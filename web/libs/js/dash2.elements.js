@@ -639,7 +639,7 @@ $(document).ready(function(e){
                 if($("#monitor_live_"+e.mid+user.auth_token).length===0||$.ccio.mon[e.ke+e.mid+user.auth_token].watch!==1){
                     $.ccio.cx({f:'monitor',ff:'watch_on',id:e.mid},user)
                 }else{
-                    $("#main_canvas").animate({scrollTop:$("#monitor_live_"+e.mid+user.auth_token).offset().top-($('#main_header').height()+10)},500);
+                    $("#main_canvas").animate({scrollTop:$("#monitor_live_"+e.mid+user.auth_token).position().top},500);
                 }
             break;
             case'watch_off':
