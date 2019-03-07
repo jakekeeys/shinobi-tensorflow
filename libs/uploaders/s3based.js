@@ -44,6 +44,9 @@ module.exports = function(s,config,lang){
             if(userDetails.whcs_dir !== ''){
                 userDetails.whcs_dir = s.checkCorrectPathEnding(userDetails.whcs_dir)
             }
+            if(userDetails.use_whcs_endpoint_select && userDetails.use_whcs_endpoint_select !== ''){
+                userDetails.whcs_endpoint = userDetails.use_whcs_endpoint_select
+            }
             if(!userDetails.whcs_endpoint || userDetails.whcs_endpoint === ''){
                 userDetails.whcs_endpoint = 's3.wasabisys.com'
             }
