@@ -11,10 +11,10 @@ module.exports = function(s,config,lang){
     }
     loadLib('loader')(s,config,lang)
     //cloud storage
+    loadLib('s3based')(s,config,lang)
     loadLib('backblazeB2')(s,config,lang)
     loadLib('amazonS3')(s,config,lang)
     loadLib('webdav')(s,config,lang)
-    loadLib('wasabi')(s,config,lang)
     //simple storage
     loadLib('sftp')(s,config,lang)
 }

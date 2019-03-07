@@ -1,6 +1,6 @@
 <% if(details.use_whcs!=='0'){ %>
 <div class="form-group-group forestgreen">
-    <h4><%-lang['Wasabi Hot Cloud Storage']%></h4>
+    <h4><%-lang['S3-Based Network Storage']%></h4>
     <div class="form-group">
         <label><div><span><%-lang.Autosave%></span></div>
                 <div><select class="form-control" detail="whcs_save" selector="autosave_whcs">
@@ -10,6 +10,19 @@
         </label>
     </div>
     <div class="autosave_whcs_input autosave_whcs_1">
+        <div class="form-group">
+            <label><div><span><%-lang['Endpoint']%></span></div>
+                    <div><select class="form-control" detail="use_whcs_size_limit" selector="h_whcs_endpoint">
+                        <option value=""><%- lang['Custom Endpoint'] %></option>
+                        <option value="s3.wasabisys.com" selected>s3.wasabisys.com</option>
+                    </select></div>
+            </label>
+        </div>
+        <div class="form-group h_whcs_endpoint_input h_whcs_endpoint_" style="display:none">
+            <label><div><span><%-lang['Endpoint Address']%></span></div>
+                <div><input class="form-control" detail="whcs_endpoint" placeholder="s3.wasabisys.com"></div>
+            </label>
+        </div>
         <div class="form-group">
             <label><div><span><%-lang.Bucket%></span></div>
                 <div><input class="form-control" detail="whcs_bucket" placeholder="Example : slippery-seal"></div>

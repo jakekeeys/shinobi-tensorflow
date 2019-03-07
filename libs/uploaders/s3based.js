@@ -44,9 +44,17 @@ module.exports = function(s,config,lang){
             if(userDetails.whcs_dir !== ''){
                 userDetails.whcs_dir = s.checkCorrectPathEnding(userDetails.whcs_dir)
             }
+            if(!userDetails.whcs_endpoint || userDetails.whcs_endpoint === ''){
+                userDetails.whcs_endpoint = 's3.wasabisys.com'
+            }
+            var endpointSplit = userDetails.whcs_endpoint.split('.')
+            if(endpointSplit.length > 1){
+                endpointSplit.shift()
+            }
+            var locationUrl = endpointSplit.join('.')
             var AWS = new require("aws-sdk")
             s.group[e.ke].whcs = AWS
-            var wasabiEndpoint = new AWS.Endpoint('s3.wasabisys.com')
+            var wasabiEndpoint = new AWS.Endpoint(userDetails.whcs_endpoint)
             s.group[e.ke].whcs.config = new s.group[e.ke].whcs.Config({
                 endpoint: wasabiEndpoint,
                 accessKeyId: userDetails.whcs_accessKeyId,
@@ -67,7 +75,7 @@ module.exports = function(s,config,lang){
             var videoDetails = video.details
         }
         if(!videoDetails.location){
-            videoDetails.location = video.href.split('wasabisys.com')[1]
+            videoDetails.location = video.href.split(locationUrl)[1]
         }
         s.group[e.ke].whcs.deleteObject({
             Bucket: s.group[e.ke].init.whcs_bucket,
