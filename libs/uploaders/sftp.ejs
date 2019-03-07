@@ -1,0 +1,45 @@
+<% if(details.use_sftp!=='0'){ %>
+<div class="form-group-group forestgreen">
+    <h4><%-lang['SFTP (SSH File Transfer)']%></h4>
+    <div class="form-group">
+        <label><div><span><%-lang.Autosave%></span></div>
+                <div><select class="form-control" detail="sftp_save" selector="autosave_sftp">
+                    <option value="0" selected><%-lang.No%></option>
+                    <option value="1"><%-lang.Yes%></option>
+                </select></div>
+        </label>
+    </div>
+    <div class="autosave_sftp_input autosave_sftp_1">
+        <div class="form-group">
+            <label><div><span><%-lang.Host%></span></div>
+                <div><input class="form-control" detail="sftp_host"></div>
+            </label>
+        </div>
+        <div class="form-group">
+            <label><div><span><%-lang.Port%></span></div>
+                <div><input class="form-control" type="text" detail="sftp_port"></div>
+            </label>
+        </div>
+        <div class="form-group">
+            <label><div><span><%-lang.Username%></span></div>
+                <div><input class="form-control" type="text" detail="sftp_username"></div>
+            </label>
+        </div>
+        <div class="form-group">
+            <label><div><span><%-lang.Password%></span></div>
+                <div><input class="form-control" type="password" detail="sftp_password"></div>
+            </label>
+        </div>
+        <div class="form-group">
+            <label><div><span><%-lang.privateKey%></span></div>
+                <div><textarea class="form-control" type="password" detail="sftp_privateKey"></textarea></div>
+            </label>
+        </div>
+        <div class="form-group">
+            <label><div><span><%-lang['Save Directory']%></span></div>
+                <div><input class="form-control" placeholder="" detail="sftp_dir"></div>
+            </label>
+        </div>
+    </div>
+</div>
+<% } %>

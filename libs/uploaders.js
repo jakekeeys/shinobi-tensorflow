@@ -1,11 +1,20 @@
 module.exports = function(s,config,lang){
+    config.uploaderEjsBlocks = []
     var loadLib = function(lib){
-        return require('./uploaders/' + lib + '.js')
+        var uploadersFolder = __dirname + '/uploaders/'
+        var libraryPath = uploadersFolder + lib + '.js'
+        if(lib !== 'loader'){
+            var libraryEjsFile = uploadersFolder + lib + '.ejs'
+            config.uploaderEjsBlocks.push(libraryEjsFile)
+        }
+        return require(libraryPath)
     }
     loadLib('loader')(s,config,lang)
+    //cloud storage
     loadLib('backblazeB2')(s,config,lang)
     loadLib('amazonS3')(s,config,lang)
     loadLib('webdav')(s,config,lang)
     loadLib('wasabi')(s,config,lang)
+    //simple storage
     loadLib('sftp')(s,config,lang)
 }
