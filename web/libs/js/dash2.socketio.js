@@ -131,8 +131,7 @@ $.ccio.globalWebsocket=function(d,user){
             $.ccio.pm(0,d,null,user)
         break;
         case'log':
-            var attr = '[mid="'+d.mid+'"][ke="'+d.ke+'"][auth="'+user.auth_token+'"]'
-            $.ccio.tm(4,d,'#logs,'+attr+'.monitor_item .logs:visible,'+attr+'#add_monitor:visible .logs',user)
+            $.logWriter.draw('[mid="'+d.mid+'"][ke="'+d.ke+'"][auth="'+user.auth_token+'"]',d,user)
         break;
         case'camera_cpu_usage':
             var el = $('.monitor_item[auth="'+user.auth_token+'"][ke="'+d.ke+'"][mid="'+d.id+'"] .camera_cpu_usage')
