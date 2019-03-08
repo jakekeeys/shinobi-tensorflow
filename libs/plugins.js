@@ -43,7 +43,11 @@ module.exports = function(s,config,lang){
                 pluginArray.push(name)
             }
         })
-        if(pluginArray.length > 0)s.isAtleatOneDetectorPluginConnected = true
+        if(pluginArray.length > 0){
+            s.isAtleatOneDetectorPluginConnected = true
+        }else{
+            s.isAtleatOneDetectorPluginConnected = false
+        }
         s.detectorPluginArray = pluginArray
     }
     s.sendToAllDetectors = function(data){
