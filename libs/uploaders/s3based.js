@@ -51,7 +51,7 @@ module.exports = function(s,config,lang){
                 userDetails.whcs_endpoint = 's3.wasabisys.com'
             }
             var endpointSplit = userDetails.whcs_endpoint.split('.')
-            if(endpointSplit.length > 1){
+            if(endpointSplit.length > 2){
                 endpointSplit.shift()
             }
             var locationUrl = endpointSplit.join('.')
