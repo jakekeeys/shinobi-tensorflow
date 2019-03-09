@@ -1,35 +1,35 @@
 var fs = require('fs')
 var execSync = require('child_process').execSync
 module.exports = function(s,config,lang,app,io){
+    var authenticateUser = function(username,password,callback){
+        var splitUsername = username.split('@')
+        if(splitUsername[1] !== 'Shinobi' && splitUsername[1] !== 'shinobi'){
+            s.sqlQuery('SELECT ke,uid FROM Users WHERE mail=? AND (pass=? OR pass=?)',[
+                username,
+                password,
+                s.createHash(password)
+            ],function(err,r){
+                var user
+                if(r && r[0]){
+                    user = r[0]
+                }
+                callback(err,user)
+            })
+        }else{
+            s.sqlQuery('SELECT ke,uid FROM API WHERE code=? AND ke=?',[
+                splitUsername[0], //code
+                password //ke
+            ],function(err,r){
+                var apiKey
+                if(r && r[0]){
+                    apiKey = r[0]
+                }
+                callback(err,apiKey)
+            })
+        }
+    }
     if(config.dropInEventServer === true){
         if(config.dropInEventDeleteFileAfterTrigger === undefined)config.dropInEventDeleteFileAfterTrigger = true
-        var authenticateUser = function(username,password,callback){
-            var splitUsername = username.split('@')
-            if(splitUsername[1] !== 'Shinobi' && splitUsername[1] !== 'shinobi'){
-                s.sqlQuery('SELECT ke,uid FROM Users WHERE mail=? AND (pass=? OR pass=?)',[
-                    username,
-                    password,
-                    s.createHash(password)
-                ],function(err,r){
-                    var user
-                    if(r && r[0]){
-                        user = r[0]
-                    }
-                    callback(err,user)
-                })
-            }else{
-                s.sqlQuery('SELECT ke,uid FROM API WHERE code=? AND ke=?',[
-                    splitUsername[0], //code
-                    password //ke
-                ],function(err,r){
-                    var apiKey
-                    if(r && r[0]){
-                        apiKey = r[0]
-                    }
-                    callback(err,apiKey)
-                })
-            }
-        }
         var beforeMonitorsLoadedOnStartup = function(){
             if(!config.dropInEventsDir){
                 config.dropInEventsDir = s.dir.streams + 'dropInEvents/'
