@@ -909,7 +909,7 @@ module.exports = function(s,config,lang,app,io){
                     r[n].streamsSortedByType={}
                     buildStreamURL(details.stream_type)
                     if(details.stream_channels&&details.stream_channels!==''){
-                        details.stream_channels=JSON.parse(details.stream_channels)
+                        details.stream_channels=s.parseJSON(details.stream_channels)
                         details.stream_channels.forEach(function(b,m){
                             buildStreamURL(b.stream_type,m.toString())
                         })

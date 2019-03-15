@@ -19,20 +19,20 @@ var s = loadLib('process')(process,__dirname)
 loadLib('extenders')(s)
 //configuration loader
 var config = loadLib('config')(s)
+//basic functions
+loadLib('basic')(s,config)
+//working directories : videos, streams, fileBin..
+loadLib('folders')(s,config)
 //language loader
 var lang = loadLib('language')(s,config)
 //code test module
 loadLib('codeTester')(s,config,lang)
-//basic functions
-loadLib('basic')(s,config)
 //video processing engine
-loadLib('ffmpeg')(s,config,function(ffmpeg){
+loadLib('ffmpeg')(s,config,lang,function(ffmpeg){
     //ffmpeg coProcessor
     loadLib('ffmpegCoProcessor')(s,config,lang,ffmpeg)
     //database connection : mysql, sqlite3..
     loadLib('sql')(s,config)
-    //working directories : videos, streams, fileBin..
-    loadLib('folders')(s,config)
     //authenticator functions : API, dashboard login..
     loadLib('auth')(s,config,lang)
     //express web server with ejs

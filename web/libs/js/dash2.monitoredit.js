@@ -6,23 +6,6 @@ $.aM.f=$.aM.e.find('form')
 $.aM.channels=$('#monSectionStreamChannels')
 $.aM.maps=$('#monSectionInputMaps')
 $.aM.e.find('.follow-list ul').affix();
-$.each($.ccio.definitions["Monitor Settings"].blocks,function(n,v){
-    $.each(v.info,function(m,b){
-        if(!b.name){
-            console.log(b)
-            return
-        }
-        if(b.name.indexOf('detail=')>-1){
-            b.name=b.name.replace('detail=','')
-            v.element=$.aM.e.find('[detail="'+b.name+'"]')
-        }else{
-            v.element=$.aM.e.find('[name="'+b.name+'"]')
-        }
-        v.parent=v.element.parents('.form-group').find('label div:first-child span')
-        v.parent.find('small').remove()
-        v.parent.append('<small class="hover">'+b.description+'</small>')
-    })
-})
 $.aM.generateDefaultMonitorSettings=function(){
     return {
     "mode": "start",
@@ -468,7 +451,18 @@ $.aM.f.submit(function(ee){
         })
         var alterSettings = function(settingsToAlter,monitor){
             monitor.details = JSON.parse(monitor.details);
-            $.aM.e.find(settingsToAlter).find('input,select,textarea').each(function(n,v){
+            var searchElements = []
+            if(settingsToAlter.indexOf('field=') > -1){
+                var splitSettingsToAlter = settingsToAlter.split('=')
+                if(splitSettingsToAlter[1] === 'detail' && splitSettingsToAlter[2]){
+                    searchElements = $.aM.e.find(`[detail="${splitSettingsToAlter[2]}"]`)
+                }else{
+                    searchElements = $.aM.e.find(`[name="${splitSettingsToAlter[1]}"]`)
+                }
+            }else{
+                searchElements = $.aM.e.find(settingsToAlter).find('input,select,textarea')
+            }
+            searchElements.each(function(n,v){
                 var el = $(v);
                 var name = el.attr('name')
                 var detail = el.attr('detail')

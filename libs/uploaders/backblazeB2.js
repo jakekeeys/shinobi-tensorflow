@@ -167,4 +167,127 @@ module.exports = function(s,config,lang){
         beforeAccountSave: beforeAccountSaveForBackblazeB2,
         onAccountSave: cloudDiskUseStartupForBackblazeB2,
     })
+    return {
+       "evaluation": "details.use_bb_b2 !== '0'",
+       "name": lang["Backblaze B2"],
+       "color": "forestgreen",
+       "info": [
+           {
+              "name": "detail=bb_b2_save",
+              "selector":"autosave_bb_b2",
+              "field": lang.Autosave,
+              "description": "",
+              "default": "No",
+              "example": "",
+              "fieldType": "select",
+              "possible": [
+                  {
+                     "name": "No",
+                     "value": "0"
+                  },
+                  {
+                     "name": "Yes",
+                     "value": "1"
+                  }
+              ]
+           },
+           {
+               "hidden": true,
+              "field": lang.Bucket,
+              "name": "detail=bb_b2_bucket",
+              "placeholder": "Example : slippery-seal",
+              "form-group-class": "autosave_bb_b2_input autosave_bb_b2_1",
+              "description": "",
+              "default": "",
+              "example": "",
+              "possible": ""
+           },
+           {
+               "hidden": true,
+              "field": lang.accountId,
+              "name": "detail=bb_b2_accountId",
+              "form-group-class": "autosave_bb_b2_input autosave_bb_b2_1",
+              "description": "",
+              "default": "",
+              "example": "",
+              "possible": ""
+           },
+           {
+               "hidden": true,
+              "name": "detail=bb_b2_applicationKey",
+              "fieldType":"password",
+              "placeholder": "XXXXXXXXXXXXXXXXXXXXXXXX.XXXXXXXXXXXXXXX_XXXXXXXXXXXXXXXXXX",
+              "field": lang.applicationKey,
+              "form-group-class":"autosave_bb_b2_input autosave_bb_b2_1",
+              "description": "",
+              "default": "",
+              "example": "",
+              "possible": ""
+           },
+           {
+               "hidden": true,
+              "name": "detail=bb_b2_log",
+              "field": lang['Save Links to Database'],
+              "fieldType": "select",
+              "selector": "h_b2sld",
+              "form-group-class":"autosave_bb_b2_input autosave_bb_b2_1",
+              "description": "",
+              "default": "",
+              "example": "",
+              "possible": [
+                  {
+                     "name": "No",
+                     "value": "0"
+                  },
+                  {
+                     "name": "Yes",
+                     "value": "1"
+                  }
+              ]
+          },
+          {
+              "hidden": true,
+             "name": "detail=use_bb_b2_size_limit",
+             "field": lang['Use Max Storage Amount'],
+             "fieldType": "select",
+             "selector": "h_b2zl",
+             "form-group-class":"autosave_bb_b2_input autosave_bb_b2_1",
+             "form-group-class-pre-layer":"h_b2sld_input h_b2sld_1",
+             "description": "",
+             "default": "",
+             "example": "",
+             "possible":  [
+                 {
+                    "name": "No",
+                    "value": "0"
+                 },
+                 {
+                    "name": "Yes",
+                    "value": "1"
+                 }
+             ]
+          },
+          {
+              "hidden": true,
+             "name": "detail=bb_b2_size_limit",
+             "field": lang['Max Storage Amount'],
+             "form-group-class":"autosave_bb_b2_input autosave_bb_b2_1",
+             "form-group-class-pre-layer":"h_b2sld_input h_b2sld_1",
+             "description": "",
+             "default": "10000",
+             "example": "",
+             "possible": ""
+          },
+          {
+              "hidden": true,
+             "name": "detail=bb_b2_dir",
+             "field": lang['Save Directory'],
+             "form-group-class":"autosave_bb_b2_input autosave_bb_b2_1",
+             "description": "",
+             "default": "/",
+             "example": "",
+             "possible": ""
+          },
+       ]
+    }
 }

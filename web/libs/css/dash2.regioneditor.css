@@ -3,3 +3,7 @@
 #region_editor .cord_element{position:absolute;background:rgba(221, 221, 221, 0.8);z-index:11;padding:5px;}
 #region_editor .cord_element.selected{z-index:12;}
 #region_editor .cord_element .controls{margin-bottom:5px;}
+
+
+
+#region_editor_live iframe,.canvas_holder canvas{border:0;position:absolute;left:0;top:0}

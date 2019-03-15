@@ -1,7 +1,7 @@
 var fs = require('fs');
 var spawn = require('child_process').spawn;
 var execSync = require('child_process').execSync;
-module.exports = function(s,config,onFinish){
+module.exports = function(s,config,lang,onFinish){
     var ffmpeg = {}
     var downloadingFfmpeg = false;
     //check local ffmpeg
@@ -98,6 +98,27 @@ module.exports = function(s,config,onFinish){
             config.availableHWAccels = availableHWAccels
             config.availableHWAccels = ['auto'].concat(config.availableHWAccels)
             console.log('Available Hardware Acceleration Methods : ',availableHWAccels.join(', '))
+            var methods = {
+                auto: {label:lang['Auto'],value:'auto'},
+                drm: {label:lang['drm'],value:'drm'},
+                cuvid: {label:lang['cuvid'],value:'cuvid'},
+                vaapi: {label:lang['vaapi'],value:'vaapi'},
+                qsv: {label:lang['qsv'],value:'qsv'},
+                vdpau: {label:lang['vdpau'],value:'vdpau'},
+                dxva2: {label:lang['dxva2'],value:'dxva2'},
+                vdpau: {label:lang['vdpau'],value:'vdpau'},
+                videotoolbox: {label:lang['videotoolbox'],value:'videotoolbox'}
+            }
+            s.listOfHwAccels = []
+            config.availableHWAccels.forEach(function(availibleMethod){
+                if(methods[availibleMethod]){
+                    var method = methods[availibleMethod]
+                    s.listOfHwAccels.push({
+                        name: method.label,
+                        value: method.value,
+                    })
+                 }
+            })
         }
         callback()
     }

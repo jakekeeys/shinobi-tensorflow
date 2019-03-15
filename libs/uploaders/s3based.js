@@ -146,4 +146,244 @@ module.exports = function(s,config,lang){
         beforeAccountSave: beforeAccountSaveForWasabiHotCloudStorage,
         onAccountSave: cloudDiskUseStartupForWasabiHotCloudStorage,
     })
+    return {
+       "evaluation": "details.use_whcs !== '0'",
+       "name": lang["S3-Based Network Storage"],
+       "color": "forestgreen",
+       "info": [
+           {
+              "name": "detail=whcs_save",
+              "selector":"autosave_whcs",
+              "field": lang.Autosave,
+              "description": "",
+              "default": "No",
+              "example": "",
+              "fieldType": "select",
+              "possible": [
+                  {
+                     "name": "No",
+                     "value": "0"
+                  },
+                  {
+                     "name": "Yes",
+                     "value": "1"
+                  }
+              ]
+           },
+           {
+               "hidden": true,
+              "name": "detail=use_whcs_endpoint_select",
+              "selector":"h_whcs_endpoint",
+              "field": lang.Endpoint,
+              "description": "",
+              "default": "",
+              "example": "",
+              "fieldType": "select",
+              "possible": [
+                  {
+                     "name": "Custom Endpoint",
+                     "value": ""
+                  },
+                  {
+                     "name": lang['Wasabi Hot Cloud Storage'],
+                     "value": "s3.wasabisys.com"
+                  }
+              ]
+           },
+           {
+              "hidden": true,
+              "field": lang['Endpoint Address'],
+              "name": "detail=whcs_endpoint",
+              "placeholder": "s3.wasabisys.com",
+              "form-group-class": "autosave_whcs_input autosave_whcs_1",
+              "form-group-class-pre-layer":"h_whcs_endpoint_input h_whcs_endpoint_",
+              "description": "",
+              "default": "",
+              "example": "",
+              "possible": ""
+           },
+           {
+              "hidden": true,
+              "field": lang.Bucket,
+              "name": "detail=whcs_bucket",
+              "placeholder": "Example : slippery-seal",
+              "form-group-class": "autosave_whcs_input autosave_whcs_1",
+              "description": "",
+              "default": "",
+              "example": "",
+              "possible": ""
+           },
+           {
+               "hidden": true,
+              "field": lang.aws_accessKeyId,
+              "name": "detail=aws_accessKeyId",
+              "form-group-class": "autosave_whcs_input autosave_whcs_1",
+              "description": "",
+              "default": "",
+              "example": "",
+              "possible": ""
+           },
+           {
+               "hidden": true,
+              "name": "detail=aws_secretAccessKey",
+              "fieldType":"password",
+              "placeholder": "",
+              "field": lang.aws_secretAccessKey,
+              "form-group-class":"autosave_whcs_input autosave_whcs_1",
+              "description": "",
+              "default": "",
+              "example": "",
+              "possible": ""
+           },
+           {
+               "hidden": true,
+              "name": "detail=aws_region",
+              "field": lang.Region,
+              "fieldType": "select",
+              "selector": "h_b2sld",
+              "form-group-class":"autosave_whcs_input autosave_whcs_1",
+              "description": "",
+              "default": "",
+              "example": "",
+              "possible": [
+                   {
+                      "name": "US West 1",
+                      "value": "us-west-1"
+                   },
+                   {
+                      "name": "US West 2)",
+                      "value": "us-west-2"
+                   },
+                   {
+                      "name": "US East 1",
+                      "value": "us-east-2"
+                   },
+                   {
+                      "name": "US East 2",
+                      "value": "us-east-1"
+                   },
+                   {
+                      "name": "Asia Pacific 1",
+                      "value": "ap-south-1"
+                   },
+                   {
+                      "name": "Asia Pacific 2",
+                      "value": "ap-northeast-2"
+                   },
+                   {
+                      "name": "Asia Pacific 3",
+                      "value": "ap-northeast-3"
+                   },
+                   {
+                      "name": "Asia Pacific 4",
+                      "value": "ap-southeast-1"
+                   },
+                   {
+                      "name": "Asia Pacific 5",
+                      "value": "ap-southeast-2"
+                   },
+                   {
+                      "name": "Asia Pacific 6",
+                      "value": "ap-northeast-1"
+                   },
+                   {
+                      "name": "Canada 1",
+                      "value": "ca-central-1"
+                   },
+                   {
+                      "name": "China 1",
+                      "value": "cn-north-1"
+                   },
+                   {
+                      "name": "China 1",
+                      "value": "cn-northwest-1"
+                   },
+                   {
+                      "name": "EU 1",
+                      "value": "eu-central-1"
+                   },
+                   {
+                      "name": "EU 2",
+                      "value": "eu-west-1"
+                   },
+                   {
+                      "name": "EU 3",
+                      "value": "eu-west-2"
+                   },
+                   {
+                      "name": "EU 4",
+                      "value": "eu-west-3"
+                   },
+                   {
+                      "name": "South America 1",
+                      "value": "sa-east-1"
+                   }
+                ]
+          },
+          {
+              "hidden": true,
+             "name": "detail=whcs_log",
+             "field": lang['Save Links to Database'],
+             "fieldType": "select",
+             "selector": "h_s3sld",
+             "form-group-class":"autosave_whcs_input autosave_whcs_1",
+             "description": "",
+             "default": "",
+             "example": "",
+             "possible": [
+                 {
+                    "name": "No",
+                    "value": "0"
+                 },
+                 {
+                    "name": "Yes",
+                    "value": "1"
+                 }
+             ]
+         },
+         {
+             "hidden": true,
+            "name": "detail=use_bb_b2_size_limit",
+            "field": lang['Use Max Storage Amount'],
+            "fieldType": "select",
+            "selector": "h_b2zl",
+            "form-group-class":"autosave_whcs_input autosave_whcs_1",
+            "form-group-class-pre-layer":"h_s3sld_input h_s3sld_1",
+            "description": "",
+            "default": "",
+            "example": "",
+            "possible":  [
+                {
+                   "name": "No",
+                   "value": "0"
+                },
+                {
+                   "name": "Yes",
+                   "value": "1"
+                }
+            ]
+         },
+         {
+             "hidden": true,
+            "name": "detail=whcs_size_limit",
+            "field": lang['Max Storage Amount'],
+            "form-group-class":"autosave_whcs_input autosave_whcs_1",
+            "form-group-class-pre-layer":"h_s3sld_input h_s3sld_1",
+            "description": "",
+            "default": "10000",
+            "example": "",
+            "possible": ""
+         },
+         {
+             "hidden": true,
+            "name": "detail=whcs_dir",
+            "field": lang['Save Directory'],
+            "form-group-class":"autosave_whcs_input autosave_whcs_1",
+            "description": "",
+            "default": "/",
+            "example": "",
+            "possible": ""
+         },
+       ]
+    }
 }

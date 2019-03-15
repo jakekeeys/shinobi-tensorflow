@@ -336,11 +336,11 @@ $.ccio.init=function(x,d,user,k){
         case'drawMatrices':
             d.height=d.stream.height()
             d.width=d.stream.width()
-            if(d.monitorDetails.detector_scale_x===''){d.monitorDetails.detector_scale_x=320}
-            if(d.monitorDetails.detector_scale_y===''){d.monitorDetails.detector_scale_y=240}
+            if(!d.details.imgWidth && d.monitorDetails.detector_scale_x===''){d.monitorDetails.detector_scale_x=320}
+            if(!d.details.imgHeight && d.monitorDetails.detector_scale_y===''){d.monitorDetails.detector_scale_y=240}
 
-            d.widthRatio=d.width/d.monitorDetails.detector_scale_x
-            d.heightRatio=d.height/d.monitorDetails.detector_scale_y
+            d.widthRatio=d.width/d.details.imgWidth || d.monitorDetails.detector_scale_x
+            d.heightRatio=d.height/d.details.imgHeight || d.monitorDetails.detector_scale_y
 
             d.streamObjects.find('.stream-detected-object[name="'+d.details.name+'"]').remove()
             d.tmp=''

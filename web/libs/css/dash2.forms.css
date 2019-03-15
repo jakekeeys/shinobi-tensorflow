@@ -22,23 +22,23 @@ form.modal-body{margin:0}
 .form-group-group .mdl-list__item:hover{background:#e6e6e6;border-radius:4px;}
 .dark .form-group-group .mdl-list__item{color:#fff;border-bottom:1px solid #444;}
 .dark .form-group-group .mdl-list__item:hover{background:#555;}
-.form-group-group:last-child,.form-group-group > .form-group:last-child{margin-bottom:0}
-.form-group-group h4{margin:0 -10px 15px -10px;padding:15px;background:#ddd;}
-.form-group-group h4 small{color:#fff;}
+.form-group-group:visible:last-child,.form-group-group > .form-group:last-child{margin-bottom:0}
+.form-group-group > h4{margin:0 -10px 15px -10px;padding:15px;background:#ddd;}
+.form-group-group > h4 small{color:#fff;}
 .form-group-group.red{border-color:#d9534f}
-.form-group-group.red h4{background:#d9534f;color:#fff}
+.form-group-group.red > h4{background:#d9534f;color:#fff}
 .form-group-group.purple{border-color:#3f51b5}
-.form-group-group.purple h4{background:#3f51b5;color:#fff}
+.form-group-group.purple > h4{background:#3f51b5;color:#fff}
 .form-group-group.blue{border-color:#337ab7}
-.form-group-group.blue h4{background:#337ab7;color:#fff}
+.form-group-group.blue > h4{background:#337ab7;color:#fff}
 .form-group-group.navy{border-color:#31708f}
-.form-group-group.navy h4{background:#31708f;color:#fff}
+.form-group-group.navy > h4{background:#31708f;color:#fff}
 .form-group-group.green{border-color:#449d44}
-.form-group-group.green h4{background:#449d44;color:#fff}
+.form-group-group.green > h4{background:#449d44;color:#fff}
 .form-group-group.forestgreen{border-color:#1e4046}
-.form-group-group.forestgreen h4{background:#1e4046;color:#fff}
+.form-group-group.forestgreen > h4{background:#1e4046;color:#fff}
 .form-group-group.orange{border-color:#c49a68}
-.form-group-group.orange h4{background:#c49a68;color:#fff}
+.form-group-group.orange > h4{background:#c49a68;color:#fff}
 .form-group-group.grey{border-color:#777}
-.form-group-group.grey h4{background:#777;color:#fff}
+.form-group-group.grey > h4{background:#777;color:#fff}
 .dark .form-group-group{background:#222}

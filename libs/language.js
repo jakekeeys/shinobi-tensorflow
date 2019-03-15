@@ -1,3 +1,4 @@
+var fs = require('fs')
 module.exports = function(s,config){
     if(!config.language){
         config.language='en_CA'
@@ -9,19 +10,19 @@ module.exports = function(s,config){
         console.log('There was an error loading your language file.')
         var lang = require(s.location.languages+'/en_CA.json');
     }
-    s.location.definitions = s.mainDirectory+'/definitions'
-    try{
-        var definitions = require(s.location.definitions+'/'+config.language+'.json');
-    }catch(er){
-        console.error(er)
-        console.log('There was an error loading your language file.')
-        var definitions = require(s.location.definitions+'/en_CA.json');
-    }
     //load languages dynamically
     s.copySystemDefaultLanguage = function(){
         //en_CA
         return Object.assign(lang,{})
     }
+    s.listOfPossibleLanguages = []
+    fs.readdirSync(s.mainDirectory + '/languages').forEach(function(filename){
+        var name = filename.replace('.json','')
+        s.listOfPossibleLanguages.push({
+            "name": name,
+            "value": name,
+        })
+    })
     s.loadedLanguages={}
     s.loadedLanguages[config.language] = s.copySystemDefaultLanguage()
     s.getLanguageFile = function(rule){
@@ -41,6 +42,15 @@ module.exports = function(s,config){
         }
         return file
     }
+    //
+    s.location.definitions = s.mainDirectory+'/definitions'
+    try{
+        var definitions = require(s.location.definitions+'/'+config.language+'.js')(s,config,lang)
+    }catch(er){
+        console.error(er)
+        console.log('There was an error loading your definition file.')
+        var definitions = require(s.location.definitions+'/en_CA.json');
+    }
     //load defintions dynamically
     s.copySystemDefaultDefinitions = function(){
         //en_CA
@@ -53,7 +63,7 @@ module.exports = function(s,config){
             var file = s.loadedDefinitons[file]
             if(!file){
                 try{
-                    s.loadedDefinitons[rule] = require(s.location.definitions+'/'+rule+'.json')
+                    s.loadedDefinitons[rule] = require(s.location.definitions+'/'+rule+'.js')(s,config,lang)
                     s.loadedDefinitons[rule] = Object.assign(s.copySystemDefaultDefinitions(),s.loadedDefinitons[rule])
                     file = s.loadedDefinitons[rule]
                 }catch(err){
