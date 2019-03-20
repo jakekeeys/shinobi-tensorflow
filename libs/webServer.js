@@ -89,6 +89,8 @@ module.exports = function(s,config,lang,io){
             path:s.checkCorrectPathEnding(config.webPaths.super)+'socket.io',
             transports: ['websocket']
         })
+        var wellKnownDirectory = s.mainDirectory + '/web/.well-known'
+        if(fs.existsSync(wellKnownDirectory))app.use('/.well-known',express.static(wellKnownDirectory))
     }
     //start HTTP
     var server = http.createServer(app);
