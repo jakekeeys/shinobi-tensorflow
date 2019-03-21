@@ -10,6 +10,11 @@
         <h4 class="modal-title" id="settingsLabel"><i class="fa fa-gears"></i> &nbsp; <%-lang.Settings%></h4>
       </div>
       <div class="modal-body">
+          <div class="row">
+              <div class="col-md-2 hidden-xs follow-list">
+                  <ul class="affix"></ul>
+              </div>
+              <div class="col-md-10">
           <div class="text-center msg"></div>
           <div class="form-group-group green">
               <h4><%-lang['Account Info']%></h4>
@@ -43,53 +48,56 @@
               })
               return fieldElement
           }
-          var drawBlock = function(monitorSettings){
-            if(monitorSettings.evaluation && !eval(monitorSettings.evaluation)){
+          var drawBlock = function(userSettings){
+            if(userSettings.evaluation && !eval(userSettings.evaluation)){
                 return
             }
             var attributes = []
             var styles = []
             var sectionClass = []
-            var headerTitle = monitorSettings.headerTitle || lang[monitorSettings.name]
-            if(monitorSettings.hidden === true){
+            var headerTitle = userSettings.headerTitle || lang[userSettings.name]
+            if(userSettings.hidden === true){
                 styles.push('display:none')
             }
-            if(monitorSettings.style){
-                styles.push(monitorSettings.style)
+            if(userSettings.style){
+                styles.push(userSettings.style)
             }
-            if(monitorSettings.isSection === true){
+            if(userSettings.isSection === true){
                 attributes.push('section')
             }
-            if(monitorSettings.attribute){
-                attributes.push(monitorSettings.attribute)
+            if(userSettings.attribute){
+                attributes.push(userSettings.attribute)
             }
-            if(monitorSettings.id){
-                attributes.push(`id="${monitorSettings.id}"`)
+            if(userSettings.id){
+                attributes.push(`id="${userSettings.id}"`)
+            }else{
+                var userSettingsId = userSettings.name.replace(/[^a-zA-Z ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/ /g, '')
+                attributes.push(`id="${userSettingsId}"`)
             }
-            if(monitorSettings['input-mapping']){
-                attributes.push(`input-mapping="${monitorSettings['input-mapping']}"`)
+            if(userSettings['input-mapping']){
+                attributes.push(`input-mapping="${userSettings['input-mapping']}"`)
             }
-            if(monitorSettings.color){
-                sectionClass.push(monitorSettings.color)
+            if(userSettings.color){
+                sectionClass.push(userSettings.color)
             }
-            if(monitorSettings['section-class']){
-                sectionClass.push(monitorSettings['section-class'])
+            if(userSettings['section-class']){
+                sectionClass.push(userSettings['section-class'])
             }
-            if(monitorSettings.isAdvanced){ %>
+            if(userSettings.isAdvanced){ %>
            <div class="h_us_input h_us_advanced">
            <% }
-            if(monitorSettings['section-pre-pre-class']){ %>
-           <div class="<%- monitorSettings['section-pre-pre-class'] %>">
+            if(userSettings['section-pre-pre-class']){ %>
+           <div class="<%- userSettings['section-pre-pre-class'] %>">
            <% }
-            if(monitorSettings['section-pre-class']){ %>
-           <div class="<%- monitorSettings['section-pre-class'] %>">
+            if(userSettings['section-pre-class']){ %>
+           <div class="<%- userSettings['section-pre-class'] %>">
            <% }
             %>
             <div <%- attributes.join(' ') %> style="<%- styles.join(';') %>" class="form-group-group <%- sectionClass.join(' ') %>">
-                <h4 class="<%- monitorSettings.headerClass %>"><%- headerTitle %>
-                    <% if(monitorSettings.headerButtons){ %>
+                <h4 class="<%- userSettings.headerClass %>"><%- headerTitle %>
+                    <% if(userSettings.headerButtons){ %>
                         <div class="pull-right">
-                            <% monitorSettings.headerButtons.forEach(function(button){ %>
+                            <% userSettings.headerButtons.forEach(function(button){ %>
                                 <a class="btn btn-success btn-xs <%- button.class %>">
                                     <% if(button.icon){ %><i class="fa fa-<%- button.icon %>"></i><% } %>
                                      <% if(button.text){ %><%- button.text %><% } %>
@@ -98,8 +106,8 @@
                         </div>
                     <% } %>
                 </h4>
-            <% if(monitorSettings['input-mapping']){ %>
-                <div class="form-group-group forestgreen" style="display:none" input-mapping="<%- monitorSettings['input-mapping'] %>">
+            <% if(userSettings['input-mapping']){ %>
+                <div class="form-group-group forestgreen" style="display:none" input-mapping="<%- userSettings['input-mapping'] %>">
                     <h4><%-lang['Input Feed']%>
                         <div class="pull-right">
                             <a class="btn btn-success btn-xs add_map_row"><i class="fa fa-plus-square-o"></i></a>
@@ -108,18 +116,20 @@
                     <div class="choices"></div>
                 </div>
             <% } %>
-            <% if(monitorSettings.blockquote){ %>
-                <blockquote class="<%- monitorSettings.blockquoteClass || '' %>">
-                    <%- monitorSettings.blockquote %>
+            <% if(userSettings.blockquote){ %>
+                <blockquote class="<%- userSettings.blockquoteClass || '' %>">
+                    <%- userSettings.blockquote %>
                 </blockquote>
             <% } %>
-            <% if(monitorSettings.blocks){
-                    monitorSettings.blocks.forEach(function(settingsBlock){
+
+            <%
+            if(userSettings.blocks){
+                    userSettings.blocks.forEach(function(settingsBlock){
                         drawBlock(settingsBlock)
                     })
                 }
-               if(monitorSettings.info){
-               monitorSettings.info.forEach(function(field){
+               if(userSettings.info){
+               userSettings.info.forEach(function(field){
                    if(field.isFormGroupGroup === true){
                        drawBlock(field)
                    }else{
@@ -238,13 +248,13 @@
           %>
           </div>
           <%
-          if(monitorSettings['section-pre-class']){ %>
+          if(userSettings['section-pre-class']){ %>
           </div>
           <% }
-          if(monitorSettings['section-pre-pre-class']){ %>
+          if(userSettings['section-pre-pre-class']){ %>
           </div>
           <% }
-          if(monitorSettings.isAdvanced){ %>
+          if(userSettings.isAdvanced){ %>
           </div>
           <% }
           }
@@ -258,6 +268,8 @@
                 <div id="linkShinobi"></div>
             </div>
         <input type="hidden" name="details">
+      </div>
+      </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default pull-left" data-dismiss="modal"><i class="fa fa-times"></i> <%-lang.Close%></button>

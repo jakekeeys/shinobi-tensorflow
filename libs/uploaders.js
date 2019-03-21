@@ -5,7 +5,7 @@ module.exports = function(s,config,lang){
         var libraryPath = uploadersFolder + lib + '.js'
         var loadedLib = require(libraryPath)(s,config,lang)
         if(lib !== 'loader'){
-            var libraryEjsFile = uploadersFolder + lib + '.ejs'
+            loadedLib.isFormGroupGroup = true
             s.uploaderFields.push(loadedLib)
         }
         return loadedLib
