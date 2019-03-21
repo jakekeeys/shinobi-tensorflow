@@ -3,7 +3,8 @@ $.ccio={
     mon:{},
     useUTC: <%- config.useUTC || false %>,
     definitions: <%-JSON.stringify(define)%>,
-    libURL: '<%-window.libURL%>'
+    libURL: '<%-window.libURL%>',
+    logMemory: []
 };
 <% if(config.DropboxAppKey){ %>
     $.ccio.DropboxAppKey = '<%-window.DropboxAppKey%>'
@@ -117,6 +118,7 @@ $(document).ready(function(e){
             }
         })
     }
+    //on window resize
     document.addEventListener("fullscreenchange", onFullScreenChange, false);
     document.addEventListener("webkitfullscreenchange", onFullScreenChange, false);
     document.addEventListener("mozfullscreenchange", onFullScreenChange, false);

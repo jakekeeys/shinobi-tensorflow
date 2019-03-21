@@ -6,6 +6,42 @@ $.sM.links=$('#linkShinobi');
 $.sM.g=$('#settings_mon_groups');
 $.sM.md=$.sM.f.find('[detail]');
 $.sM.md.change($.ccio.form.details);
+$.sM.e.find('.follow-list ul').affix();
+$.sM.sections = {}
+var addSection = function(section){
+    if(!section.id){
+        var userSettingsId = section.name.replace(/[^a-zA-Z ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/ /g, '')
+        section.id = userSettingsId
+    }
+    $.sM.sections[section.name] = section.id
+    if(section.info){
+        $.each(section.info,function(m,block){
+            if(block.isFormGroupGroup === true){
+                addSection(block)
+            }
+        })
+    }
+    if(section.blocks){
+        $.each(section.blocks,function(m,block){
+            addSection(block)
+        })
+    }
+}
+$.each($.ccio.definitions['Account Settings'].blocks,function(n,section){
+    addSection(section)
+})
+$.sM.drawList = function(){
+    var list = $.sM.e.find('.follow-list ul')
+    var html = ''
+    $.each($.sM.sections,function(sectionName,sectionId){
+        var el = $('#' + sectionId)
+        if(el.length > 0){
+            html += '<li><a class="scrollTo" href="#' + sectionId + '" scrollToParent="#settings .modal-body">' + sectionName + '</a></li>'
+        }
+    })
+    list.html(html)
+}
+$.sM.drawList()
 $.sM.f.find('[selector]').change(function(e){
     e.v=$(this).val();e.a=$(this).attr('selector')
     $.sM.f.find('.'+e.a+'_input').hide()
