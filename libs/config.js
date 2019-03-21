@@ -11,7 +11,7 @@ module.exports = function(s){
     //config defaults
     if(config.showPoweredBy === undefined){config.showPoweredBy=true}
     if(config.poweredBy === undefined){config.poweredBy='Powered by Shinobi'}
-    if(config.poweredBy === undefined){config.poweredByClass='margin:15px 0 0 0;text-align:center;color:#777;font-family: sans-serif;text-transform: uppercase;letter-spacing: 3;font-size: 8pt;'}
+    if(config.poweredByClass === undefined){config.poweredByClass='margin:15px 0 0 0;text-align:center;color:#777;font-family: sans-serif;text-transform: uppercase;letter-spacing: 3;font-size: 8pt;'}
     if(config.webPageTitle === undefined){config.webPageTitle='Shinobi'}
     if(config.showLoginCardHeader === undefined){config.showLoginCardHeader=true}
     if(config.logoLocation76x76 === undefined){config.logoLocation76x76='libs/img/icon/apple-touch-icon-76x76.png'}
