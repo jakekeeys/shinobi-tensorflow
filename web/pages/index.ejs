@@ -6,21 +6,30 @@
     	<div class="row">
 			<div class="col-md-6 col-md-offset-3">
 				<div class="panel panel-login">
-					<div class="panel-heading">
-                        <div class="panel-heading-shade">
-                            <div class="row">
-                                <div class="col-xs-12">
-                                    <a href="http://shinobi.video" target="_blank">
-                                        <img src="<%-window.libURL%>libs/img/icon/apple-touch-icon-76x76.png" style="border-radius:50%">
-                                    </a>
+                    <% if(config.showLoginCardHeader){
+                        var logoImageLink
+                        if(config.logoLocation76x76.indexOf('//') === -1){
+                            logoImageLink = window.libURL + config.logoLocation76x76
+                        }else{
+                            logoImageLink = config.logoLocation76x76
+                        }
+                        %>
+                        <div class="panel-heading">
+                            <div class="panel-heading-shade">
+                                <div class="row">
+                                    <div class="col-xs-12">
+                                        <a href="http://shinobi.video" target="_blank">
+                                            <img src="<%- logoImageLink %>" style="<%- config.logoLocation76x76Style %>">
+                                        </a>
+                                    </div>
                                 </div>
-                            </div>
-						</div>
-					</div>
+                        	</div>
+                        </div>
+                    <% } %>
 					<div class="panel-body">
 						<div class="row">
 							<div class="col-lg-12">
-								<form id="login-form" method="post" style="display: block;">
+								<form id="login-form" method="post" style="display: block;margin:0">
                                     <input type="hidden" name="machineID" id="machineID" value="">
                                     <% var message,timeLeft;if(message){ %>
                                         <div class="form-group text-center monospace">
@@ -66,10 +75,12 @@
                                         </div>
 									</div>
 									</div>
-                                    <div class="form-group" style="margin:20px"></div>
-									<div class="form-group">
+									<div class="form-group" style="margin:0">
                                         <button type="submit" name="login-submit" id="login-submit" tabindex="4" class="btn btn-success btn-block"><%- lang.Login %></button>
 									</div>
+                                    <% if(config.showPoweredBy){ %>
+                                        <p style="<%- config.poweredByClass %>"><small><%- config.poweredBy %></small></p>
+                                    <% } %>
 								</form>
 							</div>
 						</div>

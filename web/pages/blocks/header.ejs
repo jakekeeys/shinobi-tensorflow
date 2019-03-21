@@ -1,5 +1,6 @@
 <head>
-<title><%-lang.Shinobi%></title>
+<!-- Powered by Shinobi, http://shinobi.video -->
+<title><%- config.webPageTitle %></title>
 <% if(!window.libURL)window.libURL = originalURL + global.s.checkCorrectPathEnding(config.webPaths.home) %>
 <% include header-meta.ejs %>
 <meta http-equiv="content-type" content="text/html;charset=UTF-8">
@@ -8,6 +9,7 @@
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/login.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/material.min.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/material.style.css">
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/roboto.css" type="text/css" />
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
 <% include header-favicon.ejs %>
