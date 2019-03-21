@@ -42,3 +42,4 @@ form.modal-body{margin:0}
 .form-group-group.grey{border-color:#777}
 .form-group-group.grey > h4{background:#777;color:#fff}
 .dark .form-group-group{background:#222}
+.form-group-group:last-child {margin-bottom: 0}

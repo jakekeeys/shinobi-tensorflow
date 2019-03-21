@@ -905,6 +905,24 @@ module.exports = function(s,config,lang,onFinish){
             x.pipe += ' -q:v 1 -an -c:v copy -f hls -tune zerolatency -g 1 -hls_time 2 -hls_list_size 3 -start_number 0 -live_start_index 3 -hls_allow_cache 0 -hls_flags +delete_segments+omit_endlist "'+e.sdir+'coProcessor.m3u8"'
         }
     }
+    ffmpeg.buildTimelapseOutput = function(e,x){
+        if(e.details.record_timelapse === '1'){
+            if(e.details.input_map_choices&&e.details.input_map_choices.record_timelapse){
+                //add input feed map
+                x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.record_timelapse)
+            }
+            var flags = []
+            if(e.details.record_timelapse_fps && e.details.record_timelapse_fps !== ''){
+                flags.push('-r 1/' + e.details.record_timelapse_fps)
+            }else{
+                flags.push('-r 1/900') // 15 minutes
+            }
+            if(e.details.record_timelapse_vf && e.details.record_timelapse_vf !== '')flags.push('-vf ' + e.details.record_timelapse_vf)
+            if(e.details.record_timelapse_scale_x && e.details.record_timelapse_scale_x !== '' && e.details.record_timelapse_scale_y && e.details.record_timelapse_scale_y !== '')flags.push(`-s ${e.details.record_timelapse_scale_x}x${e.details.record_timelapse_scale_y}`)
+            // x.pipe+=` -strftime 1 ${flags.join(' ')} -an -q:v 1 "${e.dirTimelapse}%Y-%m-%d/%Y-%m-%dT%H-%M-%S.jpg"`
+            x.pipe+=` -f singlejpeg ${flags.join(' ')} -an -q:v 1 pipe:7`
+        }
+    }
     ffmpeg.assembleMainPieces = function(e,x){
         //create executeable FFMPEG command
         x.ffmpegCommandString = x.loglevel+x.input_fps;
@@ -962,6 +980,7 @@ module.exports = function(s,config,lang,onFinish){
         ffmpeg.buildAudioDetector(e,x)
         ffmpeg.buildMainDetector(e,x)
         ffmpeg.buildCoProcessorFeed(e,x)
+        ffmpeg.buildTimelapseOutput(e,x)
         s.onFfmpegCameraStringCreationExtensions.forEach(function(extender){
             extender(e,x)
         })

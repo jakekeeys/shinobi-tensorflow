@@ -18,6 +18,7 @@ module.exports = function(s,config,lang){
                       "description": "This is the primary task of the monitor.",
                       "default": "stop",
                       "example": "",
+                      "selector": "h_m",
                       "possible": [
                          {
                             "name": lang.Disabled,
@@ -45,13 +46,13 @@ module.exports = function(s,config,lang){
                       "name": "mid",
                       "field": lang["Monitor ID"],
                       "description": "This is a non-changeable identifier for the monitor. You can duplicate a monitor by double clicking the Monitor ID and changing it.",
-                      "example": s.gid(),
+                      "example": s.gid()
                    },
                    {
                       "name": "name",
                       "field": lang.Name,
                       "description": "This is the human-readable display name for the monitor.",
-                      "example": "Bunny",
+                      "example": "Bunny"
                    },
                    {
                       "name": "detail=max_keep_days",
@@ -1242,7 +1243,7 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                 ]
-            },
+             },
              "Recording": {
                 "id": "monSectionRecording",
                 "name": lang.Recording,
@@ -1251,6 +1252,7 @@ module.exports = function(s,config,lang){
                 "input-mapping": "record",
                 "blockquote": lang.RecordingText,
                 "blockquoteClass": 'global_tip',
+                "section-class": 'h_m_input h_m_record h_m_idle',
                 "info": [
                     // {
                     //    "name": "height",
@@ -1707,6 +1709,111 @@ module.exports = function(s,config,lang){
                    },
                 ]
              },
+             "Timelapse": {
+                "name": lang['Timelapse'],
+                "id": "monSectionTimelapse",
+                "color": "red",
+                "isSection": true,
+                "input-mapping": "record_timelapse",
+                "info": [
+                    {
+                       "name": "detail=record_timelapse",
+                       "field": lang.Enabled,
+                       "description": "Create a JPEG based timelapse.",
+                       "default": "0",
+                       "example": "",
+                       "fieldType": "select",
+                       "selector": "h_rec_ti",
+                       "possible": [
+                           {
+                              "name": "No",
+                              "value": "0"
+                           },
+                           {
+                              "name": "Yes",
+                              "value": "1"
+                           }
+                       ]
+                   },
+                   {
+                       hidden: true,
+                      "name": "detail=record_timelapse_mp4",
+                      "field": lang.Enabled,
+                      "description": "Create an MP4 file at the end of each day for the timelapse.",
+                      "default": "0",
+                      "example": "",
+                      "fieldType": "select",
+                      "possible": [
+                          {
+                             "name": "No",
+                             "value": "0"
+                          },
+                          {
+                             "name": "Yes",
+                             "value": "1"
+                          }
+                      ]
+                   },
+                   {
+                       hidden: true,
+                      "name": "detail=record_timelapse_fps",
+                      "field": lang['Creation Interval'],
+                      "description": "",
+                      "default": "900",
+                      "example": "",
+                      "form-group-class": "h_rec_ti_input h_rec_ti_1",
+                      "fieldType": "select",
+                      "possible": [
+                        {
+                            "name": `15 ${lang.minutes}`,
+                            "value": "900"
+                        },
+                        {
+                            "name": `30 ${lang.minutes}`,
+                            "value": "1800"
+                        },
+                        {
+                            "name": `45 ${lang.minutes}`,
+                            "value": "2700"
+                        },
+                        {
+                            "name": `60 ${lang.minutes}`,
+                            "value": "3600"
+                         }
+                      ]
+                   },
+                   {
+                       hidden: true,
+                      "name": "detail=record_timelapse_scale_x",
+                      "field": lang['Image Width'],
+                      "description": "",
+                      "default": "",
+                      "example": "",
+                      "form-group-class": "h_rec_ti_input h_rec_ti_1",
+                      "possible": ""
+                   },
+                   {
+                       hidden: true,
+                      "name": "detail=record_timelapse_scale_y",
+                      "field": lang['Image Height'],
+                      "description": "",
+                      "default": "",
+                      "example": "",
+                      "form-group-class": "h_rec_ti_input h_rec_ti_1",
+                      "possible": ""
+                   },
+                   {
+                       hidden: true,
+                      "name": "detail=record_timelapse_vf",
+                      "field": lang['Video Filter'],
+                      "description": "",
+                      "default": "",
+                      "example": "",
+                      "form-group-class": "h_rec_ti_input h_rec_ti_1",
+                      "possible": ""
+                   },
+                ]
+             },
              "Custom": {
                 "name": "Custom",
                 "color": "navy",
@@ -1975,16 +2082,6 @@ module.exports = function(s,config,lang){
                    },
                    {
                        hidden: true,
-                      "name": "detail=detector_send_video_length",
-                      "field": lang['Notification Video Length'],
-                      "description": "",
-                      "default": "10",
-                      "example": "",
-                      "form-group-class": "h_det_input h_det_1",
-                      "form-group-class-pre-layer": "h_rec_mtd_input h_rec_mtd_hot h_rec_mtd_sip",
-                      "possible": ""
-                   },
-                   {
                       "name": "detail=detector_send_video_length",
                       "field": lang["Notification Video Length"],
                       "description": "In seconds. The length of the video that gets sent to your Notification service, like Email or Discord.",
@@ -2522,15 +2619,13 @@ module.exports = function(s,config,lang){
                       ]
                   },
                    {
-                       hidden: true,
                       "name": lang['Object Detection'],
                       "color": "orange",
                       id: "monSectionDetectorObject",
-                      headerTitle: `${lang['Object Detection']} <small>${lang['Plugin']} : <b class="shinobi-detector_name"></b> <b class="shinobi-detector-invert">${lang['Not Connected']}</b><b class="shinobi-detector" style="display:none">${lang['Connected']}</b></small>`,
+                      headerTitle: `${lang['Object Detection']} <small><b class="shinobi-detector_name"></b> <b class="shinobi-detector-invert">${lang['Not Connected']}</b><b class="shinobi-detector" style="display:none">${lang['Connected']}</b></small>`,
                       isFormGroupGroup: true,
                       isSection: true,
-                      "section-pre-class": "h_det_input h_det_1",
-                      "section-class": "shinobi-detector-opencv shinobi-detector-openalpr shinobi-detector-yolo shinobi-detector-dlib shinobi-detector_plug",
+                      "section-class": "h_det_input h_det_1",
                       "info": [
                           {
                              "name": "detail=detector_use_detect_object",
@@ -2723,7 +2818,7 @@ module.exports = function(s,config,lang){
                        hidden: true,
                       "name": lang['Traditional Recording'],
                       "color": "orange",
-                      id: "monSectionLisencePlateDetector",
+                      id: "monSectionDetectorTraditionalRecording",
                       isSection: true,
                       isAdvanced: true,
                       isFormGroupGroup: true,

@@ -625,13 +625,15 @@ module.exports = function(s,config,lang){
     }
     s.createCameraFolders = function(e){
         //set the recording directory
+        var monitorRecordingFolder
         if(e.details && e.details.dir && e.details.dir !== '' && config.childNodes.mode !== 'child'){
             //addStorage choice
             e.dir=s.checkCorrectPathEnding(e.details.dir)+e.ke+'/';
             if (!fs.existsSync(e.dir)){
                 fs.mkdirSync(e.dir);
             }
-            e.dir=e.dir+e.id+'/';
+            monitorRecordingFolder = e.dir + e.id + ''
+            e.dir = monitorRecordingFolder + '/'
             if (!fs.existsSync(e.dir)){
                 fs.mkdirSync(e.dir);
             }
@@ -645,6 +647,12 @@ module.exports = function(s,config,lang){
             if (!fs.existsSync(e.dir)){
                 fs.mkdirSync(e.dir);
             }
+            monitorRecordingFolder = s.dir.videos + e.ke + '/' + e.id
+        }
+        //
+        e.dirTimelapse = monitorRecordingFolder + '_timelapse/'
+        if (!fs.existsSync(e.dirTimelapse)){
+            fs.mkdirSync(e.dirTimelapse)
         }
         // exec('chmod -R 777 '+e.dir,function(err){
         //
@@ -895,6 +903,52 @@ module.exports = function(s,config,lang){
             s.group[e.ke].mon[e.id].audioDetector = audioDetector
             audioDetector.start()
             s.group[e.ke].mon[e.id].spawn.stdio[6].pipe(audioDetector.streamDecoder)
+        }
+        if(e.details.record_timelapse === '1'){
+            s.group[e.ke].mon[e.id].spawn.stdio[7].on('data',function(data){
+                var fileStream = s.group[e.ke].mon[e.id].recordTimelapseWriter
+                if(!fileStream){
+                    var currentDate = s.formattedTime(null,'YYYY-MM-DD')
+                    var filename = s.formattedTime() + '.jpg'
+                    var location = e.dirTimelapse + currentDate + '/'
+                    if(!fs.existsSync(location)){
+                        fs.mkdirSync(location)
+                    }
+                    fileStream = fs.createWriteStream(location + filename)
+                    fileStream.on('close', function () {
+                        s.group[e.ke].mon[e.id].recordTimelapseWriter = null
+                        var fileStats = fs.statSync(location + filename)
+                        var fileInfo = {}
+                        if(e.details && e.details.dir && e.details.dir !== ''){
+                            fileInfo.dir = e.details.dir
+                        }
+                        fileInfo.size = fileStats.size
+                        s.sqlQuery('SELECT * FROM Timelapses WHERE ke=? AND mid=? AND date=?',[e.ke,e.id,currentDate],function(err,rows){
+                            if(rows && rows[0]){
+                                var row = rows[0]
+                                var details = s.parseJSON(row.details)
+                                details.files[filename] = fileInfo
+                                row.size += fileStats.size
+                                s.sqlQuery('UPDATE Timelapses SET details=?,size=? WHERE ke=? AND mid=? AND date=?',[s.s(details),row.size,e.ke,e.id,currentDate],function(){
+
+                                })
+                            }else{
+                                var details = {
+                                    files: {}
+                                }
+                                details.files[filename] = fileInfo
+                                s.sqlQuery('INSERT INTO Timelapses (ke,mid,details,date,size) VALUES (?,?,?,?,?)',[e.ke,e.id,s.s(details),currentDate,fileStats.size])
+                            }
+                        })
+                    })
+                    s.group[e.ke].mon[e.id].recordTimelapseWriter = fileStream
+                }
+                fileStream.write(data)
+                clearTimeout(s.group[e.ke].mon[e.id].recordTimelapseWriterTimeout)
+                s.group[e.ke].mon[e.id].recordTimelapseWriterTimeout = setTimeout(function(){
+                    fileStream.end()
+                },900)
+            })
         }
         if(e.details.detector === '1' && e.coProcessor === false){
             s.ocvTx({f:'init_monitor',id:e.id,ke:e.ke})

@@ -46,8 +46,12 @@ module.exports = function(s,config){
         }
         return newQuery
     }
+    s.getUnixDate = function(value){
+        newValue = new Date(value).valueOf()
+        return newValue
+    }
     s.stringToSqlTime = function(value){
-        newValue = new Date(value.replace('T',' '))
+        newValue = s.getUnixDate(s.nameToTime(value))
         return newValue
     }
     s.sqlQuery = function(query,values,onMoveOn,hideLog){
@@ -57,6 +61,11 @@ module.exports = function(s,config){
             var values = [];
         }
         if(!onMoveOn){onMoveOn=function(){}}
+        // if(s.databaseOptions.client === 'pg'){
+        //     query = query
+        //         .replace(/ NOT LIKE /g," NOT ILIKE ")
+        //         .replace(/ LIKE /g," ILIKE ")
+        // }
         var mergedQuery = s.mergeQueryValues(query,values)
         s.debugLog('s.sqlQuery QUERY',mergedQuery)
         if(!s.databaseEngine || !s.databaseEngine.raw){
@@ -107,6 +116,10 @@ module.exports = function(s,config){
         },true)
         //add Schedules table, will remove in future
         s.sqlQuery("CREATE TABLE IF NOT EXISTS `Schedules` (`ke` varchar(50) DEFAULT NULL,`name` text,`details` text,`start` varchar(10) DEFAULT NULL,`end` varchar(10) DEFAULT NULL,`enabled` int(1) NOT NULL DEFAULT '1')" + mySQLtail + ';',[],function(err){
+            if(err)console.error(err)
+        },true)
+        //add Schedules table, will remove in future
+        s.sqlQuery("CREATE TABLE IF NOT EXISTS `Timelapses` (`ke`varchar(50)NOT NULL,`mid`varchar(50)NOT NULL,`details`longtext,`date`date NOT NULL,`time`timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,`end`timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,`size`int(11)NOT NULL)" + mySQLtail + ';',[],function(err){
             if(err)console.error(err)
         },true)
         //add Cloud Videos table, will remove in future

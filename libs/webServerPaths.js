@@ -1094,6 +1094,165 @@ module.exports = function(s,config,lang,app,io){
         },res,req);
     });
     /**
+    * API : Get Timelapse images
+     */
+    app.get([
+        config.webPaths.apiPrefix+':auth/timelapse/:ke',
+        config.webPaths.apiPrefix+':auth/timelapse/:ke/:id',
+    ], function (req,res){
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,function(user){
+            var hasRestrictions = user.details.sub && user.details.allmonitors !== '1'
+            if(
+                user.permissions.watch_videos==="0" ||
+                hasRestrictions && (!user.details.video_view || user.details.video_view.indexOf(req.params.id)===-1)
+            ){
+                res.end(s.prettyPrint([]))
+                return
+            }
+            req.sql='SELECT * FROM `Timelapses` WHERE ke=?';req.ar=[req.params.ke];
+            if(req.query.archived=='1'){
+                req.sql+=' AND details LIKE \'%"archived":"1"\''
+            }
+            if(!req.params.id){
+                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
+                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
+                    req.or=[];
+                    user.details.monitors.forEach(function(v,n){
+                        req.or.push('mid=?');req.ar.push(v)
+                    })
+                    req.sql+=' AND ('+req.or.join(' OR ')+')'
+                }
+            }else{
+                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1){
+                    req.sql+=' and mid=?'
+                    req.ar.push(req.params.id)
+                }else{
+                    res.end('[]');
+                    return;
+                }
+            }
+            if(req.query.start||req.query.end){
+                if(req.query.start && req.query.start !== ''){
+                    req.query.start = s.stringToSqlTime(req.query.start)
+                }
+                if(req.query.end && req.query.end !== ''){
+                    req.query.end = s.stringToSqlTime(req.query.end)
+                }
+                if(!req.query.startOperator||req.query.startOperator==''){
+                    req.query.startOperator='>='
+                }
+                if(!req.query.endOperator||req.query.endOperator==''){
+                    req.query.endOperator='<='
+                }
+                var endIsStartTo
+                var theEndParameter = '`end`'
+                if(req.query.endIsStartTo){
+                    endIsStartTo = true
+                    theEndParameter = '`time`'
+                }
+                switch(true){
+                    case(req.query.start&&req.query.start!==''&&req.query.end&&req.query.end!==''):
+                        req.sql+=' AND `time` '+req.query.startOperator+' ? AND '+theEndParameter+' '+req.query.endOperator+' ?'
+                        req.ar.push(req.query.start)
+                        req.ar.push(req.query.end)
+                    break;
+                    case(req.query.start&&req.query.start!==''):
+                        req.sql+=' AND `time` '+req.query.startOperator+' ?'
+                        req.ar.push(req.query.start)
+                    break;
+                    case(req.query.end&&req.query.end!==''):
+                        req.sql+=' AND '+theEndParameter+' '+req.query.endOperator+' ?'
+                        req.ar.push(req.query.end)
+                    break;
+                }
+            }
+            req.sql+=' ORDER BY `time` DESC'
+            s.sqlQuery(req.sql,req.ar,function(err,r){
+                if(!r){
+                    res.end(s.prettyPrint([]))
+                    return
+                }
+                r.forEach(function(row){
+                    row.details = s.parseJSON(row.details)
+                })
+                res.end(s.prettyPrint(r))
+            })
+        },res,req);
+    });
+    /**
+    * API : Get Timelapse images
+     */
+    app.get([
+        config.webPaths.apiPrefix+':auth/timelapse/:ke/:id/:date',
+        config.webPaths.apiPrefix+':auth/timelapse/:ke/:id/:date/:filename',
+    ], function (req,res){
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,function(user){
+            var hasRestrictions = user.details.sub && user.details.allmonitors !== '1'
+            if(
+                user.permissions.watch_videos==="0" ||
+                hasRestrictions && (!user.details.video_view || user.details.video_view.indexOf(req.params.id)===-1)
+            ){
+                res.end(s.prettyPrint([]))
+                return
+            }
+            req.sql='SELECT * FROM `Timelapses` WHERE ke=?';req.ar=[req.params.ke];
+            if(req.query.archived=='1'){
+                req.sql+=' AND details LIKE \'%"archived":"1"\''
+            }
+            if(!req.params.id){
+                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
+                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
+                    req.or=[];
+                    user.details.monitors.forEach(function(v,n){
+                        req.or.push('mid=?');req.ar.push(v)
+                    })
+                    req.sql+=' AND ('+req.or.join(' OR ')+')'
+                }
+            }else{
+                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1){
+                    req.sql+=' and mid=?'
+                    req.ar.push(req.params.id)
+                }else{
+                    res.end('[]');
+                    return;
+                }
+            }
+            req.sql+=' and date=?'
+            req.ar.push(req.params.date)
+            req.sql+=' ORDER BY `time` DESC'
+            s.sqlQuery(req.sql,req.ar,function(err,r){
+                if(!r || !r[0]){
+                    res.end(s.prettyPrint([]))
+                    return
+                }
+                var timelapse = r[0]
+                timelapse.details = s.parseJSON(timelapse.details)
+                if(req.params.filename){
+                    var fileInfo = timelapse.details.files[req.params.filename]
+                    if(fileInfo){
+                        res.contentType('image/jpeg')
+                        var fileLocation
+                        var currentDate = req.params.date
+                        if(fileInfo.dir){
+                            fileLocation = `${s.checkCorrectPathEnding(fileInfo.dir)}`
+                        }else{
+                            fileLocation = `${s.dir.videos}`
+                        }
+                        fileLocation = `${fileLocation}${timelapse.ke}/${timelapse.mid}_timelapse/${currentDate}/${req.params.filename}`
+                        res.on('finish',function(){res.end()})
+                        fs.createReadStream(fileLocation).pipe(res)
+                    }else{
+                        res.end(s.prettyPrint({ok: false, msg: lang['File Not Exist']}))
+                    }
+                }else{
+                    res.end(s.prettyPrint(timelapse))
+                }
+            })
+        },res,req);
+    });
+    /**
     * API : Get Events
      */
     app.get([config.webPaths.apiPrefix+':auth/events/:ke',config.webPaths.apiPrefix+':auth/events/:ke/:id',config.webPaths.apiPrefix+':auth/events/:ke/:id/:limit',config.webPaths.apiPrefix+':auth/events/:ke/:id/:limit/:start',config.webPaths.apiPrefix+':auth/events/:ke/:id/:limit/:start/:end'], function (req,res){
