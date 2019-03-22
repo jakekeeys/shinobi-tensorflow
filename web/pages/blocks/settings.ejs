@@ -74,9 +74,6 @@
                 var userSettingsId = userSettings.name.replace(/[^a-zA-Z ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/ /g, '')
                 attributes.push(`id="${userSettingsId}"`)
             }
-            if(userSettings['input-mapping']){
-                attributes.push(`input-mapping="${userSettings['input-mapping']}"`)
-            }
             if(userSettings.color){
                 sectionClass.push(userSettings.color)
             }
