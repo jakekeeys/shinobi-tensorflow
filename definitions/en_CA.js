@@ -1765,6 +1765,10 @@ module.exports = function(s,config,lang){
                       "fieldType": "select",
                       "possible": [
                         {
+                            "name": `5 ${lang.minutes}`,
+                            "value": "300"
+                        },
+                        {
                             "name": `15 ${lang.minutes}`,
                             "value": "900"
                         },
@@ -2256,7 +2260,6 @@ module.exports = function(s,config,lang){
                       "example": "",
                       "selector": "h_det_email",
                       "fieldType": "select",
-                      "form-group-class": "h_det_email_input h_det_email_1",
                       "form-group-class-pre-layer": "h_det_input h_det_1",
                       "possible": [
                          {
