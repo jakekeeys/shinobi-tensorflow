@@ -119,7 +119,7 @@ module.exports = function(s,config){
             if(err)console.error(err)
         },true)
         //add Timelapses and Timelapse Frames tables, will remove in future
-        s.sqlQuery("CREATE TABLE IF NOT EXISTS `Timelapses` (`ke`varchar(50)NOT NULL,`mid`varchar(50)NOT NULL,`details`longtext,`date`date NOT NULL,`time`timestamp NOT NULL,`end`timestamp NOT NULL,`size`int(11)NOT NULL)" + mySQLtail + ';',[],function(err){
+        s.sqlQuery("CREATE TABLE IF NOT EXISTS `Timelapses` (`ke` varchar(50) NOT NULL,`mid` varchar(50) NOT NULL,`details` longtext,`date` date NOT NULL,`time` timestamp NOT NULL,`end` timestamp NOT NULL,`size` int(11)NOT NULL)" + mySQLtail + ';',[],function(err){
             if(err)console.error(err)
         },true)
         s.sqlQuery("CREATE TABLE IF NOT EXISTS `Timelapse Frames` (`ke` varchar(50) NOT NULL,`mid` varchar(50) NOT NULL,`details` longtext,`filename` varchar(50) NOT NULL,`time` timestamp NULL DEFAULT NULL,`size` int(11) NOT NULL)" + mySQLtail + ';',[],function(err){
