@@ -75,7 +75,12 @@ module.exports = function(s,config){
         break;
     }
     //load camera controller vars
-    s.nameToTime=function(x){x=x.split('.')[0].split('T'),x[1]=x[1].replace(/-/g,':');x=x.join(' ');return x;}
+    s.nameToTime=function(x){
+        x = x.split('.')[0].split('T')
+        if(x[1])x[1] = x[1].replace(/-/g,':')
+        x = x.join(' ')
+        return x
+    }
     s.ratio=function(width,height,ratio){ratio = width / height;return ( Math.abs( ratio - 4 / 3 ) < Math.abs( ratio - 16 / 9 ) ) ? '4:3' : '16:9';}
     s.randomNumber=function(x){
         if(!x){x=10};

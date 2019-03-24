@@ -378,6 +378,18 @@ $(document).ready(function(e){
                 e.e.first().prop('selected',true)
                 $.timelapse.f.submit()
             break;
+            case'timelapseJpeg':
+                $.timelapseJpeg.e.modal('show')
+                $.timelapseJpeg.monitors.find('.monitor').remove()
+                $.each($.ccio.mon,function(n,v){
+                    $.timelapseJpeg.monitors.append('<option class="monitor" value="'+v.mid+'">'+v.name+'</option>')
+                })
+                e.e=$.timelapseJpeg.monitors.find('.monitor').prop('selected',false)
+                if(e.mid!==''){
+                    e.e=$.timelapseJpeg.monitors.find('.monitor[value="'+e.mid+'"]')
+                }
+                e.e.first().prop('selected',true)
+            break;
             case'powerview':
                 $.pwrvid.e.modal('show')
                 $.pwrvid.m.empty()

@@ -390,6 +390,7 @@
    "Clear Recorder Process": "Clear Recorder Process",
    "Logging": "Logging",
    "Timelapse": "Timelapse",
+   "Nothing exists": "Nothing exists",
    "Creation Interval": "Creation Interval",
    "Plugin": "Plugin",
    "IdentityText1": "This is how the system will identify the data for this stream. You cannot change the <b>Monitor ID</b> once you have pressed save. If you want you can make the <b>Monitor ID</b> more human readable before you continue.",
