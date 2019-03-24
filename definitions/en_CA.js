@@ -2825,9 +2825,7 @@ module.exports = function(s,config,lang){
                       isSection: true,
                       isAdvanced: true,
                       isFormGroupGroup: true,
-                      "section-pre-pre-class": "h_det_input h_det_1",
-                      "section-pre-class": "h_casc_input h_casc_1",
-                      "section-class": "shinobi-detector-opencv shinobi-detector-openalpr shinobi-detector_plug",
+                      "section-class": "h_det_input h_det_1",
                       "info": [
                           {
                              "name": "detail=detector_buffer_vcodec",
