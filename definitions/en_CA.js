@@ -2904,7 +2904,7 @@ module.exports = function(s,config,lang){
                           {
                              "name": "detail=detector_buffer_hls_time",
                              "field": "HLS Segment Length",
-                             "description": "How long each video segment should be, in minutes. Each segment will be drawn by the client through an m3u8 file. Shorter segments take less space.",
+                             "description": "How long each video segment should be, in seconds. Each segment will be drawn by the client through an m3u8 file. Shorter segments take less space.",
                              "default": "2",
                              "example": "",
                              "possible": ""
