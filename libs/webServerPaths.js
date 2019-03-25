@@ -1099,6 +1099,7 @@ module.exports = function(s,config,lang,app,io){
     app.get([
         config.webPaths.apiPrefix+':auth/timelapse/:ke',
         config.webPaths.apiPrefix+':auth/timelapse/:ke/:id',
+        config.webPaths.apiPrefix+':auth/timelapse/:ke/:id/:date',
     ], function (req,res){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
@@ -1110,7 +1111,7 @@ module.exports = function(s,config,lang,app,io){
                 res.end(s.prettyPrint([]))
                 return
             }
-            req.sql='SELECT * FROM `Timelapses` WHERE ke=?';req.ar=[req.params.ke];
+            req.sql='SELECT * FROM `Timelapse Frames` WHERE ke=?';req.ar=[req.params.ke];
             if(req.query.archived=='1'){
                 req.sql+=' AND details LIKE \'%"archived":"1"\''
             }
@@ -1132,51 +1133,47 @@ module.exports = function(s,config,lang,app,io){
                     return;
                 }
             }
+            if(req.params.date){
+                if(req.params.date.indexOf('-') === -1 && !isNaN(req.params.date)){
+                    req.params.date = parseInt(req.params.date)
+                }
+                var selectedDate = new Date(req.params.date)
+                var utcSelectedDate = new Date(selectedDate.getTime() + selectedDate.getTimezoneOffset() * 60000)
+                req.query.start = moment(utcSelectedDate).format('YYYY-MM-DD HH:mm:ss')
+                var dayAfter = utcSelectedDate
+                dayAfter.setDate(dayAfter.getDate() + 1)
+                req.query.end = moment(dayAfter).format('YYYY-MM-DD HH:mm:ss')
+            }
             if(req.query.start||req.query.end){
-                if(req.query.start && req.query.start !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                }
-                if(req.query.end && req.query.end !== ''){
-                    req.query.end = s.stringToSqlTime(req.query.end)
-                }
                 if(!req.query.startOperator||req.query.startOperator==''){
                     req.query.startOperator='>='
                 }
                 if(!req.query.endOperator||req.query.endOperator==''){
                     req.query.endOperator='<='
                 }
-                var endIsStartTo
-                var theEndParameter = '`end`'
-                if(req.query.endIsStartTo){
-                    endIsStartTo = true
-                    theEndParameter = '`time`'
-                }
-                switch(true){
-                    case(req.query.start&&req.query.start!==''&&req.query.end&&req.query.end!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ? AND '+theEndParameter+' '+req.query.endOperator+' ?'
-                        req.ar.push(req.query.start)
-                        req.ar.push(req.query.end)
-                    break;
-                    case(req.query.start&&req.query.start!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ?'
-                        req.ar.push(req.query.start)
-                    break;
-                    case(req.query.end&&req.query.end!==''):
-                        req.sql+=' AND '+theEndParameter+' '+req.query.endOperator+' ?'
-                        req.ar.push(req.query.end)
-                    break;
+                if(req.query.start && req.query.start !== '' && req.query.end && req.query.end !== ''){
+                    req.query.start = s.stringToSqlTime(req.query.start)
+                    req.query.end = s.stringToSqlTime(req.query.end)
+                    req.sql+=' AND `time` '+req.query.startOperator+' ? AND `time` '+req.query.endOperator+' ?';
+                    req.ar.push(req.query.start)
+                    req.ar.push(req.query.end)
+                }else if(req.query.start && req.query.start !== ''){
+                    req.query.start = s.stringToSqlTime(req.query.start)
+                    req.sql+=' AND `time` '+req.query.startOperator+' ?';
+                    req.ar.push(req.query.start)
                 }
             }
-            req.sql+=' ORDER BY `time` DESC'
+            if(!req.query.limit||req.query.limit==''){req.query.limit=288}
+            req.sql+=' ORDER BY `time` DESC LIMIT '+req.query.limit+'';
             s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(!r){
+                if(r && r[0]){
+                    r.forEach(function(file){
+                        file.details = s.parseJSON(file.details)
+                    })
+                    res.end(s.prettyPrint(r))
+                }else{
                     res.end(s.prettyPrint([]))
-                    return
                 }
-                r.forEach(function(row){
-                    row.details = s.parseJSON(row.details)
-                })
-                res.end(s.prettyPrint(r))
             })
         },res,req);
     });
@@ -1184,7 +1181,6 @@ module.exports = function(s,config,lang,app,io){
     * API : Get Timelapse images
      */
     app.get([
-        config.webPaths.apiPrefix+':auth/timelapse/:ke/:id/:date',
         config.webPaths.apiPrefix+':auth/timelapse/:ke/:id/:date/:filename',
     ], function (req,res){
         res.setHeader('Content-Type', 'application/json');
@@ -1197,7 +1193,7 @@ module.exports = function(s,config,lang,app,io){
                 res.end(s.prettyPrint([]))
                 return
             }
-            req.sql='SELECT * FROM `Timelapses` WHERE ke=?';req.ar=[req.params.ke];
+            req.sql='SELECT * FROM `Timelapse Frames` WHERE ke=?';req.ar=[req.params.ke];
             if(req.query.archived=='1'){
                 req.sql+=' AND details LIKE \'%"archived":"1"\''
             }
@@ -1219,35 +1215,33 @@ module.exports = function(s,config,lang,app,io){
                     return;
                 }
             }
-            req.sql+=' and date=?'
-            req.ar.push(req.params.date)
+            req.sql+=' AND filename=?'
+            req.ar.push(req.params.filename)
             req.sql+=' ORDER BY `time` DESC'
             s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(!r || !r[0]){
-                    res.end(s.prettyPrint([]))
-                    return
-                }
-                var timelapse = r[0]
-                timelapse.details = s.parseJSON(timelapse.details)
-                if(req.params.filename){
-                    var fileInfo = timelapse.details.files[req.params.filename]
-                    if(fileInfo){
+                if(r && r[0]){
+                    var frame = r[0]
+                    frame.details = s.parseJSON(frame.details)
+                    var fileLocation
+                    if(frame.details.dir){
+                        fileLocation = `${s.checkCorrectPathEnding(frame.details.dir)}`
+                    }else{
+                        fileLocation = `${s.dir.videos}`
+                    }
+                    var selectedDate = req.params.date
+                    if(selectedDate.indexOf('-') === -1){
+                        selectedDate = req.params.filename.split('T')[0]
+                    }
+                    fileLocation = `${fileLocation}${frame.ke}/${frame.mid}_timelapse/${selectedDate}/${req.params.filename}`
+                    if(fs.existsSync(fileLocation)){
                         res.contentType('image/jpeg')
-                        var fileLocation
-                        var currentDate = req.params.date
-                        if(fileInfo.dir){
-                            fileLocation = `${s.checkCorrectPathEnding(fileInfo.dir)}`
-                        }else{
-                            fileLocation = `${s.dir.videos}`
-                        }
-                        fileLocation = `${fileLocation}${timelapse.ke}/${timelapse.mid}_timelapse/${currentDate}/${req.params.filename}`
                         res.on('finish',function(){res.end()})
                         fs.createReadStream(fileLocation).pipe(res)
                     }else{
-                        res.end(s.prettyPrint({ok: false, msg: lang['File Not Exist']}))
+                        res.end(s.prettyPrint({ok: false, msg: lang[`Nothing exists`]}))
                     }
                 }else{
-                    res.end(s.prettyPrint(timelapse))
+                    res.end(s.prettyPrint({ok: false, msg: lang[`Nothing exists`]}))
                 }
             })
         },res,req);
