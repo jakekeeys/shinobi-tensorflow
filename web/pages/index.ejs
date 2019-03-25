@@ -78,8 +78,10 @@
 									<div class="form-group" style="margin:0">
                                         <button type="submit" name="login-submit" id="login-submit" tabindex="4" class="btn btn-success btn-block"><%- lang.Login %></button>
 									</div>
-                                    <% if(config.showPoweredBy){ %>
-                                        <p style="<%- config.poweredByClass %>"><small><%- config.poweredBy %></small></p>
+                                    <% if(config.showPoweredByShinobi){ %>
+                                        <p style="<%- config.poweredByShinobiClass %>"><small><%- config.poweredByShinobi %></small></p>
+                                    <% }else{ %>
+                                        <!-- <%- config.poweredByShinobi %> -->
                                     <% } %>
 								</form>
 							</div>
