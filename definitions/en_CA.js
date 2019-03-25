@@ -2586,7 +2586,7 @@ module.exports = function(s,config,lang){
                       "section-class": "h_det_input h_det_1",
                       "info": [
                           {
-                             "name": "detail=detector_notrigger",
+                             "name": "detail=detector_audio",
                              "field": lang.Enabled,
                              "description": "Check if Audio has occured at a certiain decible. Decible reading may not be accurate to real-world measurement.",
                              "default": "0",
