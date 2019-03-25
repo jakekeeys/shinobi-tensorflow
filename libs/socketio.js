@@ -7,11 +7,6 @@ var jsonfile = require("jsonfile");
 var onvif = require("node-onvif");
 module.exports = function(s,config,lang,io){
     s.clientSocketConnection = {}
-    //send data to detector plugin
-    s.ocvTx=function(data){
-        // chaining coming in future update
-        s.sendToAllDetectors(data)
-    }
     //send data to socket client function
     s.tx = function(z,y,x){if(x){return x.broadcast.to(y).emit('f',z)};io.to(y).emit('f',z);}
     s.txToDashcamUsers = function(data,groupKey){
@@ -53,22 +48,6 @@ module.exports = function(s,config,lang,io){
     ////socket controller
     io.on('connection', function (cn) {
         var tx;
-        //set "client" detector plugin event function
-        cn.on('ocv',function(d){
-            if(!cn.pluginEngine && d.f === 'init'){
-                if(config.pluginKeys[d.plug] === d.pluginKey){
-                    s.pluginInitiatorSuccess("client",d,cn)
-                }else{
-                    s.pluginInitiatorFail("client",d,cn)
-                }
-            }else{
-                if(config.pluginKeys[d.plug] === d.pluginKey){
-                    s.pluginEventController(d)
-                }else{
-                    cn.disconnect()
-                }
-            }
-        })
         //unique h265 socket stream
         cn.on('h265',function(d){
             if(!s.group[d.ke]||!s.group[d.ke].mon||!s.group[d.ke].mon[d.id]){
@@ -442,10 +421,6 @@ module.exports = function(s,config,lang,io){
                         s.group[d.ke].mon={}
                         if(!s.group[d.ke].mon){s.group[d.ke].mon={}}
                     }
-                    if(s.isAtleatOneDetectorPluginConnected){
-                        s.sendDetectorInfoToClient({f:'detector_plugged'},tx)
-                        s.ocvTx({f:'readPlugins',ke:d.ke})
-                    }
                     tx({f:'users_online',users:s.group[d.ke].users})
                     s.tx({f:'user_status_change',ke:d.ke,uid:cn.uid,status:1,user:s.group[d.ke].users[d.auth]},'GRP_'+d.ke)
                     s.sendDiskUsedAmountToClients(d)
@@ -474,7 +449,7 @@ module.exports = function(s,config,lang,io){
                         }
                     })
                     s.onSocketAuthenticationExtensions.forEach(function(extender){
-                        extender(r,cn)
+                        extender(r,cn,d,tx)
                     })
                 }
                 s.sqlQuery('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND auth=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
@@ -507,9 +482,6 @@ module.exports = function(s,config,lang,io){
             if((d.id||d.uid||d.mid)&&cn.ke){
                 try{
                 switch(d.f){
-                    case'ocv_in':
-                        s.ocvTx(d.data)
-                    break;
                     case'monitorOrder':
                         if(d.monitorOrder && d.monitorOrder instanceof Object){
                             s.sqlQuery('SELECT details FROM Users WHERE uid=? AND ke=?',[cn.uid,cn.ke],function(err,r){
@@ -1364,19 +1336,8 @@ module.exports = function(s,config,lang,io){
                     if(s.group[cn.ke].dashcamUsers && s.group[cn.ke].dashcamUsers[cn.auth])delete(s.group[cn.ke].dashcamUsers[cn.auth]);
                 }
             }
-            if(cn.pluginEngine){
-                s.connectedPlugins[cn.pluginEngine].plugged = false
-                s.tx({f:'plugin_engine_unplugged',plug:cn.pluginEngine},'CPU')
-            }
             if(cn.cron){
                 delete(s.cron);
-            }
-            if(cn.detectorPlugin){
-                s.tx({f:'detector_unplugged',plug:cn.detectorPlugin},'CPU')
-                s.removeDetectorPlugin(cn.detectorPlugin)
-                s.sendDetectorInfoToClient({f:'detector_plugged'},function(data){
-                    s.tx(data,'CPU')
-                })
             }
             if(cn.superSessionKey){
                 delete(s.superUsersApi[cn.superSessionKey])

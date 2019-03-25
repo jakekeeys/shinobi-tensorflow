@@ -58,7 +58,7 @@ loadLib('ffmpeg')(s,config,lang,function(ffmpeg){
     //recording functions
     loadLib('videos')(s,config,lang)
     //plugins : websocket connected services..
-    loadLib('plugins')(s,config,lang)
+    loadLib('plugins')(s,config,lang,io)
     //health : cpu and ram trackers..
     loadLib('health')(s,config,lang,io)
     //cluster module
