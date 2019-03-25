@@ -918,28 +918,12 @@ module.exports = function(s,config,lang){
                     fileStream.on('close', function () {
                         s.group[e.ke].mon[e.id].recordTimelapseWriter = null
                         var fileStats = fs.statSync(location + filename)
-                        var fileInfo = {}
+                        var details = {}
                         if(e.details && e.details.dir && e.details.dir !== ''){
-                            fileInfo.dir = e.details.dir
+                            details.dir = e.details.dir
                         }
-                        fileInfo.size = fileStats.size
-                        s.sqlQuery('SELECT * FROM Timelapses WHERE ke=? AND mid=? AND date=?',[e.ke,e.id,currentDate],function(err,rows){
-                            if(rows && rows[0]){
-                                var row = rows[0]
-                                var details = s.parseJSON(row.details)
-                                details.files[filename] = fileInfo
-                                row.size += fileStats.size
-                                s.sqlQuery('UPDATE Timelapses SET details=?,size=? WHERE ke=? AND mid=? AND date=?',[s.s(details),row.size,e.ke,e.id,currentDate],function(){
-
-                                })
-                            }else{
-                                var details = {
-                                    files: {}
-                                }
-                                details.files[filename] = fileInfo
-                                s.sqlQuery('INSERT INTO Timelapses (ke,mid,details,date,size) VALUES (?,?,?,?,?)',[e.ke,e.id,s.s(details),currentDate,fileStats.size])
-                            }
-                        })
+                        var timeNow = new Date()
+                        s.sqlQuery('INSERT INTO `Timelapse Frames` (ke,mid,details,filename,size,time) VALUES (?,?,?,?,?,?)',[e.ke,e.id,s.s(details),filename,fileStats.size,timeNow])
                     })
                     s.group[e.ke].mon[e.id].recordTimelapseWriter = fileStream
                 }
