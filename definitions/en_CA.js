@@ -2102,6 +2102,9 @@ module.exports = function(s,config,lang){
                       "description": "If there is an overlap in trigger record should it reset.",
                       "default": "1",
                       "example": "",
+                      "fieldType": "select",
+                      "form-group-class": "h_det_input h_det_1",
+                      "form-group-class-pre-layer": "h_rec_mtd_input h_rec_mtd_hot h_rec_mtd_sip",
                       "possible": [
                          {
                             "name": "No",
