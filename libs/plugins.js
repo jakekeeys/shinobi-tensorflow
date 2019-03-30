@@ -160,7 +160,7 @@ module.exports = function(s,config,lang,io){
                 if(!v.port){
                     v.port=80
                 }
-                var socket = socketIOclient(v.https+v.host+':'+v.port,{transports:['websocket']})
+                var socket = socketIOclient(v.https+v.host+':'+v.port)
                 s.connectedPlugins[v.id].tx = function(x){return socket.emit('f',x)}
                 socket.on('connect', function(cn){
                     s.systemLog('Connected to plugin (host) : '+v.id)

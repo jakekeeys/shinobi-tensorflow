@@ -9,6 +9,7 @@
 //
 var fs=require('fs');
 var exec = require('child_process').exec;
+var spawn = require('child_process').spawn;
 var moment = require('moment');
 var express = require('express');
 var http = require('http'),
@@ -91,6 +92,14 @@ module.exports = function(__dirname,config){
         if(!e){e=''}
         if(config.systemLog===true){
            return console.log(moment().format(),q,w,e)
+        }
+    }
+    s.debugLog = function(){
+        if(config.debugLog === true){
+            console.log(new Date(),arguments)
+            if(config.debugLogVerbose === true){
+                console.log(new Error())
+            }
         }
     }
     s.detectObject=function(buffer,d,tx,frameLocation){
@@ -197,7 +206,13 @@ module.exports = function(__dirname,config){
     if(config.mode === 'host'){
         plugLog('Plugin started as Host')
         //start plugin as host
-        var io = require('socket.io')(server);
+        var io = require('socket.io')(server,{
+            transports: ['websocket']
+        })
+        io.engine.ws = new (require('cws').Server)({
+            noServer: true,
+            perMessageDeflate: false
+        })
         io.attach(server);
         s.connectedClients={};
         io.on('connection', function (cn) {
@@ -240,7 +255,7 @@ module.exports = function(__dirname,config){
             s.cx({f:'init',plug:config.plug,notice:config.notice,type:config.type,connectionType:config.connectionType});
         })
         io.on('disconnect',function(d){
-            if(retryConnection > maxRetryConnection){
+            if(retryConnection > maxRetryConnection && maxRetryConnection !== 0){
                 webPageMssage = 'Max Failed Retries Reached'
                 return plugLog('Max Failed Retries Reached!',maxRetryConnection)
             }
@@ -251,6 +266,85 @@ module.exports = function(__dirname,config){
         io.on('f',function(d){
             s.MainEventController(d,null,s.cx)
         })
+    }
+
+    s.createPythonScriptDaemon = function(){
+        if(!config.pythonScript){config.pythonScript=__dirname+'/pumpkin.py'}
+        if(!config.pythonPort){config.pythonPort=7990}
+        //Start Python Controller
+        s.callbacks = {}
+        s.createCameraBridgeToPython = function(uniqueId){
+            var pythonIo = require('socket.io-client')('ws://localhost:'+config.pythonPort,{transports : ['websocket']});
+            var sendToPython = function(data,callback){
+                s.callbacks[data.id] = callback
+                pythonIo.emit('f',data)
+            }
+            var refreshTracker = function(data){
+                pythonIo.emit('refreshTracker',{trackerId : data})
+            }
+            pythonIo.on('connect',function(d){
+                s.debugLog(uniqueId+' is Connected from Python')
+            })
+            pythonIo.on('disconnect',function(d){
+                s.debugLog(uniqueId+' is Disconnected from Python')
+                setTimeout(function(){
+                    pythonIo.connect();
+                    s.debugLog(uniqueId+' is Attempting to Reconect to Python')
+                },3000)
+            })
+            pythonIo.on('f',function(d){
+                if(s.callbacks[d.id]){
+                    s.callbacks[d.id](d.data)
+                    delete(s.callbacks[d.id])
+                }
+            })
+            return {refreshTracker : refreshTracker, sendToPython : sendToPython}
+        }
+
+
+        //Start Python Daemon
+        process.env.PYTHONUNBUFFERED = 1;
+        var createPythonProcess = function(){
+            s.isPythonRunning = false
+            s.pythonScript = spawn('sh',[__dirname+'/bootPy.sh',config.pythonScript,__dirname]);
+            var onStdErr = function(data){
+                s.debugLog(data.toString())
+            }
+            var onStdOut = function(data){
+                s.debugLog(data.toString())
+            }
+            setTimeout(function(){
+              s.isPythonRunning = true
+            },5000)
+            s.pythonScript.stderr.on('data',onStdErr);
+
+            s.pythonScript.stdout.on('data',onStdOut);
+
+            s.pythonScript.on('close', function () {
+                s.debugLog('Python CLOSED')
+            });
+        }
+        createPythonProcess()
+    }
+    s.getImageDimensions = function(d){
+        var height
+        var width
+        if(
+            d.mon.detector_scale_y_object &&
+            d.mon.detector_scale_y_object !== '' &&
+            d.mon.detector_scale_x_object &&
+            d.mon.detector_scale_x_object !== ''
+        ){
+            height = d.mon.detector_scale_y_object
+            width = d.mon.detector_scale_x_object
+        }else{
+            height = d.mon.detector_scale_y
+            width = d.mon.detector_scale_x
+        }
+        return {
+            height : parseFloat(height),
+            width : parseFloat(width)
+        }
     }
     return s
 }
