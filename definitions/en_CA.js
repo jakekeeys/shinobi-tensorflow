@@ -473,6 +473,24 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
+                       hidden: true,
+                      "name": "height",
+                      "field": lang["Height"],
+                      "description": "Height of the stream image.",
+                      "default": "480",
+                      "example": "720, 0 for Auto",
+                      "possible": ""
+                   },
+                   {
+                       hidden: true,
+                      "name": "width",
+                      "field": lang["Width"],
+                      "description": "Width of the stream image.",
+                      "default": "640",
+                      "example": "1280, 0 for Auto",
+                      "possible": ""
+                   },
+                   {
                      "name": "detail=accelerator",
                      "field": lang.Accelerator,
                      "description": "Hardware Acceleration (HWAccel) for decoding streams.",
@@ -1478,7 +1496,7 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
-                      "name": "height",
+                      "name": "detail=record_scale_y",
                       "field": lang["Record Height"],
                       "description": "Height of the stream image.",
                       "default": "",
@@ -1487,7 +1505,7 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
-                      "name": "width",
+                      "name": "detail=record_scale_x",
                       "field": lang["Record Width"],
                       "description": "Width of the stream image.",
                       "default": "",

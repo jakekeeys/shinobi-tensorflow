@@ -659,8 +659,8 @@ module.exports = function(s,config,lang,onFinish){
         x.record_video_filters = []
         x.record_string = ''
         //record - resolution
-        if(e.width!==''&&e.height!==''&&e.width!=='0'&&e.height!=='0'&&!isNaN(e.width)&&!isNaN(e.height)){
-            x.record_dimensions=' -s '+e.width+'x'+e.height
+        if(e.record_scale_x!==''&&e.record_scale_y!==''&&e.record_scale_x!=='0'&&e.record_scale_y!=='0'&&!isNaN(e.record_scale_x)&&!isNaN(e.record_scale_y)){
+            x.record_dimensions=' -s '+e.record_scale_x+'x'+e.record_scale_y
         }else{
             x.record_dimensions=''
         }
