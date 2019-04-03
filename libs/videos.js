@@ -414,4 +414,80 @@ module.exports = function(s,config,lang){
         file.pipe(res)
         return file
     }
+    s.createVideoFromTimelapse = function(timelapseFrames,callback){
+        var frames = timelapseFrames.reverse()
+        var ke = frames[0].ke
+        var mid = frames[0].mid
+        var finalFileName = frames[0].filename.split('T')[0]
+        var concatFiles = []
+        var createLocation
+        frames.forEach(function(frame,frameNumber){
+            var selectedDate = frame.filename.split('T')[0]
+            var fileLocationMid = `${frame.ke}/${frame.mid}_timelapse/${selectedDate}/`
+            frame.details = s.parseJSON(frame.details)
+            var fileLocation
+            if(frame.details.dir){
+                fileLocation = `${s.checkCorrectPathEnding(frame.details.dir)}`
+            }else{
+                fileLocation = `${s.dir.videos}`
+            }
+            fileLocation = `${fileLocation}${fileLocationMid}${frame.filename}`
+            concatFiles.push(fileLocation)
+            if(frameNumber === 0){
+                createLocation = fileLocationMid
+            }
+        })
+        var commandTempLocation = `${s.dir.streams}${ke}/${mid}/mergeJpegs_${finalFileName}.sh`
+        var finalMp4OutputLocation = `${s.dir.fileBin}${ke}/${mid}/${finalFileName}.mp4`
+        if(!s.group[ke].mon[mid].buildingTimelapseVideo){
+            if(!fs.existsSync(finalMp4OutputLocation)){
+                var currentFile = 0
+                var completionTimeout
+                var commandString = `ffmpeg -y -pattern_type glob -f image2pipe -vcodec mjpeg -r 2 -i - -q:v 1 -c:v libx264 -r 2 "${finalMp4OutputLocation}"`
+                fs.writeFileSync(commandTempLocation,commandString)
+                var videoBuildProcess = spawn('sh',[commandTempLocation])
+                videoBuildProcess.stderr.on('data',function(data){
+                    console.log(data.toString())
+                    clearTimeout(completionTimeout)
+                    completionTimeout = setTimeout(function(){
+                        if(currentFile === concatFiles.length - 1){
+                            videoBuildProcess.kill('SIGTERM')
+                        }
+                    },4000)
+                })
+                videoBuildProcess.on('exit',function(data){
+                    var timeNow = new Date()
+                    var fileStats = fs.statSync(finalMp4OutputLocation)
+                    var details = {}
+                    s.sqlQuery('INSERT INTO `Files` (ke,mid,details,name,size,time) VALUES (?,?,?,?,?,?)',[ke,mid,s.s(details),finalFileName + '.mp4',fileStats.size,timeNow])
+                    s.setDiskUsedForGroup({ke: ke},fileStats.size / 1000000)
+                    fs.unlink(commandTempLocation,function(){
+
+                    })
+                    delete(s.group[ke].mon[mid].buildingTimelapseVideo)
+                })
+                var readFile = function(){
+                    var filePath = concatFiles[currentFile]
+                    console.log(filePath,currentFile,'/',concatFiles.length - 1)
+                    videoBuildProcess.stdin.write(fs.readFileSync(filePath))
+                    if(currentFile === concatFiles.length - 1){
+                        //is last
+
+                    }else{
+                        setTimeout(function(){
+                            ++currentFile
+                            readFile()
+                        },500)
+                    }
+                }
+                readFile()
+                s.group[ke].mon[mid].buildingTimelapseVideo = videoBuildProcess
+                callback({ok: true, fileExists: false, fileLocation: finalMp4OutputLocation, msg: lang['Started Building']})
+            }else{
+                callback({ok: false, fileExists: true, fileLocation: finalMp4OutputLocation, msg: lang['Already exists']})
+            }
+        }else{
+            callback({ok: false, fileExists: false, fileLocation: finalMp4OutputLocation, msg: lang.Building})
+        }
+    }
 }

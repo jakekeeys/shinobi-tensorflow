@@ -57,12 +57,14 @@ module.exports = function(s,config){
         e.triggerTimer = {}
 
         var regions = s.createPamDiffRegionArray(regionJson,globalColorThreshold,globalSensitivity,fullFrame)
-
-        s.group[e.ke].mon[e.id].pamDiff = new PamDiff({
+        var pamDiffOptions = {
             grayscale: 'luminosity',
-            regions : regions.forPam,
-            drawMatrix : e.details.detector_show_matrix
-        });
+            regions : regions.forPam
+        }
+        if(e.details.detector_show_matrix==='1'){
+            pamDiffOptions.response = 'bounds'
+        }
+        s.group[e.ke].mon[e.id].pamDiff = new PamDiff(pamDiffOptions);
         s.group[e.ke].mon[e.id].p2p = new P2P()
         var regionArray = Object.values(regionJson)
         if(config.detectorMergePamRegionTriggers === true){
@@ -94,7 +96,7 @@ module.exports = function(s,config){
                                 ++filteredCount
                                 if(!err1 && !err2)++filteredCountSuccess
                                 if(filteredCount === trigger.merged.length && filteredCountSuccess > 0){
-                                    detectorObject.doObjectDetection = (s.ocv && e.details.detector_use_detect_object === '1')
+                                    detectorObject.doObjectDetection = (s.isAtleatOneDetectorPluginConnected && e.details.detector_use_detect_object === '1')
                                     s.triggerEvent(detectorObject)
                                 }
                             })
@@ -106,7 +108,7 @@ module.exports = function(s,config){
                     s.checkMaximumSensitivity(e, region, detectorObject, function(err1) {
                         s.checkTriggerThreshold(e, region, detectorObject, function(err2) {
                             if(!err1 && !err2){
-                                detectorObject.doObjectDetection = (s.ocv && e.details.detector_use_detect_object === '1')
+                                detectorObject.doObjectDetection = (s.isAtleatOneDetectorPluginConnected && e.details.detector_use_detect_object === '1')
                                 s.triggerEvent(detectorObject)
                             }
                         })
@@ -161,7 +163,7 @@ module.exports = function(s,config){
                 s.checkMaximumSensitivity(e, region, detectorObject, function(err1) {
                     s.checkTriggerThreshold(e, region, detectorObject, function(err2) {
                         if(!err1 && ! err2){
-                            detectorObject.doObjectDetection = (s.ocv && e.details.detector_use_detect_object === '1')
+                            detectorObject.doObjectDetection = (s.isAtleatOneDetectorPluginConnected && e.details.detector_use_detect_object === '1')
                             s.triggerEvent(detectorObject)
                         }
                     })
@@ -176,13 +178,17 @@ module.exports = function(s,config){
                 s.group[e.ke].mon[e.id].pamDiff.on('diff', (data) => {
                     data.trigger.forEach(function(trigger){
                         s.filterTheNoise(e,noiseFilterArray,regions,trigger,function(){
+                            s.createMatrixFromPamTrigger(trigger)
                             buildTriggerEvent(trigger)
                         })
                     })
                 })
             }else{
                 s.group[e.ke].mon[e.id].pamDiff.on('diff', (data) => {
-                    data.trigger.forEach(buildTriggerEvent)
+                    data.trigger.forEach(function(trigger){
+                        s.createMatrixFromPamTrigger(trigger)
+                        buildTriggerEvent(trigger)
+                    })
                 })
             }
         }
@@ -305,6 +311,7 @@ module.exports = function(s,config){
                 name.push(trigger.name + ' ('+trigger.percent+'%)')
                 ++n
                 sum += trigger.percent
+                s.createMatrixFromPamTrigger(trigger)
                 if(trigger.matrix)matrices.push(trigger.matrix)
             })
             var average = sum / n
@@ -318,6 +325,7 @@ module.exports = function(s,config){
             }
         }else{
             var trigger = data.trigger[0]
+            s.createMatrixFromPamTrigger(trigger)
             trigger.matrices = [trigger.matrix]
         }
         return trigger
@@ -356,5 +364,29 @@ module.exports = function(s,config){
         })
         if(callback)callback(foundInRegion,collisions)
         return foundInRegion
+    }
+    s.createMatrixFromPamTrigger = function(trigger){
+        if(
+            trigger.minX &&
+            trigger.maxX &&
+            trigger.minY &&
+            trigger.maxY
+        ){
+            var coordinates = [
+                {"x" : trigger.minX, "y" : trigger.minY},
+                {"x" : trigger.maxX, "y" : trigger.minY},
+                {"x" : trigger.maxX, "y" : trigger.maxY}
+            ]
+            var width = Math.sqrt( Math.pow(coordinates[1].x - coordinates[0].x, 2) + Math.pow(coordinates[1].y - coordinates[0].y, 2));
+            var height = Math.sqrt( Math.pow(coordinates[2].x - coordinates[1].x, 2) + Math.pow(coordinates[2].y - coordinates[1].y, 2))
+            trigger.matrix = {
+                x: coordinates[0].x,
+                y: coordinates[0].y,
+                width: width,
+                height: height,
+                tag: trigger.name
+            }
+        }
+        return trigger
     }
 }

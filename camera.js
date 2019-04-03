@@ -73,6 +73,8 @@ loadLib('ffmpeg')(s,config,lang,function(ffmpeg){
     loadLib('dropInEvents')(s,config,lang,app,io)
     //form fields to drive the internals
     loadLib('definitions')(s,config,lang,app,io)
+    //branding functions and config defaults
+    loadLib('branding')(s,config,lang,app,io)
     //custom module loader
     loadLib('customAutoLoad')(s,config,lang,app,io)
     //scheduling engine

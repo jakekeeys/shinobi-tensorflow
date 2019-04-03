@@ -55,7 +55,7 @@
             var attributes = []
             var styles = []
             var sectionClass = []
-            var headerTitle = userSettings.headerTitle || lang[userSettings.name]
+            var headerTitle = userSettings.headerTitle || lang[userSettings.name] || userSettings.name
             if(userSettings.hidden === true){
                 styles.push('display:none')
             }
@@ -71,7 +71,13 @@
             if(userSettings.id){
                 attributes.push(`id="${userSettings.id}"`)
             }else{
-                var userSettingsId = userSettings.name.replace(/[^a-zA-Z ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/ /g, '')
+                var userSettingsId
+                if(userSettings.name){
+                    userSettingsId = userSettings.name.replace(/[^a-zA-Z ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/ /g, '')
+                }else{
+                    userSettingsId = "NO NAME"
+                }
+                userSettings.id = userSettingsId
                 attributes.push(`id="${userSettingsId}"`)
             }
             if(userSettings.color){

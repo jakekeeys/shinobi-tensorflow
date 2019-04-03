@@ -10,10 +10,14 @@ $(document).ready(function(e){
     $.timelapseJpeg.frameStripContainer = $.timelapseJpeg.e.find('.frameStripContainer')
     $.timelapseJpeg.playBackViewImg = $.timelapseJpeg.e.find('.playBackView img')
     $.timelapseJpeg.monitors=$.timelapseJpeg.e.find('.monitors_list')
+    $.timelapseJpeg.pointer = $.ccio.init('location',$user)
+    setTimeout(function(){
+        $.timelapseJpeg.datepicker.val(moment().subtract(1, 'days').format('YYYY-MM-DD')).change()
+    },5000)
     $.timelapseJpeg.datepicker.daterangepicker({
         singleDatePicker: true,
         showDropdowns: true,
-        // startDate: moment().subtract(1, 'days'),
+        // startDate: moment().subtract(2, 'days'),
         locale: {
             format: 'YYYY-MM-DD'
         }
@@ -26,7 +30,7 @@ $(document).ready(function(e){
         var frameStripHtml = ''
         var frameIconsHtml = ''
         var selectedMonitor = $.timelapseJpeg.monitors.val()
-        var apiURL = $.ccio.init('location',$user)+$user.auth_token+'/timelapse/'+$user.ke+'/'+selectedMonitor+'/'+selectedDate
+        var apiURL = $.timelapseJpeg.pointer+$user.auth_token+'/timelapse/'+$user.ke+'/'+selectedMonitor+'/'+selectedDate
         $.timelapseJpeg.frameStripHrefPrefix = apiURL + '/'
         $.getJSON(apiURL,function(data){
             if(data && data[0]){
@@ -37,26 +41,27 @@ $(document).ready(function(e){
                 $.each(data.reverse(),function(n,fileInfo){
                     fileInfo.href = apiURL + '/' + fileInfo.filename
                     fileInfo.number = n
-                    // frameStripHtml += '<div class="frame" data-filename="' + fileInfo.filename + '"><img src="' + fileInfo.href + '"></div>'
+                    frameStripHtml += '<div class="frame" data-filename="' + fileInfo.filename + '"><img src="' + fileInfo.href + '"></div>'
                     frameIconsHtml += '<div class="col-md-4"><div class="frame" data-filename="' + fileInfo.filename + '" style="background-image:url(\'' + fileInfo.href + '\')"><div class="shade">' + moment(fileInfo.time).format('YYYY-MM-DD HH:mm:ss') + '</div></div></div>'
                     $.timelapseJpeg.playlist[fileInfo.filename] = fileInfo
                 })
                 $.timelapseJpeg.playlistArray = data
-                // $.timelapseJpeg.frameStrip.html(frameStripHtml)
+                $.timelapseJpeg.frameStrip.html(frameStripHtml)
                 $.timelapseJpeg.frameIcons.html(frameIconsHtml)
                 $.timelapseJpeg.resetFilmStripPositions()
             }else{
-                html = lang['No Data']
-                $.timelapseJpeg.frameStrip.html(html)
+                frameIconsHtml = lang['No Data']
+                $.timelapseJpeg.frameIcons.html(frameIconsHtml)
             }
         })
     }
+    $.timelapseJpeg.fieldHolderCssHeightModifier = 0
     $.timelapseJpeg.resetFilmStripPositions = function(){
-        // var numberOfFrames = Object.keys($.timelapseJpeg.playlist).length
-        // var frameStripWidth = $.timelapseJpeg.frameStrip.width()
-        // var widthForEachFrame = frameStripWidth / numberOfFrames
-        // $.timelapseJpeg.frameStrip.find('.frame').css('width',widthForEachFrame)
-        var fieldHolderHeight = $.timelapseJpeg.fieldHolder.height()
+        var numberOfFrames = Object.keys($.timelapseJpeg.playlist).length
+        var frameStripWidth = $.timelapseJpeg.frameStrip.width()
+        var widthForEachFrame = frameStripWidth / numberOfFrames
+        $.timelapseJpeg.frameStrip.find('.frame').css('width',widthForEachFrame)
+        var fieldHolderHeight = $.timelapseJpeg.fieldHolder.height() + $.timelapseJpeg.fieldHolderCssHeightModifier
         console.log("calc(100% - " + fieldHolderHeight + "px)")
         $.timelapseJpeg.frameIcons.css({height:"calc(100% - " + fieldHolderHeight + "px)"})
     }
@@ -68,8 +73,8 @@ $(document).ready(function(e){
         var selectedFrame = $.timelapseJpeg.playlist[$.timelapseJpeg.frameSelected]
         var selectedFrameNumber = $.timelapseJpeg.playlist[$.timelapseJpeg.frameSelected].number
         $.timelapseJpeg.setPlayBackFrame(selectedFrame.href)
-        // $.timelapseJpeg.frameStrip.find(`.frameStrip .frame.selected`).removeClass('selected')
-        // $.timelapseJpeg.frameStrip.find(`.frameStrip .frame[data-filename="${selectedFrame.filename}"]`).addClass('selected')
+        $.timelapseJpeg.frameStrip.find(`.frameStrip .frame.selected`).removeClass('selected')
+        $.timelapseJpeg.frameStrip.find(`.frameStrip .frame[data-filename="${selectedFrame.filename}"]`).addClass('selected')
         clearTimeout($.timelapseJpeg.playIntervalTimer)
         $.timelapseJpeg.playIntervalTimer = setTimeout(function(){
             ++selectedFrameNumber
@@ -116,6 +121,9 @@ $(document).ready(function(e){
     // $.timelapseJpeg.e.on('mouseout','.frame',function(e){
     //
     // })
+    $.timelapseJpeg.e.on('shown.bs.modal', function (e) {
+        $.timelapseJpeg.datepicker.change()
+    })
     $.timelapseJpeg.e.on('hidden.bs.modal', function (e) {
         $.timelapseJpeg.destroy()
     })

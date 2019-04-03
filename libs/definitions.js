@@ -7,7 +7,13 @@ module.exports = function(s,config,lang,app,io){
     }catch(er){
         console.error(er)
         console.log('There was an error loading your definition file.')
-        var definitions = require(s.location.definitions+'/en_CA.json');
+        try{
+            var definitions = require(s.location.definitions+'/en_CA.js')(s,config,lang)
+        }catch(er){
+            console.error(er)
+            console.log('There was an error loading your definition file.')
+            var definitions = require(s.location.definitions+'/en_CA.json');
+        }
     }
     //load defintions dynamically
     s.copySystemDefaultDefinitions = function(){

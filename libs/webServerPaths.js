@@ -19,7 +19,7 @@ module.exports = function(s,config,lang,app,io){
     s.renderPage = function(req,res,paths,passables,callback){
         passables.window = {}
         passables.originalURL = s.getOriginalUrl(req)
-        passables.config = config
+        passables.config = s.getConfigWithBranding(req.hostname)
         res.render(paths,passables,callback)
     }
     //child node proxy check
@@ -94,7 +94,7 @@ module.exports = function(s,config,lang,app,io){
     * Page : Login Screen
     */
     app.get(config.webPaths.home, function (req,res){
-        s.renderPage(req,res,config.renderPaths.index,{lang:lang,config:config,screen:'dashboard'},function(err,html){
+        s.renderPage(req,res,config.renderPaths.index,{lang:lang,config: s.getConfigWithBranding(req.hostname),screen:'dashboard'},function(err,html){
             if(err){
                 s.systemLog(err)
             }
@@ -105,7 +105,7 @@ module.exports = function(s,config,lang,app,io){
     * Page : Administrator Login Screen
     */
     app.get(config.webPaths.admin, function (req,res){
-        s.renderPage(req,res,config.renderPaths.index,{lang:lang,config:config,screen:'admin'},function(err,html){
+        s.renderPage(req,res,config.renderPaths.index,{lang:lang,config: s.getConfigWithBranding(req.hostname),screen:'admin'},function(err,html){
             if(err){
                 s.systemLog(err)
             }
@@ -117,7 +117,7 @@ module.exports = function(s,config,lang,app,io){
     */
     app.get(config.webPaths.super, function (req,res){
 
-        s.renderPage(req,res,config.renderPaths.index,{lang:lang,config:config,screen:'super'},function(err,html){
+        s.renderPage(req,res,config.renderPaths.index,{lang:lang,config: s.getConfigWithBranding(req.hostname),screen:'super'},function(err,html){
             if(err){
                 s.systemLog(err)
             }
@@ -183,7 +183,7 @@ module.exports = function(s,config,lang,app,io){
                     failedLogin: true,
                     message: lang.failedLoginText1,
                     lang: s.copySystemDefaultLanguage(),
-                    config: config,
+                    config: s.getConfigWithBranding(req.hostname),
                     screen: screenChooser(req.params.screen)
                 },function(err,html){
                     if(err){
@@ -241,7 +241,7 @@ module.exports = function(s,config,lang,app,io){
                     failedLogin: true,
                     message: lang.failedLoginText2,
                     lang: s.copySystemDefaultLanguage(),
-                    config: config,
+                    config: s.getConfigWithBranding(req.hostname),
                     screen: screenChooser(req.params.screen)
                 },function(err,html){
                     if(err){
@@ -284,7 +284,7 @@ module.exports = function(s,config,lang,app,io){
                     s.sqlQuery('SELECT * FROM Monitors WHERE ke=? AND type=?',[r.ke,"dashcam"],function(err,rr){
                         req.resp.mons=rr;
                         renderPage(config.renderPaths.dashcam,{
-                            // config: config,
+                            // config: s.getConfigWithBranding(req.hostname),
                             $user: req.resp,
                             lang: r.lang,
                             define: s.getDefinitonFile(r.details.lang),
@@ -296,7 +296,7 @@ module.exports = function(s,config,lang,app,io){
                     s.sqlQuery('SELECT * FROM Monitors WHERE ke=? AND type=?',[r.ke,"socket"],function(err,rr){
                         req.resp.mons=rr;
                         renderPage(config.renderPaths.streamer,{
-                            // config: config,
+                            // config: s.getConfigWithBranding(req.hostname),
                             $user: req.resp,
                             lang: r.lang,
                             define: s.getDefinitonFile(r.details.lang),
@@ -309,7 +309,7 @@ module.exports = function(s,config,lang,app,io){
                         s.sqlQuery('SELECT uid,mail,details FROM Users WHERE ke=? AND details LIKE \'%"sub"%\'',[r.ke],function(err,rr) {
                             s.sqlQuery('SELECT * FROM Monitors WHERE ke=?',[r.ke],function(err,rrr) {
                                 renderPage(config.renderPaths.admin,{
-                                    config: config,
+                                    config: s.getConfigWithBranding(req.hostname),
                                     $user: req.resp,
                                     $subs: rr,
                                     $mons: rrr,
@@ -323,7 +323,7 @@ module.exports = function(s,config,lang,app,io){
                         //not admin user
                         renderPage(config.renderPaths.home,{
                             $user:req.resp,
-                            config:config,
+                            config: s.getConfigWithBranding(req.hostname),
                             lang:r.lang,
                             define:s.getDefinitonFile(r.details.lang),
                             addStorage:s.dir.addStorage,
@@ -336,7 +336,7 @@ module.exports = function(s,config,lang,app,io){
                 default:
                     renderPage(config.renderPaths.home,{
                         $user:req.resp,
-                        config:config,
+                        config: s.getConfigWithBranding(req.hostname),
                         lang:r.lang,
                         define:s.getDefinitonFile(r.details.lang),
                         addStorage:s.dir.addStorage,
@@ -689,7 +689,7 @@ module.exports = function(s,config,lang,app,io){
                 s.renderPage(req,res,page,{
                     data:Object.assign(req.params,req.query),
                     baseUrl:req.protocol+'://'+req.hostname,
-                    config:config,
+                    config: s.getConfigWithBranding(req.hostname),
                     lang:user.lang,
                     $user:user,
                     monitors:r,
@@ -1137,7 +1137,13 @@ module.exports = function(s,config,lang,app,io){
                 if(req.params.date.indexOf('-') === -1 && !isNaN(req.params.date)){
                     req.params.date = parseInt(req.params.date)
                 }
-                var selectedDate = new Date(req.params.date)
+                var isMp4Call = false
+                var selectedDate = req.params.date
+                if(typeof req.params.date === 'string' && req.params.date.indexOf('.') > -1){
+                    isMp4Call = true
+                    selectedDate = req.params.date.split('.')[0]
+                }
+                selectedDate = new Date(selectedDate)
                 var utcSelectedDate = new Date(selectedDate.getTime() + selectedDate.getTimezoneOffset() * 60000)
                 req.query.start = moment(utcSelectedDate).format('YYYY-MM-DD HH:mm:ss')
                 var dayAfter = utcSelectedDate
@@ -1166,13 +1172,33 @@ module.exports = function(s,config,lang,app,io){
             if(!req.query.limit||req.query.limit==''){req.query.limit=288}
             req.sql+=' ORDER BY `time` DESC LIMIT '+req.query.limit+'';
             s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(r && r[0]){
-                    r.forEach(function(file){
-                        file.details = s.parseJSON(file.details)
-                    })
-                    res.end(s.prettyPrint(r))
+                if(isMp4Call){
+                    if(r && r[0]){
+                        s.createVideoFromTimelapse(r,function(response){
+                            if(response.fileExists){
+                                res.setHeader('Content-Type', 'video/mp4')
+                                s.streamMp4FileOverHttp(response.fileLocation,req,res)
+                            }else{
+                                res.setHeader('Content-Type', 'application/json')
+                                res.end(s.prettyPrint({
+                                    ok : response.ok,
+                                    msg : response.msg,
+                                }))
+                            }
+                        })
+                    }else{
+                        res.setHeader('Content-Type', 'application/json');
+                        res.end(s.prettyPrint([]))
+                    }
                 }else{
-                    res.end(s.prettyPrint([]))
+                    if(r && r[0]){
+                        r.forEach(function(file){
+                            file.details = s.parseJSON(file.details)
+                        })
+                        res.end(s.prettyPrint(r))
+                    }else{
+                        res.end(s.prettyPrint([]))
+                    }
                 }
             })
         },res,req);
@@ -1243,6 +1269,30 @@ module.exports = function(s,config,lang,app,io){
                 }else{
                     res.end(s.prettyPrint({ok: false, msg: lang[`Nothing exists`]}))
                 }
+            })
+        },res,req);
+    });
+    /**
+    * Page : Get Timelapse Page (Not Modal)
+     */
+     process.on('uncaughtException', function (err) {
+    console.error('uncaughtExceptioasdasdasdasdasdn',err);
+});
+    app.get(config.webPaths.apiPrefix+':auth/timelapsePage/:ke', function (req,res){
+        req.params.protocol=req.protocol;
+        s.auth(req.params,function(user){
+            // if(user.permissions.watch_stream==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
+            //     res.end(user.lang['Not Permitted'])
+            //     return
+            // }
+            req.params.uid = user.uid
+            s.renderPage(req,res,config.renderPaths.timelapse,{
+                $user: user,
+                data: req.params,
+                baseUrl: req.protocol+'://'+req.hostname,
+                config: s.getConfigWithBranding(req.hostname),
+                lang: user.lang,
+                originalURL: s.getOriginalUrl(req)
             })
         },res,req);
     });

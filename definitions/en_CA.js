@@ -1481,7 +1481,7 @@ module.exports = function(s,config,lang){
                       "name": "height",
                       "field": lang["Record Height"],
                       "description": "Height of the stream image.",
-                      "default": "480",
+                      "default": "",
                       "example": "720",
                       "form-group-class": "h_vc_input h_vc_libvpx h_vc_libvpx-vp9 h_vc_libx264 h_vc_libx265 h_vc_hevc_nvenc h_vc_h264_nvenc h_vc_h264_vaapi h_vc_hevc_vaapi h_vc_h264_qsv h_vc_hevc_qsv h_vc_mpeg2_qsv h_vc_default h_vc_none",
                       "possible": ""
@@ -1490,7 +1490,7 @@ module.exports = function(s,config,lang){
                       "name": "width",
                       "field": lang["Record Width"],
                       "description": "Width of the stream image.",
-                      "default": "640",
+                      "default": "",
                       "example": "1280",
                       "form-group-class": "h_vc_input h_vc_libvpx h_vc_libvpx-vp9 h_vc_libx264 h_vc_libx265 h_vc_hevc_nvenc h_vc_h264_nvenc h_vc_h264_vaapi h_vc_hevc_vaapi h_vc_h264_qsv h_vc_hevc_qsv h_vc_mpeg2_qsv h_vc_default h_vc_none",
                       "possible": ""
@@ -1767,6 +1767,10 @@ module.exports = function(s,config,lang){
                         {
                             "name": `5 ${lang.minutes}`,
                             "value": "300"
+                        },
+                        {
+                            "name": `10 ${lang.minutes}`,
+                            "value": "600"
                         },
                         {
                             "name": `15 ${lang.minutes}`,

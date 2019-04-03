@@ -77,13 +77,27 @@ module.exports = function(s,config,lang,io){
         user.size = 0
         user.limit = userDetails.size
         s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND status!=?',[user.ke,0],function(err,videos){
-            if(videos && videos[0]){
-                videos.forEach(function(video){
-                    user.size += video.size
+            s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE ke=?',[user.ke],function(err,timelapseFrames){
+                s.sqlQuery('SELECT * FROM `Files` WHERE ke=?',[user.ke],function(err,files){
+                    if(videos && videos[0]){
+                        videos.forEach(function(video){
+                            user.size += video.size
+                        })
+                    }
+                    if(timelapseFrames && timelapseFrames[0]){
+                        timelapseFrames.forEach(function(frame){
+                            user.size += frame.size
+                        })
+                    }
+                    if(files && files[0]){
+                        files.forEach(function(file){
+                            user.size += file.size
+                        })
+                    }
+                    s.systemLog(user.mail+' : '+lang.startUpText1+' : '+videos.length,user.size)
+                    callback()
                 })
-            }
-            s.systemLog(user.mail+' : '+lang.startUpText1+' : '+videos.length,user.size)
-            callback()
+            })
         })
     }
     var loadCloudDiskUseForUser = function(user,callback){

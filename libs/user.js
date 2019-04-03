@@ -131,9 +131,9 @@ module.exports = function(s,config){
         if(!s.group[e.ke].sizePurgeQueue){s.group[e.ke].sizePurgeQueue=[]}
         if(!e.limit||e.limit===''){e.limit=10000}else{e.limit=parseFloat(e.limit)}
         //save global space limit for group key (mb)
-        s.group[e.ke].sizeLimit=e.limit;
+        s.group[e.ke].sizeLimit = e.limit
         //save global used space as megabyte value
-        s.group[e.ke].usedSpace=e.size/1000000;
+        s.group[e.ke].usedSpace = (e.size || 0) / 1000000
         //emit the changes to connected users
         s.sendDiskUsedAmountToClients(e)
     }

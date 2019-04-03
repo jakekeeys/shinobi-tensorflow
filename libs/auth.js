@@ -121,7 +121,9 @@ module.exports = function(s,config,lang){
         var adminUsersSelected = null
         try{
             var success = function(){
+                var chosenConfig = config
                 if(req && res){
+                    chosenConfig = s.getConfigWithBranding(req.hostname)
                     res.setHeader('Content-Type', 'application/json');
                     var ip = req.headers['cf-connecting-ip']||req.headers["CF-Connecting-IP"]||req.headers["'x-forwarded-for"]||req.connection.remoteAddress;
                     var resp = {
@@ -143,7 +145,7 @@ module.exports = function(s,config,lang){
                     ip : ip,
                     $user:userSelected,
                     users:adminUsersSelected,
-                    config:config,
+                    config: chosenConfig,
                     lang:lang
                 })
             }

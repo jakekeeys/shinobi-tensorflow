@@ -154,7 +154,7 @@ echo "============="
 
 #Install PM2
 echo "Shinobi - Install PM2"
-sudo npm install pm2 -g
+sudo npm install pm2@3.0.0 -g
 if [ ! -e "./conf.json" ]; then
     cp conf.sample.json conf.json
 fi
