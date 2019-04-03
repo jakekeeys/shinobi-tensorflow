@@ -659,7 +659,7 @@ module.exports = function(s,config,lang,onFinish){
         x.record_video_filters = []
         x.record_string = ''
         //record - resolution
-        if(e.width!==''&&e.height!==''&&!isNaN(e.width)&&!isNaN(e.height)){
+        if(e.width!==''&&e.height!==''&&e.width!=='0'&&e.height!=='0'&&!isNaN(e.width)&&!isNaN(e.height)){
             x.record_dimensions=' -s '+e.width+'x'+e.height
         }else{
             x.record_dimensions=''
