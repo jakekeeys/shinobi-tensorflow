@@ -55,6 +55,8 @@ module.exports = function(s,config,lang,io){
     // Use uws/cws
     if(config.useUWebsocketJs === undefined){config.useUWebsocketJs=true}
     //SSL options
+    var wellKnownDirectory = s.mainDirectory + '/web/.well-known'
+    if(fs.existsSync(wellKnownDirectory))app.use('/.well-known',express.static(wellKnownDirectory))
     if(config.ssl&&config.ssl.key&&config.ssl.cert){
         config.ssl.key=fs.readFileSync(s.checkRelativePath(config.ssl.key),'utf8')
         config.ssl.cert=fs.readFileSync(s.checkRelativePath(config.ssl.cert),'utf8')
@@ -91,8 +93,6 @@ module.exports = function(s,config,lang,io){
             path:s.checkCorrectPathEnding(config.webPaths.super)+'socket.io',
             transports: ['websocket']
         })
-        var wellKnownDirectory = s.mainDirectory + '/web/.well-known'
-        if(fs.existsSync(wellKnownDirectory))app.use('/.well-known',express.static(wellKnownDirectory))
     }
     //start HTTP
     var server = http.createServer(app);
