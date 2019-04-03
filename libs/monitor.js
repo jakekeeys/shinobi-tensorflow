@@ -1411,7 +1411,14 @@ module.exports = function(s,config,lang){
             if(r&&r[0]){
                 txData.new = false
                 Object.keys(form).forEach(function(v){
-                    if(form[v]&&form[v]!==''){
+                    if(
+                        form[v] !== undefined &&
+                        form[v] !== `undefined` &&
+                        form[v] !== null &&
+                        form[v] !== `null` &&
+                        form[v] !== false &&
+                        form[v] !== `false`
+                    ){
                         monitorQuery.push(v+'=?')
                         if(form[v] instanceof Object){
                             form[v] = s.s(form[v])
