@@ -17,36 +17,15 @@
     position:relative;
     height: 100%;
 }
-#timelapsejpeg .frameStrip .frame{
-    position:relative;
-    height:100px;
+#timelapsejpeg .frameIcons .frame{
+    border-radius: 15px;
     overflow: hidden;
-    display: inline-block;
 }
-#timelapsejpeg .frameStrip .frame.selected{
-    border-right: 3px inset red
+#timelapsejpeg .frameIcons .frame.selected{
+    border: 3px solid #ffc96b;
 }
-#timelapsejpeg .frameStrip{
-    position:absolute;
-    height:30px;
-    width:90%;
-    margin:auto;
-    bottom:0;
-    left:0;
-    right:0;
-    border-radius:5px;
-    overflow:hidden;
-}
-#timelapsejpeg .frameStripPreview{
-    position:absolute;
-    height:80px;
-    width:100px;
-    border:3px solid #333;
-    border-radius:5px;
-    background-size: cover;
-    z-index: 10;
-    transition: none;
-    bottom: 40px;
+#timelapsejpeg .frameIcons > div:not(:last-child){
+    margin-bottom: 15px
 }
 #timelapsejpeg .frameIcons{
     overflow-y: auto;

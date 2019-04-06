@@ -482,12 +482,27 @@ module.exports = function(s,config,lang){
                 }
                 readFile()
                 s.group[ke].mon[mid].buildingTimelapseVideo = videoBuildProcess
-                callback({ok: true, fileExists: false, fileLocation: finalMp4OutputLocation, msg: lang['Started Building']})
+                callback({
+                    ok: true,
+                    fileExists: false,
+                    fileLocation: finalMp4OutputLocation,
+                    msg: lang['Started Building']
+                })
             }else{
-                callback({ok: false, fileExists: true, fileLocation: finalMp4OutputLocation, msg: lang['Already exists']})
+                callback({
+                    ok: false,
+                    fileExists: true,
+                    fileLocation: finalMp4OutputLocation,
+                    msg: lang['Already exists']
+                })
             }
         }else{
-            callback({ok: false, fileExists: false, fileLocation: finalMp4OutputLocation, msg: lang.Building})
+            callback({
+                ok: false,
+                fileExists: false,
+                fileLocation: finalMp4OutputLocation,
+                msg: lang.Building
+            })
         }
     }
 }

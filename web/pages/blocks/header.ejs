@@ -1,6 +1,6 @@
 <head>
 <!-- Powered by Shinobi, http://shinobi.video -->
-<title><%- config.webPageTitle %></title>
+<% include header-title.ejs %>
 <% if(!window.libURL)window.libURL = originalURL + global.s.checkCorrectPathEnding(config.webPaths.home) %>
 <% include header-meta.ejs %>
 <meta http-equiv="content-type" content="text/html;charset=UTF-8">

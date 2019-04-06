@@ -246,6 +246,9 @@ module.exports = function(s,config){
             if(callback)callback()
         },theTimeout)
     }
+    s.isCorrectFilenameSyntax = function(string){
+        return RegExp('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]').test(string)
+    }
     Object.defineProperty(Array.prototype, 'chunk', {
         value: function(chunkSize){
             var temporal = [];

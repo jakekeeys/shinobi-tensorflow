@@ -9,6 +9,9 @@ if(data.addon && data.addon.indexOf('relative')>-1){
     data.url=''
 }
 %>
+<% include blocks/header-title.ejs %>
+<% include blocks/header-meta.ejs %>
+<% include blocks/header-favicon.ejs %>
 <link rel="stylesheet" href="<%=data.url%>/libs/css/font-awesome.min.css">
 <link rel="stylesheet" href="<%=data.url%>/libs/css/bootstrap.min.css">
 <link rel="stylesheet" href="<%-data.url%>/libs/css/daterangepicker.css">
@@ -77,6 +80,8 @@ $(document).ready(function(){
         // if(monitor.mid !== ''){
         //     $.timelapseJpeg.monitors.find('.monitor[value="'+e.mid+'"]')
         // }
+        $.timelapseJpeg.datepicker.val($.timelapseJpeg.baseDate)
+        $.timelapseJpeg.draw($.timelapseJpeg.baseDate)
     })
 })
 </script>

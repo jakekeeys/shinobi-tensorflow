@@ -18,7 +18,9 @@ module.exports = function(s,config,lang,app,io){
     }
     s.renderPage = function(req,res,paths,passables,callback){
         passables.window = {}
+        passables.data = req.params
         passables.originalURL = s.getOriginalUrl(req)
+        passables.baseUrl = req.protocol+'://'+req.hostname
         passables.config = s.getConfigWithBranding(req.hostname)
         res.render(paths,passables,callback)
     }
@@ -94,35 +96,20 @@ module.exports = function(s,config,lang,app,io){
     * Page : Login Screen
     */
     app.get(config.webPaths.home, function (req,res){
-        s.renderPage(req,res,config.renderPaths.index,{lang:lang,config: s.getConfigWithBranding(req.hostname),screen:'dashboard'},function(err,html){
-            if(err){
-                s.systemLog(err)
-            }
-            res.end(html)
-        })
+        s.renderPage(req,res,config.renderPaths.index,{lang:lang,config: s.getConfigWithBranding(req.hostname),screen:'dashboard'})
     });
     /**
     * Page : Administrator Login Screen
     */
     app.get(config.webPaths.admin, function (req,res){
-        s.renderPage(req,res,config.renderPaths.index,{lang:lang,config: s.getConfigWithBranding(req.hostname),screen:'admin'},function(err,html){
-            if(err){
-                s.systemLog(err)
-            }
-            res.end(html)
-        })
+        s.renderPage(req,res,config.renderPaths.index,{lang:lang,config: s.getConfigWithBranding(req.hostname),screen:'admin'})
     });
     /**
     * Page : Superuser Login Screen
     */
     app.get(config.webPaths.super, function (req,res){
 
-        s.renderPage(req,res,config.renderPaths.index,{lang:lang,config: s.getConfigWithBranding(req.hostname),screen:'super'},function(err,html){
-            if(err){
-                s.systemLog(err)
-            }
-            res.end(html)
-        })
+        s.renderPage(req,res,config.renderPaths.index,{lang:lang,config: s.getConfigWithBranding(req.hostname),screen:'super'})
     });
     /**
     * API : Get User Info
@@ -185,11 +172,6 @@ module.exports = function(s,config,lang,app,io){
                     lang: s.copySystemDefaultLanguage(),
                     config: s.getConfigWithBranding(req.hostname),
                     screen: screenChooser(req.params.screen)
-                },function(err,html){
-                    if(err){
-                        s.systemLog(err)
-                    }
-                    res.end(html)
                 })
             }
             return false
@@ -207,12 +189,7 @@ module.exports = function(s,config,lang,app,io){
                 res.end(s.prettyPrint(data))
             }else{
                 data.screen=req.params.screen
-                s.renderPage(req,res,focus,data,function(err,html){
-                    if(err){
-                        s.systemLog(err)
-                    }
-                    res.end(html)
-                })
+                s.renderPage(req,res,focus,data)
             }
         }
         failedAuthentication = function(board){
@@ -243,11 +220,6 @@ module.exports = function(s,config,lang,app,io){
                     lang: s.copySystemDefaultLanguage(),
                     config: s.getConfigWithBranding(req.hostname),
                     screen: screenChooser(req.params.screen)
-                },function(err,html){
-                    if(err){
-                        s.systemLog(err)
-                    }
-                    res.end(html)
                 })
             }
             var logTo = {
@@ -343,7 +315,7 @@ module.exports = function(s,config,lang,app,io){
                         fs:fs,
                         __dirname:s.mainDirectory,
                         customAutoLoad: s.customAutoLoadTree
-                    });
+                    })
                 break;
             }
             s.userLog({ke:r.ke,mid:'$USER'},{type:r.lang['New Authentication Token'],msg:{for:req.body.function,mail:r.mail,id:r.uid,ip:req.ip}})
@@ -360,6 +332,8 @@ module.exports = function(s,config,lang,app,io){
                         r.details=JSON.parse(r.details);
                         r.lang=s.getLanguageFile(r.details.lang)
                         req.factorAuth=function(cb){
+                            req.params.auth = r.auth
+                            req.params.ke = r.ke
                             if(r.details.factorAuth === "1"){
                                 if(!r.details.acceptedMachines||!(r.details.acceptedMachines instanceof Object)){
                                     r.details.acceptedMachines={}
@@ -494,8 +468,8 @@ module.exports = function(s,config,lang,app,io){
                                             req.resp.lang=r.lang
                                             s.sqlQuery('INSERT INTO Users (ke,uid,auth,mail,pass,details) VALUES (?,?,?,?,?,?)',user.post)
                                         }
-                                        req.resp.details=JSON.stringify(req.resp.details)
-                                        req.resp.auth_token=req.resp.auth
+                                        req.resp.details = JSON.stringify(req.resp.details)
+                                        req.resp.auth_token = req.resp.auth
                                         req.resp.ok=true
                                         checkRoute(req.resp)
                                     })

@@ -57,6 +57,8 @@ loadLib('ffmpeg')(s,config,lang,function(ffmpeg){
     loadLib('detector')(s,config)
     //recording functions
     loadLib('videos')(s,config,lang)
+    //branding functions and config defaults
+    loadLib('videoDropInServer')(s,config,lang,app,io)
     //plugins : websocket connected services..
     loadLib('plugins')(s,config,lang,io)
     //health : cpu and ram trackers..
