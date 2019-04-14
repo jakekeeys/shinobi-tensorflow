@@ -2971,13 +2971,10 @@ module.exports = function(s,config,lang){
                 ]
              },
              "Control": {
-                 hidden: true,
                 "name": lang.Control,
                 "color": "blue",
                 id: "monSectionControl",
-                headerTitle: `${lang['Object Detection']} <small>${lang['Plugin']} : <b class="shinobi-detector_name"></b> <b class="shinobi-detector-invert">${lang['Not Connected']}</b><b class="shinobi-detector" style="display:none">${lang['Connected']}</b></small>`,
                 isSection: true,
-                isAdvanced: true,
                 "info": [
                     {
                        "name": "detail=control",
