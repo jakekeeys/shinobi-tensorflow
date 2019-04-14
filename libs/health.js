@@ -34,14 +34,20 @@ module.exports = function(s,config,lang,io){
                   d = d.replace(/(\r\n|\n|\r)/gm, "").replace(/%/g, "")
               }
               callback(d)
-          });
+              s.onGetCpuUsageExtensions.forEach(function(extender){
+                  extender(d)
+              })
+          })
         } else if(k.cmd){
              exec(k.cmd,{encoding:'utf8',detached: true},function(err,d){
                  if(s.isWin===true){
                      d=d.replace(/(\r\n|\n|\r)/gm,"").replace(/%/g,"")
                  }
                  callback(d)
-             });
+                 s.onGetCpuUsageExtensions.forEach(function(extender){
+                     extender(d)
+                 })
+             })
         } else {
             callback(0)
         }
@@ -68,7 +74,10 @@ module.exports = function(s,config,lang,io){
                      d=(parseInt(d.split('=')[1])/(s.totalmem/1000))*100
                  }
                  callback(d)
-             });
+                 s.onGetRamUsageExtensions.forEach(function(extender){
+                     extender(d)
+                 })
+             })
         }else{
             callback(0)
         }
