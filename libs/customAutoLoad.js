@@ -154,7 +154,6 @@ module.exports = function(s,config,lang,app,io){
                                                     }else{
                                                         s.loadedDefinitons[rule] = mergeDeep(s.copySystemDefaultDefinitions(),fileData)
                                                     }
-                                                    console.log(s.loadedDefinitons[rule]['Monitor Settings'].blocks.Identity)
                                                 })
                                             })
                                         break;
