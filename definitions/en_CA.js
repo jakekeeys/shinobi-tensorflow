@@ -72,7 +72,7 @@ module.exports = function(s,config,lang){
                       "description": "Location of where recorded files will be saved. You can configure more locations with the <code>addStorage</code> variable.",
                       "fieldType": "select",
                       "possible": s.listOfStorage
-                   }
+                  }
                 ]
              },
              "Connection": {
@@ -2978,9 +2978,6 @@ module.exports = function(s,config,lang){
                 headerTitle: `${lang['Object Detection']} <small>${lang['Plugin']} : <b class="shinobi-detector_name"></b> <b class="shinobi-detector-invert">${lang['Not Connected']}</b><b class="shinobi-detector" style="display:none">${lang['Connected']}</b></small>`,
                 isSection: true,
                 isAdvanced: true,
-                "section-pre-pre-class": "h_det_input h_det_1",
-                "section-pre-class": "h_casc_input h_casc_1",
-                "section-class": "shinobi-detector-opencv shinobi-detector-openalpr shinobi-detector_plug",
                 "info": [
                     {
                        "name": "detail=control",
@@ -3691,6 +3688,16 @@ module.exports = function(s,config,lang){
                       "possible": "Up to 95% of your maximum storage space if only one master account exists.",
                       "notForSubAccount": true,
                       "evaluation": "details.edit_size !== '0'"
+                   },
+                   {
+                       hidden:true,
+                      "name": "detail=addStorage",
+                      "default": "{}",
+                      "notForSubAccount": true,
+                   },
+                   {
+                       "fieldType": 'div',
+                       "id": "add_storage_max_amounts"
                    },
                    {
                       "name": "detail=days",
