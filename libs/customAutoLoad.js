@@ -1,6 +1,28 @@
 var fs = require('fs')
 var express = require('express')
 module.exports = function(s,config,lang,app,io){
+    function mergeDeep(...objects) {
+      const isObject = obj => obj && typeof obj === 'object';
+
+      return objects.reduce((prev, obj) => {
+        Object.keys(obj).forEach(key => {
+          const pVal = prev[key];
+          const oVal = obj[key];
+
+          if (Array.isArray(pVal) && Array.isArray(oVal)) {
+            prev[key] = pVal.concat(...oVal);
+          }
+          else if (isObject(pVal) && isObject(oVal)) {
+            prev[key] = mergeDeep(pVal, oVal);
+          }
+          else {
+            prev[key] = oVal;
+          }
+        });
+
+        return prev;
+      }, {});
+    }
     s.customAutoLoadModules = {}
     s.customAutoLoadTree = {
         pages: [],
@@ -14,7 +36,7 @@ module.exports = function(s,config,lang,app,io){
         superLibsJs: [],
         superLibsCss: []
     }
-    var folderPath = __dirname + '/customAutoLoad'
+    var folderPath = s.mainDirectory + '/libs/customAutoLoad'
     var search = function(searchFor,searchIn){return searchIn.indexOf(searchFor) > -1}
     fs.readdir(folderPath,function(err,folderContents){
         if(!err && folderContents){
@@ -114,6 +136,25 @@ module.exports = function(s,config,lang,app,io){
                                                     }else{
                                                         s.loadedLanguages[rule] = Object.assign(s.copySystemDefaultLanguage(),fileData)
                                                     }
+                                                })
+                                            })
+                                        break;
+                                        case'definitions':
+                                            var definitionsFolder = s.checkCorrectPathEnding(customModulePath) + 'definitions/'
+                                            fs.readdir(definitionsFolder,function(err,files){
+                                                if(err)return console.log(err);
+                                                files.forEach(function(filename){
+                                                    var fileData = require(definitionsFolder + filename)
+                                                    var rule = filename.replace('.json','').replace('.js','')
+                                                    if(config.language === rule){
+                                                        s.definitions = mergeDeep(s.definitions,fileData)
+                                                    }
+                                                    if(s.loadedDefinitons[rule]){
+                                                        s.loadedDefinitons[rule] = mergeDeep(s.loadedDefinitons[rule],fileData)
+                                                    }else{
+                                                        s.loadedDefinitons[rule] = mergeDeep(s.copySystemDefaultDefinitions(),fileData)
+                                                    }
+                                                    console.log(s.loadedDefinitons[rule]['Monitor Settings'].blocks.Identity)
                                                 })
                                             })
                                         break;

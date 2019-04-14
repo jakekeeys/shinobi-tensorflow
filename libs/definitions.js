@@ -16,15 +16,16 @@ module.exports = function(s,config,lang,app,io){
         }
     }
     //load defintions dynamically
+    s.definitions = definitions
     s.copySystemDefaultDefinitions = function(){
         //en_CA
-        return Object.assign(definitions,{})
+        return Object.assign(s.definitions,{})
     }
     s.loadedDefinitons={}
     s.loadedDefinitons[config.language] = s.copySystemDefaultDefinitions()
     s.getDefinitonFile = function(rule){
         if(rule && rule !== ''){
-            var file = s.loadedDefinitons[file]
+            var file = s.loadedDefinitons[rule]
             if(!file){
                 try{
                     s.loadedDefinitons[rule] = require(s.location.definitions+'/'+rule+'.js')(s,config,lang)
