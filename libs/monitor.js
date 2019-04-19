@@ -1590,6 +1590,8 @@ module.exports = function(s,config,lang){
                 s.group[e.ke].mon[e.id].isStarted = true
                 if(e.details && e.details.dir && e.details.dir !== ''){
                     s.group[e.ke].mon[e.id].addStorageId = e.details.dir
+                }else{
+                    s.group[e.ke].mon[e.id].addStorageId = null
                 }
                 //set recording status
                 e.wantedStatus = lang.Watching
