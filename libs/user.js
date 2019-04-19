@@ -377,7 +377,7 @@ module.exports = function(s,config){
                         storageIndex.name = storage.name
                         storageIndex.path = path
                         storageIndex.usedSpace = storageIndex.usedSpace || 0
-                        storageIndex.sizeLimit = s.parseJSON(detailContainer.addStorage)[path].limit || d.form.details.size || 10000
+                        storageIndex.sizeLimit = parseFloat(s.parseJSON(detailContainer.addStorage)[path].limit) || newSize
                     }
                     readStorageArray()
                     ///

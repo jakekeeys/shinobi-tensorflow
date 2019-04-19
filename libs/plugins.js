@@ -249,7 +249,7 @@ module.exports = function(s,config,lang,io){
             }
         })
     }
-    if(config.oldPluginConnectionMethod === undefined)config.oldPluginConnectionMethod = true
+    if(config.oldPluginConnectionMethod === undefined)config.oldPluginConnectionMethod = false
     if(config.oldPluginConnectionMethod === true){
         s.ocvTx = function(data){
             if(!s.ocv){return}
