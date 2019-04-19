@@ -174,7 +174,15 @@ module.exports = function(s,config,lang){
                     //purge over max
                     s.purgeDiskForGroup(e)
                     //send new diskUsage values
-                    s.setDiskUsedForGroup(e,k.filesizeMB)
+                    var storageIndex = s.getVideoStorageIndex(e)
+                    if(storageIndex){
+                        s.setDiskUsedForGroupAddStorage(e,{
+                            size: k.filesizeMB,
+                            storageIndex: storageIndex
+                        })
+                    }else{
+                        s.setDiskUsedForGroup(e,k.filesizeMB)
+                    }
                     s.insertDatabaseRow(e,k,callback)
                     s.insertCompletedVideoExtensions.forEach(function(extender){
                         extender(e,k)
@@ -216,7 +224,15 @@ module.exports = function(s,config,lang){
                         time: s.nameToTime(filename),
                         end: s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss')
                     },'GRP_'+e.ke);
-                    s.setDiskUsedForGroup(e,-(r.size / 1000000))
+                    var storageIndex = s.getVideoStorageIndex(e)
+                    if(storageIndex){
+                        s.setDiskUsedForGroupAddStorage(e,{
+                            size: -(r.size / 1000000),
+                            storageIndex: storageIndex
+                        })
+                    }else{
+                        s.setDiskUsedForGroup(e,-(r.size / 1000000))
+                    }
                     s.sqlQuery('DELETE FROM Videos WHERE `mid`=? AND `ke`=? AND `time`=?',queryValues,function(err){
                         if(err){
                             s.systemLog(lang['File Delete Error'] + ' : '+e.ke+' : '+' : '+e.id,err)
@@ -270,7 +286,15 @@ module.exports = function(s,config,lang){
                         time: s.nameToTime(filename),
                         end: s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss')
                     },'GRP_'+video.ke);
-                    s.setDiskUsedForGroup(video,-(video.size / 1000000))
+                    var storageIndex = s.getVideoStorageIndex(video)
+                    if(storageIndex){
+                        s.setDiskUsedForGroupAddStorage(video,{
+                            size: -(video.size / 1000000),
+                            storageIndex: storageIndex
+                        })
+                    }else{
+                        s.setDiskUsedForGroup(video,-(video.size / 1000000))
+                    }
                     fs.unlink(video.dir+filename,function(err){
                         fs.stat(video.dir+filename,function(err){
                             if(!err){
@@ -414,11 +438,13 @@ module.exports = function(s,config,lang){
         file.pipe(res)
         return file
     }
-    s.createVideoFromTimelapse = function(timelapseFrames,callback){
+    s.createVideoFromTimelapse = function(timelapseFrames,framesPerSecond,callback){
+        framesPerSecond = parseInt(framesPerSecond)
+        if(!framesPerSecond || isNaN(framesPerSecond))framesPerSecond = 2
         var frames = timelapseFrames.reverse()
         var ke = frames[0].ke
         var mid = frames[0].mid
-        var finalFileName = frames[0].filename.split('T')[0]
+        var finalFileName = frames[0].filename.split('.')[0] + '_' + frames[frames.length - 1].filename.split('.')[0] + `-${framesPerSecond}fps`
         var concatFiles = []
         var createLocation
         frames.forEach(function(frame,frameNumber){
@@ -443,11 +469,11 @@ module.exports = function(s,config,lang){
             if(!fs.existsSync(finalMp4OutputLocation)){
                 var currentFile = 0
                 var completionTimeout
-                var commandString = `ffmpeg -y -pattern_type glob -f image2pipe -vcodec mjpeg -r 2 -i - -q:v 1 -c:v libx264 -r 2 "${finalMp4OutputLocation}"`
+                var commandString = `ffmpeg -y -pattern_type glob -f image2pipe -vcodec mjpeg -r ${framesPerSecond} -analyzeduration 10 -i - -q:v 1 -c:v libx264 -r ${framesPerSecond} "${finalMp4OutputLocation}"`
                 fs.writeFileSync(commandTempLocation,commandString)
                 var videoBuildProcess = spawn('sh',[commandTempLocation])
                 videoBuildProcess.stderr.on('data',function(data){
-                    console.log(data.toString())
+                    // console.log(data.toString())
                     clearTimeout(completionTimeout)
                     completionTimeout = setTimeout(function(){
                         if(currentFile === concatFiles.length - 1){
@@ -468,7 +494,7 @@ module.exports = function(s,config,lang){
                 })
                 var readFile = function(){
                     var filePath = concatFiles[currentFile]
-                    console.log(filePath,currentFile,'/',concatFiles.length - 1)
+                    // console.log(filePath,currentFile,'/',concatFiles.length - 1)
                     videoBuildProcess.stdin.write(fs.readFileSync(filePath))
                     if(currentFile === concatFiles.length - 1){
                         //is last
@@ -477,7 +503,7 @@ module.exports = function(s,config,lang){
                         setTimeout(function(){
                             ++currentFile
                             readFile()
-                        },500)
+                        },1/framesPerSecond)
                     }
                 }
                 readFile()
@@ -504,5 +530,13 @@ module.exports = function(s,config,lang){
                 msg: lang.Building
             })
         }
+    }
+    s.getVideoStorageIndex = function(video){
+        var details = s.parseJSON(video)
+        var storageId = details.storageId || s.group[video.ke].mon[video.id].addStorageId
+        if(storageId){
+            return s.group[video.ke].addStorageUse[storageId]
+        }
+        return null
     }
 }

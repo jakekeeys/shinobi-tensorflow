@@ -413,3 +413,7 @@ ul.msg_list li .message {
     overflow-y: auto;
     overflow-x: hidden;
 }
+/*  */
+.slider.slider-horizontal {
+    width:100%!important
+}

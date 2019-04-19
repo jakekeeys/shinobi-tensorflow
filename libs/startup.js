@@ -6,7 +6,7 @@ var exec = require('child_process').exec;
 var execSync = require('child_process').execSync;
 module.exports = function(s,config,lang,io){
     console.log('FFmpeg version : '+s.ffmpegVersion)
-    console.log('Node.js version : '+execSync("node -v"))
+    console.log('Node.js version : '+process.version)
     s.processReady = function(){
         s.systemLog(lang.startUpText5)
         s.onProcessReadyExtensions.forEach(function(extender){
@@ -18,7 +18,7 @@ module.exports = function(s,config,lang,io){
         var next = function(){
             if(callback)callback()
         }
-        if(!s.isWin){
+        if(!s.isWin && s.packageJson.mainDirectory !== '.'){
             var etcPath = '/etc/shinobisystems/cctv.txt'
             fs.stat(etcPath,function(err,stat){
                 if(err || !stat){
@@ -48,14 +48,14 @@ module.exports = function(s,config,lang,io){
                     if(!orphanedVideosForMonitors[monitor.ke])orphanedVideosForMonitors[monitor.ke] = {}
                     if(!orphanedVideosForMonitors[monitor.ke][monitor.mid])orphanedVideosForMonitors[monitor.ke][monitor.mid] = 0
                     s.initiateMonitorObject(monitor)
+                    s.group[monitor.ke].mon_conf[monitor.mid] = monitor
+                    s.sendMonitorStatus({id:monitor.mid,ke:monitor.ke,status:'Stopped'});
+                    var monObj = Object.assign(monitor,{id : monitor.mid})
+                    s.camera(monitor.mode,monObj)
                     s.orphanedVideoCheck(monitor,2,function(orphanedFilesCount){
                         if(orphanedFilesCount){
                             orphanedVideosForMonitors[monitor.ke][monitor.mid] += orphanedFilesCount
                         }
-                        s.group[monitor.ke].mon_conf[monitor.mid] = monitor
-                        s.sendMonitorStatus({id:monitor.mid,ke:monitor.ke,status:'Stopped'});
-                        var monObj = Object.assign(monitor,{id : monitor.mid})
-                        s.camera(monitor.mode,monObj)
                         ++loadCompleted
                         if(monitors[loadCompleted]){
                             loadMonitor(monitors[loadCompleted])
@@ -76,7 +76,7 @@ module.exports = function(s,config,lang,io){
         var userDetails = JSON.parse(user.details)
         user.size = 0
         user.limit = userDetails.size
-        s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND status!=?',[user.ke,0],function(err,videos){
+        s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND status!=? AND details',[user.ke,0],function(err,videos){
             s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE ke=?',[user.ke],function(err,timelapseFrames){
                 s.sqlQuery('SELECT * FROM `Files` WHERE ke=?',[user.ke],function(err,files){
                     if(videos && videos[0]){
@@ -130,6 +130,44 @@ module.exports = function(s,config,lang,io){
             callback()
         })
     }
+    var loadAddStorageDiskUseForUser = function(user,callback){
+        var userDetails = JSON.parse(user.details)
+        var userAddStorageData = s.parseJSON(userDetails.addStorage) || {}
+        var currentStorageNumber = 0
+        var readStorageArray = function(){
+            var storage = s.listOfStorage[currentStorageNumber]
+            if(!storage){
+                //done all checks, move on to next user
+                callback()
+                return
+            }
+            var path = storage.value
+            if(path === ''){
+                ++currentStorageNumber
+                readStorageArray()
+                return
+            }
+            var storageId = path
+            var storageData = userAddStorageData[storageId] || {}
+            if(!s.group[user.ke].addStorageUse[storageId])s.group[user.ke].addStorageUse[storageId] = {}
+            var storageIndex = s.group[user.ke].addStorageUse[storageId]
+            storageIndex.name = storage.name
+            storageIndex.path = path
+            storageIndex.usedSpace = 0
+            storageIndex.sizeLimit = storageData.limit || user.limit || 10000
+            s.sqlQuery(`SELECT * FROM Videos WHERE ke=? AND status!=? AND details LIKE ?`,[user.ke,0,`%"dir":"${storage.value}"%`,],function(err,videos){
+                if(videos && videos[0]){
+                    videos.forEach(function(video){
+                        storageIndex.usedSpace += video.size
+                    })
+                }
+                s.systemLog(user.mail+' : '+path+' : '+videos.length,storageIndex.usedSpace)
+                ++currentStorageNumber
+                readStorageArray()
+            })
+        }
+        readStorageArray()
+    }
     var loadAdminUsers = function(callback){
         //get current disk used for each isolated account (admin user) on startup
         s.sqlQuery('SELECT * FROM Users WHERE details NOT LIKE ?',['%"sub"%'],function(err,users){
@@ -161,9 +199,23 @@ module.exports = function(s,config,lang,io){
                         })
                     })
                 }
+                var loadAddStorageDiskUse = function(callback){
+                    var count = users.length
+                    var countFinished = 0
+                    users.forEach(function(user){
+                        loadAddStorageDiskUseForUser(user,function(){
+                            ++countFinished
+                            if(countFinished === count){
+                                callback()
+                            }
+                        })
+                    })
+                }
                 loadLocalDiskUse(function(){
                     loadCloudDiskUse(function(){
-                        callback()
+                        loadAddStorageDiskUse(function(){
+                            callback()
+                        })
                     })
                 })
             }else{

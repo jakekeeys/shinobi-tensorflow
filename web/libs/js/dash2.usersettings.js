@@ -3,6 +3,8 @@ $(document).ready(function(e){
 $.sM={e:$('#settings')};
 $.sM.f=$.sM.e.find('form');
 $.sM.links=$('#linkShinobi');
+$.sM.addStorageMaxAmounts=$('#add_storage_max_amounts')
+$.sM.addStorageMaxAmountsField=$.sM.e.find('[detail="addStorage"]')
 $.sM.g=$('#settings_mon_groups');
 $.sM.md=$.sM.f.find('[detail]');
 $.sM.md.change($.ccio.form.details);
@@ -41,6 +43,39 @@ $.sM.drawList = function(){
     })
     list.html(html)
 }
+try{
+    var addStorageData = JSON.parse($user.details.addStorage || '{}')
+    var html = ''
+    $.each(addStorage,function(n,storage){
+        var limit = ""
+        if(addStorageData[storage.path] && addStorageData[storage.path].limit){
+            limit = addStorageData[storage.path].limit
+        }
+        html += `<div class="form-group">\
+                    <label><div><span>${lang['Max Storage Amount']} : ${storage.name}</span></div>\
+                        <div><input class="form-control" addStorageLimit="${storage.path}" value="${limit}"></div>\
+                    </label>\
+                </div>`
+    })
+    $.sM.addStorageMaxAmounts.html(html)
+    $.sM.addStorageMaxAmounts.on('change','[addStorageLimit]',function(){
+        var json = {}
+        $.each(addStorage,function(n,storage){
+            var storageId = storage.path
+            var el = $.sM.addStorageMaxAmounts.find('[addStorageLimit="' + storageId + '"]')
+            var value = el.val()
+            json[storageId] = {
+                name: storage.name,
+                path: storage.path,
+                limit: value
+            }
+        })
+        $.sM.addStorageMaxAmountsField.val(JSON.stringify(json))
+    })
+}catch(err){
+    console.log(err)
+}
+
 $.sM.drawList()
 $.sM.f.find('[selector]').change(function(e){
     e.v=$(this).val();e.a=$(this).attr('selector')

@@ -50,13 +50,30 @@
 }
 #timelapsejpeg .playBackView{
     position:absolute;
-    height: calc(100% - 100px);
+    height: 50%;
     width:100%;
     top:0;
     left:0;
+    background:#333;
 }
 #timelapsejpeg .playBackView img{
-    width:calc(100% - 40px)
+    height:100%;
+}
+#timelapsejpeg .liveStreamView{
+    position:absolute;
+    text-align: center;
+    height: 50%;
+    width:100%;
+    top:50%;
+    left:0;
+    background:#333;
+}
+#timelapsejpeg .liveStreamView iframe{
+    width:100%;
+    height:100%;
+    display: inline-block;
+    margin: auto;
+    border: 0;
 }
 /* stand alone */
 #timelapsejpeg.standalone {

@@ -5,77 +5,123 @@ var exec = require('child_process').exec;
 module.exports = function(s,config){
     s.purgeDiskForGroup = function(e){
         if(config.cron.deleteOverMax === true){
-                s.group[e.ke].sizePurgeQueue.push(1)
-                if(s.group[e.ke].sizePurging !== true){
-                    s.group[e.ke].sizePurging = true
-                    var finish = function(){
-                        //remove value just used from queue
-                        s.group[e.ke].sizePurgeQueue.shift()
-                        //do next one
-                        if(s.group[e.ke].sizePurgeQueue.length > 0){
-                            checkQueue()
+            s.group[e.ke].sizePurgeQueue.push(1)
+            if(s.group[e.ke].sizePurging !== true){
+                s.group[e.ke].sizePurging = true
+                var finish = function(){
+                    //remove value just used from queue
+                    s.group[e.ke].sizePurgeQueue.shift()
+                    //do next one
+                    if(s.group[e.ke].sizePurgeQueue.length > 0){
+                        checkQueue()
+                    }else{
+                        s.group[e.ke].sizePurging = false
+                        s.sendDiskUsedAmountToClients(e)
+                    }
+                }
+                var checkQueue = function(){
+                    //get first in queue
+                    var currentPurge = s.group[e.ke].sizePurgeQueue[0]
+                    var reRunCheck = function(){}
+                    var deleteSetOfVideos = function(err,videos,storageIndex,callback){
+                        var videosToDelete = []
+                        var queryValues = [e.ke]
+                        var completedCheck = 0
+                        if(videos){
+                            videos.forEach(function(video){
+                                video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
+                                videosToDelete.push('(mid=? AND `time`=?)')
+                                queryValues.push(video.mid)
+                                queryValues.push(video.time)
+                                fs.chmod(video.dir,0o777,function(err){
+                                    fs.unlink(video.dir,function(err){
+                                        ++completedCheck
+                                        if(err){
+                                            fs.stat(video.dir,function(err){
+                                                if(!err){
+                                                    s.file('delete',video.dir)
+                                                }
+                                            })
+                                        }
+                                        if(videosToDelete.length === completedCheck){
+                                            videosToDelete = videosToDelete.join(' OR ')
+                                            s.sqlQuery('DELETE FROM Videos WHERE ke =? AND ('+videosToDelete+')',queryValues,function(){
+                                                reRunCheck()
+                                            })
+                                        }
+                                    })
+                                })
+                                if(storageIndex){
+                                    s.setDiskUsedForGroupAddStorage(e,{
+                                        size: -(video.size/1000000),
+                                        storageIndex: storageIndex
+                                    })
+                                }else{
+                                    s.setDiskUsedForGroup(e,-(video.size/1000000))
+                                }
+                                s.tx({
+                                    f: 'video_delete',
+                                    ff: 'over_max',
+                                    filename: s.formattedTime(video.time)+'.'+video.ext,
+                                    mid: video.mid,
+                                    ke: video.ke,
+                                    time: video.time,
+                                    end: s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss')
+                                },'GRP_'+e.ke)
+                            })
                         }else{
-                            s.group[e.ke].sizePurging = false
-                            s.sendDiskUsedAmountToClients(e)
+                            console.log(err)
+                        }
+                        if(videosToDelete.length === 0){
+                            if(callback)callback()
                         }
                     }
-                    var checkQueue = function(){
-                        //get first in queue
-                        var currentPurge = s.group[e.ke].sizePurgeQueue[0]
-                        var deleteVideos = function(){
-                            //run purge command
-                            if(s.group[e.ke].usedSpace > (s.group[e.ke].sizeLimit*config.cron.deleteOverMaxOffset)){
-                                s.sqlQuery('SELECT * FROM Videos WHERE status != 0 AND details NOT LIKE \'%"archived":"1"%\' AND ke=? ORDER BY `time` ASC LIMIT 3',[e.ke],function(err,videos){
-                                    var videosToDelete = []
-                                    var queryValues = [e.ke]
-                                    var completedCheck = 0
-                                    if(videos){
-                                        videos.forEach(function(video){
-                                            video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
-                                            videosToDelete.push('(mid=? AND `time`=?)')
-                                            queryValues.push(video.mid)
-                                            queryValues.push(video.time)
-                                            fs.chmod(video.dir,0o777,function(err){
-                                                fs.unlink(video.dir,function(err){
-                                                    ++completedCheck
-                                                    if(err){
-                                                        fs.stat(video.dir,function(err){
-                                                            if(!err){
-                                                                s.file('delete',video.dir)
-                                                            }
-                                                        })
-                                                    }
-                                                    if(videosToDelete.length === completedCheck){
-                                                        videosToDelete = videosToDelete.join(' OR ')
-                                                        s.sqlQuery('DELETE FROM Videos WHERE ke =? AND ('+videosToDelete+')',queryValues,function(){
-                                                            deleteVideos()
-                                                        })
-                                                    }
-                                                })
-                                            })
-                                            s.setDiskUsedForGroup(e,-(video.size/1000000))
-                                            s.tx({
-                                                f: 'video_delete',
-                                                ff: 'over_max',
-                                                filename: s.formattedTime(video.time)+'.'+video.ext,
-                                                mid: video.mid,
-                                                ke: video.ke,
-                                                time: video.time,
-                                                end: s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss')
-                                            },'GRP_'+e.ke)
-                                        })
-                                    }else{
-                                        console.log(err)
-                                    }
-                                    if(videosToDelete.length === 0){
-                                        finish()
-                                    }
+                    var deleteMainVideos = function(callback){
+                        reRunCheck = deleteMainVideos
+                        //run purge command
+                        if(s.group[e.ke].usedSpace > (s.group[e.ke].sizeLimit * config.cron.deleteOverMaxOffset)){
+                                s.sqlQuery('SELECT * FROM Videos WHERE status != 0 AND details NOT LIKE \'%"archived":"1"%\' AND ke=? AND details NOT LIKE '%"dir"%' ORDER BY `time` ASC LIMIT 3',[e.ke],function(err,rows){
+                                    deleteSetOfVideos(err,rows,null,callback)
                                 })
                         }else{
-                            finish()
+                            callback()
                         }
                     }
-                    deleteVideos()
+                    var deleteAddStorageVideos = function(callback){
+                        reRunCheck = deleteAddStorageVideos
+                        var currentStorageNumber = 0
+                        var readStorageArray = function(finishedReading){
+                            reRunCheck = readStorageArray
+                            var storage = s.listOfStorage[currentStorageNumber]
+                            if(!storage){
+                                //done all checks, move on to next user
+                                callback()
+                                return
+                            }
+                            var storageId = storage.value
+                            if(storageId === ''){
+                                ++currentStorageNumber
+                                readStorageArray()
+                                return
+                            }
+                            var storageIndex = s.group[e.ke].addStorageUse[storageId]
+                            //run purge command
+                            if(storageIndex.usedSpace / 1000000 > (storageIndex.sizeLimit * (storageIndex.deleteOffset || config.cron.deleteOverMaxOffset))){
+                                s.sqlQuery('SELECT * FROM Videos WHERE status != 0 AND details NOT LIKE \'%"archived":"1"%\' AND ke=? AND details LIKE ? ORDER BY `time` ASC LIMIT 3',[e.ke,`%"dir":"${storage.value}"%`],function(err,rows){
+                                    deleteSetOfVideos(err,rows,storageIndex,callback)
+                                })
+                            }else{
+                                ++currentStorageNumber
+                                readStorageArray()
+                            }
+                        }
+                        readStorageArray()
+                    }
+                    deleteMainVideos(function(){
+                        deleteAddStorageVideos(function(){
+                            finish()
+                        })
+                    })
                 }
                 checkQueue()
             }
@@ -87,6 +133,11 @@ module.exports = function(s,config){
         //`bytes` will be used as the value to add or substract
         if(s.group[e.ke] && s.group[e.ke].diskUsedEmitter){
             s.group[e.ke].diskUsedEmitter.emit('set',bytes)
+        }
+    }
+    s.setDiskUsedForGroupAddStorage = function(e,data){
+        if(s.group[e.ke] && s.group[e.ke].diskUsedEmitter){
+            s.group[e.ke].diskUsedEmitter.emit('setAddStorage',data)
         }
     }
     s.purgeCloudDiskForGroup = function(e,storageType){
@@ -103,7 +154,12 @@ module.exports = function(s,config){
     s.sendDiskUsedAmountToClients = function(e){
         //send the amount used disk space to connected users
         if(s.group[e.ke]&&s.group[e.ke].init){
-            s.tx({f:'diskUsed',size:s.group[e.ke].usedSpace,limit:s.group[e.ke].sizeLimit},'GRP_'+e.ke);
+            s.tx({
+                f: 'diskUsed',
+                size: s.group[e.ke].usedSpace,
+                limit: s.group[e.ke].sizeLimit,
+                addStorage: s.group[e.ke].addStorageUse
+            },'GRP_'+e.ke);
         }
     }
     //user log
@@ -125,10 +181,12 @@ module.exports = function(s,config){
         if(!s.group[e.ke].init){
             s.group[e.ke].init={}
         }
+        if(!s.group[e.ke].addStorageUse){s.group[e.ke].addStorageUse={}};
         if(!s.group[e.ke].fileBin){s.group[e.ke].fileBin={}};
         if(!s.group[e.ke].users){s.group[e.ke].users={}}
         if(!s.group[e.ke].dashcamUsers){s.group[e.ke].dashcamUsers={}}
         if(!s.group[e.ke].sizePurgeQueue){s.group[e.ke].sizePurgeQueue=[]}
+        if(!s.group[e.ke].addStorageUse){s.group[e.ke].addStorageUse = {}}
         if(!e.limit||e.limit===''){e.limit=10000}else{e.limit=parseFloat(e.limit)}
         //save global space limit for group key (mb)
         s.group[e.ke].sizeLimit = e.limit
@@ -228,9 +286,26 @@ module.exports = function(s,config){
                         //remove value just used from queue
                         s.sendDiskUsedAmountToClients(e)
                     })
+                    s.group[e.ke].diskUsedEmitter.on('setAddStorage',function(data){
+                        var currentSize = data.size
+                        var storageIndex = data.storageIndex
+                        //validate current values
+                        if(!storageIndex.usedSpace){
+                            storageIndex.usedSpace=0
+                        }else{
+                            storageIndex.usedSpace=parseFloat(storageIndex.usedSpace)
+                        }
+                        if(storageIndex.usedSpace<0||isNaN(storageIndex.usedSpace)){
+                            storageIndex.usedSpace=0
+                        }
+                        //change global size value
+                        storageIndex.usedSpace += currentSize
+                        //remove value just used from queue
+                        s.sendDiskUsedAmountToClients(e)
+                    })
                 }
                 Object.keys(ar).forEach(function(v){
-                    s.group[e.ke].init[v]=ar[v]
+                    s.group[e.ke].init[v] = ar[v]
                 })
             }
         })
@@ -259,6 +334,7 @@ module.exports = function(s,config){
                     d.form.details.edit_days=d.d.edit_days
                     d.form.details.use_admin=d.d.use_admin
                     d.form.details.use_ldap=d.d.use_ldap
+                    d.form.details.landing_page=d.d.landing_page
                     //check
                     if(d.d.edit_days == "0"){
                         d.form.details.days = d.d.days;
@@ -279,7 +355,33 @@ module.exports = function(s,config){
                         delete(d.form.details.mon_groups)
                     }
                     var newSize = d.form.details.size || 10000
-                    d.form.details=JSON.stringify(d.form.details)
+                    //load addStorageUse
+                    var currentStorageNumber = 0
+                    var readStorageArray = function(){
+                        var storage = s.listOfStorage[currentStorageNumber]
+                        if(!storage){
+                            //done all checks, move on to next user
+                            callback()
+                            return
+                        }
+                        var path = storage.value
+                        if(path === ''){
+                            ++currentStorageNumber
+                            readStorageArray()
+                            return
+                        }
+                        var detailContainer = d.form.details || s.group[r.ke].init
+                        var storageId = path
+                        if(!s.group[d.ke].addStorageUse[storageId])s.group[d.ke].addStorageUse[storageId] = {}
+                        var storageIndex = s.group[d.ke].addStorageUse[storageId]
+                        storageIndex.name = storage.name
+                        storageIndex.path = path
+                        storageIndex.usedSpace = storageIndex.usedSpace || 0
+                        storageIndex.sizeLimit = s.parseJSON(detailContainer.addStorage)[path].limit || 10000
+                    }
+                    readStorageArray()
+                    ///
+                    d.form.details = JSON.stringify(d.form.details)
                     ///
                     d.set=[],d.ar=[];
                     if(d.form.pass&&d.form.pass!==''){d.form.pass=s.createHash(d.form.pass);}else{delete(d.form.pass)};

@@ -105,7 +105,7 @@ module.exports = function(s,config,lang){
                 var snapBuffer = []
                 var snapProcess = spawn(config.ffmpegDir,('-loglevel quiet -re -i '+url+options+' -frames:v 1 -f image2pipe pipe:1').split(' '),{detached: true})
                 snapProcess.stdout.on('data',function(data){
-                    if(snapBuffer)snapBuffer.push(data)
+                    if(snapBuffer && snapBuffer.push)snapBuffer.push(data)
                 })
                 snapProcess.stderr.on('data',function(data){
                     console.log(data.toString())
@@ -1588,6 +1588,9 @@ module.exports = function(s,config,lang){
                 //lock this function
                 s.sendMonitorStatus({id:e.id,ke:e.ke,status:lang.Starting});
                 s.group[e.ke].mon[e.id].isStarted = true
+                if(e.details && e.details.dir && e.details.dir !== ''){
+                    s.group[e.ke].mon[e.id].addStorageId = e.details.dir
+                }
                 //set recording status
                 e.wantedStatus = lang.Watching
                 if(e.functionMode === 'record'){

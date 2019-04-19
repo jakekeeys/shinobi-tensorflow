@@ -39,3 +39,7 @@
     background-color: #333;
     box-shadow: none;
 }
+
+.dark .slider-selection {
+    background:#555;
+}

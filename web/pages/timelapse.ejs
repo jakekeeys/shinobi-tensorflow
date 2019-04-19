@@ -18,6 +18,7 @@ if(data.addon && data.addon.indexOf('relative')>-1){
 <link rel="stylesheet" href="<%-data.url%>/libs/css/dash2.basic.css">
 <link rel="stylesheet" href="<%-data.url%>/libs/css/dash2.forms.css">
 <link rel="stylesheet" href="<%-data.url%>/libs/css/dash2.darktheme.css">
+<link rel="stylesheet" href="<%-data.url%>/libs/css/bootstrap-slider.min.css">
 
 
 <div id="timelapsejpeg" class="standalone dark">
@@ -25,6 +26,17 @@ if(data.addon && data.addon.indexOf('relative')>-1){
         <div class="row">
             <div class="col-md-4">
                 <div class="fieldHolder text-left">
+                    <div class="form-group text-center">
+                        <%
+                            var logoImageLink
+                            if(config.logoLocation76x76.indexOf('//') === -1){
+                                logoImageLink = window.libURL + config.logoLocation76x76
+                            }else{
+                                logoImageLink = config.logoLocation76x76
+                            }
+                        %>
+                        <img src="<%- logoImageLink %>" style="<%- config.logoLocation76x76Style %>">
+                    </div>
                     <div class="form-group">
                       <label><div><span><%-lang['Monitor']%></span></div>
                           <div><select class="form-control dark monitors_list"></select></div>
@@ -35,6 +47,16 @@ if(data.addon && data.addon.indexOf('relative')>-1){
                             <div><input type="text" id="timelapsejpeg_date" class="form-control" value="" /></div>
                         </label>
                     </div>
+                    <div class="form-group">
+                        <input id="timelapseJpegFps" data-slider-id='timelapseJpegFps' type="text"
+                         data-slider-min="1" data-slider-max="30" data-slider-step="1" data-slider-value="30" value="30"/>
+                    </div>
+                    <div class="form-group">
+                        <!-- <div class="btn-group"> -->
+                            <!-- <a class="btn btn-primary download_mp4"><%-lang['Build']%></a> -->
+                            <a class="btn btn-danger btn-block download_mp4"><%-lang['Download']%></a>
+                        <!-- </div> -->
+                    </div>
                 </div>
                 <div class="">
                 </div>
@@ -42,6 +64,7 @@ if(data.addon && data.addon.indexOf('relative')>-1){
             </div>
             <div class="col-md-8 frameStripContainer contained">
                 <div class="playBackView"><img></div>
+                <div class="liveStreamView"></div>
                 <!-- <div class="frames"></div>
                 <div class="frameStripPreview"></div>
                 <div class="frameStrip"></div> -->
@@ -54,8 +77,9 @@ if(data.addon && data.addon.indexOf('relative')>-1){
 <script src="<%=data.url%>/libs/js/jquery.min.js"></script>
 <script src="<%=data.url%>/libs/js/jquery-ui.min.js"></script>
 <script>$.ccio = {mon:{}}</script>
-<script><% include ../libs/js/moment.js %></script>
+<script src="<%-data.url%>/libs/js/moment-with-locales.min.js"></script>
 <script src="<%-data.url%>/libs/js/daterangepicker.js"></script>
+<script src="<%-data.url%>/libs/js/bootstrap-slider.min.js"></script>
 <script src="<%-data.url%>/libs/js/dash2.init.js"></script>
 <link rel="stylesheet" href="<%-data.url%>/libs/css/dash2.timelapse.jpeg.css">
 <script src="<%-data.url%>/libs/js/dash2.timelapse.jpeg.js"></script>
@@ -63,16 +87,21 @@ if(data.addon && data.addon.indexOf('relative')>-1){
 var data = <%- JSON.stringify(data) %>
 var $user = <%- JSON.stringify($user) %>
 var lang = <%- JSON.stringify(lang) %>
+var languageChoice = "<%- config.language || 'en' %>".replace('_','-').toLowerCase()
+moment.locale(languageChoice)
 $user.auth_token = data.auth
 $(document).ready(function(){
     $.timelapseJpeg.pointer = data.url + '/'
     $.timelapseJpeg.fieldHolderCssHeightModifier = 50
     $.timelapseJpeg.monitors.find('.monitor').remove()
     $.getJSON(data.url+'/'+$user.auth_token+'/monitor/'+$user.ke,function(d){
-        console.log(d)
-        $.each(d,function(n,monitor){
-            $.ccio.mon[monitor.ke + monitor.mid + $user.auth_token] = monitor
-        })
+        if(d instanceof Array){
+            $.each(d,function(n,monitor){
+                $.ccio.mon[monitor.ke + monitor.mid + $user.auth_token] = monitor
+            })
+        }else{
+            $.ccio.mon[d.ke + d.mid + $user.auth_token] = d
+        }
         $.each($.ccio.mon,function(n,v){
             $.timelapseJpeg.monitors.append('<option class="monitor" value="'+v.mid+'">'+v.name+'</option>')
         })
@@ -80,8 +109,10 @@ $(document).ready(function(){
         // if(monitor.mid !== ''){
         //     $.timelapseJpeg.monitors.find('.monitor[value="'+e.mid+'"]')
         // }
-        $.timelapseJpeg.datepicker.val($.timelapseJpeg.baseDate)
-        $.timelapseJpeg.draw($.timelapseJpeg.baseDate)
+        // $.timelapseJpeg.datepicker.val($.timelapseJpeg.baseDate)
+        $.timelapseJpeg.selectedStartDate = moment().utc().subtract(2, 'days').format('YYYY-MM-DD')
+        $.timelapseJpeg.selectedEndDate = moment().utc().add(1, 'days').format('YYYY-MM-DD')
+        $.timelapseJpeg.draw($.timelapseJpeg.selectedStartDate,$.timelapseJpeg.selectedEndDate)
     })
 })
 </script>

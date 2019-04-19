@@ -1,12 +1,6 @@
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 module.exports = function(s,config,lang,io){
-    s.sendDiskUsedAmountToClients = function(e){
-        //send the amount used disk space to connected users
-        if(s.group[e.ke]&&s.group[e.ke].init){
-            s.tx({f:'diskUsed',size:s.group[e.ke].usedSpace,limit:s.group[e.ke].sizeLimit},'GRP_'+e.ke);
-        }
-    }
     s.heartBeat = function(){
         setTimeout(s.heartBeat, 8000);
         io.sockets.emit('ping',{beat:1});

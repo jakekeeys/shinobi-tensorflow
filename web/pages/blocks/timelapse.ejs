@@ -91,7 +91,18 @@
         <div class="modal-body text-center">
             <div class="row">
                 <div class="col-md-4">
-                    <div class="fieldHolder">
+                    <div class="fieldHolder text-left">
+                        <div class="form-group text-center">
+                            <%
+                                var logoImageLink
+                                if(config.logoLocation76x76.indexOf('//') === -1){
+                                    logoImageLink = window.libURL + config.logoLocation76x76
+                                }else{
+                                    logoImageLink = config.logoLocation76x76
+                                }
+                            %>
+                            <img src="<%- logoImageLink %>" style="<%- config.logoLocation76x76Style %>">
+                        </div>
                         <div class="form-group">
                           <label><div><span><%-lang['Monitor']%></span></div>
                               <div><select class="form-control dark monitors_list"></select></div>
@@ -102,14 +113,24 @@
                                 <div><input type="text" id="timelapsejpeg_date" class="form-control" value="" /></div>
                             </label>
                         </div>
+                        <div class="form-group">
+                            <input id="timelapseJpegFps" data-slider-id='timelapseJpegFps' type="text"
+                             data-slider-min="1" data-slider-max="30" data-slider-step="1" data-slider-value="30" value="30"/>
+                        </div>
+                        <div class="form-group">
+                            <!-- <div class="btn-group"> -->
+                                <!-- <a class="btn btn-primary download_mp4"><%-lang['Build']%></a> -->
+                                <a class="btn btn-danger btn-block download_mp4"><%-lang['Download']%></a>
+                            <!-- </div> -->
+                        </div>
                     </div>
-                    <div class="frameIcons row"></div>
+                    <div class="">
+                    </div>
+                    <div class="frameIcons row scroll-style-6"></div>
                 </div>
                 <div class="col-md-8 frameStripContainer contained">
                     <div class="playBackView"><img></div>
-                    <div class="frames"></div>
-                    <div class="frameStripPreview"></div>
-                    <div class="frameStrip"></div>
+                    <div class="liveStreamView"></div>
                 </div>
             </div>
         </div>

@@ -216,7 +216,7 @@ module.exports = function(s,config,lang){
            {
                "hidden": true,
               "field": lang.aws_accessKeyId,
-              "name": "detail=aws_accessKeyId",
+              "name": "detail=whcs_accessKeyId",
               "form-group-class": "autosave_whcs_input autosave_whcs_1",
               "description": "",
               "default": "",
@@ -225,7 +225,7 @@ module.exports = function(s,config,lang){
            },
            {
                "hidden": true,
-              "name": "detail=aws_secretAccessKey",
+              "name": "detail=whcs_secretAccessKey",
               "fieldType":"password",
               "placeholder": "",
               "field": lang.aws_secretAccessKey,
@@ -237,7 +237,7 @@ module.exports = function(s,config,lang){
            },
            {
                "hidden": true,
-              "name": "detail=aws_region",
+              "name": "detail=whcs_region",
               "field": lang.Region,
               "fieldType": "select",
               "selector": "h_b2sld",
