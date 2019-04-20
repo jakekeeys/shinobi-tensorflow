@@ -167,6 +167,7 @@ module.exports = function(s,config,lang,io){
                         storageIndex.usedSpace += video.size
                     }
                 })
+                storageIndex.usedSpace = storageIndex.usedSpace / 1000000
             }
             s.systemLog(user.mail+' : '+path+' : '+videos.length,storageIndex.usedSpace)
             ++currentStorageNumber
