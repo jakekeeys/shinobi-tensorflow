@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/bootstrap-slider.min.css">
 
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.basic.css">
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.misc.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.monitors.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.forms.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.modal.css">
@@ -101,16 +102,31 @@
                     </ul>
                 </div>
                 </li>
-                <li role="presentation" class="dropdown">
+                <li role="presentation" class="dropdown hidden-xs">
                   <a href="javascript:;" class="dropdown-toggle info-number" data-toggle="dropdown" aria-expanded="true">&nbsp;<i class="fa fa-group"></i>&nbsp;</a>
                   <ul id="users_online" class="dropdown-menu list-unstyled msg_list scrollable" role="menu"></ul>
                 </li>
-<!--
+
                 <li role="presentation" class="dropdown">
-                  <a href="javascript:;" class="dropdown-toggle info-number" data-toggle="dropdown" aria-expanded="true">&nbsp;<i class="fa fa-info-circle"></i>&nbsp;</a>
-                  <ul id="notifications" class="dropdown-menu list-unstyled msg_list scrollable" role="menu"></ul>
+                  <a href="javascript:;" class="dropdown-toggle info-number" data-toggle="dropdown" aria-expanded="true">&nbsp;<i class="fa fa-hdd-o"></i>&nbsp;</a>
+                  <ul id="diskUsedList" class="dropdown-menu list-unstyled msg_list scrollable" role="menu">
+                      <% addStorage.forEach(function(storage){ %>
+                          <li class="log-item" storage="<%- storage.name %>">
+                              <span>
+                                  <div class="title"><%- storage.name %></div>
+                                  <span class="pull-right percent"></span>
+                                  <label><span class="value"></span></label>
+                              </span>
+                              <div class="message">
+                                  <div class="progress">
+                                      <div class="progress-bar progress-bar-warning" role="progressbar"></div>
+                                  </div>
+                              </div>
+                          </li>
+                      <% }) %>
+                  </ul>
                 </li>
--->
+
                 <li role="presentation" class="dropdown">
                   <a href="javascript:;" class="dropdown-toggle info-number" data-toggle="dropdown" aria-expanded="true">&nbsp;<i class="fa fa-exclamation-triangle"></i>&nbsp;</a>
                   <ul id="logs" class="dropdown-menu list-unstyled msg_list scrollable" role="menu">
