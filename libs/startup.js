@@ -110,7 +110,7 @@ module.exports = function(s,config,lang,io){
         var userDetails = JSON.parse(user.details)
         user.cloudDiskUse = {}
         user.size = 0
-        user.limit = userDetails.size
+        s.group[user.ke].sizeLimit = userDetails.size
         s.cloudDisksLoaded.forEach(function(storageType){
             user.cloudDiskUse[storageType] = {
                 usedSpace : 0,
