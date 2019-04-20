@@ -77,10 +77,12 @@ module.exports = function(s,config){
                         }
                     }
                     var deleteMainVideos = function(callback){
-                        reRunCheck = deleteMainVideos
+                        reRunCheck = function(){
+                            return deleteMainVideos(callback)
+                        }
                         //run purge command
                         if(s.group[e.ke].usedSpace > (s.group[e.ke].sizeLimit * config.cron.deleteOverMaxOffset)){
-                                s.sqlQuery('SELECT * FROM Videos WHERE status != 0 AND details NOT LIKE \'%"archived":"1"%\' AND ke=? AND details NOT LIKE '%"dir"%' ORDER BY `time` ASC LIMIT 3',[e.ke],function(err,rows){
+                                s.sqlQuery('SELECT * FROM Videos WHERE status != 0 AND details NOT LIKE \'%"archived":"1"%\' AND ke=? AND details NOT LIKE \'%"dir"%\' ORDER BY `time` ASC LIMIT 3',[e.ke],function(err,rows){
                                     deleteSetOfVideos(err,rows,null,callback)
                                 })
                         }else{
@@ -88,7 +90,9 @@ module.exports = function(s,config){
                         }
                     }
                     var deleteAddStorageVideos = function(callback){
-                        reRunCheck = deleteAddStorageVideos
+                        reRunCheck = function(){
+                            return deleteAddStorageVideos(callback)
+                        }
                         var currentStorageNumber = 0
                         var readStorageArray = function(finishedReading){
                             reRunCheck = readStorageArray

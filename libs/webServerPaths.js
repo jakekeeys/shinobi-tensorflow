@@ -293,7 +293,11 @@ module.exports = function(s,config,lang,app,io){
                         })
                     }else{
                         //not admin user
-                        renderPage(config.renderPaths.home,{
+                        var chosenRender = 'home'
+                        if(r.details.landing_page && r.details.landing_page !== '' && config.renderPaths[r.details.landing_page]){
+                            chosenRender = r.details.landing_page
+                        }
+                        renderPage(config.renderPaths[chosenRender],{
                             $user:req.resp,
                             config: s.getConfigWithBranding(req.hostname),
                             lang:r.lang,
@@ -306,7 +310,11 @@ module.exports = function(s,config,lang,app,io){
                     }
                 break;
                 default:
-                    renderPage(config.renderPaths.home,{
+                    var chosenRender = 'home'
+                    if(r.details.sub && r.details.landing_page && r.details.landing_page !== '' && config.renderPaths[r.details.landing_page]){
+                        chosenRender = r.details.landing_page
+                    }
+                    renderPage(config.renderPaths[chosenRender],{
                         $user:req.resp,
                         config: s.getConfigWithBranding(req.hostname),
                         lang:r.lang,
@@ -1107,11 +1115,14 @@ module.exports = function(s,config,lang,app,io){
                     return;
                 }
             }
+            var isMp4Call = false
+            if(req.query.mp4){
+                isMp4Call = true
+            }
             if(req.params.date){
                 if(req.params.date.indexOf('-') === -1 && !isNaN(req.params.date)){
                     req.params.date = parseInt(req.params.date)
                 }
-                var isMp4Call = false
                 var selectedDate = req.params.date
                 if(typeof req.params.date === 'string' && req.params.date.indexOf('.') > -1){
                     isMp4Call = true
@@ -1143,19 +1154,29 @@ module.exports = function(s,config,lang,app,io){
                     req.ar.push(req.query.start)
                 }
             }
-            if(!req.query.limit||req.query.limit==''){req.query.limit=288}
-            req.sql+=' ORDER BY `time` DESC LIMIT '+req.query.limit+'';
+            // if(!req.query.limit||req.query.limit==''){req.query.limit=288}
+            req.sql+=' ORDER BY `time` DESC'
             s.sqlQuery(req.sql,req.ar,function(err,r){
                 if(isMp4Call){
                     if(r && r[0]){
-                        s.createVideoFromTimelapse(r,function(response){
+                        s.createVideoFromTimelapse(r,req.query.fps,function(response){
                             if(response.fileExists){
-                                res.setHeader('Content-Type', 'video/mp4')
-                                s.streamMp4FileOverHttp(response.fileLocation,req,res)
+                                if(req.query.download){
+                                    res.setHeader('Content-Type', 'video/mp4')
+                                    s.streamMp4FileOverHttp(response.fileLocation,req,res)
+                                }else{
+                                    res.setHeader('Content-Type', 'application/json')
+                                    res.end(s.prettyPrint({
+                                        ok : response.ok,
+                                        fileExists : response.fileExists,
+                                        msg : response.msg,
+                                    }))
+                                }
                             }else{
                                 res.setHeader('Content-Type', 'application/json')
                                 res.end(s.prettyPrint({
                                     ok : response.ok,
+                                    fileExists : response.fileExists,
                                     msg : response.msg,
                                 }))
                             }
@@ -1249,9 +1270,6 @@ module.exports = function(s,config,lang,app,io){
     /**
     * Page : Get Timelapse Page (Not Modal)
      */
-     process.on('uncaughtException', function (err) {
-    console.error('uncaughtExceptioasdasdasdasdasdn',err);
-});
     app.get(config.webPaths.apiPrefix+':auth/timelapsePage/:ke', function (req,res){
         req.params.protocol=req.protocol;
         s.auth(req.params,function(user){
@@ -1263,7 +1281,6 @@ module.exports = function(s,config,lang,app,io){
             s.renderPage(req,res,config.renderPaths.timelapse,{
                 $user: user,
                 data: req.params,
-                baseUrl: req.protocol+'://'+req.hostname,
                 config: s.getConfigWithBranding(req.hostname),
                 lang: user.lang,
                 originalURL: s.getOriginalUrl(req)
