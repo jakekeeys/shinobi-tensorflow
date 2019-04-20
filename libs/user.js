@@ -372,12 +372,17 @@ module.exports = function(s,config){
                         }
                         var detailContainer = d.form.details || s.group[r.ke].init
                         var storageId = path
+                        var detailsContainerAddStorage = s.parseJSON(detailContainer.addStorage)
                         if(!s.group[d.ke].addStorageUse[storageId])s.group[d.ke].addStorageUse[storageId] = {}
                         var storageIndex = s.group[d.ke].addStorageUse[storageId]
                         storageIndex.name = storage.name
                         storageIndex.path = path
                         storageIndex.usedSpace = storageIndex.usedSpace || 0
-                        storageIndex.sizeLimit = parseFloat(s.parseJSON(detailContainer.addStorage)[path].limit) || newSize
+                        if(detailsContainerAddStorage && detailsContainerAddStorage[path] && detailsContainerAddStorage[path].limit){
+                            storageIndex.sizeLimit = parseFloat(detailsContainerAddStorage[path].limit)
+                        }else{
+                            storageIndex.sizeLimit = newSize
+                        }
                     }
                     readStorageArray()
                     ///

@@ -160,7 +160,7 @@ module.exports = function(s,config,lang,io){
             storageIndex.name = storage.name
             storageIndex.path = path
             storageIndex.usedSpace = 0
-            storageIndex.sizeLimit = storageData.limit || parseFloat(user.limit) || 10000
+            storageIndex.sizeLimit = parseFloat(storageData.limit) || parseFloat(user.limit) || 10000
             if(videos && videos[0]){
                 videos.forEach(function(video){
                     if(video.details.dir === storage.value){
