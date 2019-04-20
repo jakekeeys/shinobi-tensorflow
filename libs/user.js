@@ -191,7 +191,7 @@ module.exports = function(s,config){
         //save global space limit for group key (mb)
         s.group[e.ke].sizeLimit = e.limit
         //save global used space as megabyte value
-        s.group[e.ke].usedSpace = (e.size || 0) / 1000000
+        s.group[e.ke].usedSpace = s.group[e.ke].usedSpace || ((e.size || 0) / 1000000)
         //emit the changes to connected users
         s.sendDiskUsedAmountToClients(e)
     }

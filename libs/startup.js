@@ -76,13 +76,17 @@ module.exports = function(s,config,lang,io){
         var userDetails = JSON.parse(user.details)
         user.size = 0
         user.limit = userDetails.size
-        s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND status!=? AND details',[user.ke,0],function(err,videos){
+        s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND status!=?',[user.ke,0],function(err,videos){
             s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE ke=?',[user.ke],function(err,timelapseFrames){
                 s.sqlQuery('SELECT * FROM `Files` WHERE ke=?',[user.ke],function(err,files){
                     if(videos && videos[0]){
                         videos.forEach(function(video){
-                            user.size += video.size
+                            video.details = s.parseJSON(video.details)
+                            if(!video.details.dir){
+                                s.group[user.ke].usedSpace += video.size
+                            }
                         })
+                        s.group[user.ke].usedSpace = s.group[user.ke].usedSpace / 1000000
                     }
                     if(timelapseFrames && timelapseFrames[0]){
                         timelapseFrames.forEach(function(frame){
@@ -94,8 +98,10 @@ module.exports = function(s,config,lang,io){
                             user.size += file.size
                         })
                     }
-                    s.systemLog(user.mail+' : '+lang.startUpText1+' : '+videos.length,user.size)
-                    callback()
+                    loadAddStorageDiskUseForUser(user,videos,function(){
+                        s.systemLog(user.mail+' : '+lang.startUpText1+' : '+videos.length,user.size)
+                        callback()
+                    })
                 })
             })
         })
@@ -130,7 +136,7 @@ module.exports = function(s,config,lang,io){
             callback()
         })
     }
-    var loadAddStorageDiskUseForUser = function(user,callback){
+    var loadAddStorageDiskUseForUser = function(user,videos,callback){
         var userDetails = JSON.parse(user.details)
         var userAddStorageData = s.parseJSON(userDetails.addStorage) || {}
         var currentStorageNumber = 0
@@ -154,17 +160,17 @@ module.exports = function(s,config,lang,io){
             storageIndex.name = storage.name
             storageIndex.path = path
             storageIndex.usedSpace = 0
-            storageIndex.sizeLimit = storageData.limit || user.limit || 10000
-            s.sqlQuery(`SELECT * FROM Videos WHERE ke=? AND status!=? AND details LIKE ?`,[user.ke,0,`%"dir":"${storage.value}"%`,],function(err,videos){
-                if(videos && videos[0]){
-                    videos.forEach(function(video){
+            storageIndex.sizeLimit = storageData.limit || parseFloat(user.limit) || 10000
+            if(videos && videos[0]){
+                videos.forEach(function(video){
+                    if(video.details.dir === storage.value){
                         storageIndex.usedSpace += video.size
-                    })
-                }
-                s.systemLog(user.mail+' : '+path+' : '+videos.length,storageIndex.usedSpace)
-                ++currentStorageNumber
-                readStorageArray()
-            })
+                    }
+                })
+            }
+            s.systemLog(user.mail+' : '+path+' : '+videos.length,storageIndex.usedSpace)
+            ++currentStorageNumber
+            readStorageArray()
         }
         readStorageArray()
     }
@@ -176,10 +182,10 @@ module.exports = function(s,config,lang,io){
                     var count = users.length
                     var countFinished = 0
                     users.forEach(function(user){
+                        s.loadGroup(user)
+                        s.loadGroupApps(user)
                         loadedAccounts.push(user.ke)
                         loadDiskUseForUser(user,function(){
-                            s.loadGroup(user)
-                            s.loadGroupApps(user)
                             ++countFinished
                             if(countFinished === count){
                                 callback()
@@ -199,23 +205,9 @@ module.exports = function(s,config,lang,io){
                         })
                     })
                 }
-                var loadAddStorageDiskUse = function(callback){
-                    var count = users.length
-                    var countFinished = 0
-                    users.forEach(function(user){
-                        loadAddStorageDiskUseForUser(user,function(){
-                            ++countFinished
-                            if(countFinished === count){
-                                callback()
-                            }
-                        })
-                    })
-                }
                 loadLocalDiskUse(function(){
                     loadCloudDiskUse(function(){
-                        loadAddStorageDiskUse(function(){
-                            callback()
-                        })
+                        callback()
                     })
                 })
             }else{
