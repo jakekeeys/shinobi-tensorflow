@@ -3525,10 +3525,12 @@ module.exports = function(s,config,lang){
                       "possible": [
                          {
                             "name": "No",
+                            "value": "0",
                             "info": "No is the default."
                          },
                          {
                             "name": "Yes",
+                            "value": "1",
                             "info": "Do this if you are having recurring issues only."
                          }
                       ]
