@@ -4,3 +4,4 @@
 .dark.modal .modal-body{background:#333;}
 .dark.modal .close{color:#fff;}
 .dark.modal{color:#fff;}
+#confirm_window {z-index: 11111}

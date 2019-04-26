@@ -113,7 +113,7 @@ img{max-width:100%}
 }
 @media (min-width: 768px){
     .modal.full,.modal.medium{padding-left:0!important;}
-    .modal.full .modal-dialog{width:calc(100% - 10px)!important;margin: 30px auto;}
+    .modal.full .modal-dialog{width:calc(100% - 10px)!important;margin: 30px auto;max-width: none;}
     .modal.medium .modal-dialog{width:calc(70% - 10px)!important;margin: 30px auto;}
     .full.modal .modal-body,.medium.modal .modal-body{height:calc(100% - 200px);overflow:auto}
 }

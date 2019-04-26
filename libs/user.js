@@ -76,9 +76,61 @@ module.exports = function(s,config){
                             if(callback)callback()
                         }
                     }
+                    var deleteSetOfTimelapseFrames = function(err,frames,storageIndex,callback){
+                        var framesToDelete = []
+                        var queryValues = [e.ke]
+                        var completedCheck = 0
+                        if(frames){
+                            frames.forEach(function(frame){
+                                var selectedDate = frame.filename.split('T')[0]
+                                var fileLocationMid = `${frame.ke}/${frame.mid}_timelapse/${selectedDate}/` + frame.filename
+                                framesToDelete.push('(mid=? AND `time`=?)')
+                                queryValues.push(frame.mid)
+                                queryValues.push(frame.time)
+                                fs.unlink(fileLocationMid,function(err){
+                                    ++completedCheck
+                                    if(err){
+                                        fs.stat(fileLocationMid,function(err){
+                                            if(!err){
+                                                s.file('delete',fileLocationMid)
+                                            }
+                                        })
+                                    }
+                                    if(framesToDelete.length === completedCheck){
+                                        framesToDelete = framesToDelete.join(' OR ')
+                                        s.sqlQuery('DELETE FROM `Timelapse Frames` WHERE ke =? AND ('+framesToDelete+')',queryValues,function(){
+                                            reRunCheck()
+                                        })
+                                    }
+                                })
+                                if(storageIndex){
+                                    s.setDiskUsedForGroupAddStorage(e,{
+                                        size: -(frame.size/1000000),
+                                        storageIndex: storageIndex
+                                    })
+                                }else{
+                                    s.setDiskUsedForGroup(e,-(frame.size/1000000))
+                                }
+                                // s.tx({
+                                //     f: 'timelapse_frame_delete',
+                                //     ff: 'over_max',
+                                //     filename: s.formattedTime(video.time)+'.'+video.ext,
+                                //     mid: video.mid,
+                                //     ke: video.ke,
+                                //     time: video.time,
+                                //     end: s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss')
+                                // },'GRP_'+e.ke)
+                            })
+                        }else{
+                            console.log(err)
+                        }
+                        if(framesToDelete.length === 0){
+                            if(callback)callback()
+                        }
+                    }
                     var deleteMainVideos = function(callback){
                         reRunCheck = function(){
-                            return deleteMainVideos(callback)
+                            callback()
                         }
                         //run purge command
                         if(s.group[e.ke].usedSpace > (s.group[e.ke].sizeLimit * config.cron.deleteOverMaxOffset)){
@@ -121,11 +173,33 @@ module.exports = function(s,config){
                         }
                         readStorageArray()
                     }
-                    deleteMainVideos(function(){
-                        deleteAddStorageVideos(function(){
-                            finish()
+                    var deleteTimelapseFrames = function(callback){
+                        reRunCheck = function(){
+                            callback()
+                        }
+                        //run purge command
+                        if(s.group[e.ke].usedSpace > (s.group[e.ke].sizeLimit * config.cron.deleteOverMaxOffset)){
+                                s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE ke=? AND details NOT LIKE \'%"archived":"1"%\' ORDER BY `time` ASC LIMIT 3',[e.ke],function(err,frames){
+                                    deleteSetOfTimelapseFrames(err,frames,null,callback)
+                                })
+                        }else{
+                            callback()
+                        }
+                    }
+                    var doAllChecks = function(){
+                        deleteMainVideos(function(){
+                            deleteTimelapseFrames(function(){
+                                if(s.group[e.ke].usedSpace > (s.group[e.ke].sizeLimit * config.cron.deleteOverMaxOffset)){
+                                    doAllChecks()
+                                }else{
+                                    deleteAddStorageVideos(function(){
+                                        finish()
+                                    })
+                                }
+                            })
                         })
-                    })
+                    }
+                    doAllChecks()
                 }
                 checkQueue()
             }
@@ -193,7 +267,7 @@ module.exports = function(s,config){
         if(!s.group[e.ke].addStorageUse){s.group[e.ke].addStorageUse = {}}
         if(!e.limit||e.limit===''){e.limit=10000}else{e.limit=parseFloat(e.limit)}
         //save global space limit for group key (mb)
-        s.group[e.ke].sizeLimit = s.group[e.ke].sizeLimit || e.limit
+        s.group[e.ke].sizeLimit = s.group[e.ke].sizeLimit || e.limit || 10000
         //save global used space as megabyte value
         s.group[e.ke].usedSpace = s.group[e.ke].usedSpace || ((e.size || 0) / 1000000)
         //emit the changes to connected users

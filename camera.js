@@ -48,7 +48,7 @@ loadLib('ffmpeg')(s,config,lang,function(ffmpeg){
     //websocket connection handlers : login and streams..
     loadLib('socketio')(s,config,lang,io)
     //user and group functions
-    loadLib('user')(s,config)
+    loadLib('user')(s,config,lang)
     //monitor/camera handlers
     loadLib('monitor')(s,config,lang)
     //event functions : motion, object matrix handler

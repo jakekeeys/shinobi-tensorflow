@@ -16,6 +16,15 @@ module.exports = function(s,config,lang){
             return s.dir.videos+e.ke+'/'+e.id+'/';
         }
     }
+    s.getTimelapseFrameDirectory = function(e){
+        if(e.mid&&!e.id){e.id=e.mid};
+        s.checkDetails(e)
+        if(e.details&&e.details.dir&&e.details.dir!==''){
+            return s.checkCorrectPathEnding(e.details.dir)+e.ke+'/'+e.id+'/'
+        }else{
+            return s.dir.videos+e.ke+'/'+e.id+'/';
+        }
+    }
     /**
      * Creates available API based URLs for streaming
      * @constructor

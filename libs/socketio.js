@@ -923,6 +923,7 @@ module.exports = function(s,config,lang,io){
                     var tempSessionKey = s.gid(30)
                     cn.superSessionKey = tempSessionKey
                     s.superUsersApi[tempSessionKey] = data
+                    s.superUsersApi[tempSessionKey].cnid = cn.id
                     if(!data.$user.tokens)data.$user.tokens = {}
                     data.$user.tokens[tempSessionKey] = {}
                     cn.ip=cn.request.connection.remoteAddress

@@ -79,27 +79,27 @@ module.exports = function(s,config,lang,io){
         s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND status!=?',[user.ke,0],function(err,videos){
             s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE ke=?',[user.ke],function(err,timelapseFrames){
                 s.sqlQuery('SELECT * FROM `Files` WHERE ke=?',[user.ke],function(err,files){
+                    var usedSpace = 0
                     if(videos && videos[0]){
                         videos.forEach(function(video){
                             video.details = s.parseJSON(video.details)
                             if(!video.details.dir){
-                                s.group[user.ke].usedSpace += video.size
+                                usedSpace += video.size
                             }
                         })
-                        s.group[user.ke].usedSpace = s.group[user.ke].usedSpace / 1000000
                     }
                     if(timelapseFrames && timelapseFrames[0]){
                         timelapseFrames.forEach(function(frame){
-                            user.size += frame.size
+                            usedSpace += frame.size
                         })
                     }
                     if(files && files[0]){
                         files.forEach(function(file){
-                            user.size += file.size
+                            usedSpace += file.size
                         })
                     }
+                    s.group[user.ke].usedSpace = usedSpace / 1000000
                     loadAddStorageDiskUseForUser(user,videos,function(){
-                        s.systemLog(user.mail+' : '+lang.startUpText1+' : '+videos.length,user.size)
                         callback()
                     })
                 })
@@ -110,7 +110,7 @@ module.exports = function(s,config,lang,io){
         var userDetails = JSON.parse(user.details)
         user.cloudDiskUse = {}
         user.size = 0
-        s.group[user.ke].sizeLimit = userDetails.size
+        user.limit = userDetails.size
         s.cloudDisksLoaded.forEach(function(storageType){
             user.cloudDiskUse[storageType] = {
                 usedSpace : 0,
