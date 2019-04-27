@@ -267,7 +267,7 @@ module.exports = function(s,config){
         if(!s.group[e.ke].addStorageUse){s.group[e.ke].addStorageUse = {}}
         if(!e.limit||e.limit===''){e.limit=10000}else{e.limit=parseFloat(e.limit)}
         //save global space limit for group key (mb)
-        s.group[e.ke].sizeLimit = s.group[e.ke].sizeLimit || e.limit || 10000
+        s.group[e.ke].sizeLimit = e.limit || s.group[e.ke].sizeLimit || 10000
         //save global used space as megabyte value
         s.group[e.ke].usedSpace = s.group[e.ke].usedSpace || ((e.size || 0) / 1000000)
         //emit the changes to connected users

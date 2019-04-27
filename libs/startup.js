@@ -74,8 +74,6 @@ module.exports = function(s,config,lang,io){
     var loadDiskUseForUser = function(user,callback){
         s.systemLog(user.mail+' : '+lang.startUpText0)
         var userDetails = JSON.parse(user.details)
-        user.size = 0
-        user.limit = userDetails.size
         s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND status!=?',[user.ke,0],function(err,videos){
             s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE ke=?',[user.ke],function(err,timelapseFrames){
                 s.sqlQuery('SELECT * FROM `Files` WHERE ke=?',[user.ke],function(err,files){
