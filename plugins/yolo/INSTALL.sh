@@ -12,9 +12,7 @@ else
     echo "$(nvidia-smi |grep 'Driver Version')"
 fi
 echo "-----------------------------------"
-if [ ! -d "/usr/local/cuda" ]; then
-    echo "You need to install CUDA Toolkit to use this."
-    echo "============="
+if [ -d "/usr/local/cuda" ]; then
     echo "Do you want to install the plugin with CUDA support?"
     echo "Do this if you installed NVIDIA Drivers, CUDA Toolkit, and CuDNN"
     echo "(y)es or (N)o"
@@ -23,8 +21,6 @@ if [ ! -d "/usr/local/cuda" ]; then
         export PATH=/usr/local/cuda/bin:$PATH
         export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
     fi
-else
-    echo "CUDA Toolkit found..."
 fi
 # echo "-----------------------------------"
 # if ! [ -x "$(command -v opencv_version)" ]; then
