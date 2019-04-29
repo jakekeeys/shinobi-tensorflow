@@ -43,7 +43,7 @@ class NodeRtmpServer {
         session.socket.destroy();
         context.sessions.delete(id);
       }
-    });
+    })
   }
 }
 

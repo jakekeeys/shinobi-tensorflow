@@ -74,6 +74,9 @@ module.exports = function(s,config,lang,io){
     var loadDiskUseForUser = function(user,callback){
         s.systemLog(user.mail+' : '+lang.startUpText0)
         var userDetails = JSON.parse(user.details)
+        s.group[user.ke].sizeLimit = parseFloat(userDetails.size) || 10000
+        // s.group[user.ke].sizeLimitVideoPercent = parseFloat(userDetails.size_video_percent) || 60
+        // s.group[user.ke].sizeLimitTimelapseFramesPercent = parseFloat(userDetails.size_timelapse_percent) || 40
         s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND status!=?',[user.ke,0],function(err,videos){
             s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE ke=?',[user.ke],function(err,timelapseFrames){
                 s.sqlQuery('SELECT * FROM `Files` WHERE ke=?',[user.ke],function(err,files){
