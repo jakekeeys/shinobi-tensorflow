@@ -744,9 +744,14 @@ $.ccio.globalWebsocket=function(d,user){
                                 type: "time",
                                 display: true,
                                 time: {
-                                    format: timeFormat,
-                                    // round: 'day'
-                                }
+                                    // format: timeFormat,
+                                    unit: 'minute',
+                                    displayFormats: {
+                                        minute: 'h:mm a',
+                                    },
+                                },
+                                categoryPercentage: 0.6,
+                                barPercentage: .5,
                             }],
                         },
                     }

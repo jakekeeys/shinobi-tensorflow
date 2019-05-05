@@ -3525,12 +3525,10 @@ module.exports = function(s,config,lang){
                       "possible": [
                          {
                             "name": "No",
-                            "value": "0",
                             "info": "No is the default."
                          },
                          {
                             "name": "Yes",
-                            "value": "1",
                             "info": "Do this if you are having recurring issues only."
                          }
                       ]
@@ -3687,6 +3685,20 @@ module.exports = function(s,config,lang){
                       "possible": "Up to 95% of your maximum storage space if only one master account exists.",
                       "notForSubAccount": true,
                       "evaluation": "details.edit_size !== '0'"
+                   },
+                   {
+                      "name": "detail=size_video_percent",
+                      "field": lang["Video Share"],
+                      "description": "Percent of Max Storage Amount the videos can record to.",
+                      "default": "60",
+                      "notForSubAccount": true,
+                   },
+                   {
+                      "name": "detail=size_timelapse_percent",
+                      "field": lang["Timelapse Frames Share"],
+                      "description": "Percent of Max Storage Amount the timelapse frames can record to.",
+                      "default": "40",
+                      "notForSubAccount": true,
                    },
                    {
                        hidden:true,

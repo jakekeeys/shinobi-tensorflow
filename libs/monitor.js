@@ -923,9 +923,20 @@ module.exports = function(s,config,lang){
                             details.dir = e.details.dir
                         }
                         var timeNow = new Date()
-                        s.sqlQuery('INSERT INTO `Timelapse Frames` (ke,mid,details,filename,size,time) VALUES (?,?,?,?,?,?)',[e.ke,e.id,s.s(details),filename,fileStats.size,timeNow])
-                        s.setDiskUsedForGroup(e,fileStats.size / 1000000)
+                        var queryInfo = {
+                            ke: e.ke,
+                            mid: e.id,
+                            details: s.s(details),
+                            filename: filename,
+                            size: fileStats.size,
+                            time: timeNow
+                        }
+                        s.sqlQuery('INSERT INTO `Timelapse Frames` ('+Object.keys(queryInfo).join(',')+') VALUES (?,?,?,?,?,?)',Object.values(queryInfo))
+                        s.setDiskUsedForGroup(e,fileStats.size / 1000000,'timelapeFrames')
                         s.purgeDiskForGroup(e)
+                        s.onInsertTimelapseFrameExtensions.forEach(function(extender){
+                            extender(e,queryInfo)
+                        })
                     })
                     s.group[e.ke].mon[e.id].recordTimelapseWriter = fileStream
                 }

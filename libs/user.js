@@ -107,9 +107,9 @@ module.exports = function(s,config){
                                     s.setDiskUsedForGroupAddStorage(e,{
                                         size: -(frame.size/1000000),
                                         storageIndex: storageIndex
-                                    })
+                                    },'timelapeFrames')
                                 }else{
-                                    s.setDiskUsedForGroup(e,-(frame.size/1000000))
+                                    s.setDiskUsedForGroup(e,-(frame.size/1000000),'timelapeFrames')
                                 }
                                 // s.tx({
                                 //     f: 'timelapse_frame_delete',
@@ -130,10 +130,10 @@ module.exports = function(s,config){
                     }
                     var deleteMainVideos = function(callback){
                         reRunCheck = function(){
-                            callback()
+                            return deleteMainVideos(callback)
                         }
                         //run purge command
-                        if(s.group[e.ke].usedSpace > (s.group[e.ke].sizeLimit * config.cron.deleteOverMaxOffset)){
+                        if(s.group[e.ke].usedSpaceVideos > (s.group[e.ke].sizeLimit * (s.group[e.ke].sizeLimitVideoPercent / 100) * config.cron.deleteOverMaxOffset)){
                                 s.sqlQuery('SELECT * FROM Videos WHERE status != 0 AND details NOT LIKE \'%"archived":"1"%\' AND ke=? AND details NOT LIKE \'%"dir"%\' ORDER BY `time` ASC LIMIT 3',[e.ke],function(err,rows){
                                     deleteSetOfVideos(err,rows,null,callback)
                                 })
@@ -175,10 +175,10 @@ module.exports = function(s,config){
                     }
                     var deleteTimelapseFrames = function(callback){
                         reRunCheck = function(){
-                            callback()
+                            return deleteTimelapseFrames(callback)
                         }
                         //run purge command
-                        if(s.group[e.ke].usedSpace > (s.group[e.ke].sizeLimit * config.cron.deleteOverMaxOffset)){
+                        if(s.group[e.ke].usedSpaceTimelapseFrames > (s.group[e.ke].sizeLimit * (s.group[e.ke].sizeLimitTimelapseFramesPercent / 100) * config.cron.deleteOverMaxOffset)){
                                 s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE ke=? AND details NOT LIKE \'%"archived":"1"%\' ORDER BY `time` ASC LIMIT 3',[e.ke],function(err,frames){
                                     deleteSetOfTimelapseFrames(err,frames,null,callback)
                                 })
@@ -186,20 +186,13 @@ module.exports = function(s,config){
                             callback()
                         }
                     }
-                    var doAllChecks = function(){
-                        deleteMainVideos(function(){
-                            deleteTimelapseFrames(function(){
-                                if(s.group[e.ke].usedSpace > (s.group[e.ke].sizeLimit * config.cron.deleteOverMaxOffset)){
-                                    doAllChecks()
-                                }else{
-                                    deleteAddStorageVideos(function(){
-                                        finish()
-                                    })
-                                }
+                    deleteMainVideos(function(){
+                        deleteTimelapseFrames(function(){
+                            deleteAddStorageVideos(function(){
+                                finish()
                             })
                         })
-                    }
-                    doAllChecks()
+                    })
                 }
                 checkQueue()
             }
@@ -207,15 +200,15 @@ module.exports = function(s,config){
             s.sendDiskUsedAmountToClients(e)
         }
     }
-    s.setDiskUsedForGroup = function(e,bytes){
+    s.setDiskUsedForGroup = function(e,bytes,storageType){
         //`bytes` will be used as the value to add or substract
         if(s.group[e.ke] && s.group[e.ke].diskUsedEmitter){
-            s.group[e.ke].diskUsedEmitter.emit('set',bytes)
+            s.group[e.ke].diskUsedEmitter.emit('set',bytes,storageType)
         }
     }
-    s.setDiskUsedForGroupAddStorage = function(e,data){
+    s.setDiskUsedForGroupAddStorage = function(e,data,storageType){
         if(s.group[e.ke] && s.group[e.ke].diskUsedEmitter){
-            s.group[e.ke].diskUsedEmitter.emit('setAddStorage',data)
+            s.group[e.ke].diskUsedEmitter.emit('setAddStorage',data,storageType)
         }
     }
     s.purgeCloudDiskForGroup = function(e,storageType){
@@ -235,6 +228,10 @@ module.exports = function(s,config){
             s.tx({
                 f: 'diskUsed',
                 size: s.group[e.ke].usedSpace,
+                usedSpace: s.group[e.ke].usedSpace,
+                usedSpaceVideos: s.group[e.ke].usedSpaceVideos,
+                usedSpaceFilebin: s.group[e.ke].usedSpaceFilebin,
+                usedSpaceTimelapseFrames: s.group[e.ke].usedSpaceTimelapseFrames,
                 limit: s.group[e.ke].sizeLimit,
                 addStorage: s.group[e.ke].addStorageUse
             },'GRP_'+e.ke);
@@ -268,6 +265,8 @@ module.exports = function(s,config){
         if(!e.limit||e.limit===''){e.limit=10000}else{e.limit=parseFloat(e.limit)}
         //save global space limit for group key (mb)
         s.group[e.ke].sizeLimit = e.limit || s.group[e.ke].sizeLimit || 10000
+        s.group[e.ke].sizeLimitVideoPercent = parseFloat(s.group[e.ke].init.size_video_percent) || 90
+        s.group[e.ke].sizeLimitTimelapseFramesPercent = parseFloat(s.group[e.ke].init.size_timelapse_percent) || 10
         //save global used space as megabyte value
         s.group[e.ke].usedSpace = s.group[e.ke].usedSpace || ((e.size || 0) / 1000000)
         //emit the changes to connected users
@@ -349,7 +348,7 @@ module.exports = function(s,config){
                         }
                     })
                     //s.setDiskUsedForGroup
-                    s.group[e.ke].diskUsedEmitter.on('set',function(currentChange){
+                    s.group[e.ke].diskUsedEmitter.on('set',function(currentChange,storageType){
                         //validate current values
                         if(!s.group[e.ke].usedSpace){
                             s.group[e.ke].usedSpace=0
@@ -361,6 +360,17 @@ module.exports = function(s,config){
                         }
                         //change global size value
                         s.group[e.ke].usedSpace += currentChange
+                        switch(storageType){
+                            case'timelapeFrames':
+                                s.group[e.ke].usedSpaceTimelapseFrames += currentChange
+                            break;
+                            case'fileBin':
+                                s.group[e.ke].usedSpaceFilebin += currentChange
+                            break;
+                            default:
+                                s.group[e.ke].usedSpaceVideos += currentChange
+                            break;
+                        }
                         //remove value just used from queue
                         s.sendDiskUsedAmountToClients(e)
                     })
@@ -378,6 +388,17 @@ module.exports = function(s,config){
                         }
                         //change global size value
                         storageIndex.usedSpace += currentSize
+                        switch(storageType){
+                            case'timelapeFrames':
+                                storageIndex.usedSpaceTimelapseFrames += currentChange
+                            break;
+                            case'fileBin':
+                                storageIndex.usedSpaceFilebin += currentChange
+                            break;
+                            default:
+                                storageIndex.usedSpaceVideos += currentChange
+                            break;
+                        }
                         //remove value just used from queue
                         s.sendDiskUsedAmountToClients(e)
                     })

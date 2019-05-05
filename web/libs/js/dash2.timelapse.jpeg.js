@@ -14,16 +14,19 @@ $(document).ready(function(e){
     $.timelapseJpeg.monitors=$.timelapseJpeg.e.find('.monitors_list')
     $.timelapseJpeg.pointer = $.ccio.init('location',$user)
     $.timelapseJpeg.downloadRecheckTimers = {}
-    $.timelapseJpeg.selectedStartDate = moment().utc().subtract(2, 'days').format('YYYY-MM-DD')
-    $.timelapseJpeg.selectedEndDate = moment().utc().format('YYYY-MM-DD')
+    $.timelapseJpeg.selectedStartDate = moment().utc().subtract(2, 'days').format('YYYY-MM-DDTHH:mm:ss')
+    $.timelapseJpeg.selectedEndDate = moment().utc().format('YYYY-MM-DDTHH:mm:ss')
     $.timelapseJpeg.datepicker.daterangepicker({
-        showDropdowns: true,
         startDate: moment().utc().subtract(2, 'days'),
         endDate: moment().utc(),
+        timePicker: true,
+        locale: {
+            format: 'YYYY/MM/DD hh:mm:ss A'
+        }
     }, function(start, end, label) {
         console.log(start,end)
-        var selectedStartDate = moment(start).utc().format('YYYY-MM-DD')
-        var selectedEndDate = moment(end).utc().format('YYYY-MM-DD')
+        var selectedStartDate = moment(start).utc().format('YYYY-MM-DDTHH:mm:ss')
+        var selectedEndDate = moment(end).utc().format('YYYY-MM-DDTHH:mm:ss')
         $.timelapseJpeg.draw(selectedStartDate,selectedEndDate)
         $.timelapseJpeg.selectedStartDate = selectedStartDate
         $.timelapseJpeg.selectedEndDate = selectedEndDate

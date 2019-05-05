@@ -153,4 +153,14 @@ module.exports = function(s,config){
         s.onGetRamUsageExtensions.push(callback)
     }
     //
+    /////// VIDEOS ////////
+    s.insertCompletedVideoExtensions = []
+    s.insertCompletedVideoExtender = function(callback){
+        s.insertCompletedVideoExtensions.push(callback)
+    }
+    /////// TIMELAPSE ////////
+    s.onInsertTimelapseFrameExtensions = []
+    s.onInsertTimelapseFrame = function(callback){
+        s.onInsertTimelapseFrameExtensions.push(callback)
+    }
 }

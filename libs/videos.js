@@ -65,11 +65,6 @@ module.exports = function(s,config,lang){
             v.details = details
         })
     }
-    //extender for "s.insertCompletedVideo"
-    s.insertCompletedVideoExtensions = []
-    s.insertCompletedVideoExtender = function(callback){
-        s.insertCompletedVideoExtensions.push(callback)
-    }
     s.insertDatabaseRow = function(e,k,callback){
         s.checkDetails(e)
         //save database row
