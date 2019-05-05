@@ -2,16 +2,6 @@
 echo "----------------------------------------"
 echo "-- Installing Yolo Plugin for Shinobi --"
 echo "----------------------------------------"
-if ! [ -x "$(command -v nvidia-smi)" ]; then
-    echo "You need to install NVIDIA Drivers to use this."
-    echo "inside the Shinobi directory run the following :"
-    echo "sh INSTALL/cuda.sh"
-    exit 1
-else
-    echo "NVIDIA Drivers found..."
-    echo "$(nvidia-smi |grep 'Driver Version')"
-fi
-echo "-----------------------------------"
 if [ -d "/usr/local/cuda" ]; then
     echo "Do you want to install the plugin with CUDA support?"
     echo "Do this if you installed NVIDIA Drivers, CUDA Toolkit, and CuDNN"
