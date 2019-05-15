@@ -1,4 +1,3 @@
-
 var fs = require('fs');
 var moment = require('moment');
 var crypto = require('crypto');
@@ -117,7 +116,7 @@ module.exports = function(s,config,lang,io){
                             if(!video.details.dir){
                                 usedSpaceVideos += video.size
                             }else{
-                                addStorageVideos.videos.push(video)
+                                addStorageData.videos.push(video)
                             }
                         })
                     }
@@ -127,7 +126,7 @@ module.exports = function(s,config,lang,io){
                             if(!frame.details.dir){
                                 usedSpaceTimelapseFrames += frame.size
                             }else{
-                                addStorageVideos.timelapeFrames.push(frame)
+                                addStorageData.timelapeFrames.push(frame)
                             }
                         })
                     }
