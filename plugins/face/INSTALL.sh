@@ -14,13 +14,20 @@ else
     echo "$(nvidia-smi |grep 'Driver Version')"
 fi
 echo "-----------------------------------"
-if [ ! -d "/usr/local/cuda" ]; then
-    echo "You need to install CUDA Toolkit to use this."
-    echo "inside the Shinobi directory run the following :"
-    echo "sh INSTALL/cuda.sh"
-    exit 1
+if [ ! -d "/usr/local/cuda-9.0" ]; then
+    echo "Tensorflow requires CUDA Toolkit 9.0"
+    echo "Installing CUDA Toolki 9.0..."
+    wget https://developer.nvidia.com/compute/cuda/9.0/Prod/local_installers/cuda-repo-ubuntu1704-9-0-local_9.0.176-1_amd64-deb -O cuda.deb
+    sudo dpkg -i cuda.deb
+    sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1704/x86_64/7fa2af80.pub
+    sudo apt update -y
+    sudo apt install cuda-toolkit-9-0 -y
+    wget https://cdn.shinobi.video/installers/libcudnn7_7.5.1.10-1+cuda9.0_amd64.deb -O cuda-dnn.deb
+    sudo dpkg -i cuda-dnn.deb
+    wget https://cdn.shinobi.video/installers/libcudnn7-dev_7.5.1.10-1+cuda9.0_amd64.deb -O cuda-dnn-dev.deb
+    sudo dpkg -i cuda-dnn-dev.deb
 else
-    echo "CUDA Toolkit found..."
+    echo "CUDA Toolkit 9.0 found..."
 fi
 echo "-----------------------------------"
 if [ ! -d "./faces" ]; then
