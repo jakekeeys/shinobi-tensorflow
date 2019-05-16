@@ -374,7 +374,7 @@ module.exports = function(s,config){
                         //remove value just used from queue
                         s.sendDiskUsedAmountToClients(e)
                     })
-                    s.group[e.ke].diskUsedEmitter.on('setAddStorage',function(data){
+                    s.group[e.ke].diskUsedEmitter.on('setAddStorage',function(data,storageType){
                         var currentSize = data.size
                         var storageIndex = data.storageIndex
                         //validate current values
