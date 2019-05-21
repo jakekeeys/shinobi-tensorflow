@@ -390,13 +390,13 @@ module.exports = function(s,config){
                         storageIndex.usedSpace += currentSize
                         switch(storageType){
                             case'timelapeFrames':
-                                storageIndex.usedSpaceTimelapseFrames += currentChange
+                                storageIndex.usedSpaceTimelapseFrames += currentSize
                             break;
                             case'fileBin':
-                                storageIndex.usedSpaceFilebin += currentChange
+                                storageIndex.usedSpaceFilebin += currentSize
                             break;
                             default:
-                                storageIndex.usedSpaceVideos += currentChange
+                                storageIndex.usedSpaceVideos += currentSize
                             break;
                         }
                         //remove value just used from queue
