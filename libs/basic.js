@@ -245,6 +245,7 @@ module.exports = function(s,config){
             delete(timeoutVar)
             if(callback)callback()
         },theTimeout)
+        return timeoutVar
     }
     s.isCorrectFilenameSyntax = function(string){
         return RegExp('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]').test(string)

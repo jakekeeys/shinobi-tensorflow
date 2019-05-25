@@ -323,7 +323,7 @@ module.exports = function(s,config,lang){
             }
 
             if(filter.command && currentConfig.detector_command_enable === '1' && !s.group[d.ke].mon[d.id].detector_command){
-                s.createTimeout(s.group[d.ke].mon[d.id].detector_command,currentConfig.detector_command_timeout,10)
+                s.group[d.ke].mon[d.id].detector_command = s.createTimeout(s.group[d.ke].mon[d.id].detector_command,currentConfig.detector_command_timeout,10)
                 var detector_command = addEventDetailsToString(d,currentConfig.detector_command)
                 exec(detector_command,{detached: true})
             }
