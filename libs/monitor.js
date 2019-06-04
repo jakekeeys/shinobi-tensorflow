@@ -520,11 +520,11 @@ module.exports = function(s,config,lang){
                 stopCamera()
             }else{
                 var requestOptions = {
-                    url : controlURL,
-                    method : controlURLOptions.method,
-                    auth : {
-                        user : controlURLOptions.username,
-                        pass : controlURLOptions.password
+                    url: controlURL,
+                    method: controlURLOptions.method,
+                    auth: {
+                        user: controlURLOptions.username,
+                        pass: controlURLOptions.password
                     }
                 }
                 if(monitorConfig.details.control_digest_auth === '1'){

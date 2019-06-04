@@ -1413,7 +1413,7 @@ module.exports = function(s,config,lang){
                         ]
                    },
                    {
-                      "name": "crf",
+                      "name": "detail=crf",
                       "field": lang.Quality,
                       "description": "Low number means higher quality. Higher number means less quality.",
                       "default": "15",
@@ -3058,7 +3058,7 @@ module.exports = function(s,config,lang){
                        "example": "",
                        "selector": "h_cs",
                        "fieldType": "select",
-                       "form-group-class": "h_control_call_input h_control_call_GET h_control_call_PUT h_control_call_POST",
+                       "form-group-class": "h_control_call_input h_control_call_GET h_control_call_ONVIF h_control_call_PUT h_control_call_POST",
                        "possible": [
                           {
                              "name": "No",
