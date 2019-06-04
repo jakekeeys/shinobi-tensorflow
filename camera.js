@@ -19,20 +19,20 @@ var s = loadLib('process')(process,__dirname)
 loadLib('extenders')(s)
 //configuration loader
 var config = loadLib('config')(s)
+//basic functions
+loadLib('basic')(s,config)
+//working directories : videos, streams, fileBin..
+loadLib('folders')(s,config)
 //language loader
 var lang = loadLib('language')(s,config)
 //code test module
 loadLib('codeTester')(s,config,lang)
-//basic functions
-loadLib('basic')(s,config)
 //video processing engine
-loadLib('ffmpeg')(s,config,function(ffmpeg){
+loadLib('ffmpeg')(s,config,lang,function(ffmpeg){
     //ffmpeg coProcessor
     loadLib('ffmpegCoProcessor')(s,config,lang,ffmpeg)
     //database connection : mysql, sqlite3..
     loadLib('sql')(s,config)
-    //working directories : videos, streams, fileBin..
-    loadLib('folders')(s,config)
     //authenticator functions : API, dashboard login..
     loadLib('auth')(s,config,lang)
     //express web server with ejs
@@ -48,7 +48,7 @@ loadLib('ffmpeg')(s,config,function(ffmpeg){
     //websocket connection handlers : login and streams..
     loadLib('socketio')(s,config,lang,io)
     //user and group functions
-    loadLib('user')(s,config)
+    loadLib('user')(s,config,lang)
     //monitor/camera handlers
     loadLib('monitor')(s,config,lang)
     //event functions : motion, object matrix handler
@@ -57,8 +57,10 @@ loadLib('ffmpeg')(s,config,function(ffmpeg){
     loadLib('detector')(s,config)
     //recording functions
     loadLib('videos')(s,config,lang)
+    //branding functions and config defaults
+    loadLib('videoDropInServer')(s,config,lang,app,io)
     //plugins : websocket connected services..
-    loadLib('plugins')(s,config,lang)
+    loadLib('plugins')(s,config,lang,io)
     //health : cpu and ram trackers..
     loadLib('health')(s,config,lang,io)
     //cluster module
@@ -71,6 +73,10 @@ loadLib('ffmpeg')(s,config,function(ffmpeg){
     loadLib('rtmpserver')(s,config,lang)
     //dropInEvents server (file manipulation to create event trigger)
     loadLib('dropInEvents')(s,config,lang,app,io)
+    //form fields to drive the internals
+    loadLib('definitions')(s,config,lang,app,io)
+    //branding functions and config defaults
+    loadLib('branding')(s,config,lang,app,io)
     //custom module loader
     loadLib('customAutoLoad')(s,config,lang,app,io)
     //scheduling engine

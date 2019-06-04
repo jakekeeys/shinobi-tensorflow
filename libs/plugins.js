@@ -1,7 +1,12 @@
 var socketIOclient = require('socket.io-client');
-module.exports = function(s,config,lang){
+module.exports = function(s,config,lang,io){
+    //send data to detector plugin
+    s.ocvTx = function(data){
+        // chaining coming in future update
+        s.sendToAllDetectors(data)
+    }
     //function for receiving detector data
-    s.pluginEventController=function(d){
+    s.pluginEventController = function(d){
         switch(d.f){
             case'trigger':
                 s.triggerEvent(d)
@@ -22,16 +27,32 @@ module.exports = function(s,config,lang){
     s.detectorPluginArray = []
     s.isAtleatOneDetectorPluginConnected = false
     s.addDetectorPlugin = function(name,d){
+        if(config.useOldPluginConnectionMethod === true){
+            s.ocv = {
+                started: s.timeObject(),
+                id: d.id,
+                plug: d.plug,
+                notice: d.notice,
+                isClientPlugin: d.isClientPlugin,
+                isHostPlugin: d.isHostPlugin,
+                connectionType: d.connectionType
+            }
+        }
         s.connectedDetectorPlugins[d.plug] = {
             started: s.timeObject(),
             id: d.id,
             plug: d.plug,
             notice: d.notice,
+            isClientPlugin: d.isClientPlugin,
+            isHostPlugin: d.isHostPlugin,
             connectionType: d.connectionType
         }
         s.resetDetectorPluginArray()
     }
     s.removeDetectorPlugin = function(name){
+        if(config.oldPluginConnectionMethod === true && s.ocv && s.ocv.plug === name){
+            delete(s.ocv)
+        }
         delete(s.connectedDetectorPlugins[name])
         s.resetDetectorPluginArray(name)
     }
@@ -43,7 +64,12 @@ module.exports = function(s,config,lang){
                 pluginArray.push(name)
             }
         })
-        if(pluginArray.length > 0)s.isAtleatOneDetectorPluginConnected = true
+        if(pluginArray.length > 0){
+            s.isAtleatOneDetectorPluginConnected = true
+        }else{
+            s.isAtleatOneDetectorPluginConnected = false
+        }
+        s.debugLog(`resetDetectorPluginArray : ${JSON.stringify(pluginArray)}`)
         s.detectorPluginArray = pluginArray
     }
     s.sendToAllDetectors = function(data){
@@ -63,7 +89,7 @@ module.exports = function(s,config,lang){
     // s.sendToDetectorsInChain = function(){
     //
     // }
-    s.pluginInitiatorSuccess=function(mode,d,cn){
+    s.pluginInitiatorSuccess = function(mode,d,cn){
         s.systemLog('pluginInitiatorSuccess',d)
         if(!s.connectedPlugins[d.plug]){
             s.connectedPlugins[d.plug]={
@@ -79,6 +105,7 @@ module.exports = function(s,config,lang){
             s.systemLog('Connected to plugin : Detector - '+d.plug+' - '+d.type)
             switch(d.type){
                 default:case'detector':
+                    if(config.oldPluginConnectionMethod)cn.ocv = 1
                     cn.detectorPlugin = d.plug
                     s.addDetectorPlugin(d.plug,{
                         id: cn.id,
@@ -95,10 +122,10 @@ module.exports = function(s,config,lang){
             switch(d.type){
                 default:case'detector':
                     s.addDetectorPlugin(d.plug,{
-                        id:"host",
-                        plug:d.plug,
-                        notice:d.notice,
-                        isHostPlugin:true,
+                        id: "host",
+                        plug: d.plug,
+                        notice: d.notice,
+                        isHostPlugin: true,
                         connectionType: d.connectionType
                     })
                     s.tx({f:'detector_plugged',plug:d.plug,notice:d.notice},'CPU')
@@ -141,12 +168,12 @@ module.exports = function(s,config,lang){
                 });
                 socket.on('init',function(d){
                     s.systemLog('Initialize Plugin : Host',d)
-                    if(d.ok===true){
+                    if(d.ok === true){
                         s.pluginInitiatorSuccess("host",d)
                     }else{
                         s.pluginInitiatorFail("host",d)
                     }
-                });
+                })
                 socket.on('ocv',s.pluginEventController);
                 socket.on('disconnect', function(){
                     s.connectedPlugins[v.id].plugged=false
@@ -170,4 +197,70 @@ module.exports = function(s,config,lang){
             }
         })
     }
+    var onWebSocketDisconnection = function(cn){
+        if(cn.pluginEngine){
+            s.connectedPlugins[cn.pluginEngine].plugged = false
+            s.tx({f:'plugin_engine_unplugged',plug:cn.pluginEngine},'CPU')
+        }
+        if(cn.detectorPlugin){
+            s.tx({f:'detector_unplugged',plug:cn.detectorPlugin},'CPU')
+            s.removeDetectorPlugin(cn.detectorPlugin)
+            s.sendDetectorInfoToClient({f:'detector_plugged'},function(data){
+                s.tx(data,'CPU')
+            })
+        }
+        if(cn.ocv && s.ocv){
+            s.tx({f:'detector_unplugged',plug:s.ocv.plug},'CPU')
+            delete(s.ocv);
+        }
+    }
+    var onSocketAuthentication = function(r,cn,d,tx){
+        if(s.isAtleatOneDetectorPluginConnected){
+            s.sendDetectorInfoToClient({f:'detector_plugged'},tx)
+            s.ocvTx({f:'readPlugins',ke:d.ke})
+        }
+        if(config.oldPluginConnectionMethod && s.ocv){
+            tx({f:'detector_plugged',plug:s.ocv.plug,notice:s.ocv.notice})
+        }
+    }
+    var onWebSocketConnection = function(cn){
+        cn.on('ocv',function(d){
+            if(!cn.pluginEngine && d.f === 'init'){
+                if(config.pluginKeys[d.plug] === d.pluginKey){
+                    s.pluginInitiatorSuccess("client",d,cn)
+                }else{
+                    s.pluginInitiatorFail("client",d,cn)
+                }
+            }else{
+                if(config.pluginKeys[d.plug] === d.pluginKey){
+                    s.pluginEventController(d)
+                }else{
+                    cn.disconnect()
+                }
+            }
+        })
+        cn.on('f',function(d){
+            if((d.id || d.uid || d.mid) && cn.ke){
+                switch(d.f){
+                    case'ocv_in':
+                        s.ocvTx(d.data)
+                    break;
+                }
+            }
+        })
+    }
+    if(config.oldPluginConnectionMethod === undefined)config.oldPluginConnectionMethod = false
+    if(config.oldPluginConnectionMethod === true){
+        s.ocvTx = function(data){
+            if(!s.ocv){return}
+            if(s.ocv.isClientPlugin === true){
+                s.tx(data,s.ocv.id)
+            }else{
+                s.connectedPlugins[s.ocv.plug].tx(data)
+            }
+        }
+    }
+    s.onSocketAuthentication(onSocketAuthentication)
+    s.onWebSocketDisconnection(onWebSocketDisconnection)
+    s.onWebSocketConnection(onWebSocketConnection)
 }

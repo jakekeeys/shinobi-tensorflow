@@ -44,6 +44,8 @@ module.exports = function(s,config,lang,io){
         if(config.renderPaths.dashcam === undefined){config.renderPaths.dashcam='pages/dashcam'}
         //embeddable widget page
         if(config.renderPaths.embed === undefined){config.renderPaths.embed='pages/embed'}
+        //timelapse page (not modal)
+        if(config.renderPaths.timelapse === undefined){config.renderPaths.timelapse='pages/timelapse'}
         //mjpeg full screen page
         if(config.renderPaths.mjpeg === undefined){config.renderPaths.mjpeg='pages/mjpeg'}
         //gridstack only page
@@ -53,6 +55,8 @@ module.exports = function(s,config,lang,io){
     // Use uws/cws
     if(config.useUWebsocketJs === undefined){config.useUWebsocketJs=true}
     //SSL options
+    var wellKnownDirectory = s.mainDirectory + '/web/.well-known'
+    if(fs.existsSync(wellKnownDirectory))app.use('/.well-known',express.static(wellKnownDirectory))
     if(config.ssl&&config.ssl.key&&config.ssl.cert){
         config.ssl.key=fs.readFileSync(s.checkRelativePath(config.ssl.key),'utf8')
         config.ssl.cert=fs.readFileSync(s.checkRelativePath(config.ssl.cert),'utf8')

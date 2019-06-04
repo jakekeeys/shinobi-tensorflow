@@ -6,7 +6,7 @@ var exec = require('child_process').exec;
 var execSync = require('child_process').execSync;
 module.exports = function(s,config,lang,io){
     console.log('FFmpeg version : '+s.ffmpegVersion)
-    console.log('Node.js version : '+execSync("node -v"))
+    console.log('Node.js version : '+process.version)
     s.processReady = function(){
         s.systemLog(lang.startUpText5)
         s.onProcessReadyExtensions.forEach(function(extender){
@@ -18,7 +18,7 @@ module.exports = function(s,config,lang,io){
         var next = function(){
             if(callback)callback()
         }
-        if(!s.isWin){
+        if(!s.isWin && s.packageJson.mainDirectory !== '.'){
             var etcPath = '/etc/shinobisystems/cctv.txt'
             fs.stat(etcPath,function(err,stat){
                 if(err || !stat){
@@ -33,6 +33,7 @@ module.exports = function(s,config,lang,io){
         }
     }
     var loadedAccounts = []
+    var foundMonitors = []
     var loadMonitors = function(callback){
         s.beforeMonitorsLoadedOnStartupExtensions.forEach(function(extender){
             extender()
@@ -40,6 +41,7 @@ module.exports = function(s,config,lang,io){
         s.systemLog(lang.startUpText4)
         //preliminary monitor start
         s.sqlQuery('SELECT * FROM Monitors', function(err,monitors) {
+            foundMonitors = monitors
             if(err){s.systemLog(err)}
             if(monitors && monitors[0]){
                 var loadCompleted = 0
@@ -48,22 +50,16 @@ module.exports = function(s,config,lang,io){
                     if(!orphanedVideosForMonitors[monitor.ke])orphanedVideosForMonitors[monitor.ke] = {}
                     if(!orphanedVideosForMonitors[monitor.ke][monitor.mid])orphanedVideosForMonitors[monitor.ke][monitor.mid] = 0
                     s.initiateMonitorObject(monitor)
-                    s.orphanedVideoCheck(monitor,2,function(orphanedFilesCount){
-                        if(orphanedFilesCount){
-                            orphanedVideosForMonitors[monitor.ke][monitor.mid] += orphanedFilesCount
-                        }
-                        s.group[monitor.ke].mon_conf[monitor.mid] = monitor
-                        s.sendMonitorStatus({id:monitor.mid,ke:monitor.ke,status:'Stopped'});
-                        var monObj = Object.assign(monitor,{id : monitor.mid})
-                        s.camera(monitor.mode,monObj)
-                        ++loadCompleted
-                        if(monitors[loadCompleted]){
-                            loadMonitor(monitors[loadCompleted])
-                        }else{
-                            s.systemLog(lang.startUpText6+' : '+s.s(orphanedVideosForMonitors))
-                            callback()
-                        }
-                    })
+                    s.group[monitor.ke].mon_conf[monitor.mid] = monitor
+                    s.sendMonitorStatus({id:monitor.mid,ke:monitor.ke,status:'Stopped'});
+                    var monObj = Object.assign(monitor,{id : monitor.mid})
+                    s.camera(monitor.mode,monObj)
+                    ++loadCompleted
+                    if(monitors[loadCompleted]){
+                        loadMonitor(monitors[loadCompleted])
+                    }else{
+                        callback()
+                    }
                 }
                 loadMonitor(monitors[loadCompleted])
             }else{
@@ -71,19 +67,89 @@ module.exports = function(s,config,lang,io){
             }
         })
     }
+    var checkForOrphanedVideos = function(callback){
+        var monitors = foundMonitors
+        if(monitors && monitors[0]){
+            var loadCompleted = 0
+            var orphanedVideosForMonitors = {}
+            var checkForOrphanedVideosForMonitor = function(monitor){
+                if(!orphanedVideosForMonitors[monitor.ke])orphanedVideosForMonitors[monitor.ke] = {}
+                if(!orphanedVideosForMonitors[monitor.ke][monitor.mid])orphanedVideosForMonitors[monitor.ke][monitor.mid] = 0
+                s.orphanedVideoCheck(monitor,2,function(orphanedFilesCount){
+                    if(orphanedFilesCount){
+                        orphanedVideosForMonitors[monitor.ke][monitor.mid] += orphanedFilesCount
+                    }
+                    ++loadCompleted
+                    if(monitors[loadCompleted]){
+                        checkForOrphanedVideosForMonitor(monitors[loadCompleted])
+                    }else{
+                        s.systemLog(lang.startUpText6+' : '+s.s(orphanedVideosForMonitors))
+                        delete(foundMonitors)
+                        callback()
+                    }
+                })
+            }
+            checkForOrphanedVideosForMonitor(monitors[loadCompleted])
+        }else{
+            callback()
+        }
+    }
     var loadDiskUseForUser = function(user,callback){
         s.systemLog(user.mail+' : '+lang.startUpText0)
         var userDetails = JSON.parse(user.details)
-        user.size = 0
-        user.limit = userDetails.size
+        s.group[user.ke].sizeLimit = parseFloat(userDetails.size) || 10000
+        s.group[user.ke].sizeLimitVideoPercent = parseFloat(userDetails.size_video_percent) || 90
+        s.group[user.ke].sizeLimitTimelapseFramesPercent = parseFloat(userDetails.size_timelapse_percent) || 10
         s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND status!=?',[user.ke,0],function(err,videos){
-            if(videos && videos[0]){
-                videos.forEach(function(video){
-                    user.size += video.size
+            s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE ke=?',[user.ke],function(err,timelapseFrames){
+                s.sqlQuery('SELECT * FROM `Files` WHERE ke=?',[user.ke],function(err,files){
+                    var usedSpaceVideos = 0
+                    var usedSpaceTimelapseFrames = 0
+                    var usedSpaceFilebin = 0
+                    var addStorageData = {
+                        files: [],
+                        videos: [],
+                        timelapeFrames: [],
+                    }
+                    if(videos && videos[0]){
+                        videos.forEach(function(video){
+                            video.details = s.parseJSON(video.details)
+                            if(!video.details.dir){
+                                usedSpaceVideos += video.size
+                            }else{
+                                addStorageData.videos.push(video)
+                            }
+                        })
+                    }
+                    if(timelapseFrames && timelapseFrames[0]){
+                        timelapseFrames.forEach(function(frame){
+                            frame.details = s.parseJSON(frame.details)
+                            if(!frame.details.dir){
+                                usedSpaceTimelapseFrames += frame.size
+                            }else{
+                                addStorageData.timelapeFrames.push(frame)
+                            }
+                        })
+                    }
+                    if(files && files[0]){
+                        files.forEach(function(file){
+                            file.details = s.parseJSON(file.details)
+                            if(!file.details.dir){
+                                usedSpaceFilebin += file.size
+                            }else{
+                                addStorageData.files.push(file)
+                            }
+                        })
+                    }
+                    s.group[user.ke].usedSpace = (usedSpaceVideos + usedSpaceTimelapseFrames + usedSpaceFilebin) / 1000000
+                    s.group[user.ke].usedSpaceVideos = usedSpaceVideos / 1000000
+                    s.group[user.ke].usedSpaceFilebin = usedSpaceFilebin / 1000000
+                    s.group[user.ke].usedSpaceTimelapseFrames = usedSpaceTimelapseFrames / 1000000
+                    loadAddStorageDiskUseForUser(user,addStorageData,function(){
+                        callback()
+                    })
                 })
-            }
-            s.systemLog(user.mail+' : '+lang.startUpText1+' : '+videos.length,user.size)
-            callback()
+            })
         })
     }
     var loadCloudDiskUseForUser = function(user,callback){
@@ -116,6 +182,68 @@ module.exports = function(s,config,lang,io){
             callback()
         })
     }
+    var loadAddStorageDiskUseForUser = function(user,data,callback){
+        var videos = data.videos
+        var timelapseFrames = data.timelapseFrames
+        var files = data.files
+        var userDetails = JSON.parse(user.details)
+        var userAddStorageData = s.parseJSON(userDetails.addStorage) || {}
+        var currentStorageNumber = 0
+        var readStorageArray = function(){
+            var storage = s.listOfStorage[currentStorageNumber]
+            if(!storage){
+                //done all checks, move on to next user
+                callback()
+                return
+            }
+            var path = storage.value
+            if(path === ''){
+                ++currentStorageNumber
+                readStorageArray()
+                return
+            }
+            var storageId = path
+            var storageData = userAddStorageData[storageId] || {}
+            if(!s.group[user.ke].addStorageUse[storageId])s.group[user.ke].addStorageUse[storageId] = {}
+            var storageIndex = s.group[user.ke].addStorageUse[storageId]
+            storageIndex.name = storage.name
+            storageIndex.path = path
+            storageIndex.usedSpace = 0
+            storageIndex.sizeLimit = parseFloat(storageData.limit) || parseFloat(user.limit) || 10000
+            var usedSpaceVideos = 0
+            var usedSpaceTimelapseFrames = 0
+            var usedSpaceFilebin = 0
+            if(videos && videos[0]){
+                videos.forEach(function(video){
+                    if(video.details.dir === storage.value){
+                        usedSpaceVideos += video.size
+                    }
+                })
+            }
+            if(timelapseFrames && timelapseFrames[0]){
+                timelapseFrames.forEach(function(frame){
+                    if(video.details.dir === storage.value){
+                        usedSpaceTimelapseFrames += frame.size
+                    }
+                })
+            }
+            if(files && files[0]){
+                files.forEach(function(file){
+                    if(video.details.dir === storage.value){
+                        usedSpaceFilebin += file.size
+                    }
+                })
+            }
+            storageIndex.usedSpace = (usedSpaceVideos + usedSpaceTimelapseFrames + usedSpaceFilebin) / 1000000
+            storageIndex.usedSpaceVideos = usedSpaceVideos / 1000000
+            storageIndex.usedSpaceFilebin = usedSpaceFilebin / 1000000
+            storageIndex.usedSpaceTimelapseFrames = usedSpaceTimelapseFrames / 1000000
+            s.systemLog(user.mail+' : '+path+' : '+videos.length,storageIndex.usedSpace)
+            ++currentStorageNumber
+            readStorageArray()
+        }
+        readStorageArray()
+    }
     var loadAdminUsers = function(callback){
         //get current disk used for each isolated account (admin user) on startup
         s.sqlQuery('SELECT * FROM Users WHERE details NOT LIKE ?',['%"sub"%'],function(err,users){
@@ -124,10 +252,10 @@ module.exports = function(s,config,lang,io){
                     var count = users.length
                     var countFinished = 0
                     users.forEach(function(user){
+                        s.loadGroup(user)
+                        s.loadGroupApps(user)
                         loadedAccounts.push(user.ke)
                         loadDiskUseForUser(user,function(){
-                            s.loadGroup(user)
-                            s.loadGroupApps(user)
                             ++countFinished
                             if(countFinished === count){
                                 callback()
@@ -182,11 +310,14 @@ module.exports = function(s,config,lang,io){
         s.preQueries()
         setTimeout(function(){
             checkForTerminalCommands(function(){
-                //load administrators (groups)
-                loadAdminUsers(function(){
-                    //load monitors (for groups)
-                    loadMonitors(function(){
-                        s.processReady()
+                //load monitors (for groups)
+                loadMonitors(function(){
+                    //load administrators (groups)
+                    loadAdminUsers(function(){
+                        //check for orphaned videos
+                        checkForOrphanedVideos(function(){
+                            s.processReady()
+                        })
                     })
                 })
             })

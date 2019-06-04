@@ -2,25 +2,8 @@
 echo "----------------------------------------"
 echo "-- Installing Yolo Plugin for Shinobi --"
 echo "----------------------------------------"
-if ! [ -x "$(command -v nvidia-smi)" ]; then
-    echo "You need to install NVIDIA Drivers to use this."
-    echo "inside the Shinobi directory run the following :"
-    echo "sh INSTALL/cuda.sh"
-    exit 1
-else
-    echo "NVIDIA Drivers found..."
-    echo "$(nvidia-smi |grep 'Driver Version')"
-fi
-echo "-----------------------------------"
-if [ ! -d "/usr/local/cuda" ]; then
-    echo "You need to install CUDA Toolkit to use this."
-    echo "inside the Shinobi directory run the following :"
-    echo "sh INSTALL/cuda.sh"
-    exit 1
-else
-    echo "CUDA Toolkit found..."
-    echo "============="
-    echo "Shinobi - Do you want to install the plugin with CUDA support?"
+if [ -d "/usr/local/cuda" ]; then
+    echo "Do you want to install the plugin with CUDA support?"
     echo "Do this if you installed NVIDIA Drivers, CUDA Toolkit, and CuDNN"
     echo "(y)es or (N)o"
     read usecuda
@@ -29,15 +12,15 @@ else
         export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
     fi
 fi
-echo "-----------------------------------"
-if ! [ -x "$(command -v opencv_version)" ]; then
-    echo "You need to install OpenCV with CUDA first."
-    echo "inside the Shinobi directory run the following :"
-    echo "sh INSTALL/opencv-cuda.sh"
-    exit 1
-else
-    echo "OpenCV found... : $(opencv_version)"
-fi
+# echo "-----------------------------------"
+# if ! [ -x "$(command -v opencv_version)" ]; then
+#     echo "You need to install OpenCV with CUDA first."
+#     echo "inside the Shinobi directory run the following :"
+#     echo "sh INSTALL/opencv-cuda.sh"
+#     exit 1
+# else
+#     echo "OpenCV found... : $(opencv_version)"
+# fi
 echo "============="
 echo "Shinobi - Do you want to Install Tiny Weights?"
 echo "This is better for Graphics Cards with less than 4GB RAM"

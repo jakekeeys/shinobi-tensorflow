@@ -134,4 +134,213 @@ module.exports = function(s,config,lang){
         beforeAccountSave: beforeAccountSaveForAmazonS3,
         onAccountSave: cloudDiskUseStartupForAmazonS3,
     })
+    //return fields that will appear in settings
+    return {
+       "evaluation": "details.use_aws_s3 !== '0'",
+       "name": lang["Amazon S3"],
+       "color": "forestgreen",
+       "info": [
+           {
+              "name": "detail=aws_s3_save",
+              "selector":"autosave_aws_s3",
+              "field": lang.Autosave,
+              "description": "",
+              "default": "No",
+              "example": "",
+              "fieldType": "select",
+              "possible": [
+                  {
+                     "name": "No",
+                     "value": "0"
+                  },
+                  {
+                     "name": "Yes",
+                     "value": "1"
+                  }
+              ]
+           },
+           {
+              "hidden": true,
+              "field": lang.Bucket,
+              "name": "detail=aws_s3_bucket",
+              "placeholder": "Example : slippery-seal",
+              "form-group-class": "autosave_aws_s3_input autosave_aws_s3_1",
+              "description": "",
+              "default": "",
+              "example": "",
+              "possible": ""
+           },
+           {
+               "hidden": true,
+              "field": lang.aws_accessKeyId,
+              "name": "detail=aws_accessKeyId",
+              "form-group-class": "autosave_aws_s3_input autosave_aws_s3_1",
+              "description": "",
+              "default": "",
+              "example": "",
+              "possible": ""
+           },
+           {
+               "hidden": true,
+              "name": "detail=aws_secretAccessKey",
+              "fieldType":"password",
+              "placeholder": "",
+              "field": lang.aws_secretAccessKey,
+              "form-group-class":"autosave_aws_s3_input autosave_aws_s3_1",
+              "description": "",
+              "default": "",
+              "example": "",
+              "possible": ""
+           },
+           {
+               "hidden": true,
+              "name": "detail=aws_region",
+              "field": lang.Region,
+              "fieldType": "select",
+              "selector": "h_b2sld",
+              "form-group-class":"autosave_aws_s3_input autosave_aws_s3_1",
+              "description": "",
+              "default": "",
+              "example": "",
+              "possible": [
+                   {
+                      "name": "US West (N. California)",
+                      "value": "us-west-1"
+                   },
+                   {
+                      "name": "US West (Oregon)",
+                      "value": "us-west-2"
+                   },
+                   {
+                      "name": "US East (Ohio)",
+                      "value": "us-east-2"
+                   },
+                   {
+                      "name": "US East (N. Virginia)",
+                      "value": "us-east-1"
+                   },
+                   {
+                      "name": "Asia Pacific (Mumbai)",
+                      "value": "ap-south-1"
+                   },
+                   {
+                      "name": "Asia Pacific (Seoul)",
+                      "value": "ap-northeast-2"
+                   },
+                   {
+                      "name": "Asia Pacific (Osaka-Local)**",
+                      "value": "ap-northeast-3"
+                   },
+                   {
+                      "name": "Asia Pacific (Singapore)",
+                      "value": "ap-southeast-1"
+                   },
+                   {
+                      "name": "Asia Pacific (Sydney)",
+                      "value": "ap-southeast-2"
+                   },
+                   {
+                      "name": "Asia Pacific (Tokyo)",
+                      "value": "ap-northeast-1"
+                   },
+                   {
+                      "name": "Canada (Central)",
+                      "value": "ca-central-1"
+                   },
+                   {
+                      "name": "China (Beijing)",
+                      "value": "cn-north-1"
+                   },
+                   {
+                      "name": "China (Ningxia)",
+                      "value": "cn-northwest-1"
+                   },
+                   {
+                      "name": "EU (Frankfurt)",
+                      "value": "eu-central-1"
+                   },
+                   {
+                      "name": "EU (Ireland)",
+                      "value": "eu-west-1"
+                   },
+                   {
+                      "name": "EU (London)",
+                      "value": "eu-west-2"
+                   },
+                   {
+                      "name": "EU (Paris)",
+                      "value": "eu-west-3"
+                   },
+                   {
+                      "name": "South America (São Paulo)",
+                      "value": "sa-east-1"
+                   }
+                ]
+          },
+          {
+              "hidden": true,
+             "name": "detail=aws_s3_log",
+             "field": lang['Save Links to Database'],
+             "fieldType": "select",
+             "selector": "h_s3sld",
+             "form-group-class":"autosave_aws_s3_input autosave_aws_s3_1",
+             "description": "",
+             "default": "",
+             "example": "",
+             "possible": [
+                 {
+                    "name": "No",
+                    "value": "0"
+                 },
+                 {
+                    "name": "Yes",
+                    "value": "1"
+                 }
+             ]
+         },
+         {
+             "hidden": true,
+            "name": "detail=use_bb_b2_size_limit",
+            "field": lang['Use Max Storage Amount'],
+            "fieldType": "select",
+            "selector": "h_b2zl",
+            "form-group-class":"autosave_aws_s3_input autosave_aws_s3_1",
+            "form-group-class-pre-layer":"h_s3sld_input h_s3sld_1",
+            "description": "",
+            "default": "",
+            "example": "",
+            "possible":  [
+                {
+                   "name": "No",
+                   "value": "0"
+                },
+                {
+                   "name": "Yes",
+                   "value": "1"
+                }
+            ]
+         },
+         {
+             "hidden": true,
+            "name": "detail=aws_s3_size_limit",
+            "field": lang['Max Storage Amount'],
+            "form-group-class":"autosave_aws_s3_input autosave_aws_s3_1",
+            "form-group-class-pre-layer":"h_s3sld_input h_s3sld_1",
+            "description": "",
+            "default": "10000",
+            "example": "",
+            "possible": ""
+         },
+         {
+             "hidden": true,
+            "name": "detail=aws_s3_dir",
+            "field": lang['Save Directory'],
+            "form-group-class":"autosave_aws_s3_input autosave_aws_s3_1",
+            "description": "",
+            "default": "/",
+            "example": "",
+            "possible": ""
+         },
+       ]
+    }
 }

@@ -4,7 +4,7 @@
 <% include blocks/header %>
 <script>var $user = <%- JSON.stringify($user) %>;</script>
 <script>var lang = <%- JSON.stringify(lang) %>;</script>
-<link rel="stylesheet" href="<%-window.libURL%>libs/css/roboto.css" type="text/css" />
+<script>var addStorage = <%- JSON.stringify(addStorage) %>;</script>
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/material-design-iconic-font.min.css" type="text/css" />
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/pnotify.custom.min.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/vbox.css">
@@ -16,19 +16,20 @@
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/gridstack.min.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/gridstack-extra.min.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/bootstrap-table.min.css">
-<!--
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/bootstrap-slider.min.css">
+
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.basic.css">
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.misc.css">
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.monitors.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.forms.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.modal.css">
-<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.monitors.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.powervideo.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.ptzcontrols.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.regioneditor.css">
-<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.rightotleft.css">
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.righttoleft.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.timelapse.css">
-<link rel="stylesheet" href="<%-window.libURL%>libs/css/main.dash2.css">
--->
-<link rel="stylesheet" href="<%-window.libURL%>libs/css/main.dash2.old.css">
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.sidemenu.css">
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.darktheme.css">
 <% customAutoLoad.LibsCss.forEach(function(lib){ %>
     <link rel="stylesheet" href="<%-window.libURL%>libs/css/<%-lib%>">
 <% }) %>
@@ -101,16 +102,31 @@
                     </ul>
                 </div>
                 </li>
-                <li role="presentation" class="dropdown">
+                <li role="presentation" class="dropdown hidden-xs">
                   <a href="javascript:;" class="dropdown-toggle info-number" data-toggle="dropdown" aria-expanded="true">&nbsp;<i class="fa fa-group"></i>&nbsp;</a>
                   <ul id="users_online" class="dropdown-menu list-unstyled msg_list scrollable" role="menu"></ul>
                 </li>
-<!--
+
                 <li role="presentation" class="dropdown">
-                  <a href="javascript:;" class="dropdown-toggle info-number" data-toggle="dropdown" aria-expanded="true">&nbsp;<i class="fa fa-info-circle"></i>&nbsp;</a>
-                  <ul id="notifications" class="dropdown-menu list-unstyled msg_list scrollable" role="menu"></ul>
+                  <a href="javascript:;" class="dropdown-toggle info-number" data-toggle="dropdown" aria-expanded="true">&nbsp;<i class="fa fa-hdd-o"></i>&nbsp;</a>
+                  <ul id="diskUsedList" class="dropdown-menu list-unstyled msg_list scrollable" role="menu">
+                      <% addStorage.forEach(function(storage){ %>
+                          <li class="log-item" storage="<%- storage.name %>">
+                              <span>
+                                  <div class="title"><%- storage.name %></div>
+                                  <span class="pull-right percent"></span>
+                                  <label><span class="value"></span></label>
+                              </span>
+                              <div class="message">
+                                  <div class="progress">
+                                      <div class="progress-bar progress-bar-warning" role="progressbar"></div>
+                                  </div>
+                              </div>
+                          </li>
+                      <% }) %>
+                  </ul>
                 </li>
--->
+
                 <li role="presentation" class="dropdown">
                   <a href="javascript:;" class="dropdown-toggle info-number" data-toggle="dropdown" aria-expanded="true">&nbsp;<i class="fa fa-exclamation-triangle"></i>&nbsp;</a>
                   <ul id="logs" class="dropdown-menu list-unstyled msg_list scrollable" role="menu">
@@ -127,6 +143,7 @@
                 <li class="mdl-menu__item" data-toggle="modal" data-target="#multi_mon"><div><i class="fa fa-clone"></i><div><%- lang['Monitors'] %></div></div></li>
                 <li class="mdl-menu__item" mid="" ke=""><div class="flex" monitor="powerview"><i class="fa fa-map-marker"></i><div><%- lang['Power Viewer'] %></div></div></li>
                 <li class="mdl-menu__item" mid="" ke=""><div class="flex" monitor="timelapse"><i class="fa fa-angle-double-right"></i><div><%- lang['Time-lapse'] %></div></div></li>
+                <li class="mdl-menu__item" mid="" ke=""><div class="flex" monitor="timelapseJpeg"><i class="fa fa-angle-double-right"></i><div><%- lang['Timelapse'] %></div></div></li>
                 <li class="mdl-menu__item permission_user_change" data-toggle="modal" data-target="#settings"><div><i class="fa fa-gears"></i><div><%- lang.Settings %></div></div></li>
                 <li class="mdl-menu__item" data-toggle="modal" data-target="#apis"><div><i class="fa fa-code"></i><div><%- lang.API %></div></div></li>
                 <% if(!details.sub){ %>
@@ -202,6 +219,7 @@
 <script src="<%-window.libURL%>libs/js/fullcalendar.min.js"></script>
 <script src="<%-window.libURL%>libs/js/hls.min.js"></script>
 <script src="<%-window.libURL%>libs/js/libde265.min.js"></script>
+<script src="<%-window.libURL%>libs/js/bootstrap-slider.min.js"></script>
 <script type="text/javascript" src="<%-window.libURL%>libs/js/flv.shinobi.js">;</script>
 <script src="<%-window.libURL%>libs/js/menu.js"></script>
 <script src="<%-window.libURL%>libs/js/clock.js"></script>

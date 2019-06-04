@@ -57,6 +57,27 @@ $(document).ready(function(e){
             }).each(function() { $('.link-monitors-list[auth="'+user.auth_token+'"]').append($(this)); });
         })
     }
+    //log stream writer
+    $.logWriter = {}
+    $.logWriter.floodTimeout = null
+    $.logWriter.floodCounter = 0
+    $.logWriter.draw = function(id,d,user){
+        if($.logWriter.floodLock)return $.ccio.log('logWriter.floodLock : Log was dropped');
+        if($.logWriter.floodTimeout){
+            ++$.logWriter.floodCounter
+        }
+        if($.logWriter.floodCounter > 10){
+            $.logWriter.floodLock = setTimeout(function(){
+                delete($.logWriter.floodLock)
+            },10000)
+        }
+        clearTimeout($.logWriter.floodTimeout)
+        $.logWriter.floodTimeout = setTimeout(function(){
+            delete($.logWriter.floodTimeout)
+            $.logWriter.floodCounter = 0
+        },1000)
+        $.ccio.tm(4,d,'#logs,'+id+'.monitor_item .logs:visible,'+id+'#add_monitor:visible .logs',user)
+    }
     //open all monitors
     $('[class_toggle="list-blocks"][data-target="#left_menu"]').dblclick(function(){
         $('#monitors_list .monitor_block').each(function(n,v){
@@ -356,6 +377,18 @@ $(document).ready(function(e){
                 }
                 e.e.first().prop('selected',true)
                 $.timelapse.f.submit()
+            break;
+            case'timelapseJpeg':
+                $.timelapseJpeg.e.modal('show')
+                $.timelapseJpeg.monitors.find('.monitor').remove()
+                $.each($.ccio.mon,function(n,v){
+                    $.timelapseJpeg.monitors.append('<option class="monitor" value="'+v.mid+'">'+v.name+'</option>')
+                })
+                e.e=$.timelapseJpeg.monitors.find('.monitor').prop('selected',false)
+                if(e.mid!==''){
+                    e.e=$.timelapseJpeg.monitors.find('.monitor[value="'+e.mid+'"]')
+                }
+                e.e.first().prop('selected',true)
             break;
             case'powerview':
                 $.pwrvid.e.modal('show')

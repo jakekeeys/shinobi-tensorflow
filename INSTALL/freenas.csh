@@ -21,7 +21,7 @@ npm i npm -g
 #There are some errors in here that I don't want you to see. Redirecting to dev null :D
 npm install --unsafe-perm > & /dev/null
 npm audit fix --force > & /dev/null
-npm install pm2 -g
+npm install pm2@3.0.0 -g
 cp conf.sample.json conf.json
 cp super.sample.json super.json
 pm2 start camera.js

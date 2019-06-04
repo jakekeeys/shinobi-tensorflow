@@ -40,10 +40,44 @@ module.exports = function(s,config){
         fs.mkdirSync(s.dir.fileBin);
     }
     //additional storage areas
+    s.listOfStorage = [{
+        name: "Main",
+        value: ""
+    }]
     s.dir.addStorage.forEach(function(v,n){
         v.path = s.checkCorrectPathEnding(v.path)
         if(!fs.existsSync(v.path)){
             fs.mkdirSync(v.path);
         }
+        s.listOfStorage.push({
+            name: v.name,
+            value: v.path
+        })
+    })
+    //get audio files list
+    s.listOfAudioFiles = [
+        {
+            name:"No Sound",
+            value:""
+        }
+    ]
+    fs.readdirSync(s.mainDirectory + '/web/libs/audio').forEach(function(file){
+        s.listOfAudioFiles.push({
+            name: file,
+            value: file
+        })
+    })
+    //get themes list
+    s.listOfThemes = [
+        {
+            name:"Default",
+            value:""
+        }
+    ]
+    fs.readdirSync(s.mainDirectory + '/web/libs/themes').forEach(function(folder){
+        s.listOfThemes.push({
+            name: folder,
+            value: folder
+        })
     })
 }

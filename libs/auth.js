@@ -121,7 +121,9 @@ module.exports = function(s,config,lang){
         var adminUsersSelected = null
         try{
             var success = function(){
+                var chosenConfig = config
                 if(req && res){
+                    chosenConfig = s.getConfigWithBranding(req.hostname)
                     res.setHeader('Content-Type', 'application/json');
                     var ip = req.headers['cf-connecting-ip']||req.headers["CF-Connecting-IP"]||req.headers["'x-forwarded-for"]||req.connection.remoteAddress;
                     var resp = {
@@ -143,7 +145,7 @@ module.exports = function(s,config,lang){
                     ip : ip,
                     $user:userSelected,
                     users:adminUsersSelected,
-                    config:config,
+                    config: chosenConfig,
                     lang:lang
                 })
             }
@@ -197,6 +199,33 @@ module.exports = function(s,config,lang){
                 msg: lang['Not Authorized']
             }))
             return false
+        }
+    }
+    s.basicOrApiAuthentication = function(username,password,callback){
+        var splitUsername = username.split('@')
+        if(splitUsername[1] !== 'Shinobi' && splitUsername[1] !== 'shinobi'){
+            s.sqlQuery('SELECT ke,uid FROM Users WHERE mail=? AND (pass=? OR pass=?)',[
+                username,
+                password,
+                s.createHash(password)
+            ],function(err,r){
+                var user
+                if(r && r[0]){
+                    user = r[0]
+                }
+                callback(err,user)
+            })
+        }else{
+            s.sqlQuery('SELECT ke,uid FROM API WHERE code=? AND ke=?',[
+                splitUsername[0], //code
+                password //ke
+            ],function(err,r){
+                var apiKey
+                if(r && r[0]){
+                    apiKey = r[0]
+                }
+                callback(err,apiKey)
+            })
         }
     }
 }

@@ -6,7 +6,7 @@ module.exports = function(s){
     }
     var config = require(s.location.config);
     if(!config.productType){
-        config.productType='CE'
+        config.productType = 'CE'
     }
     //config defaults
     if(config.cpuUsageMarker === undefined){config.cpuUsageMarker='%Cpu'}

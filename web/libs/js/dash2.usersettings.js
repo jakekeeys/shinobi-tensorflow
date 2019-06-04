@@ -3,9 +3,80 @@ $(document).ready(function(e){
 $.sM={e:$('#settings')};
 $.sM.f=$.sM.e.find('form');
 $.sM.links=$('#linkShinobi');
+$.sM.addStorageMaxAmounts=$('#add_storage_max_amounts')
+$.sM.addStorageMaxAmountsField=$.sM.e.find('[detail="addStorage"]')
 $.sM.g=$('#settings_mon_groups');
 $.sM.md=$.sM.f.find('[detail]');
 $.sM.md.change($.ccio.form.details);
+$.sM.e.find('.follow-list ul').affix();
+$.sM.sections = {}
+var addSection = function(section){
+    if(!section.id){
+        var userSettingsId = section.name.replace(/[^a-zA-Z ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/ /g, '')
+        section.id = userSettingsId
+    }
+    $.sM.sections[section.name] = section.id
+    if(section.info){
+        $.each(section.info,function(m,block){
+            if(block.isFormGroupGroup === true){
+                addSection(block)
+            }
+        })
+    }
+    if(section.blocks){
+        $.each(section.blocks,function(m,block){
+            addSection(block)
+        })
+    }
+}
+$.each($.ccio.definitions['Account Settings'].blocks,function(n,section){
+    addSection(section)
+})
+$.sM.drawList = function(){
+    var list = $.sM.e.find('.follow-list ul')
+    var html = ''
+    $.each($.sM.sections,function(sectionName,sectionId){
+        var el = $('#' + sectionId)
+        if(el.length > 0){
+            html += '<li><a class="scrollTo" href="#' + sectionId + '" scrollToParent="#settings .modal-body">' + sectionName + '</a></li>'
+        }
+    })
+    list.html(html)
+}
+try{
+    var addStorageData = JSON.parse($user.details.addStorage || '{}')
+    var html = ''
+    $.each(addStorage,function(n,storage){
+        var limit = ""
+        if(addStorageData[storage.path] && addStorageData[storage.path].limit){
+            limit = addStorageData[storage.path].limit
+        }
+        html += `<div class="form-group">\
+                    <label><div><span>${lang['Max Storage Amount']} : ${storage.name}</span></div>\
+                        <div><input class="form-control" addStorageLimit="${storage.path}" value="${limit}"></div>\
+                    </label>\
+                </div>`
+    })
+    $.sM.addStorageMaxAmounts.html(html)
+    $.sM.addStorageMaxAmounts.on('change','[addStorageLimit]',function(){
+        var json = {}
+        $.each(addStorage,function(n,storage){
+            var storageId = storage.path
+            var el = $.sM.addStorageMaxAmounts.find('[addStorageLimit="' + storageId + '"]')
+            var value = el.val()
+            json[storageId] = {
+                name: storage.name,
+                path: storage.path,
+                limit: value
+            }
+        })
+        $.sM.addStorageMaxAmountsField.val(JSON.stringify(json))
+    })
+}catch(err){
+    console.log(err)
+}
+
+$.sM.drawList()
 $.sM.f.find('[selector]').change(function(e){
     e.v=$(this).val();e.a=$(this).attr('selector')
     $.sM.f.find('.'+e.a+'_input').hide()

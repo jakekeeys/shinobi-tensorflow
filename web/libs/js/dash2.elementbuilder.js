@@ -20,8 +20,13 @@ $.ccio.tm=function(x,d,z,user){
             d.per=parseInt(d.hr/24*100);
             d.circle='<div title="at '+d.hr+' hours of '+d.startMoment.format('MMMM DD')+'" '+href+' video="launch" class="progress-circle progress-'+d.per+'"><span>'+d.hr+'</span></div>'
             tmp+='<li class="video-item glM'+d.mid+user.auth_token+'" auth="'+user.auth_token+'" mid="'+d.mid+'" ke="'+d.ke+'" status="'+d.status+'" status="'+d.status+'" file="'+d.filename+'">'+d.circle+'<div><span title="'+d.endMoment.format()+'" class="livestamp"></span></div><div><div class="small"><b>'+lang.Start+'</b> : '+d.startMoment.format('h:mm:ss , MMMM Do YYYY')+'</div><div class="small"><b>'+lang.End+'</b> : '+d.endMoment.format('h:mm:ss , MMMM Do YYYY')+'</div></div><div><span class="pull-right">'+(parseInt(d.size)/1000000).toFixed(2)+'mb</span><div class="controls btn-group"><a class="btn btn-sm btn-primary" video="launch" '+href+'><i class="fa fa-play-circle"></i></a> <a download="'+d.dlname+'" '+href+' class="btn btn-sm btn-default"><i class="fa fa-download"></i></a>'
-            if($.ccio.DropboxAppKey){ tmp+='<a video="download" host="dropbox" download="'+d.dlname+'" '+href+' class="btn btn-sm btn-default"><i class="fa fa-dropbox"></i></a>' }
-            tmp+='<a title="'+lang['Delete Video']+'" video="delete" href="'+$.ccio.init('videoHrefToDelete',url)+'" class="btn btn-sm btn-danger permission_video_delete"><i class="fa fa-trash"></i></a></div></div></li>';
+            if($.ccio.DropboxAppKey){
+                tmp+='<a video="download" host="dropbox" download="'+d.dlname+'" '+href+' class="btn btn-sm btn-default"><i class="fa fa-dropbox"></i></a>'
+            }
+            if($.ccio.permissionCheck('video_delete',d.mid)){
+                tmp += '<a title="'+lang['Delete Video']+'" video="delete" href="'+$.ccio.init('videoHrefToDelete',url)+'" class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></a>'
+            }
+            tmp += '</div></div></li>';
             $(z).each(function(n,v){
                 v=$(v);
                 if(v.find('.video-item').length>10){v.find('.video-item:last').remove()}

@@ -28,6 +28,20 @@ fi
 echo "Shinobi - Run yum update"
 sudo yum update -y
 sudo yum install make zip -y
+if ! [ -x "$(command -v node)" ]; then
+    echo "============="
+    echo "Shinobi - Installing Node.js"
+    sudo wget https://rpm.nodesource.com/setup_8.x
+    sudo chmod +x setup_8.x
+    ./setup_8.x
+    sudo yum install nodejs -y
+else
+    echo "Node.js Found..."
+    echo "Version : $(node -v)"
+fi
+if ! [ -x "$(command -v npm)" ]; then
+    sudo apt install npm -y
+fi
 echo "============="
 echo "Shinobi - Do you want to Install FFMPEG?"
 echo "(y)es or (N)o"
@@ -47,15 +61,6 @@ if [ "$ffmpeginstall" = "y" ] || [ "$ffmpeginstall" = "Y" ]; then
     else
         sudo npm install ffbinaries
     fi
-fi
-echo "Shinobi - Do you want to Install Node.js?"
-echo "(y)es or (N)o"
-read nodejsinstall
-if [ "$nodejsinstall" = "y" ] || [ "$nodejsinstall" = "Y" ]; then
-    sudo wget https://rpm.nodesource.com/setup_8.x
-    sudo chmod +x setup_8.x
-    ./setup_8.x
-    sudo yum install nodejs -y
 fi
 echo "============="
 echo "Shinobi - Do you want to use MariaDB or SQLite3?"
@@ -108,7 +113,7 @@ sudo npm install --unsafe-perm
 sudo npm audit fix --force
 echo "============="
 echo "Shinobi - Install PM2"
-sudo npm install pm2 -g
+sudo npm install pm2@3.0.0 -g
 echo "Shinobi - Finished"
 sudo chmod -R 755 .
 touch INSTALL/installed.txt

@@ -11,7 +11,7 @@ else
 fi
 # get tesseract repo because ubuntu repo is serving a broken version
 sudo add-apt-repository ppa:alex-p/tesseract-ocr -y
-sudo apt-get update
+sudo apt-get update -y
 # this includes all the ones missing from OpenALPR's guide.
 sudo apt install libtesseract-dev git cmake build-essential libleptonica-dev -y
 sudo apt install liblog4cplus-dev libcurl3-dev -y

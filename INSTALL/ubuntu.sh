@@ -18,6 +18,9 @@ if [ "$getubuntuversion" = "18" ] || [ "$getubuntuversion" > "18" ]; then
     sudo apt install -y software-properties-common
     sudo add-apt-repository universe -y
 fi
+if [ "$getubuntuversion" = "16" ]; then
+    apt install gnupg-curl -y
+fi
 #create conf.json
 if [ ! -e "./conf.json" ]; then
     sudo cp conf.sample.json conf.json
@@ -121,7 +124,7 @@ sudo npm install --unsafe-perm
 sudo npm audit fix --force
 echo "============="
 echo "Shinobi - Install PM2"
-sudo npm install pm2 -g
+sudo npm install pm2@3.0.0 -g
 echo "Shinobi - Finished"
 sudo chmod -R 755 .
 touch INSTALL/installed.txt

@@ -1,12 +1,6 @@
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 module.exports = function(s,config,lang,io){
-    s.sendDiskUsedAmountToClients = function(e){
-        //send the amount used disk space to connected users
-        if(s.group[e.ke]&&s.group[e.ke].init){
-            s.tx({f:'diskUsed',size:s.group[e.ke].usedSpace,limit:s.group[e.ke].sizeLimit},'GRP_'+e.ke);
-        }
-    }
     s.heartBeat = function(){
         setTimeout(s.heartBeat, 8000);
         io.sockets.emit('ping',{beat:1});
@@ -34,14 +28,20 @@ module.exports = function(s,config,lang,io){
                   d = d.replace(/(\r\n|\n|\r)/gm, "").replace(/%/g, "")
               }
               callback(d)
-          });
+              s.onGetCpuUsageExtensions.forEach(function(extender){
+                  extender(d)
+              })
+          })
         } else if(k.cmd){
              exec(k.cmd,{encoding:'utf8',detached: true},function(err,d){
                  if(s.isWin===true){
                      d=d.replace(/(\r\n|\n|\r)/gm,"").replace(/%/g,"")
                  }
                  callback(d)
-             });
+                 s.onGetCpuUsageExtensions.forEach(function(extender){
+                     extender(d)
+                 })
+             })
         } else {
             callback(0)
         }
@@ -68,7 +68,10 @@ module.exports = function(s,config,lang,io){
                      d=(parseInt(d.split('=')[1])/(s.totalmem/1000))*100
                  }
                  callback(d)
-             });
+                 s.onGetRamUsageExtensions.forEach(function(extender){
+                     extender(d)
+                 })
+             })
         }else{
             callback(0)
         }

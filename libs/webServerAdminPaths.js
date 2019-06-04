@@ -68,7 +68,7 @@ module.exports = function(s,config,lang,app){
                 s.closeJsonResponse(res,endData)
                 return
             }
-            var form = s.getPostData(req)
+            var form = s.getPostData(req) || {}
             var uid = form.uid || s.getPostData(req,'uid',false)
             var mail = form.mail || s.getPostData(req,'mail',false)
             s.sqlQuery('DELETE FROM Users WHERE uid=? AND ke=? AND mail=?',[uid,req.params.ke,mail])

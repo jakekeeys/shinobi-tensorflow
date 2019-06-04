@@ -105,7 +105,7 @@ module.exports = function(s,config,lang){
                 var snapBuffer = []
                 var snapProcess = spawn(config.ffmpegDir,('-loglevel quiet -re -i '+url+options+' -frames:v 1 -f image2pipe pipe:1').split(' '),{detached: true})
                 snapProcess.stdout.on('data',function(data){
-                    if(snapBuffer)snapBuffer.push(data)
+                    if(snapBuffer && snapBuffer.push)snapBuffer.push(data)
                 })
                 snapProcess.stderr.on('data',function(data){
                     console.log(data.toString())
@@ -520,11 +520,11 @@ module.exports = function(s,config,lang){
                 stopCamera()
             }else{
                 var requestOptions = {
-                    url : controlURL,
-                    method : controlURLOptions.method,
-                    auth : {
-                        user : controlURLOptions.username,
-                        pass : controlURLOptions.password
+                    url: controlURL,
+                    method: controlURLOptions.method,
+                    auth: {
+                        user: controlURLOptions.username,
+                        pass: controlURLOptions.password
                     }
                 }
                 if(monitorConfig.details.control_digest_auth === '1'){
@@ -625,13 +625,15 @@ module.exports = function(s,config,lang){
     }
     s.createCameraFolders = function(e){
         //set the recording directory
+        var monitorRecordingFolder
         if(e.details && e.details.dir && e.details.dir !== '' && config.childNodes.mode !== 'child'){
             //addStorage choice
             e.dir=s.checkCorrectPathEnding(e.details.dir)+e.ke+'/';
             if (!fs.existsSync(e.dir)){
                 fs.mkdirSync(e.dir);
             }
-            e.dir=e.dir+e.id+'/';
+            monitorRecordingFolder = e.dir + e.id + ''
+            e.dir = monitorRecordingFolder + '/'
             if (!fs.existsSync(e.dir)){
                 fs.mkdirSync(e.dir);
             }
@@ -645,6 +647,12 @@ module.exports = function(s,config,lang){
             if (!fs.existsSync(e.dir)){
                 fs.mkdirSync(e.dir);
             }
+            monitorRecordingFolder = s.dir.videos + e.ke + '/' + e.id
+        }
+        //
+        e.dirTimelapse = monitorRecordingFolder + '_timelapse/'
+        if (!fs.existsSync(e.dirTimelapse)){
+            fs.mkdirSync(e.dirTimelapse)
         }
         // exec('chmod -R 777 '+e.dir,function(err){
         //
@@ -895,6 +903,49 @@ module.exports = function(s,config,lang){
             s.group[e.ke].mon[e.id].audioDetector = audioDetector
             audioDetector.start()
             s.group[e.ke].mon[e.id].spawn.stdio[6].pipe(audioDetector.streamDecoder)
+        }
+        if(e.details.record_timelapse === '1'){
+            s.group[e.ke].mon[e.id].spawn.stdio[7].on('data',function(data){
+                var fileStream = s.group[e.ke].mon[e.id].recordTimelapseWriter
+                if(!fileStream){
+                    var currentDate = s.formattedTime(null,'YYYY-MM-DD')
+                    var filename = s.formattedTime() + '.jpg'
+                    var location = e.dirTimelapse + currentDate + '/'
+                    if(!fs.existsSync(location)){
+                        fs.mkdirSync(location)
+                    }
+                    fileStream = fs.createWriteStream(location + filename)
+                    fileStream.on('close', function () {
+                        s.group[e.ke].mon[e.id].recordTimelapseWriter = null
+                        var fileStats = fs.statSync(location + filename)
+                        var details = {}
+                        if(e.details && e.details.dir && e.details.dir !== ''){
+                            details.dir = e.details.dir
+                        }
+                        var timeNow = new Date()
+                        var queryInfo = {
+                            ke: e.ke,
+                            mid: e.id,
+                            details: s.s(details),
+                            filename: filename,
+                            size: fileStats.size,
+                            time: timeNow
+                        }
+                        s.sqlQuery('INSERT INTO `Timelapse Frames` ('+Object.keys(queryInfo).join(',')+') VALUES (?,?,?,?,?,?)',Object.values(queryInfo))
+                        s.setDiskUsedForGroup(e,fileStats.size / 1000000,'timelapeFrames')
+                        s.purgeDiskForGroup(e)
+                        s.onInsertTimelapseFrameExtensions.forEach(function(extender){
+                            extender(e,queryInfo)
+                        })
+                    })
+                    s.group[e.ke].mon[e.id].recordTimelapseWriter = fileStream
+                }
+                fileStream.write(data)
+                clearTimeout(s.group[e.ke].mon[e.id].recordTimelapseWriterTimeout)
+                s.group[e.ke].mon[e.id].recordTimelapseWriterTimeout = setTimeout(function(){
+                    fileStream.end()
+                },900)
+            })
         }
         if(e.details.detector === '1' && e.coProcessor === false){
             s.ocvTx({f:'init_monitor',id:e.id,ke:e.ke})
@@ -1372,7 +1423,14 @@ module.exports = function(s,config,lang){
             if(r&&r[0]){
                 txData.new = false
                 Object.keys(form).forEach(function(v){
-                    if(form[v]&&form[v]!==''){
+                    if(
+                        form[v] !== undefined &&
+                        form[v] !== `undefined` &&
+                        form[v] !== null &&
+                        form[v] !== `null` &&
+                        form[v] !== false &&
+                        form[v] !== `false`
+                    ){
                         monitorQuery.push(v+'=?')
                         if(form[v] instanceof Object){
                             form[v] = s.s(form[v])
@@ -1542,6 +1600,11 @@ module.exports = function(s,config,lang){
                 //lock this function
                 s.sendMonitorStatus({id:e.id,ke:e.ke,status:lang.Starting});
                 s.group[e.ke].mon[e.id].isStarted = true
+                if(e.details && e.details.dir && e.details.dir !== ''){
+                    s.group[e.ke].mon[e.id].addStorageId = e.details.dir
+                }else{
+                    s.group[e.ke].mon[e.id].addStorageId = null
+                }
                 //set recording status
                 e.wantedStatus = lang.Watching
                 if(e.functionMode === 'record'){

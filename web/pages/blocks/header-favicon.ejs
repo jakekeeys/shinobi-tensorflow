@@ -1,11 +1,11 @@
 <%
 if(!window.libURL)window.libURL = originalURL
  %>
-<link rel="icon" href="<%-window.libURL%>libs/img/icon/favicon.ico" type="image/x-icon" />
-<link rel="shortcut icon" href="<%-window.libURL%>libs/img/icon/favicon.ico" type="image/x-icon" />
+<link rel="icon" href="<%-window.libURL%><%-config.webFavicon%>" type="image/x-icon" />
+<link rel="shortcut icon" href="<%-window.libURL%><%-config.webFavicon%>" type="image/x-icon" />
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="Shinobi">
+<meta name="apple-mobile-web-app-title" content="<%-config.webPageTitle%>">
 <link rel="apple-touch-icon" href="<%-window.libURL%>libs/img/icon/apple-touch-icon.png" />
 <link rel="apple-touch-icon" sizes="57x57" href="<%-window.libURL%>libs/img/icon/apple-touch-icon-57x57.png" />
 <link rel="apple-touch-icon" sizes="72x72" href="<%-window.libURL%>libs/img/icon/apple-touch-icon-72x72.png" />

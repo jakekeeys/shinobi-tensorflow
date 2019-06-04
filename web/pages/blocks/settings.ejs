@@ -10,6 +10,11 @@
         <h4 class="modal-title" id="settingsLabel"><i class="fa fa-gears"></i> &nbsp; <%-lang.Settings%></h4>
       </div>
       <div class="modal-body">
+          <div class="row">
+              <div class="col-md-2 hidden-xs follow-list">
+                  <ul class="affix"></ul>
+              </div>
+              <div class="col-md-10">
           <div class="text-center msg"></div>
           <div class="form-group-group green">
               <h4><%-lang['Account Info']%></h4>
@@ -24,596 +29,250 @@
                 </label>
             </div>
           </div>
-          <div class="form-group-group grey">
-                <h4><%-lang['2-Factor Authentication']%></h4>
-                <div class="form-group">
-                    <label><div><span><%-lang['Enabled']%></span></div>
-                        <div><select class="form-control" detail="factorAuth">
-                            <option value="0" selected><%-lang.No%></option>
-                            <option value="1"><%-lang.Yes%></option>
-                        </select></div>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label><div><span><%-lang.Email%></span></div>
-                        <div><select class="form-control" detail="factor_mail">
-                            <option value="1" selected><%-lang.Yes%></option>
-                            <option value="0"><%-lang.No%></option>
-                        </select></div>
-                    </label>
-                </div>
-                <div class="form-group u_discord_bot_input u_discord_bot_1">
-                    <label><div><span><%-lang.Discord%></span></div>
-                        <div><select class="form-control" detail="factor_discord">
-                            <option value="0" selected><%-lang.No%></option>
-                            <option value="1"><%-lang.Yes%></option>
-                        </select></div>
-                    </label>
-                </div>
-          </div>
-          <div class="form-group-group grey">
-                <h4><%-lang.Profile%></h4>
-                <div class="form-group">
-                    <label><div><span><%-lang.Email%></span></div>
-                        <div><input class="form-control" type="email" name="mail"></div>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label><div><span><%-lang.Password%> <small><%-lang.blankPassword%></small></span></div>
-                        <div><input class="form-control" type="password" name="pass"></div>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label><div><span><%-lang.Password%> <%-lang.Again%></span></div>
-                        <div><input class="form-control" type="password" name="password_again"></div>
-                    </label>
-                </div>
-              <% if(!details.sub){ %>
-                <% if(details.edit_size!=='0'){ %>
-                <div class="form-group">
-                    <label><div><span><%-lang['Max Storage Amount']%></span></div>
-                        <div><input class="form-control" detail="size" placeholder="10000"></div>
-                    </label>
-                </div>
-                <% } %>
-                <% if(details.edit_days!=='0'){ %>
-                <div class="form-group">
-                    <label><div><span><%-lang['Number of Days to keep']%> <%-lang.Videos%></span></div>
-                        <div><input class="form-control" detail="days" placeholder="5"></div>
-                    </label>
-                </div>
-                <% } %>
-                <% if(details.edit_event_days!=='0'){ %>
-                <div class="form-group">
-                    <label><div><span><%-lang['Number of Days to keep']%> <%-lang.Events%></span></div>
-                        <div><input class="form-control" detail="event_days" placeholder="10"></div>
-                    </label>
-                </div>
-                <% } %>
-                <% if(details.edit_log_days!=='0'){ %>
-                <div class="form-group">
-                    <label><div><span><%-lang['Number of Days to keep']%> <%-lang.Logs%></span></div>
-                        <div><input class="form-control" detail="log_days" placeholder="10"></div>
-                    </label>
-                </div>
-                <% } %>
-              <% } %>
-            <div class="form-group">
-                <label><div><span><%-lang['Dashboard Language']%></span></div>
-                    <div>
-                        <select class="form-control" detail="lang">
-                            <option value="" selected>Default</option>
-                            <% fs.readdirSync('./languages').forEach(function(v,n){
-                                    v=v.replace('.json','') %>
-                            <option value="<%-v%>"><%-v%></option>
-                               <% }) %>
-                        </select>
-                    </div>
-                </label>
-            </div>
-            <div class="form-group">
-                <label><div><span><%-lang['Notification Sound']%></span></div>
-                    <div>
-                        <select class="form-control" detail="audio_note">
-                            <option value="" selected>No Sound</option>
-                            <% audioFiles.forEach(function(v,n){ %>
-                            <option value="<%-v%>"><%-v%></option>
+          <%
+          var buildOptions = function(field,possiblities){
+              if(!field)console.error('field',field)
+              var fieldElement = ''
+              possiblities.forEach(function(option){
+                  if(option.optgroup){
+                      fieldElement += '<optgroup label="' + option.name + '">'
+                      fieldElement += buildOptions(field,option.optgroup)
+                      fieldElement += '</optgroup>'
+                  }else{
+                      var selected = ''
+                      if(option.value === field.default){
+                        selected = 'selected'
+                      }
+                      fieldElement += '<option value="' + option.value + '" ' + selected + '>' + option.name + '</option>'
+                  }
+              })
+              return fieldElement
+          }
+          var drawBlock = function(userSettings){
+            if(userSettings.evaluation && !eval(userSettings.evaluation)){
+                return
+            }
+            var attributes = []
+            var styles = []
+            var sectionClass = []
+            var headerTitle = userSettings.headerTitle || lang[userSettings.name] || userSettings.name
+            if(userSettings.hidden === true){
+                styles.push('display:none')
+            }
+            if(userSettings.style){
+                styles.push(userSettings.style)
+            }
+            if(userSettings.isSection === true){
+                attributes.push('section')
+            }
+            if(userSettings.attribute){
+                attributes.push(userSettings.attribute)
+            }
+            if(userSettings.id){
+                attributes.push(`id="${userSettings.id}"`)
+            }else{
+                var userSettingsId
+                if(userSettings.name){
+                    userSettingsId = userSettings.name.replace(/[^a-zA-Z ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/ /g, '')
+                }else{
+                    userSettingsId = "NO NAME"
+                }
+                userSettings.id = userSettingsId
+                attributes.push(`id="${userSettingsId}"`)
+            }
+            if(userSettings.color){
+                sectionClass.push(userSettings.color)
+            }
+            if(userSettings['section-class']){
+                sectionClass.push(userSettings['section-class'])
+            }
+            if(userSettings.isAdvanced){ %>
+           <div class="h_us_input h_us_advanced">
+           <% }
+            if(userSettings['section-pre-pre-class']){ %>
+           <div class="<%- userSettings['section-pre-pre-class'] %>">
+           <% }
+            if(userSettings['section-pre-class']){ %>
+           <div class="<%- userSettings['section-pre-class'] %>">
+           <% }
+            %>
+            <div <%- attributes.join(' ') %> style="<%- styles.join(';') %>" class="form-group-group <%- sectionClass.join(' ') %>">
+                <h4 class="<%- userSettings.headerClass %>"><%- headerTitle %>
+                    <% if(userSettings.headerButtons){ %>
+                        <div class="pull-right">
+                            <% userSettings.headerButtons.forEach(function(button){ %>
+                                <a class="btn btn-success btn-xs <%- button.class %>">
+                                    <% if(button.icon){ %><i class="fa fa-<%- button.icon %>"></i><% } %>
+                                     <% if(button.text){ %><%- button.text %><% } %>
+                                </a>
                             <% }) %>
-                        </select>
-                    </div>
-                </label>
-            </div>
-            <div class="form-group">
-                <label><div><span><%-lang['Alert Sound']%></span></div>
-                    <div>
-                        <select class="form-control" detail="audio_alert">
-                            <option value="" selected>No Sound</option>
-                            <% audioFiles.forEach(function(v,n){ %>
-                            <option value="<%-v%>"><%-v%></option>
-                            <% }) %>
-                        </select>
-                    </div>
-                </label>
-            </div>
-            <div class="form-group">
-                <label><div><span><%-lang['Alert Sound Delay']%></span></div>
-                    <div><input class="form-control" detail="audio_delay" placeholder="1"></div>
-                </label>
-            </div>
-            <div class="form-group">
-                <label><div><span><%-lang['Popout Monitor on Event']%></span></div>
-                    <div><select class="form-control" detail="event_mon_pop">
-                        <option value="0" selected><%-lang.No%></option>
-                        <option value="1"><%-lang.Yes%></option>
-                    </select></div>
-                </label>
-            </div>
+                        </div>
+                    <% } %>
+                </h4>
+            <% if(userSettings['input-mapping']){ %>
+                <div class="form-group-group forestgreen" style="display:none" input-mapping="<%- userSettings['input-mapping'] %>">
+                    <h4><%-lang['Input Feed']%>
+                        <div class="pull-right">
+                            <a class="btn btn-success btn-xs add_map_row"><i class="fa fa-plus-square-o"></i></a>
+                        </div>
+                    </h4>
+                    <div class="choices"></div>
+                </div>
+            <% } %>
+            <% if(userSettings.blockquote){ %>
+                <blockquote class="<%- userSettings.blockquoteClass || '' %>">
+                    <%- userSettings.blockquote %>
+                </blockquote>
+            <% } %>
+
+            <%
+            if(userSettings.blocks){
+                    userSettings.blocks.forEach(function(settingsBlock){
+                        drawBlock(settingsBlock)
+                    })
+                }
+               if(userSettings.info){
+               userSettings.info.forEach(function(field){
+                   if(field.isFormGroupGroup === true){
+                       drawBlock(field)
+                   }else{
+               if(field.notForSubAccount === true){
+                    var notForSubAccount = '!details.sub'
+                    if(!field.evaluation){
+                        field.evaluation = notForSubAccount
+                    }else{
+                        field.evaluation += ' && ' + notForSubAccount
+                    }
+                }
+                if(field.evaluation && !eval(field.evaluation)){
+                    return
+                }
+                var hidden = ''
+                if(field.hidden === true){
+                    hidden = 'style="display:none"'
+                }
+                var fieldClass = []
+                var attributes = []
+                if(field.name && field.name.indexOf('detail=') > -1){
+                    attributes.push(field.name)
+                }else if(field.name){
+                    attributes.push("name=" + field.name)
+                }
+                if(field.placeholder || field.default){
+                    attributes.push(`placeholder="${field.placeholder || field.default}"`)
+                }else if(field.example){
+                    attributes.push(`placeholder="Example : ${field.example}"`)
+                }
+                if(field.attribute){
+                    attributes.push(field.attribute)
+                }
+                if(field.selector){
+                    attributes.push(`selector="${field.selector}"`)
+                }
+                if(field.id){
+                    attributes.push(`id="${field.id}"`)
+                }
+                if(field.class){
+                    fieldClass.push(`${field.class}`)
+                }
+                var possiblities = field.possible || []
+                var fieldType = field.fieldType || 'text'
+                var fieldElement = ''
+                var preFill = field.preFill || ''
+                switch(fieldType){
+                    case'btn':
+
+                          fieldElement = `<a class="btn btn-block ${fieldClass.join(' ')}" ${attributes.join(' ')}>${field.btnContent}</a>`
+                    break;
+                    case'ul':
+                          fieldElement = `<ul ${attributes.join(' ')} class="${fieldClass.join(' ')}" ></ul>`
+                    break;
+                    case'div':
+                          fieldElement = `<div ${attributes.join(' ')} class="${fieldClass.join(' ')}" ></div>`
+                    break;
+                    case'number':
+                          if(field.numberMin){
+                              attributes.push(`min="${field.numberMin}"`)
+                          }
+                          if(field.numberMax){
+                              attributes.push(`max="${field.numberMax}"`)
+                          }
+                          fieldElement = '<div><input type="number" class="form-control" ' + attributes.join(' ') + '></div>'
+                    break;
+                    case'password':
+                          fieldElement = '<div><input type="password" class="form-control" ' + attributes.join(' ') + '></div>'
+                    break;
+                    case'text':
+                          fieldElement = `<div><input class="form-control" ${attributes.join(' ')} value="${preFill}"></div>`
+                    break;
+                    case'textarea':
+                          fieldElement = '<div><textarea class="form-control" ' + attributes.join(' ') + '></textarea></div>'
+                    break;
+                    case'select':
+                          fieldElement = '<div><select class="form-control" ' + attributes.join(' ') + '>'
+                          fieldElement += buildOptions(field,possiblities)
+                          fieldElement += '</select></div>'
+                    break;
+                }
+                if(field.isAdvanced){ %>
+                <div class="h_us_input h_us_advanced">
+                <% }
+                 if(field['form-group-class-pre-pre-layer']){ %>
+                <div class="<%- field['form-group-class-pre-pre-layer'] %>">
+                <% }
+                 if(field['form-group-class-pre-layer']){ %>
+                <div class="<%- field['form-group-class-pre-layer'] %>">
+                <% }
+                if(fieldType === 'ul' || fieldType ===  'div' || fieldType ===  'btn'){ %>
+                    <%- fieldElement %>
+                <% }else{ %>
+                <div <%- hidden %> class="form-group <%- field['form-group-class'] %>">
+                    <label><div><span><%- field.field %>
+                        <% if(field.description){ %>
+                            <small><%- field.description %></small>
+                        <% } %>
+                    </span></div>
+                        <%- fieldElement %>
+                    </label>
+                </div>
+                <% }
+                  }
+                  if(field['form-group-class-pre-layer']){ %>
+                 </div>
+                 <% }
+                  if(field['form-group-class-pre-pre-layer']){ %>
+                 </div>
+                 <% }
+                 if(field.isAdvanced){ %>
+                 </div>
+                 <% }
+              })
+          }
+          %>
           </div>
-          <% if(!details.sub){ %>
-          <div class="form-group-group blue">
-              <h4 class="mon_groups">
-                  <%-lang['Monitor Groups']%>
-                  <div class="pull-right">
-                    <a class="btn btn-success btn-xs add"><i class="fa fa-plus"></i></a>
-                    <a class="btn btn-danger btn-xs delete"><i class="fa fa-trash-o"></i></a>
-                  </div>
-              </h4>
-              <div class="form-group">
-                    <label><div><span><%-lang['Monitor Groups']%></span></div>
-                        <div><select class="form-control" id="settings_mon_groups"></select></div>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label><div><span><%-lang['Group Name']%></span></div>
-                        <div><input type="hidden" group="id">
-                        <input class="form-control" group="name"></div>
-                    </label>
-                </div>
-              <input type="hidden" detail="mon_groups">
+          <%
+          if(userSettings['section-pre-class']){ %>
           </div>
-            <% if(details.use_webdav!=='0'){ %>
-          <div class="form-group-group forestgreen">
-                <h4><%-lang.WebDAV%></h4>
-                <div class="form-group">
-                    <label><div><span><%-lang.Autosave%></span></div>
-                            <div><select class="form-control" detail="webdav_save" selector="autosave_webdav">
-                                <option value="0"><%-lang.No%></option>
-                                <option value="1"><%-lang.Yes%></option>
-                            </select></div>
-                    </label>
-                </div>
-                <div class="autosave_webdav_input autosave_webdav_1">
-                    <div class="form-group">
-                        <label><div><span><%-lang.URL%></span></div>
-                            <div><input class="form-control" detail="webdav_url"></div>
-                        </label>
-                    </div>
-                    <div class="row">
-                        <div class="form-group col-md-12">
-                            <label><div><span><%-lang.Username%></span></div>
-                                <div><input class="form-control" detail="webdav_user"></div>
-                            </label>
-                        </div>
-                        <div class="form-group col-md-12">
-                            <label><div><span><%-lang.Password%></span></div>
-                                <div><input class="form-control" type="password" detail="webdav_pass"></div>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang['Save Links to Database']%></span></div>
-                                <div><select class="form-control" detail="webdav_log" selector="h_webdavsld">
-                                    <option value="0"><%-lang.No%></option>
-                                    <option value="1" selected><%-lang.Yes%></option>
-                                </select></div>
-                        </label>
-                    </div>
-                    <div class="h_webdavsld_input h_webdavsld_1">
-                        <div class="form-group">
-                            <label><div><span><%-lang['Use Max Storage Amount']%></span></div>
-                                    <div><select class="form-control" detail="use_webdav_size_limit" selector="h_webdavzl">
-                                        <option value="0" selected><%-lang.No%></option>
-                                        <option value="1"><%-lang.Yes%></option>
-                                    </select></div>
-                            </label>
-                        </div>
-                        <div class="form-group h_webdavzl_input h_webdavzl_1">
-                            <label><div><span><%-lang['Max Storage Amount']%></span></div>
-                                <div><input class="form-control" placeholder="10000" detail="webdav_size_limit"></div>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang['Save Directory']%></span></div>
-                            <div><input class="form-control" placeholder="/" detail="webdav_dir"></div>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <% } %>
-            <% if(details.use_aws_s3!=='0'){ %>
-          <div class="form-group-group forestgreen">
-                <h4><%-lang['Amazon S3']%></h4>
-                <div class="form-group">
-                    <label><div><span><%-lang.Autosave%></span></div>
-                            <div><select class="form-control" detail="aws_s3_save" selector="autosave_aws_s3">
-                                <option value="0" selected><%-lang.No%></option>
-                                <option value="1"><%-lang.Yes%></option>
-                            </select></div>
-                    </label>
-                </div>
-                <div class="autosave_aws_s3_input autosave_aws_s3_1">
-                    <div class="form-group">
-                        <label><div><span><%-lang.Bucket%></span></div>
-                            <div><input class="form-control" detail="aws_s3_bucket" placeholder="Example : slippery-seal"></div>
-                        </label>
-                    </div>
-                    <div class="row">
-                        <div class="form-group col-md-12">
-                            <label><div><span><%-lang.aws_accessKeyId%></span></div>
-                                <div><input class="form-control" detail="aws_accessKeyId"></div>
-                            </label>
-                        </div>
-                        <div class="form-group col-md-12">
-                            <label><div><span><%-lang.aws_secretAccessKey%></span></div>
-                                <div><input class="form-control" type="password" detail="aws_secretAccessKey"></div>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang.Region%></span></div>
-                            <div><select class="form-control" detail="aws_region">
-                                <option value="us-west-1" selected>US West (N. California)</option>
-                                <option value="us-west-2">US West (Oregon)</option>
-                                <option value="us-east-2">US East (Ohio)</option>
-                                <option value="us-east-1">US East (N. Virginia)</option>
-                                <option value="ap-south-1">Asia Pacific (Mumbai)</option>
-                                <option value="ap-northeast-2">Asia Pacific (Seoul)</option>
-                                <option value="ap-northeast-3">Asia Pacific (Osaka-Local)**</option>
-                                <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
-                                <option value="ap-southeast-2">Asia Pacific (Sydney)</option>
-                                <option value="ap-northeast-1">Asia Pacific (Tokyo)</option>
-                                <option value="ca-central-1">Canada (Central)</option>
-                                <option value="cn-north-1">China (Beijing)</option>
-                                <option value="cn-northwest-1">China (Ningxia)</option>
-                                <option value="eu-central-1">EU (Frankfurt)</option>
-                                <option value="eu-west-1">EU (Ireland)</option>
-                                <option value="eu-west-2">EU (London)</option>
-                                <option value="eu-west-3">EU (Paris)</option>
-                                <option value="sa-east-1">South America (São Paulo)</option>
-                            </select></div>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang['Save Links to Database']%></span></div>
-                                <div><select class="form-control" detail="aws_s3_log" selector="h_s3sld">
-                                    <option value="0"><%-lang.No%></option>
-                                    <option value="1" selected><%-lang.Yes%></option>
-                                </select></div>
-                        </label>
-                    </div>
-                    <div class="h_s3sld_input h_s3sld_1">
-                        <div class="form-group">
-                            <label><div><span><%-lang['Use Max Storage Amount']%></span></div>
-                                    <div><select class="form-control" detail="use_aws_s3_size_limit" selector="h_s3zl">
-                                        <option value="0" selected><%-lang.No%></option>
-                                        <option value="1"><%-lang.Yes%></option>
-                                    </select></div>
-                            </label>
-                        </div>
-                        <div class="form-group h_s3zl_input h_s3zl_1">
-                            <label><div><span><%-lang['Max Storage Amount']%></span></div>
-                                <div><input class="form-control" placeholder="10000" detail="aws_s3_size_limit"></div>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang['Save Directory']%></span></div>
-                            <div><input class="form-control" placeholder="" detail="aws_s3_dir"></div>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <% } %>
-            <% if(details.use_bb_b2!=='0'){ %>
-          <div class="form-group-group forestgreen">
-                <h4><%-lang['Backblaze B2']%></h4>
-                <div class="form-group">
-                    <label><div><span><%-lang.Autosave%></span></div>
-                            <div><select class="form-control" detail="bb_b2_save" selector="autosave_bb_b2">
-                                <option value="0" selected><%-lang.No%></option>
-                                <option value="1"><%-lang.Yes%></option>
-                            </select></div>
-                    </label>
-                </div>
-                <div class="autosave_bb_b2_input autosave_bb_b2_1">
-                    <div class="form-group">
-                        <label><div><span><%-lang.Bucket%></span></div>
-                            <div><input class="form-control" detail="bb_b2_bucket" placeholder="Example : slippery-seal"></div>
-                        </label>
-                    </div>
-                    <div class="row">
-                        <div class="form-group col-md-12">
-                            <label><div><span><%-lang.accountId%></span></div>
-                                <div><input class="form-control" detail="bb_b2_accountId"></div>
-                            </label>
-                        </div>
-                        <div class="form-group col-md-12">
-                            <label><div><span><%-lang.applicationKey%></span></div>
-                                <div><input class="form-control" type="password" detail="bb_b2_applicationKey"></div>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang['Save Links to Database']%></span></div>
-                                <div><select class="form-control" detail="bb_b2_log" selector="h_b2sld">
-                                    <option value="0"><%-lang.No%></option>
-                                    <option value="1" selected><%-lang.Yes%></option>
-                                </select></div>
-                        </label>
-                    </div>
-                    <div class="h_b2sld_input h_b2sld_1">
-                        <div class="form-group">
-                            <label><div><span><%-lang['Use Max Storage Amount']%></span></div>
-                                    <div><select class="form-control" detail="use_bb_b2_size_limit" selector="h_b2zl">
-                                        <option value="0" selected><%-lang.No%></option>
-                                        <option value="1"><%-lang.Yes%></option>
-                                    </select></div>
-                            </label>
-                        </div>
-                        <div class="form-group h_b2zl_input h_b2zl_1">
-                            <label><div><span><%-lang['Max Storage Amount']%></span></div>
-                                <div><input class="form-control" placeholder="10000" detail="bb_b2_size_limit"></div>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang['Save Directory']%></span></div>
-                            <div><input class="form-control" placeholder="" detail="bb_b2_dir"></div>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <% } %>
-            <% if(details.use_whcs!=='0'){ %>
-          <div class="form-group-group forestgreen">
-                <h4><%-lang['Wasabi Hot Cloud Storage']%></h4>
-                <div class="form-group">
-                    <label><div><span><%-lang.Autosave%></span></div>
-                            <div><select class="form-control" detail="whcs_save" selector="autosave_whcs">
-                                <option value="0" selected><%-lang.No%></option>
-                                <option value="1"><%-lang.Yes%></option>
-                            </select></div>
-                    </label>
-                </div>
-                <div class="autosave_whcs_input autosave_whcs_1">
-                    <div class="form-group">
-                        <label><div><span><%-lang.Bucket%></span></div>
-                            <div><input class="form-control" detail="whcs_bucket" placeholder="Example : slippery-seal"></div>
-                        </label>
-                    </div>
-                    <div class="row">
-                        <div class="form-group col-md-12">
-                            <label><div><span><%-lang.aws_accessKeyId%></span></div>
-                                <div><input class="form-control" detail="whcs_accessKeyId"></div>
-                            </label>
-                        </div>
-                        <div class="form-group col-md-12">
-                            <label><div><span><%-lang.aws_secretAccessKey%></span></div>
-                                <div><input class="form-control" type="password" detail="whcs_secretAccessKey"></div>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang.Region%></span></div>
-                            <div><select class="form-control" detail="whcs_region">
-                                <option value="us-west-1" selected>US West</option>
-                                <option value="us-east-1">US East</option>
-                            </select></div>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang['Save Links to Database']%></span></div>
-                                <div><select class="form-control" detail="whcs_log" selector="h_whcssld">
-                                    <option value="0"><%-lang.No%></option>
-                                    <option value="1" selected><%-lang.Yes%></option>
-                                </select></div>
-                        </label>
-                    </div>
-                    <div class="h_whcssld_input h_whcssld_1">
-                        <div class="form-group">
-                            <label><div><span><%-lang['Use Max Storage Amount']%></span></div>
-                                    <div><select class="form-control" detail="use_whcs_size_limit" selector="h_whcszl">
-                                        <option value="0" selected><%-lang.No%></option>
-                                        <option value="1"><%-lang.Yes%></option>
-                                    </select></div>
-                            </label>
-                        </div>
-                        <div class="form-group h_whcszl_input h_whcszl_1">
-                            <label><div><span><%-lang['Max Storage Amount']%></span></div>
-                                <div><input class="form-control" placeholder="10000" detail="whcs_size_limit"></div>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang['Save Directory']%></span></div>
-                            <div><input class="form-control" placeholder="" detail="whcs_dir"></div>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <% } %>
-            <% if(details.use_sftp!=='0'){ %>
-          <div class="form-group-group forestgreen">
-                <h4><%-lang['SFTP (SSH File Transfer)']%></h4>
-                <div class="form-group">
-                    <label><div><span><%-lang.Autosave%></span></div>
-                            <div><select class="form-control" detail="sftp_save" selector="autosave_sftp">
-                                <option value="0" selected><%-lang.No%></option>
-                                <option value="1"><%-lang.Yes%></option>
-                            </select></div>
-                    </label>
-                </div>
-                <div class="autosave_sftp_input autosave_sftp_1">
-                    <div class="form-group">
-                        <label><div><span><%-lang.Host%></span></div>
-                            <div><input class="form-control" detail="sftp_host"></div>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang.Port%></span></div>
-                            <div><input class="form-control" type="text" detail="sftp_port"></div>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang.Username%></span></div>
-                            <div><input class="form-control" type="text" detail="sftp_username"></div>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang.Password%></span></div>
-                            <div><input class="form-control" type="password" detail="sftp_password"></div>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang.privateKey%></span></div>
-                            <div><textarea class="form-control" type="password" detail="sftp_privateKey"></textarea></div>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang['Save Directory']%></span></div>
-                            <div><input class="form-control" placeholder="" detail="sftp_dir"></div>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <% } %>
-            <% if(details.use_discordbot!=='0'){ %>
-          <div class="form-group-group forestgreen">
-                <h4><%-lang['Discord Bot']%></h4>
-                <div class="form-group">
-                    <label><div><span><%-lang.Enabled%></span></div>
-                            <div><select class="form-control" detail="discordbot" selector="u_discord_bot">
-                                <option value="0" selected><%-lang.No%></option>
-                                <option value="1"><%-lang.Yes%></option>
-                            </select></div>
-                    </label>
-                </div>
-                <div class="u_discord_bot_input u_discord_bot_1">
-                <div class="form-group">
-                    <label><div><span><%-lang.Token%></span></div>
-                        <div><input type="password" class="form-control" placeholder="XXXXXXXXXXXXXXXXXXXXXXXX.XXXXXXXXXXXXXXX_XXXXXXXXXXXXXXXXXX" detail="discordbot_token"></div>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label><div><span><%-lang['Channel ID']%></span></div>
-                        <div><input class="form-control" placeholder="xxxxxxxxxxxxxxxxxx" detail="discordbot_channel"></div>
-                    </label>
-                </div>
-                </div>
-            </div>
-            <% } %>
-            <% if(details.use_ldap!=='0'){ %>
-          <div class="form-group-group forestgreen">
-                <h4><%-lang.LDAP%></h4>
-                <div class="form-group">
-                    <label><div><span><%-lang.Enable%></span></div>
-                            <div><select class="form-control" detail="ldap_enable" selector="ldap_i">
-                                <option value="0"><%-lang.No%></option>
-                                <option value="1"><%-lang.Yes%></option>
-                            </select></div>
-                    </label>
-                </div>
-                <div class="ldap_i_input ldap_i_1" style="display:none">
-                    <div class="form-group">
-                        <label><div><span><%-lang.URL%></span></div>
-                            <div><input class="form-control" detail="ldap_url"></div>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang['bindDN']%></span></div>
-                            <div><input class="form-control" detail="ldap_bindDN" placeholder="<%-lang.Example%> : cn=admin,dc=test,dc=com"></div>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang['Bind Credentials']%></span></div>
-                            <div><input class="form-control" detail="ldap_bindCredentials"></div>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang['Search Filter']%></span></div>
-                            <div><input class="form-control" detail="ldap_searchFilter" placeholder="cn={{username}}"></div>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label><div><span><%-lang['Search Base']%></span></div>
-                            <div><input class="form-control" detail="ldap_searchBase" placeholder="dc=test,dc=com"></div>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <% } %>
-          <% } %>
-            <div class="form-group-group navy">
-                <h4><%-lang.Preferences%></h4>
-                <div class="form-group">
-                    <label><div><span><%-lang.CSS%></span></div>
-                        <div><textarea class="form-control" placeholder="#main_header{background:#b59f00}" detail="css"></textarea></div>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label><div><span><%-lang['Force Monitors Per Row']%></span></div>
-                            <div><select class="form-control" localStorage="montage_use" selector="st_force_mon_rows">
-                                <option value="1"><%-lang.Yes%></option>
-                                <option value="0" selected><%-lang.No%></option>
-                            </select></div>
-                    </label>
-                </div>
-                <div class="form-group st_force_mon_rows_input st_force_mon_rows_1">
-                    <label><div><span><%-lang['Monitors per row']%></span></div>
-                        <div><input class="form-control" placeholder="3" localStorage="montage"></div>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label><div><span><%-lang['Browser Console Log']%></span></div>
-                            <div><select class="form-control" localStorage="browserLog">
-                                <option value="0" selected><%-lang.No%></option>
-                                <option value="1"><%-lang.Yes%></option>
-                            </select></div>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label><div><span><%-lang['Get Logs to Client']%></span></div>
-                            <div><select class="form-control" detail="get_server_log">
-                                <option value="1" selected><%-lang.Yes%></option>
-                                <option value="0"><%-lang.No%></option>
-                            </select></div>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label><div><span><%-lang['Show Thumbnails in Video List']%></span></div>
-                            <div><select class="form-control" localStorage="showThumbnail">
-                                <option value="1"><%-lang.Yes%></option>
-                                <option value="0" selected><%-lang.No%></option>
-                            </select></div>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label><div><span><%-lang['Themes']%></span></div>
-                        <div><select class="form-control" detail="theme">
-                            <option value="" selected>Default</option>
-                            <% fs.readdirSync(__dirname+'/web/libs/themes').forEach(function(v){ %>
-                            <option value="<%-v%>"><%-v%></option>
-                            <% }) %>
-                            </select></div>
-                    </label>
-                </div>
-            </div>
+          <% }
+          if(userSettings['section-pre-pre-class']){ %>
+          </div>
+          <% }
+          if(userSettings.isAdvanced){ %>
+          </div>
+          <% }
+          }
+          %>
+          <% Object.keys(define['Account Settings'].blocks).forEach(function(blockKey){
+                var accountSettings = define['Account Settings'].blocks[blockKey]
+                drawBlock(accountSettings)
+            }) %>
             <div class="form-group-group green linkShinobi">
                 <h4><%-lang['Link Shinobi']%><div class="pull-right"><a class="btn btn-success btn-xs add"><i class="fa fa-plus"></i></a></div></h4>
                 <div id="linkShinobi"></div>
             </div>
         <input type="hidden" name="details">
+      </div>
+      </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default pull-left" data-dismiss="modal"><i class="fa fa-times"></i> <%-lang.Close%></button>

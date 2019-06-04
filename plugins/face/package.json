@@ -1,0 +1,21 @@
+{
+  "name": "shinobi-face",
+  "version": "1.0.0",
+  "description": "Face Recognition plugin for Shinobi that uses C++ functions for detection. Based on @justadudewhohacks' face-api.js.",
+  "main": "shinobi-face.js",
+  "dependencies": {
+    "socket.io-client": "^1.7.4",
+    "express": "^4.16.2",
+    "moment": "^2.19.2",
+    "socket.io": "^2.0.4",
+    "face-api.js": "^0.16.1",
+    "canvas": "^2.1.0",
+    "@tensorflow/tfjs-node-gpu": "^0.1.21"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Moe Alam",
+  "license": "ISC"
+}

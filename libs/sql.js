@@ -46,6 +46,10 @@ module.exports = function(s,config){
         }
         return newQuery
     }
+    s.getUnixDate = function(value){
+        newValue = new Date(value).valueOf()
+        return newValue
+    }
     s.stringToSqlTime = function(value){
         newValue = new Date(value.replace('T',' '))
         return newValue
@@ -57,6 +61,11 @@ module.exports = function(s,config){
             var values = [];
         }
         if(!onMoveOn){onMoveOn=function(){}}
+        // if(s.databaseOptions.client === 'pg'){
+        //     query = query
+        //         .replace(/ NOT LIKE /g," NOT ILIKE ")
+        //         .replace(/ LIKE /g," ILIKE ")
+        // }
         var mergedQuery = s.mergeQueryValues(query,values)
         s.debugLog('s.sqlQuery QUERY',mergedQuery)
         if(!s.databaseEngine || !s.databaseEngine.raw){
@@ -107,6 +116,13 @@ module.exports = function(s,config){
         },true)
         //add Schedules table, will remove in future
         s.sqlQuery("CREATE TABLE IF NOT EXISTS `Schedules` (`ke` varchar(50) DEFAULT NULL,`name` text,`details` text,`start` varchar(10) DEFAULT NULL,`end` varchar(10) DEFAULT NULL,`enabled` int(1) NOT NULL DEFAULT '1')" + mySQLtail + ';',[],function(err){
+            if(err)console.error(err)
+        },true)
+        //add Timelapses and Timelapse Frames tables, will remove in future
+        s.sqlQuery("CREATE TABLE IF NOT EXISTS `Timelapses` (`ke` varchar(50) NOT NULL,`mid` varchar(50) NOT NULL,`details` longtext,`date` date NOT NULL,`time` timestamp NOT NULL,`end` timestamp NOT NULL,`size` int(11)NOT NULL)" + mySQLtail + ';',[],function(err){
+            if(err)console.error(err)
+        },true)
+        s.sqlQuery("CREATE TABLE IF NOT EXISTS `Timelapse Frames` (`ke` varchar(50) NOT NULL,`mid` varchar(50) NOT NULL,`details` longtext,`filename` varchar(50) NOT NULL,`time` timestamp NULL DEFAULT NULL,`size` int(11) NOT NULL)" + mySQLtail + ';',[],function(err){
             if(err)console.error(err)
         },true)
         //add Cloud Videos table, will remove in future

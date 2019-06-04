@@ -185,6 +185,7 @@ module.exports = function(s,config,lang){
                 d.details.matrices = reviewedMatrix
             }
         }
+        var eventTime = new Date()
         //motion counter
         if(filter.addToMotionCounter && filter.record){
             if(!s.group[d.ke].mon[d.id].detector_motion_count){
@@ -254,7 +255,7 @@ module.exports = function(s,config,lang){
             }
             //save this detection result in SQL, only coords. not image.
             if(filter.save && currentConfig.detector_save === '1'){
-                s.sqlQuery('INSERT INTO Events (ke,mid,details,time) VALUES (?,?,?,?)',[d.ke,d.id,detailString,new Date()])
+                s.sqlQuery('INSERT INTO Events (ke,mid,details,time) VALUES (?,?,?,?)',[d.ke,d.id,detailString,eventTime])
             }
             if(currentConfig.detector_notrigger === '1'){
                 var detector_notrigger_timeout
@@ -273,7 +274,7 @@ module.exports = function(s,config,lang){
                 detector_timeout = parseFloat(currentConfig.detector_timeout)
             }
             if(filter.record && d.mon.mode=='start'&&currentConfig.detector_trigger==='1'&&currentConfig.detector_record_method==='sip'){
-                s.createEventBasedRecording(d)
+                s.createEventBasedRecording(d,moment(eventTime).subtract(5,'seconds').format('YYYY-MM-DDTHH-mm-ss'))
             }else if(filter.record && d.mon.mode!=='stop'&&currentConfig.detector_trigger=='1'&&currentConfig.detector_record_method==='hot'){
                 if(!d.auth){
                     d.auth=s.gid();
@@ -322,7 +323,7 @@ module.exports = function(s,config,lang){
             }
 
             if(filter.command && currentConfig.detector_command_enable === '1' && !s.group[d.ke].mon[d.id].detector_command){
-                s.createTimeout(s.group[d.ke].mon[d.id].detector_command,currentConfig.detector_command_timeout,10)
+                s.group[d.ke].mon[d.id].detector_command = s.createTimeout(s.group[d.ke].mon[d.id].detector_command,currentConfig.detector_command_timeout,10)
                 var detector_command = addEventDetailsToString(d,currentConfig.detector_command)
                 exec(detector_command,{detached: true})
             }
@@ -331,7 +332,8 @@ module.exports = function(s,config,lang){
         d.cx={f:'detector_trigger',id:d.id,ke:d.ke,details:d.details,doObjectDetection:d.doObjectDetection};
         s.tx(d.cx,'DETECTOR_'+d.ke+d.id);
     }
-    s.createEventBasedRecording = function(d){
+    s.createEventBasedRecording = function(d,fileTime){
+        if(!fileTime)fileTime = s.formattedTime()
         d.mon = s.group[d.ke].mon_conf[d.id]
         var currentConfig = s.group[d.ke].mon[d.id].details
         if(currentConfig.detector !== '1'){
@@ -355,7 +357,7 @@ module.exports = function(s,config,lang){
         if(!s.group[d.ke].mon[d.id].eventBasedRecording.process){
             s.group[d.ke].mon[d.id].eventBasedRecording.allowEnd = false;
             var runRecord = function(){
-                var filename = s.formattedTime()+'.mp4'
+                var filename = fileTime+'.mp4'
                 s.userLog(d,{type:lang["Traditional Recording"],msg:lang["Started"]})
                 //-t 00:'+s.timeObject(new Date(detector_timeout * 1000 * 60)).format('mm:ss')+'
                 s.group[d.ke].mon[d.id].eventBasedRecording.process = spawn(config.ffmpegDir,s.splitForFFPMEG(('-loglevel warning -analyzeduration 1000000 -probesize 1000000 -re -i "'+s.dir.streams+'/'+d.ke+'/'+d.id+'/detectorStream.m3u8" -c:v copy -strftime 1 "'+s.getVideoDirectory(d.mon) + filename + '"')))

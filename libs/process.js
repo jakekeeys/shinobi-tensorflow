@@ -1,5 +1,6 @@
 var os = require('os')
 module.exports = function(process,__dirname){
+    var packageJson = require('../package.json')
     process.send = process.send || function () {};
     process.on('uncaughtException', function (err) {
         console.error('Uncaught Exception occured!');
@@ -31,6 +32,11 @@ module.exports = function(process,__dirname){
         utcOffset : require('moment')().utcOffset(),
         //directory path for this file
         mainDirectory : __dirname
+    }
+    s.packageJson = packageJson
+    if(packageJson.mainDirectory){
+        s.mainDirectory = require('path').resolve('.')
+        console.log(s.mainDirectory)
     }
     return s
 }

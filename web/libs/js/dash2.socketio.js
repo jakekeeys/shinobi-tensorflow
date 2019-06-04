@@ -7,6 +7,13 @@ $.ccio.cx=function(x,user){
     if(!x.uid){x.uid=user.uid;};
     return user.ws.emit('f',x)
 }
+$.diskUsed = {
+    main: $('.diskUsed'),
+    list: {},
+}
+$.each(addStorage,function(n,storage){
+    $.diskUsed.list[storage.name] = $(`#diskUsedList [storage="${storage.name}"]`)
+})
 $.ccio.globalWebsocket=function(d,user){
     if(d.f!=='monitor_frame'&&d.f!=='os'&&d.f!=='video_delete'&&d.f!=='detector_trigger'&&d.f!=='detector_record_timeout_start'&&d.f!=='log'){$.ccio.log(d);}
     if(!user){
@@ -131,8 +138,7 @@ $.ccio.globalWebsocket=function(d,user){
             $.ccio.pm(0,d,null,user)
         break;
         case'log':
-            var attr = '[mid="'+d.mid+'"][ke="'+d.ke+'"][auth="'+user.auth_token+'"]'
-            $.ccio.tm(4,d,'#logs,'+attr+'.monitor_item .logs:visible,'+attr+'#add_monitor:visible .logs',user)
+            $.logWriter.draw('[mid="'+d.mid+'"][ke="'+d.ke+'"][auth="'+user.auth_token+'"]',d,user)
         break;
         case'camera_cpu_usage':
             var el = $('.monitor_item[auth="'+user.auth_token+'"][ke="'+d.ke+'"][mid="'+d.id+'"] .camera_cpu_usage')
@@ -152,12 +158,26 @@ $.ccio.globalWebsocket=function(d,user){
         break;
         case'diskUsed':
             if(!d.limit||d.limit===''){d.limit=10000}
-            d.percent=parseInt((d.size/d.limit)*100)+'%';
-            d.human=parseFloat(d.size)
+            d.percent = parseInt((d.size/d.limit)*100)+'%';
+            d.human = parseFloat(d.size)
             if(d.human>1000){d.human=(d.human/1000).toFixed(2)+' GB'}else{d.human=d.human.toFixed(2)+' MB'}
-            $('.diskUsed .value').html(d.human)
-            $('.diskUsed .percent').html(d.percent)
-            $('.diskUsed .progress-bar').css('width',d.percent)
+            $.diskUsed.main.find('.value').html(d.human)
+            $.diskUsed.main.find('.percent').html(d.percent)
+            $.diskUsed.main.find('.progress-bar').css('width',d.percent)
+            if(d.addStorage){
+                $.each(d.addStorage,function(n,storage){
+                    var percent = parseInt((storage.usedSpace/storage.sizeLimit)*100)+'%'
+                    var humanValue = parseFloat(storage.usedSpace)
+                    if(humanValue > 1000){
+                        humanValue = (humanValue/1000).toFixed(2)+' GB'
+                    }else{
+                        humanValue = humanValue.toFixed(2)+' MB'
+                    }
+                    $.diskUsed.list[storage.name].find('.value').html(humanValue)
+                    $.diskUsed.list[storage.name].find('.percent').html(percent)
+                    $.diskUsed.list[storage.name].find('.progress-bar').css('width',percent)
+                })
+            }
         break;
         case'video_fix_success':case'video_fix_start':
             switch(d.f){
@@ -724,9 +744,14 @@ $.ccio.globalWebsocket=function(d,user){
                                 type: "time",
                                 display: true,
                                 time: {
-                                    format: timeFormat,
-                                    // round: 'day'
-                                }
+                                    // format: timeFormat,
+                                    unit: 'minute',
+                                    displayFormats: {
+                                        minute: 'h:mm a',
+                                    },
+                                },
+                                categoryPercentage: 0.6,
+                                barPercentage: .5,
                             }],
                         },
                     }

@@ -1,0 +1,7 @@
+.dark.modal .modal-header,.dark.modal .modal-footer{background:#333;border-color:#444;}
+.dark.modal .modal-header{color:#fff;}
+.dark.modal .modal-footer>*:not(.btn){color:#fff;}
+.dark.modal .modal-body{background:#333;}
+.dark.modal .close{color:#fff;}
+.dark.modal{color:#fff;}
+#confirm_window {z-index: 11111}

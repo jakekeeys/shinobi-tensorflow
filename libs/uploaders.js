@@ -1,11 +1,21 @@
 module.exports = function(s,config,lang){
+    s.uploaderFields = []
     var loadLib = function(lib){
-        return require('./uploaders/' + lib + '.js')
+        var uploadersFolder = __dirname + '/uploaders/'
+        var libraryPath = uploadersFolder + lib + '.js'
+        var loadedLib = require(libraryPath)(s,config,lang)
+        if(lib !== 'loader'){
+            loadedLib.isFormGroupGroup = true
+            s.uploaderFields.push(loadedLib)
+        }
+        return loadedLib
     }
-    loadLib('loader')(s,config,lang)
-    loadLib('backblazeB2')(s,config,lang)
-    loadLib('amazonS3')(s,config,lang)
-    loadLib('webdav')(s,config,lang)
-    loadLib('wasabi')(s,config,lang)
-    loadLib('sftp')(s,config,lang)
+    loadLib('loader')
+    //cloud storage
+    loadLib('s3based')
+    loadLib('backblazeB2')
+    loadLib('amazonS3')
+    loadLib('webdav')
+    //simple storage
+    loadLib('sftp')
 }

@@ -46,7 +46,7 @@ npm install --unsafe-perm
 sudo npm audit fix --force
 echo "============="
 echo "Shinobi - Install PM2"
-npm install pm2 -g
+npm install pm2@3.0.0 -g
 if (! -e "./conf.json" ) then
     cp conf.sample.json conf.json
 endif
