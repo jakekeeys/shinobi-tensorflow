@@ -203,7 +203,18 @@ module.exports = function(s,config,lang){
     }
     s.basicOrApiAuthentication = function(username,password,callback){
         var splitUsername = username.split('@')
-        if(splitUsername[1] !== 'Shinobi' && splitUsername[1] !== 'shinobi'){
+        if(splitUsername[1] && splitUsername[1].toLowerCase().indexOf('shinobi') > -1){
+            s.sqlQuery('SELECT ke,uid FROM API WHERE code=? AND ke=?',[
+                splitUsername[0], //code
+                password //ke
+            ],function(err,r){
+                var apiKey
+                if(r && r[0]){
+                    apiKey = r[0]
+                }
+                callback(err,apiKey)
+            })
+        }else{
             s.sqlQuery('SELECT ke,uid FROM Users WHERE mail=? AND (pass=? OR pass=?)',[
                 username,
                 password,
@@ -214,17 +225,6 @@ module.exports = function(s,config,lang){
                     user = r[0]
                 }
                 callback(err,user)
-            })
-        }else{
-            s.sqlQuery('SELECT ke,uid FROM API WHERE code=? AND ke=?',[
-                splitUsername[0], //code
-                password //ke
-            ],function(err,r){
-                var apiKey
-                if(r && r[0]){
-                    apiKey = r[0]
-                }
-                callback(err,apiKey)
             })
         }
     }
