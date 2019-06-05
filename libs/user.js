@@ -147,29 +147,31 @@ module.exports = function(s,config){
                         }
                         var currentStorageNumber = 0
                         var readStorageArray = function(finishedReading){
-                            reRunCheck = readStorageArray
-                            var storage = s.listOfStorage[currentStorageNumber]
-                            if(!storage){
-                                //done all checks, move on to next user
-                                callback()
-                                return
-                            }
-                            var storageId = storage.value
-                            if(storageId === ''){
-                                ++currentStorageNumber
-                                readStorageArray()
-                                return
-                            }
-                            var storageIndex = s.group[e.ke].addStorageUse[storageId]
-                            //run purge command
-                            if(storageIndex.usedSpace > (storageIndex.sizeLimit * (storageIndex.deleteOffset || config.cron.deleteOverMaxOffset))){
-                                s.sqlQuery('SELECT * FROM Videos WHERE status != 0 AND details NOT LIKE \'%"archived":"1"%\' AND ke=? AND details LIKE ? ORDER BY `time` ASC LIMIT 3',[e.ke,`%"dir":"${storage.value}"%`],function(err,rows){
-                                    deleteSetOfVideos(err,rows,storageIndex,callback)
-                                })
-                            }else{
-                                ++currentStorageNumber
-                                readStorageArray()
-                            }
+                            setTimeout(function(){
+                                reRunCheck = readStorageArray
+                                var storage = s.listOfStorage[currentStorageNumber]
+                                if(!storage){
+                                    //done all checks, move on to next user
+                                    callback()
+                                    return
+                                }
+                                var storageId = storage.value
+                                if(storageId === '' || !s.group[e.ke].addStorageUse[storageId]){
+                                    ++currentStorageNumber
+                                    readStorageArray()
+                                    return
+                                }
+                                var storageIndex = s.group[e.ke].addStorageUse[storageId]
+                                //run purge command
+                                if(storageIndex.usedSpace > (storageIndex.sizeLimit * (storageIndex.deleteOffset || config.cron.deleteOverMaxOffset))){
+                                    s.sqlQuery('SELECT * FROM Videos WHERE status != 0 AND details NOT LIKE \'%"archived":"1"%\' AND ke=? AND details LIKE ? ORDER BY `time` ASC LIMIT 3',[e.ke,`%"dir":"${storage.value}"%`],function(err,rows){
+                                        deleteSetOfVideos(err,rows,storageIndex,callback)
+                                    })
+                                }else{
+                                    ++currentStorageNumber
+                                    readStorageArray()
+                                }
+                            })
                         }
                         readStorageArray()
                     }
