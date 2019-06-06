@@ -538,7 +538,8 @@ module.exports = function(s,config,lang){
     }
     s.getVideoStorageIndex = function(video){
         var details = s.parseJSON(video.details)
-        var storageId = details.storageId || s.group[video.ke].mon[video.id].addStorageId
+        var storageId = details.storageId
+        if(s.group[video.ke] && s.group[video.ke].mon[video.id] && s.group[video.ke].mon[video.id].addStorageId)storageId = s.group[video.ke].mon[video.id].addStorageId
         if(storageId){
             return s.group[video.ke].addStorageUse[storageId]
         }

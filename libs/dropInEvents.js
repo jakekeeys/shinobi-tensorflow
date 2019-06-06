@@ -45,9 +45,12 @@ module.exports = function(s,config,lang,app,io){
             }
             var fileQueue = {}
             s.group[monitorConfig.ke].mon[monitorConfig.mid].dropInEventFileQueue = fileQueue
-            var eventTrigger = function(eventType,filename){
+            var search = function(searchIn,searchFor){
+                return searchIn.indexOf(searchFor) > -1
+            }
+            var processFile = function(filename){
                 var filePath = monitorEventDropDir + filename
-                if(filename.indexOf('.jpg') > -1 || filename.indexOf('.jpeg') > -1){
+                if(search(filename,'.jpg') || search(filename,'.jpeg')){
                     var snapPath = s.dir.streams + ke + '/' + mid + '/s.jpg'
                     fs.unlink(snapPath,function(err){
                         fs.createReadStream(filePath).pipe(fs.createWriteStream(snapPath))
@@ -58,11 +61,27 @@ module.exports = function(s,config,lang,app,io){
                                 confidence: 100,
                                 name: filename,
                                 plug: "dropInEvent",
-                                reason: "dropInEvent"
+                                reason: "ftpServer"
                             }
                         })
                     })
                 }else{
+                    if(search(filename,'.mp4')){
+                        fs.stat(filePath,function(err,stats){
+                            var startTime = stats.ctime
+                            var endTime = stats.mtime
+                            var shinobiFilename = s.formattedTime(startTime) + '.mp4'
+                            var recordingPath = s.getVideoDirectory(monitorConfig) + shinobiFilename
+                            var writeStream = fs.createWriteStream(recordingPath)
+                            fs.createReadStream(filePath).pipe(writeStream)
+                            writeStream.on('finish', () => {
+                                s.insertCompletedVideo(s.group[monitorConfig.ke].mon_conf[monitorConfig.mid],{
+                                    file : shinobiFilename
+                                },function(){
+                                })
+                            })
+                        })
+                    }
                     s.triggerEvent({
                         id: mid,
                         ke: ke,
@@ -82,13 +101,26 @@ module.exports = function(s,config,lang,app,io){
                     },1000 * 60 * 5)
                 }
             }
-            var directoryWatch = fs.watch(monitorEventDropDir,function(eventType,filename){
-                if(fs.existsSync(monitorEventDropDir + filename)){
-                    clearTimeout(fileQueue[filename])
-                    fileQueue[filename] = setTimeout(function(){
-                        eventTrigger(eventType,filename)
-                    },1200)
+            var eventTrigger = function(eventType,filename,stats){
+                if(stats.isDirectory()){
+                    fs.readdir(monitorEventDropDir + filename,function(err,files){
+                        files.forEach(function(filename){
+                            processFile(filename)
+                        })
+                    })
+                }else{
+                    processFile(filename)
                 }
+            }
+            var directoryWatch = fs.watch(monitorEventDropDir,function(eventType,filename){
+                fs.stat(monitorEventDropDir + filename,function(err,stats){
+                    if(!err){
+                        clearTimeout(fileQueue[filename])
+                        fileQueue[filename] = setTimeout(function(){
+                            eventTrigger(eventType,filename,stats)
+                        },10000)
+                    }
+                })
             })
             s.group[monitorConfig.ke].mon[monitorConfig.mid].dropInEventWatcher = directoryWatch
         }
@@ -99,6 +131,13 @@ module.exports = function(s,config,lang,app,io){
             config.ftpServerUrl = config.ftpServerUrl.replace('{{PORT}}',config.ftpServerPort)
             const FtpSrv = require('ftp-srv')
             const ftpServer = new FtpSrv({
+                // log: {
+                //     warn: function(){},
+                //     info: function(){},
+                //     child: function(){},
+                //     error: function(){},
+                //     trace: function(){},
+                // },
                 url: config.ftpServerUrl,
                 // log:{trace:function(){},error:function(){},child:function(){},info:function(){},warn:function(){}
             })
@@ -114,7 +153,9 @@ module.exports = function(s,config,lang,app,io){
                     }
                 })
             })
-
+            ftpServer.on('client-error', ({connection, context, error}) => {
+                console.log('error')
+            })
             ftpServer.listen().then(() => {
                 s.systemLog(`FTP Server running on port ${config.ftpServerPort}...`)
             }).catch(function(err){
