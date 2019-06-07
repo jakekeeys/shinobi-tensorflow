@@ -69,6 +69,34 @@ module.exports = function(s,config,lang,app,io){
                                 if(!d.mon || !d.data)return console.log('LOG DROPPED',d.mon,d.data);
                                 s.userLog(d.mon,d.data)
                             break;
+                            case'open_timelapse_file_transfer':
+                                var location = s.getTimelapseFrameDirectory(d.d) + `${d.currentDate}/`
+                                if(!fs.existsSync(location)){
+                                    fs.mkdirSync(location)
+                                }
+                            break;
+                            case'created_timelapse_file_chunk':
+                                if(!s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename]){
+                                    var dir = s.getTimelapseFrameDirectory(d.d) + `${d.currentDate}/`
+                                    s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename] = fs.createWriteStream(dir+d.filename)
+                                }
+                                s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename].write(d.chunk)
+                            break;
+                            case'created_timelapse_file':
+                                if(!s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename]){
+                                    return console.log('FILE NOT EXIST')
+                                }
+                                s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename].end()
+                                tx({
+                                    f:'deleteTimelapseFrame',
+                                    file:d.filename,
+                                    ke:d.ke,
+                                    mid:d.mid
+                                })
+                                s.insertTimelapseFrameDatabaseRow({
+                                    ke: d.ke
+                                },d.queryInfo)
+                            break;
                             case'created_file_chunk':
                                 if(!s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename]){
                                     d.dir = s.getVideoDirectory(s.group[d.ke].mon_conf[d.mid])
@@ -86,7 +114,7 @@ module.exports = function(s,config,lang,app,io){
                                     file:d.filename,
                                     ke:d.ke,
                                     mid:d.mid
-                                });
+                                })
                                 s.txWithSubPermissions({
                                     f:'video_build_success',
                                     hrefNoAuth:'/videos/'+d.ke+'/'+d.mid+'/'+d.filename,
@@ -198,6 +226,9 @@ module.exports = function(s,config,lang,app,io){
                 break;
                 case'delete'://delete video
                     s.file('delete',s.dir.videos+d.ke+'/'+d.mid+'/'+d.file)
+                break;
+                case'deleteTimelapseFrame'://delete video
+                    s.file('delete',s.getTimelapseFrameDirectory(d) + d.file)
                 break;
                 case'insertCompleted'://close video
                     s.insertCompletedVideo(d.d,d.k)

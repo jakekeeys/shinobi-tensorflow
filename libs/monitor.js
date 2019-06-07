@@ -650,7 +650,7 @@ module.exports = function(s,config,lang){
             monitorRecordingFolder = s.dir.videos + e.ke + '/' + e.id
         }
         //
-        e.dirTimelapse = monitorRecordingFolder + '_timelapse/'
+        e.dirTimelapse = s.getTimelapseFrameDirectory(e)
         if (!fs.existsSync(e.dirTimelapse)){
             fs.mkdirSync(e.dirTimelapse)
         }
@@ -910,33 +910,14 @@ module.exports = function(s,config,lang){
                 if(!fileStream){
                     var currentDate = s.formattedTime(null,'YYYY-MM-DD')
                     var filename = s.formattedTime() + '.jpg'
-                    var location = e.dirTimelapse + currentDate + '/'
+                    var location = s.getTimelapseFrameDirectory(e) + currentDate + '/'
                     if(!fs.existsSync(location)){
                         fs.mkdirSync(location)
                     }
                     fileStream = fs.createWriteStream(location + filename)
                     fileStream.on('close', function () {
                         s.group[e.ke].mon[e.id].recordTimelapseWriter = null
-                        var fileStats = fs.statSync(location + filename)
-                        var details = {}
-                        if(e.details && e.details.dir && e.details.dir !== ''){
-                            details.dir = e.details.dir
-                        }
-                        var timeNow = new Date()
-                        var queryInfo = {
-                            ke: e.ke,
-                            mid: e.id,
-                            details: s.s(details),
-                            filename: filename,
-                            size: fileStats.size,
-                            time: timeNow
-                        }
-                        s.sqlQuery('INSERT INTO `Timelapse Frames` ('+Object.keys(queryInfo).join(',')+') VALUES (?,?,?,?,?,?)',Object.values(queryInfo))
-                        s.setDiskUsedForGroup(e,fileStats.size / 1000000,'timelapeFrames')
-                        s.purgeDiskForGroup(e)
-                        s.onInsertTimelapseFrameExtensions.forEach(function(extender){
-                            extender(e,queryInfo)
-                        })
+                        s.createTimelapseFrameAndInsert(e,location,filename)
                     })
                     s.group[e.ke].mon[e.id].recordTimelapseWriter = fileStream
                 }
