@@ -430,8 +430,8 @@ module.exports = function(s,config,lang){
                                 "right" : [1.0,'x'],
                                 "down" : [-1.0,'y'],
                                 "up" : [1.0,'y'],
-                                "zoom_in" : [1.0,'zoom'],
-                                "zoom_out" : [-1.0,'zoom']
+                                "zoom_in" : [1.0,'z'],
+                                "zoom_out" : [-1.0,'z']
                             }
                             var direction = onvifDirections[e.direction]
                             controlOptions.Velocity[direction[1]] = direction[0];
