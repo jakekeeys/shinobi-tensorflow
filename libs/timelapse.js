@@ -64,6 +64,7 @@ module.exports = function(s,config,lang,app,io){
                     filesize: e.filesize,
                     d: s.group[e.ke].mon_conf[e.id],
                     filename: filename,
+                    currentDate: currentDate,
                     queryInfo: queryInfo
                 })
             })

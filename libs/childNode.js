@@ -88,10 +88,12 @@ module.exports = function(s,config,lang,app,io){
                                 }
                                 s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename].end()
                                 tx({
-                                    f:'deleteTimelapseFrame',
-                                    file:d.filename,
-                                    ke:d.ke,
-                                    mid:d.mid
+                                    f: 'deleteTimelapseFrame',
+                                    file: d.filename,
+                                    currentDate: d.currentDate,
+                                    d: d.d, //monitor config
+                                    ke: d.ke,
+                                    mid: d.mid
                                 })
                                 s.insertTimelapseFrameDatabaseRow({
                                     ke: d.ke
@@ -228,7 +230,8 @@ module.exports = function(s,config,lang,app,io){
                     s.file('delete',s.dir.videos+d.ke+'/'+d.mid+'/'+d.file)
                 break;
                 case'deleteTimelapseFrame'://delete video
-                    s.file('delete',s.getTimelapseFrameDirectory(d) + d.file)
+                var filePath = s.getTimelapseFrameDirectory(d.d) + `${d.currentDate}/` + d.file
+                    s.file('delete',filePath)
                 break;
                 case'insertCompleted'://close video
                     s.insertCompletedVideo(d.d,d.k)
