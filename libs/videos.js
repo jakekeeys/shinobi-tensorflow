@@ -45,7 +45,7 @@ module.exports = function(s,config,lang){
             }
             v.filename = s.formattedTime(v.time)+'.'+v.ext;
             if(!options.videoParam)options.videoParam = 'videos'
-            var href = '/'+options.auth+'/'+options.videoParam+'/'+v.ke+'/'+v.mid+'/'+v.filename;
+            var href = s.checkCorrectPathEnding(config.webPaths.apiPrefix) + options.auth+'/'+options.videoParam+'/'+v.ke+'/'+v.mid+'/'+v.filename;
             v.actionUrl = href
             v.links = {
                 deleteVideo : href+'/delete' + queryString,
@@ -353,7 +353,7 @@ module.exports = function(s,config,lang){
         }
         if(forceCheck === true || config.insertOrphans === true){
             if(!checkMax){
-                checkMax = config.orphanedVideoCheckMax
+                checkMax = config.orphanedVideoCheckMax || 2
             }
 
             var videosDirectory = s.getVideoDirectory(monitor)// + s.formattedTime(video.time) + '.' + video.ext
