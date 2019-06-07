@@ -2802,7 +2802,7 @@ module.exports = function(s,config,lang){
                             ]
                          },
                          {
-                            "name": "detail=detector_lisence_plate",
+                            "name": "detail=detector_lisence_plate_country",
                             "field": lang['Country of Plates'],
                             "description": "Choose the type of plates to recognize. Only US and EU are supported at this time.",
                             "default": "0",
