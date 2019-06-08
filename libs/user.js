@@ -455,7 +455,7 @@ module.exports = function(s,config){
                         if(d.d.days){d.form.details.days=d.d.days;}
                         delete(d.form.details.mon_groups)
                     }
-                    var newSize = d.form.details.size || 10000
+                    var newSize = parseFloat(d.form.details.size) || 10000
                     //load addStorageUse
                     var currentStorageNumber = 0
                     var readStorageArray = function(){
