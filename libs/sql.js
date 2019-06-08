@@ -8,8 +8,8 @@ module.exports = function(s,config){
       connection: config.db,
     }
     if(s.databaseOptions.client.indexOf('sqlite')>-1){
-        s.databaseOptions.client = 'sqlite3';
-        s.databaseOptions.useNullAsDefault = true;
+        s.databaseOptions.client = 'sqlite3'
+        s.databaseOptions.useNullAsDefault = true
         try{
             require('sqlite3')
         }catch(err){
@@ -66,8 +66,10 @@ module.exports = function(s,config){
         //         .replace(/ NOT LIKE /g," NOT ILIKE ")
         //         .replace(/ LIKE /g," ILIKE ")
         // }
-        var mergedQuery = s.mergeQueryValues(query,values)
-        s.debugLog('s.sqlQuery QUERY',mergedQuery)
+        if(config.debugLog === true){
+            var mergedQuery = s.mergeQueryValues(query,values)
+            s.debugLog('s.sqlQuery QUERY',mergedQuery)
+        }
         if(!s.databaseEngine || !s.databaseEngine.raw){
             s.connectDatabase()
         }
@@ -140,7 +142,7 @@ module.exports = function(s,config){
                     aQuery += "INSERT INTO Files (`ke`, `mid`, `name`, `details`, `size`, `status`, `time`) SELECT `ke`, `mid`, `name`, `details`, `size`, `status`, `time` FROM _Files_old;COMMIT;DROP TABLE _Files_old;"
             }else{
                 s.sqlQuery('ALTER TABLE `Files`	ADD COLUMN `time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `status`;',[],function(err){
-                    if(err && err.sqlMessage.indexOf('Duplicate') === -1)console.error(err)
+                    if(err && err.sqlMessage && err.sqlMessage.indexOf('Duplicate') === -1)console.error(err)
                 },true)
             }
         },true)

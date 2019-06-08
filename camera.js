@@ -49,6 +49,8 @@ loadLib('ffmpeg')(s,config,lang,function(ffmpeg){
     loadLib('socketio')(s,config,lang,io)
     //user and group functions
     loadLib('user')(s,config,lang)
+    //timelapse functions
+    loadLib('timelapse')(s,config,lang)
     //monitor/camera handlers
     loadLib('monitor')(s,config,lang)
     //event functions : motion, object matrix handler

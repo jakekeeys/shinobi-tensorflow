@@ -75,7 +75,7 @@ module.exports = function(s,config,lang,io){
             var checkForOrphanedVideosForMonitor = function(monitor){
                 if(!orphanedVideosForMonitors[monitor.ke])orphanedVideosForMonitors[monitor.ke] = {}
                 if(!orphanedVideosForMonitors[monitor.ke][monitor.mid])orphanedVideosForMonitors[monitor.ke][monitor.mid] = 0
-                s.orphanedVideoCheck(monitor,2,function(orphanedFilesCount){
+                s.orphanedVideoCheck(monitor,null,function(orphanedFilesCount){
                     if(orphanedFilesCount){
                         orphanedVideosForMonitors[monitor.ke][monitor.mid] += orphanedFilesCount
                     }
@@ -209,7 +209,7 @@ module.exports = function(s,config,lang,io){
             storageIndex.name = storage.name
             storageIndex.path = path
             storageIndex.usedSpace = 0
-            storageIndex.sizeLimit = parseFloat(storageData.limit) || parseFloat(user.limit) || 10000
+            storageIndex.sizeLimit = parseFloat(storageData.limit) || parseFloat(userDetails.size) || 10000
             var usedSpaceVideos = 0
             var usedSpaceTimelapseFrames = 0
             var usedSpaceFilebin = 0

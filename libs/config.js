@@ -37,7 +37,7 @@ module.exports = function(s){
     if(config.pipeAddition === undefined){config.pipeAddition=10}else{config.pipeAddition=parseInt(config.pipeAddition)}
     if(config.hideCloudSaveUrls === undefined){config.hideCloudSaveUrls = true}
     if(config.insertOrphans === undefined){config.insertOrphans = true}
-    if(config.orphanedVideoCheckMax === undefined){config.orphanedVideoCheckMax = 20}
+    if(config.orphanedVideoCheckMax === undefined){config.orphanedVideoCheckMax = 2}
     if(config.detectorMergePamRegionTriggers === undefined){config.detectorMergePamRegionTriggers = false}
     //Child Nodes
     if(config.childNodes === undefined)config.childNodes = {};
