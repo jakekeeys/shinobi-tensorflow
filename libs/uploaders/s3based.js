@@ -135,6 +135,48 @@ module.exports = function(s,config,lang){
             })
         }
     }
+    var onInsertTimelapseFrame = function(monitorObject,frameDetails){
+        var e = monitorObject
+        // if(s.group[e.ke].whcs && s.group[e.ke].init.use_whcs !== '0' && s.group[e.ke].init.whcs_save === '1'){
+        //     var fileStream = fs.createReadStream(k.dir+k.filename);
+        //     fileStream.on('error', function (err) {
+        //         console.error(err)
+        //     })
+        //     var saveLocation = s.group[e.ke].init.whcs_dir+e.ke+'/'+e.mid+'/'+k.filename
+        //     s.group[e.ke].whcs.upload({
+        //         Bucket: s.group[e.ke].init.whcs_bucket,
+        //         Key: saveLocation,
+        //         Body:fileStream,
+        //         ACL:'public-read',
+        //         ContentType:'image/jpeg'
+        //     },function(err,data){
+        //         if(err){
+        //             s.userLog(e,{type:lang['Wasabi Hot Cloud Storage Upload Error'],msg:err})
+        //         }
+        //         if(s.group[e.ke].init.whcs_log === '1' && data && data.Location){
+        //             var save = [
+        //                 e.mid,
+        //                 e.ke,
+        //                 k.startTime,
+        //                 1,
+        //                 s.s({
+        //                     type : 'whcs',
+        //                     location : saveLocation
+        //                 }),
+        //                 k.filesize,
+        //                 k.endTime,
+        //                 data.Location
+        //             ]
+        //             s.sqlQuery('INSERT INTO `Cloud Videos` (mid,ke,time,status,details,size,end,href) VALUES (?,?,?,?,?,?,?,?)',save)
+        //             s.setCloudDiskUsedForGroup(e,{
+        //                 amount : k.filesizeMB,
+        //                 storageType : 'whcs'
+        //             })
+        //             s.purgeCloudDiskForGroup(e,'whcs')
+        //         }
+        //     })
+        // }
+    }
     //wasabi
     s.addCloudUploader({
         name: 'whcs',
@@ -145,6 +187,7 @@ module.exports = function(s,config,lang){
         cloudDiskUseStartupExtensions: cloudDiskUseStartupForWasabiHotCloudStorage,
         beforeAccountSave: beforeAccountSaveForWasabiHotCloudStorage,
         onAccountSave: cloudDiskUseStartupForWasabiHotCloudStorage,
+        onInsertTimelapseFrame: onInsertTimelapseFrame
     })
     return {
        "evaluation": "details.use_whcs !== '0'",
@@ -240,7 +283,6 @@ module.exports = function(s,config,lang){
               "name": "detail=whcs_region",
               "field": lang.Region,
               "fieldType": "select",
-              "selector": "h_b2sld",
               "form-group-class":"autosave_whcs_input autosave_whcs_1",
               "description": "",
               "default": "",
@@ -325,7 +367,7 @@ module.exports = function(s,config,lang){
              "name": "detail=whcs_log",
              "field": lang['Save Links to Database'],
              "fieldType": "select",
-             "selector": "h_s3sld",
+             "selector": "h_whcssld",
              "form-group-class":"autosave_whcs_input autosave_whcs_1",
              "description": "",
              "default": "",
@@ -343,12 +385,12 @@ module.exports = function(s,config,lang){
          },
          {
              "hidden": true,
-            "name": "detail=use_bb_b2_size_limit",
+            "name": "detail=use_whcs_size_limit",
             "field": lang['Use Max Storage Amount'],
             "fieldType": "select",
-            "selector": "h_b2zl",
+            "selector": "h_whcszl",
             "form-group-class":"autosave_whcs_input autosave_whcs_1",
-            "form-group-class-pre-layer":"h_s3sld_input h_s3sld_1",
+            "form-group-class-pre-layer":"h_whcssld_input h_whcssld_1",
             "description": "",
             "default": "",
             "example": "",
@@ -368,7 +410,7 @@ module.exports = function(s,config,lang){
             "name": "detail=whcs_size_limit",
             "field": lang['Max Storage Amount'],
             "form-group-class":"autosave_whcs_input autosave_whcs_1",
-            "form-group-class-pre-layer":"h_s3sld_input h_s3sld_1",
+            "form-group-class-pre-layer":"h_whcssld_input h_whcssld_1",
             "description": "",
             "default": "10000",
             "example": "",
