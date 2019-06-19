@@ -31,9 +31,9 @@ if [ "$purgeDesktop" = "Y" ] || [ "$purgeDesktop" = "y" ]; then
         rm -rf ~/Pictures
         rm -rf ~/VisionWorks-SFM-0.90-Samples
         rm -rf ~/NVIDIA_CUDA-9.0_Samples
-        echo "Deleting source files..."
-        cd /usr/src/
-        sudo rm -rf *
+        # echo "Deleting source files..."
+        # cd /usr/src/
+        # sudo rm -rf *
         sudo systemctl isolate multi-user.target
         ####
         echo "Resetting network interface file"
