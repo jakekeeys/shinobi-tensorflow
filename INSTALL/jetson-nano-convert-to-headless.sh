@@ -37,8 +37,8 @@ if [ "$purgeDesktop" = "Y" ] || [ "$purgeDesktop" = "y" ]; then
         sudo systemctl isolate multi-user.target
         ####
         echo "Resetting network interface file"
-        echo "source-directory /etc/network/interfaces.d"
-        echo "auto eth0" > "/etc/network/interfaces"
+        echo "source-directory /etc/network/interfaces.d" > "/etc/network/interfaces"
+        echo "auto eth0" >> "/etc/network/interfaces"
         echo "iface eth0 inet dhcp" >> "/etc/network/interfaces"
     fi
 fi
