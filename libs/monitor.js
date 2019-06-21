@@ -37,7 +37,7 @@ module.exports = function(s,config,lang){
     s.getMonitorCpuUsage = function(e,callback){
         if(s.group[e.ke].mon[e.mid].spawn){
             var getUsage = function(callback2){
-                fs.readFile("/proc/" + s.group[e.ke].mon[e.mid].spawn.pid + "/stat", function(err, data){
+                s.readFile("/proc/" + s.group[e.ke].mon[e.mid].spawn.pid + "/stat", function(err, data){
                     if(!err){
                         var elems = data.toString().split(' ');
                         var utime = parseInt(elems[13]);
@@ -112,20 +112,21 @@ module.exports = function(s,config,lang){
                 })
                 snapProcess.on('exit',function(data){
                     clearTimeout(snapProcessTimeout)
+                    delete(snapProcessTimeout)
                     snapBuffer = Buffer.concat(snapBuffer)
                     callback(snapBuffer,false)
                 })
                 var snapProcessTimeout = setTimeout(function(){
                     snapProcess.stdin.setEncoding('utf8')
                     snapProcess.stdin.write('q')
-                    delete(snapProcessTimeout)
-                },5000)
+                    snapProcess.kill()
+                },10000)
             }catch(err){
-                callback(fs.readFileSync(config.defaultMjpeg,'binary'),false)
+                callback(s.readFileSync(config.defaultMjpeg,'binary'),false)
             }
         }
         var checkExists = function(localStream,callback){
-            fs.stat(localStream,function(err){
+            s.fileStats(localStream,function(err){
                 if(err){
                     callback(false)
                 }else{
@@ -152,7 +153,7 @@ module.exports = function(s,config,lang){
                     }
                 })
             }else{
-                fs.readFile(localStream+'s.jpg',function(err,snapBuffer){
+                s.readFile(localStream+'s.jpg',function(err,snapBuffer){
                     callback(snapBuffer,true)
                 })
             }
@@ -170,7 +171,7 @@ module.exports = function(s,config,lang){
         if(videoLength.length === 1)videoLength = '0' + videoLength
         var createMerged = function(copiedItems){
             var allts = pathDir+items.join('_')
-            fs.stat(allts,function(err,stats){
+            s.fileStats(allts,function(err,stats){
                 if(err){
                     //not exist
                     var cat = 'cat '+copiedItems.join(' ')+' > '+allts
@@ -244,7 +245,7 @@ module.exports = function(s,config,lang){
         var mergedFilepath = pathDir + mergedFile
         var mergedRawFilepath = pathDir + 'raw_' + mergedFile
         items.sort()
-        fs.stat(mergedFilepath,function(err,stats){
+        s.fileStats(mergedFilepath,function(err,stats){
             if(err){
                 //not exist
                 var tempScriptPath = tempDir + s.gid(5) + '.sh'
@@ -266,7 +267,7 @@ module.exports = function(s,config,lang){
                         s.file('delete',mergedRawFilepath)
                         s.file('delete',tempScriptPath)
                         setTimeout(function(){
-                            fs.stat(mergedFilepath,function(err,stats){
+                            s.fileStats(mergedFilepath,function(err,stats){
                                 if(!err)s.file('delete',mergedFilepath)
                             })
                         },1000 * 60 * 60 * 24)
@@ -590,9 +591,9 @@ module.exports = function(s,config,lang){
         if(config.doSnapshot === true){
             if(e.mon.mode !== 'stop'){
                 var pathDir = s.dir.streams+e.ke+'/'+e.mid+'/'
-                fs.stat(pathDir+'icon.jpg',function(err){
+                s.fileStats(pathDir+'icon.jpg',function(err){
                     if(!err){
-                        fs.readFile(pathDir+'icon.jpg',function(err,data){
+                        s.readFile(pathDir+'icon.jpg',function(err,data){
                             if(err){s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke);return};
                             s.tx({f:'monitor_snapshot',snapshot:data,snapshot_format:'ab',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
                         })
@@ -1150,7 +1151,7 @@ module.exports = function(s,config,lang){
                     clearTimeout(s.group[e.ke].mon[e.id].checkSnap)
                     s.group[e.ke].mon[e.id].checkSnap = setTimeout(function(){
                         if(s.group[e.ke].mon[e.id].isStarted === true){
-                            fs.stat(e.sdir+'s.jpg',function(err,snap){
+                            s.fileStats(e.sdir+'s.jpg',function(err,snap){
                                 var notStreaming = function(){
                                     if(e.coProcessor === true){
                                         s.coSpawnLauncher(e)
