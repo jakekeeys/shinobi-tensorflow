@@ -1,10 +1,12 @@
-var moment = require('moment');
-var crypto = require('crypto');
-var exec = require('child_process').exec;
+var fs = require('fs')
+var moment = require('moment')
+var crypto = require('crypto')
+var exec = require('child_process').exec
 var spawn = require('child_process').spawn;
-var events = require('events');
-var http = require('http');
-var https = require('https');
+var events = require('events')
+var http = require('http')
+var https = require('https')
+const async = require("async")
 module.exports = function(s,config){
     //kill any ffmpeg running
     s.ffmpegKill=function(){
@@ -249,6 +251,18 @@ module.exports = function(s,config){
     }
     s.isCorrectFilenameSyntax = function(string){
         return RegExp('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]').test(string)
+    }
+    var readFile = async.queue(function(filename, callback) {
+        fs.readFile(filename,"utf-8",callback)
+    }, 4);
+    s.readFile = function(filename, callback){
+        return readFile.push(filename, callback)
+    }
+    var fileStats = async.queue(function(filename, callback) {
+        fs.stat(filename,callback)
+    }, 4);
+    s.fileStats = function(filename, callback){
+        return fileStats.push(filename, callback)
     }
     Object.defineProperty(Array.prototype, 'chunk', {
         value: function(chunkSize){

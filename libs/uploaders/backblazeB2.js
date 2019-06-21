@@ -204,7 +204,7 @@ module.exports = function(s,config,lang){
            },
            {
                "hidden": true,
-              "field": lang.accountId,
+              "field": lang.keyId,
               "name": "detail=bb_b2_accountId",
               "form-group-class": "autosave_bb_b2_input autosave_bb_b2_1",
               "description": "",
