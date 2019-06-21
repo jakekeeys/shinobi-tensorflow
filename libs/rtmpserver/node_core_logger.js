@@ -1,5 +1,3 @@
-const chalk = require('chalk');
-
 LOG_TYPES = {
   NONE: 0,
   ERROR: 1,
@@ -24,25 +22,25 @@ const logTime = () => {
 const log = (...args) => {
   if (logType < LOG_TYPES.NORMAL) return;
 
-  console.log(logTime(), process.pid, chalk.bold.green('[INFO]'), ...args);
+  console.log(logTime(), ...args);
 };
 
 const error = (...args) => {
   if (logType < LOG_TYPES.ERROR) return;
 
-  console.log(logTime(), process.pid, chalk.bold.red('[ERROR]'), ...args);
+  console.error(logTime(), ...args);
 };
 
 const debug = (...args) => {
   if (logType < LOG_TYPES.DEBUG) return;
 
-  console.log(logTime(), process.pid, chalk.bold.blue('[DEBUG]'), ...args);
+  console.log(logTime(), ...args);
 };
 
 const ffdebug = (...args) => {
   if (logType < LOG_TYPES.FFDEBUG) return;
 
-  console.log(logTime(), process.pid, chalk.bold.blue('[FFDEBUG]'), ...args);
+  console.log(logTime(), ...args);
 };
 
 module.exports = {

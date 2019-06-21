@@ -255,6 +255,7 @@
    "Amazon S3 Upload Error": "Amazon S3 Upload Error",
    "Wasabi Hot Cloud Storage Upload Error": "Wasabi Hot Cloud Storage Upload Error",
    "accountId": "Account ID",
+   "keyId": "Key ID",
    "applicationKey": "Application Key",
    "aws_accessKeyId": "Access Key Id",
    "aws_secretAccessKey": "Secret Access Key",

@@ -1,3 +1,5 @@
+var fs = require('fs');
+var async = require("async");
 module.exports = function(s,config){
     s.onBeforeDatabaseLoadExtensions.forEach(function(extender){
         extender(config)
@@ -54,6 +56,11 @@ module.exports = function(s,config){
         newValue = new Date(value.replace('T',' '))
         return newValue
     }
+    var runQuery = async.queue(function(data, callback) {
+        s.databaseEngine
+        .raw(data.query,data.values)
+        .asCallback(callback)
+    }, 4);
     s.sqlQuery = function(query,values,onMoveOn,hideLog){
         if(!values){values=[]}
         if(typeof values === 'function'){
@@ -73,9 +80,10 @@ module.exports = function(s,config){
         if(!s.databaseEngine || !s.databaseEngine.raw){
             s.connectDatabase()
         }
-        return s.databaseEngine
-        .raw(query,values)
-        .asCallback(function(err,r){
+        return runQuery.push({
+            query: query,
+            values: values
+        },function(err,r){
             if(err && !hideLog){
                 console.log('s.sqlQuery QUERY ERRORED',query)
                 console.log('s.sqlQuery ERROR',err)
@@ -129,6 +137,10 @@ module.exports = function(s,config){
         },true)
         //add Cloud Videos table, will remove in future
         s.sqlQuery('CREATE TABLE IF NOT EXISTS `Cloud Videos` (`mid` varchar(50) NOT NULL,`ke` varchar(50) DEFAULT NULL,`href` text NOT NULL,`size` float DEFAULT NULL,`time` timestamp NULL DEFAULT NULL,`end` timestamp NULL DEFAULT NULL,`status` int(1) DEFAULT \'0\',`details` text)' + mySQLtail + ';',[],function(err){
+            if(err)console.error(err)
+        },true)
+        //add Cloud Timelapse Frames table, will remove in future
+        s.sqlQuery('CREATE TABLE IF NOT EXISTS `Cloud Timelapse Frames` (`ke` varchar(50) NOT NULL,`mid` varchar(50) NOT NULL,`href` text NOT NULL,`details` longtext,`filename` varchar(50) NOT NULL,`time` timestamp NULL DEFAULT NULL,`size` int(11) NOT NULL)' + mySQLtail + ';',[],function(err){
             if(err)console.error(err)
         },true)
         //create Files table

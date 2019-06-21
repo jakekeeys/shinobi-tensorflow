@@ -2234,7 +2234,6 @@ module.exports = function(s,config,lang){
                       "example": "http://111.111.111.111?mid={{MONITOR_ID}}&group={{GROUP_KEY}}&confidence={{CONFIDENCE}}",
                       "form-group-class": "h_det_web_input h_det_web_1",
                       "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "fieldType": "select",
                       "possible": ""
                    },
                    {
