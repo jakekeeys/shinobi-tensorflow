@@ -269,6 +269,7 @@ module.exports = function(s,config,lang){
                     {
                         hidden:true,
                        "name": "detail=mpass",
+                       "fieldType": "password",
                        "field": lang.Password,
                        "description": "The password for your camera",
                        "default": "",
@@ -3664,6 +3665,7 @@ module.exports = function(s,config,lang){
                       "field": lang.Password,
                       "fieldType": "password",
                       "description": "Leave blank to keep the same password during settings modification.",
+                      "fieldType": "password",
                       "default": "",
                       "example": "",
                       "possible": ""
