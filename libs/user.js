@@ -462,7 +462,6 @@ module.exports = function(s,config){
                         var storage = s.listOfStorage[currentStorageNumber]
                         if(!storage){
                             //done all checks, move on to next user
-                            callback()
                             return
                         }
                         var path = storage.value

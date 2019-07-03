@@ -1,3 +1,4 @@
+# Moe was here
 echo "============="
 echo "Do you want to purge Desktop components from your Ubuntu 18.04 installation?"
 echo "You cannot undo this. Choose wisely."
@@ -6,8 +7,21 @@ echo "(y)es or (N)o"
 read purgeDesktop
 if [ "$purgeDesktop" = "Y" ] || [ "$purgeDesktop" = "y" ]; then
     echo "Really really sure?"
+    echo "(y)es or (N)o"
     read purgeDesktopSecond
     if [ "$purgeDesktopSecond" = "Y" ] || [ "$purgeDesktopSecond" = "y" ]; then
+        echo "!----------------------------!"
+        echo "Reset network interface to DHCP? (Automatically assign IP Address from network)"
+        echo "If you don't do this you might not be able to access your machine."
+        echo "You can edit it after in /etc/network/interfaces"
+        echo "!----------------------------!"
+        echo "(y)es or (N)o"
+        read resetNetworkInterface
+        if [ "$resetNetworkInterface" = "Y" ] || [ "$resetNetworkInterface" = "y" ]; then
+            echo "source-directory /etc/network/interfaces.d" > "/etc/network/interfaces"
+            echo "auto eth0" >> "/etc/network/interfaces"
+            echo "iface eth0 inet dhcp" >> "/etc/network/interfaces"
+        fi
         echo "Fixing ownership of /lib"
         sudo chown root:root / /lib
         echo "Removing desktop UI..."
@@ -35,10 +49,5 @@ if [ "$purgeDesktop" = "Y" ] || [ "$purgeDesktop" = "y" ]; then
         # cd /usr/src/
         # sudo rm -rf *
         sudo systemctl isolate multi-user.target
-        ####
-        echo "Resetting network interface file"
-        echo "source-directory /etc/network/interfaces.d" > "/etc/network/interfaces"
-        echo "auto eth0" >> "/etc/network/interfaces"
-        echo "iface eth0 inet dhcp" >> "/etc/network/interfaces"
     fi
 fi
