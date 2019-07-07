@@ -210,7 +210,14 @@ module.exports = function(s,config){
             if(!region)return false;
             region.polygon = [];
             region.points.forEach(function(points){
-                region.polygon.push({x:parseFloat(points[0]),y:parseFloat(points[1])})
+                var x = parseFloat(points[0]);
+                var y = parseFloat(points[1]);
+                if(x < 0)x = 0;
+                if(y < 0)y = 0;
+                region.polygon.push({
+                    x: x,
+                    y: y
+                })
             })
             if(region.sensitivity===''){
                 region.sensitivity = globalSensitivity
