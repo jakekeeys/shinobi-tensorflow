@@ -44,7 +44,7 @@ module.exports = function(s,config,lang){
             if(apiKey){
                 createSession(apiKey,{
                     auth: params.auth,
-                    permissions: JSON.parse(r.details),
+                    permissions: JSON.parse(apiKey.details),
                     details: {}
                 })
                 getUserByUid(apiKey,'mail,details',function(err,user){
@@ -66,7 +66,7 @@ module.exports = function(s,config,lang){
                     if(user){
                         isSessionKey = true
                         createSession(apiKey,{
-                            details: JSON.parse(r.details),
+                            details: JSON.parse(apiKey.details),
                             permissions: {}
                         })
                         callback(err,user,isSessionKey)
