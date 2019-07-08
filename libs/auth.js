@@ -66,7 +66,7 @@ module.exports = function(s,config,lang){
                     if(user){
                         isSessionKey = true
                         createSession(apiKey,{
-                            details: JSON.parse(apiKey.details),
+                            details: JSON.parse(user.details),
                             permissions: {}
                         })
                         callback(err,user,isSessionKey)
