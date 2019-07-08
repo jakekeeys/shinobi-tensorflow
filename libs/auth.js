@@ -6,7 +6,7 @@ module.exports = function(s,config,lang){
     s.factorAuth = {}
     s.failedLoginAttempts = {}
     //
-    var getUserByUID = function(params,columns,callback){
+    var getUserByUid = function(params,columns,callback){
         if(!columns)columns = '*'
         s.sqlQuery(`SELECT ${columns} FROM Users WHERE uid=? AND ke=?`,[params.uid,params.ke],function(err,r){
             if(!r)r = []
