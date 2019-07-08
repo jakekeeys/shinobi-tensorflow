@@ -202,26 +202,26 @@ module.exports = function(s,config){
             s.sendDiskUsedAmountToClients(e)
         }
     }
-    s.setDiskUsedForGroup = function(e,bytes,storageType){
+    s.setDiskUsedForGroup = function(e,bytes,storagePoint){
         //`bytes` will be used as the value to add or substract
         if(s.group[e.ke] && s.group[e.ke].diskUsedEmitter){
-            s.group[e.ke].diskUsedEmitter.emit('set',bytes,storageType)
+            s.group[e.ke].diskUsedEmitter.emit('set',bytes,storagePoint)
         }
     }
-    s.setDiskUsedForGroupAddStorage = function(e,data,storageType){
+    s.setDiskUsedForGroupAddStorage = function(e,data,storagePoint){
         if(s.group[e.ke] && s.group[e.ke].diskUsedEmitter){
-            s.group[e.ke].diskUsedEmitter.emit('setAddStorage',data,storageType)
+            s.group[e.ke].diskUsedEmitter.emit('setAddStorage',data,storagePoint)
         }
     }
-    s.purgeCloudDiskForGroup = function(e,storageType){
+    s.purgeCloudDiskForGroup = function(e,storageType,storagePoint){
         if(s.group[e.ke].diskUsedEmitter){
-            s.group[e.ke].diskUsedEmitter.emit('purgeCloud',storageType)
+            s.group[e.ke].diskUsedEmitter.emit('purgeCloud',storageType,storagePoint)
         }
     }
-    s.setCloudDiskUsedForGroup = function(e,usage){
-        //`bytes` will be used as the value to add or substract
+    s.setCloudDiskUsedForGroup = function(e,usage,storagePoint){
+        //`usage` will be used as the value to add or substract
         if(s.group[e.ke].diskUsedEmitter){
-            s.group[e.ke].diskUsedEmitter.emit('setCloud',usage)
+            s.group[e.ke].diskUsedEmitter.emit('setCloud',usage,storagePoint)
         }
     }
     s.sendDiskUsedAmountToClients = function(e){
@@ -280,9 +280,9 @@ module.exports = function(s,config){
             s.group[e.ke].init={};
         }
         s.sqlQuery('SELECT * FROM Users WHERE ke=? AND details NOT LIKE ?',[e.ke,'%"sub"%'],function(ar,r){
-            if(r&&r[0]){
-                r=r[0];
-                ar=JSON.parse(r.details);
+            if(r && r[0]){
+                r = r[0];
+                ar = JSON.parse(r.details);
                 //load extenders
                 s.loadGroupAppExtensions.forEach(function(extender){
                     extender(r,ar)
@@ -290,7 +290,7 @@ module.exports = function(s,config){
                 //disk Used Emitter
                 if(!s.group[e.ke].diskUsedEmitter){
                     s.group[e.ke].diskUsedEmitter = new events.EventEmitter()
-                    s.group[e.ke].diskUsedEmitter.on('setCloud',function(currentChange){
+                    s.group[e.ke].diskUsedEmitter.on('setCloud',function(currentChange,storagePoint){
                         var amount = currentChange.amount
                         var storageType = currentChange.storageType
                         var cloudDisk = s.group[e.ke].cloudDiskUse[storageType]
@@ -305,46 +305,90 @@ module.exports = function(s,config){
                         }
                         //change global size value
                         cloudDisk.usedSpace = cloudDisk.usedSpace + amount
+                        switch(storagePoint){
+                            case'timelapeFrames':
+                                cloudDisk.usedSpaceTimelapseFrames += amount
+                            break;
+                            case'fileBin':
+                                cloudDisk.usedSpaceFilebin += amount
+                            break;
+                            default:
+                                cloudDisk.usedSpaceVideos += amount
+                            break;
+                        }
                     })
-                    s.group[e.ke].diskUsedEmitter.on('purgeCloud',function(storageType){
+                    s.group[e.ke].diskUsedEmitter.on('purgeCloud',function(storageType,storagePoint){
                         if(config.cron.deleteOverMax === true){
-                                //set queue processor
-                                var finish=function(){
-                                    // s.sendDiskUsedAmountToClients(e)
-                                }
-                                var deleteVideos = function(){
-                                    //run purge command
-                                    var cloudDisk = s.group[e.ke].cloudDiskUse[storageType]
-                                    if(cloudDisk.sizeLimitCheck && cloudDisk.usedSpace > (cloudDisk.sizeLimit*config.cron.deleteOverMaxOffset)){
-                                            s.sqlQuery('SELECT * FROM `Cloud Videos` WHERE status != 0 AND ke=? AND details LIKE \'%"type":"'+storageType+'"%\' ORDER BY `time` ASC LIMIT 2',[e.ke],function(err,videos){
-                                                var videosToDelete = []
-                                                var queryValues = [e.ke]
-                                                if(!videos)return console.log(err)
-                                                videos.forEach(function(video){
-                                                    video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
-                                                    videosToDelete.push('(mid=? AND `time`=?)')
-                                                    queryValues.push(video.mid)
-                                                    queryValues.push(video.time)
-                                                    s.setCloudDiskUsedForGroup(e,{
-                                                        amount : -(video.size/1000000),
-                                                        storageType : storageType
-                                                    })
-                                                    s.deleteVideoFromCloudExtensionsRunner(e,storageType,video)
+                            var cloudDisk = s.group[e.ke].cloudDiskUse[storageType]
+                            //set queue processor
+                            var finish=function(){
+                                // s.sendDiskUsedAmountToClients(e)
+                            }
+                            var deleteVideos = function(){
+                                //run purge command
+                                if(cloudDisk.sizeLimitCheck && cloudDisk.usedSpace > (cloudDisk.sizeLimit*config.cron.deleteOverMaxOffset)){
+                                        s.sqlQuery('SELECT * FROM `Cloud Videos` WHERE status != 0 AND ke=? AND details LIKE \'%"type":"'+storageType+'"%\' ORDER BY `time` ASC LIMIT 2',[e.ke],function(err,videos){
+                                            var videosToDelete = []
+                                            var queryValues = [e.ke]
+                                            if(!videos)return console.log(err)
+                                            videos.forEach(function(video){
+                                                video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
+                                                videosToDelete.push('(mid=? AND `time`=?)')
+                                                queryValues.push(video.mid)
+                                                queryValues.push(video.time)
+                                                s.setCloudDiskUsedForGroup(e,{
+                                                    amount : -(video.size/1000000),
+                                                    storageType : storageType
                                                 })
-                                                if(videosToDelete.length > 0){
-                                                    videosToDelete = videosToDelete.join(' OR ')
-                                                    s.sqlQuery('DELETE FROM `Cloud Videos` WHERE ke =? AND ('+videosToDelete+')',queryValues,function(){
-                                                        deleteVideos()
-                                                    })
-                                                }else{
-                                                    finish()
-                                                }
+                                                s.deleteVideoFromCloudExtensionsRunner(e,storageType,video)
                                             })
-                                    }else{
-                                        finish()
-                                    }
+                                            if(videosToDelete.length > 0){
+                                                videosToDelete = videosToDelete.join(' OR ')
+                                                s.sqlQuery('DELETE FROM `Cloud Videos` WHERE ke =? AND ('+videosToDelete+')',queryValues,function(){
+                                                    deleteVideos()
+                                                })
+                                            }else{
+                                                finish()
+                                            }
+                                        })
+                                }else{
+                                    finish()
                                 }
-                                deleteVideos()
+                            }
+                            var deleteTimelapseFrames = function(callback){
+                                reRunCheck = function(){
+                                    return deleteTimelapseFrames(callback)
+                                }
+                                //run purge command
+                                if(cloudDisk.usedSpaceTimelapseFrames > (cloudDisk.sizeLimit * (s.group[e.ke].sizeLimitTimelapseFramesPercent / 100) * config.cron.deleteOverMaxOffset)){
+                                    s.sqlQuery('SELECT * FROM `Cloud Timelapse Frames` WHERE ke=? AND details NOT LIKE \'%"archived":"1"%\' ORDER BY `time` ASC LIMIT 3',[e.ke],function(err,frames){
+                                        var framesToDelete = []
+                                        var queryValues = [e.ke]
+                                        if(!frames)return console.log(err)
+                                        frames.forEach(function(frame){
+                                            frame.dir = s.getVideoDirectory(frame) + s.formattedTime(frame.time) + '.' + frame.ext
+                                            framesToDelete.push('(mid=? AND `time`=?)')
+                                            queryValues.push(frame.mid)
+                                            queryValues.push(frame.time)
+                                            s.setCloudDiskUsedForGroup(e,{
+                                                amount : -(frame.size/1000000),
+                                                storageType : storageType
+                                            })
+                                            s.deleteVideoFromCloudExtensionsRunner(e,storageType,frame)
+                                        })
+                                        s.sqlQuery('DELETE FROM `Cloud Timelapse Frames` WHERE ke =? AND ('+framesToDelete+')',queryValues,function(){
+
+                                        })
+                                    })
+                                }else{
+                                    callback()
+                                }
+                            }
+                            deleteVideos(function(){
+                                deleteTimelapseFrames(function(){
+
+                                })
+                            })
                         }else{
                             // s.sendDiskUsedAmountToClients(e)
                         }
@@ -381,12 +425,12 @@ module.exports = function(s,config){
                         var storageIndex = data.storageIndex
                         //validate current values
                         if(!storageIndex.usedSpace){
-                            storageIndex.usedSpace=0
+                            storageIndex.usedSpace = 0
                         }else{
-                            storageIndex.usedSpace=parseFloat(storageIndex.usedSpace)
+                            storageIndex.usedSpace = parseFloat(storageIndex.usedSpace)
                         }
-                        if(storageIndex.usedSpace<0||isNaN(storageIndex.usedSpace)){
-                            storageIndex.usedSpace=0
+                        if(storageIndex.usedSpace < 0 || isNaN(storageIndex.usedSpace)){
+                            storageIndex.usedSpace = 0
                         }
                         //change global size value
                         storageIndex.usedSpace += currentSize
