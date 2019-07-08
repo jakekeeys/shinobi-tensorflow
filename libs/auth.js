@@ -42,7 +42,7 @@ module.exports = function(s,config,lang){
         getApiKey(params,'*',function(err,apiKey){
             var isSessionKey = false
             if(apiKey){
-                createSession(apiKey,{
+                var sessionKey = createSession(apiKey,{
                     auth: params.auth,
                     permissions: JSON.parse(apiKey.details),
                     details: {}
@@ -50,7 +50,9 @@ module.exports = function(s,config,lang){
                 getUserByUid(apiKey,'mail,details',function(err,user){
                     if(user){
                         try{
-                            editSession(params,{
+                            editSession({
+                                auth: sessionKey
+                            },{
                                 mail: user.mail,
                                 details: s.parseJSON(user.details),
                                 lang: s.getLanguageFile(user.details.lang)
@@ -77,12 +79,14 @@ module.exports = function(s,config,lang){
     }
     var createSession = function(user,additionalData){
         if(user){
+            var generatedId = s.gid(20)
             if(!additionalData)additionalData = {}
             if(!user.ip)user.ip = '0.0.0.0'
-            user.auth = s.gid(20)
+            user.auth = generatedId
             user.details = JSON.parse(user.details)
             user.permissions = {}
             s.api[user.auth] = Object.assign(user,additionalData)
+            return generatedId
         }
     }
     var editSession = function(user,additionalData){
