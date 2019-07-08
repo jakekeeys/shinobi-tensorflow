@@ -97,7 +97,7 @@ module.exports = function(s,config,lang){
         if(!message)message = lang['Not Authorized']
         res.end(s.prettyPrint({
             ok: false,
-            msg: msg
+            msg: message
         }))
     }
     var resetActiveSessionTimer = function(activeSession){
