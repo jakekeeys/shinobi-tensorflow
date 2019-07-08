@@ -13,9 +13,9 @@ module.exports = function(s,config){
             globalSensitivity,
             globalColorThreshold,
             fullFrame = false
-        if(s.group[e.ke].mon_conf[e.id].details.detector_scale_x===''||s.group[e.ke].mon_conf[e.id].details.detector_scale_y===''){
-            width = s.group[e.ke].mon_conf[e.id].details.detector_scale_x;
-            height = s.group[e.ke].mon_conf[e.id].details.detector_scale_y;
+        if(s.group[e.ke].rawMonitorConfigurations[e.id].details.detector_scale_x===''||s.group[e.ke].rawMonitorConfigurations[e.id].details.detector_scale_y===''){
+            width = s.group[e.ke].rawMonitorConfigurations[e.id].details.detector_scale_x;
+            height = s.group[e.ke].rawMonitorConfigurations[e.id].details.detector_scale_y;
         }else{
             width = e.width
             height = e.height
@@ -35,9 +35,9 @@ module.exports = function(s,config){
 
         var regionJson
         try{
-            regionJson = JSON.parse(s.group[e.ke].mon_conf[e.id].details.cords)
+            regionJson = JSON.parse(s.group[e.ke].rawMonitorConfigurations[e.id].details.cords)
         }catch(err){
-            regionJson = s.group[e.ke].mon_conf[e.id].details.cords
+            regionJson = s.group[e.ke].rawMonitorConfigurations[e.id].details.cords
         }
 
         if(Object.keys(regionJson).length === 0 || e.details.detector_frame === '1'){
@@ -64,8 +64,8 @@ module.exports = function(s,config){
         if(e.details.detector_show_matrix==='1'){
             pamDiffOptions.response = 'bounds'
         }
-        s.group[e.ke].mon[e.id].pamDiff = new PamDiff(pamDiffOptions);
-        s.group[e.ke].mon[e.id].p2p = new P2P()
+        s.group[e.ke].activeMonitors[e.id].pamDiff = new PamDiff(pamDiffOptions);
+        s.group[e.ke].activeMonitors[e.id].p2p = new P2P()
         var regionArray = Object.values(regionJson)
         if(config.detectorMergePamRegionTriggers === true){
             // merge pam triggers for performance boost
@@ -116,12 +116,12 @@ module.exports = function(s,config){
                 }
             }
             if(e.details.detector_noise_filter==='1'){
-                if(!s.group[e.ke].mon[e.id].noiseFilterArray)s.group[e.ke].mon[e.id].noiseFilterArray = {}
-                var noiseFilterArray = s.group[e.ke].mon[e.id].noiseFilterArray
+                if(!s.group[e.ke].activeMonitors[e.id].noiseFilterArray)s.group[e.ke].activeMonitors[e.id].noiseFilterArray = {}
+                var noiseFilterArray = s.group[e.ke].activeMonitors[e.id].noiseFilterArray
                 Object.keys(regions.notForPam).forEach(function(name){
                     if(!noiseFilterArray[name])noiseFilterArray[name]=[];
                 })
-                s.group[e.ke].mon[e.id].pamDiff.on('diff', (data) => {
+                s.group[e.ke].activeMonitors[e.id].pamDiff.on('diff', (data) => {
                     var filteredCount = 0
                     var filteredCountSuccess = 0
                     data.trigger.forEach(function(trigger){
@@ -135,7 +135,7 @@ module.exports = function(s,config){
                     })
                 })
             }else{
-                s.group[e.ke].mon[e.id].pamDiff.on('diff', (data) => {
+                s.group[e.ke].activeMonitors[e.id].pamDiff.on('diff', (data) => {
                     buildTriggerEvent(s.mergePamTriggers(data))
                 })
             }
@@ -170,12 +170,12 @@ module.exports = function(s,config){
                 })
             }
             if(e.details.detector_noise_filter==='1'){
-                if(!s.group[e.ke].mon[e.id].noiseFilterArray)s.group[e.ke].mon[e.id].noiseFilterArray = {}
-                var noiseFilterArray = s.group[e.ke].mon[e.id].noiseFilterArray
+                if(!s.group[e.ke].activeMonitors[e.id].noiseFilterArray)s.group[e.ke].activeMonitors[e.id].noiseFilterArray = {}
+                var noiseFilterArray = s.group[e.ke].activeMonitors[e.id].noiseFilterArray
                 Object.keys(regions.notForPam).forEach(function(name){
                     if(!noiseFilterArray[name])noiseFilterArray[name]=[];
                 })
-                s.group[e.ke].mon[e.id].pamDiff.on('diff', (data) => {
+                s.group[e.ke].activeMonitors[e.id].pamDiff.on('diff', (data) => {
                     data.trigger.forEach(function(trigger){
                         s.filterTheNoise(e,noiseFilterArray,regions,trigger,function(){
                             s.createMatrixFromPamTrigger(trigger)
@@ -184,7 +184,7 @@ module.exports = function(s,config){
                     })
                 })
             }else{
-                s.group[e.ke].mon[e.id].pamDiff.on('diff', (data) => {
+                s.group[e.ke].activeMonitors[e.id].pamDiff.on('diff', (data) => {
                     data.trigger.forEach(function(trigger){
                         s.createMatrixFromPamTrigger(trigger)
                         buildTriggerEvent(trigger)

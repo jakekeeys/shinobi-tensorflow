@@ -56,11 +56,11 @@ module.exports = function(s,config,lang){
             extender(d,filter)
         })
         var detailString = JSON.stringify(d.details);
-        if(!s.group[d.ke]||!s.group[d.ke].mon[d.id]){
+        if(!s.group[d.ke]||!s.group[d.ke].activeMonitors[d.id]){
             return s.systemLog(lang['No Monitor Found, Ignoring Request'])
         }
-        d.mon=s.group[d.ke].mon_conf[d.id];
-        var currentConfig = s.group[d.ke].mon[d.id].details
+        d.mon=s.group[d.ke].rawMonitorConfigurations[d.id];
+        var currentConfig = s.group[d.ke].activeMonitors[d.id].details
         var hasMatrices = (d.details.matrices && d.details.matrices.length > 0)
         //read filters
         if(
@@ -188,13 +188,13 @@ module.exports = function(s,config,lang){
         var eventTime = new Date()
         //motion counter
         if(filter.addToMotionCounter && filter.record){
-            if(!s.group[d.ke].mon[d.id].detector_motion_count){
-                s.group[d.ke].mon[d.id].detector_motion_count=0
+            if(!s.group[d.ke].activeMonitors[d.id].detector_motion_count){
+                s.group[d.ke].activeMonitors[d.id].detector_motion_count=0
             }
-            s.group[d.ke].mon[d.id].detector_motion_count+=1
+            s.group[d.ke].activeMonitors[d.id].detector_motion_count+=1
         }
         if(filter.useLock){
-            if(s.group[d.ke].mon[d.id].motion_lock){
+            if(s.group[d.ke].activeMonitors[d.id].motion_lock){
                 return
             }
             var detector_lock_timeout
@@ -202,10 +202,10 @@ module.exports = function(s,config,lang){
                 detector_lock_timeout = 2000
             }
             detector_lock_timeout = parseFloat(currentConfig.detector_lock_timeout);
-            if(!s.group[d.ke].mon[d.id].detector_lock_timeout){
-                s.group[d.ke].mon[d.id].detector_lock_timeout=setTimeout(function(){
-                    clearTimeout(s.group[d.ke].mon[d.id].detector_lock_timeout)
-                    delete(s.group[d.ke].mon[d.id].detector_lock_timeout)
+            if(!s.group[d.ke].activeMonitors[d.id].detector_lock_timeout){
+                s.group[d.ke].activeMonitors[d.id].detector_lock_timeout=setTimeout(function(){
+                    clearTimeout(s.group[d.ke].activeMonitors[d.id].detector_lock_timeout)
+                    delete(s.group[d.ke].activeMonitors[d.id].detector_lock_timeout)
                 },detector_lock_timeout)
             }else{
                 return
@@ -213,7 +213,7 @@ module.exports = function(s,config,lang){
         }
         // check if object should be in region
         if(hasMatrices && currentConfig.detector_obj_region === '1'){
-            var regions = s.group[d.ke].mon[d.id].parsedObjects.cords
+            var regions = s.group[d.ke].activeMonitors[d.id].parsedObjects.cords
             var isMatrixInRegions = s.isAtleastOneMatrixInRegion(regions,d.details.matrices)
             if(isMatrixInRegions){
                 s.debugLog('Matrix in region!')
@@ -230,11 +230,11 @@ module.exports = function(s,config,lang){
         if(d.doObjectDetection === true){
             s.ocvTx({
                 f : 'frame',
-                mon : s.group[d.ke].mon_conf[d.id].details,
+                mon : s.group[d.ke].rawMonitorConfigurations[d.id].details,
                 ke : d.ke,
                 id : d.id,
                 time : s.formattedTime(),
-                frame : s.group[d.ke].mon[d.id].lastJpegDetectorFrame
+                frame : s.group[d.ke].activeMonitors[d.id].lastJpegDetectorFrame
             })
         }else{
             if(currentConfig.detector_multi_trigger === '1'){
@@ -263,9 +263,9 @@ module.exports = function(s,config,lang){
                     detector_notrigger_timeout = 10
                 }
                 detector_notrigger_timeout = parseFloat(currentConfig.detector_notrigger_timeout)*1000*60;
-                s.group[d.ke].mon[d.id].detector_notrigger_timeout = detector_notrigger_timeout;
-                clearInterval(s.group[d.ke].mon[d.id].detector_notrigger_timeout)
-                s.group[d.ke].mon[d.id].detector_notrigger_timeout = setInterval(s.group[d.ke].mon[d.id].detector_notrigger_timeout_function,detector_notrigger_timeout)
+                s.group[d.ke].activeMonitors[d.id].detector_notrigger_timeout = detector_notrigger_timeout;
+                clearInterval(s.group[d.ke].activeMonitors[d.id].detector_notrigger_timeout)
+                s.group[d.ke].activeMonitors[d.id].detector_notrigger_timeout = setInterval(s.group[d.ke].activeMonitors[d.id].detector_notrigger_timeout_function,detector_notrigger_timeout)
             }
             var detector_timeout
             if(!currentConfig.detector_timeout||currentConfig.detector_timeout===''){
@@ -322,8 +322,8 @@ module.exports = function(s,config,lang){
                 })
             }
 
-            if(filter.command && currentConfig.detector_command_enable === '1' && !s.group[d.ke].mon[d.id].detector_command){
-                s.group[d.ke].mon[d.id].detector_command = s.createTimeout(s.group[d.ke].mon[d.id].detector_command,currentConfig.detector_command_timeout,10)
+            if(filter.command && currentConfig.detector_command_enable === '1' && !s.group[d.ke].activeMonitors[d.id].detector_command){
+                s.group[d.ke].activeMonitors[d.id].detector_command = s.createTimeout(s.group[d.ke].activeMonitors[d.id].detector_command,currentConfig.detector_command_timeout,10)
                 var detector_command = addEventDetailsToString(d,currentConfig.detector_command)
                 if(detector_command === '')return
                 exec(detector_command,{detached: true})
@@ -335,8 +335,8 @@ module.exports = function(s,config,lang){
     }
     s.createEventBasedRecording = function(d,fileTime){
         if(!fileTime)fileTime = s.formattedTime()
-        d.mon = s.group[d.ke].mon_conf[d.id]
-        var currentConfig = s.group[d.ke].mon[d.id].details
+        d.mon = s.group[d.ke].rawMonitorConfigurations[d.id]
+        var currentConfig = s.group[d.ke].activeMonitors[d.id].details
         if(currentConfig.detector !== '1'){
             return
         }
@@ -346,29 +346,29 @@ module.exports = function(s,config,lang){
         }else{
             detector_timeout = parseFloat(currentConfig.detector_timeout)
         }
-        if(currentConfig.watchdog_reset === '1' || !s.group[d.ke].mon[d.id].eventBasedRecording.timeout){
-            clearTimeout(s.group[d.ke].mon[d.id].eventBasedRecording.timeout)
-            s.group[d.ke].mon[d.id].eventBasedRecording.timeout = setTimeout(function(){
-                s.group[d.ke].mon[d.id].eventBasedRecording.allowEnd = true
-                s.group[d.ke].mon[d.id].eventBasedRecording.process.stdin.setEncoding('utf8')
-                s.group[d.ke].mon[d.id].eventBasedRecording.process.stdin.write('q')
-                delete(s.group[d.ke].mon[d.id].eventBasedRecording.timeout)
+        if(currentConfig.watchdog_reset === '1' || !s.group[d.ke].activeMonitors[d.id].eventBasedRecording.timeout){
+            clearTimeout(s.group[d.ke].activeMonitors[d.id].eventBasedRecording.timeout)
+            s.group[d.ke].activeMonitors[d.id].eventBasedRecording.timeout = setTimeout(function(){
+                s.group[d.ke].activeMonitors[d.id].eventBasedRecording.allowEnd = true
+                s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stdin.setEncoding('utf8')
+                s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stdin.write('q')
+                delete(s.group[d.ke].activeMonitors[d.id].eventBasedRecording.timeout)
             },detector_timeout * 1000 * 60)
         }
-        if(!s.group[d.ke].mon[d.id].eventBasedRecording.process){
-            s.group[d.ke].mon[d.id].eventBasedRecording.allowEnd = false;
+        if(!s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process){
+            s.group[d.ke].activeMonitors[d.id].eventBasedRecording.allowEnd = false;
             var runRecord = function(){
                 var filename = fileTime+'.mp4'
                 s.userLog(d,{type:lang["Traditional Recording"],msg:lang["Started"]})
                 //-t 00:'+s.timeObject(new Date(detector_timeout * 1000 * 60)).format('mm:ss')+'
-                s.group[d.ke].mon[d.id].eventBasedRecording.process = spawn(config.ffmpegDir,s.splitForFFPMEG(('-loglevel warning -analyzeduration 1000000 -probesize 1000000 -re -i "'+s.dir.streams+'/'+d.ke+'/'+d.id+'/detectorStream.m3u8" -c:v copy -strftime 1 "'+s.getVideoDirectory(d.mon) + filename + '"')))
+                s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process = spawn(config.ffmpegDir,s.splitForFFPMEG(('-loglevel warning -analyzeduration 1000000 -probesize 1000000 -re -i "'+s.dir.streams+'/'+d.ke+'/'+d.id+'/detectorStream.m3u8" -c:v copy -strftime 1 "'+s.getVideoDirectory(d.mon) + filename + '"')))
                 var ffmpegError='';
                 var error
-                s.group[d.ke].mon[d.id].eventBasedRecording.process.stderr.on('data',function(data){
+                s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stderr.on('data',function(data){
                     s.userLog(d,{type:lang["Traditional Recording"],msg:data.toString()})
                 })
-                s.group[d.ke].mon[d.id].eventBasedRecording.process.on('close',function(){
-                    if(!s.group[d.ke].mon[d.id].eventBasedRecording.allowEnd){
+                s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.on('close',function(){
+                    if(!s.group[d.ke].activeMonitors[d.id].eventBasedRecording.allowEnd){
                         s.userLog(d,{type:lang["Traditional Recording"],msg:lang["Detector Recording Process Exited Prematurely. Restarting."]})
                         runRecord()
                         return
@@ -378,22 +378,22 @@ module.exports = function(s,config,lang){
                     })
                     s.userLog(d,{type:lang["Traditional Recording"],msg:lang["Detector Recording Complete"]})
                     s.userLog(d,{type:lang["Traditional Recording"],msg:lang["Clear Recorder Process"]})
-                    delete(s.group[d.ke].mon[d.id].eventBasedRecording.process)
-                    clearTimeout(s.group[d.ke].mon[d.id].eventBasedRecording.timeout)
-                    delete(s.group[d.ke].mon[d.id].eventBasedRecording.timeout)
-                    clearTimeout(s.group[d.ke].mon[d.id].recordingChecker)
+                    delete(s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process)
+                    clearTimeout(s.group[d.ke].activeMonitors[d.id].eventBasedRecording.timeout)
+                    delete(s.group[d.ke].activeMonitors[d.id].eventBasedRecording.timeout)
+                    clearTimeout(s.group[d.ke].activeMonitors[d.id].recordingChecker)
                 })
             }
             runRecord()
         }
     }
     s.closeEventBasedRecording = function(e){
-        if(s.group[e.ke].mon[e.id].eventBasedRecording.process){
-            clearTimeout(s.group[e.ke].mon[e.id].eventBasedRecording.timeout)
-            s.group[e.ke].mon[e.id].eventBasedRecording.allowEnd = true;
-            s.group[e.ke].mon[e.id].eventBasedRecording.process.kill('SIGTERM');
+        if(s.group[e.ke].activeMonitors[e.id].eventBasedRecording.process){
+            clearTimeout(s.group[e.ke].activeMonitors[e.id].eventBasedRecording.timeout)
+            s.group[e.ke].activeMonitors[e.id].eventBasedRecording.allowEnd = true;
+            s.group[e.ke].activeMonitors[e.id].eventBasedRecording.process.kill('SIGTERM');
         }
-        // var stackedProcesses = s.group[e.ke].mon[e.id].eventBasedRecording.stackable
+        // var stackedProcesses = s.group[e.ke].activeMonitors[e.id].eventBasedRecording.stackable
         // Object.keys(stackedProcesses).forEach(function(key){
         //     var item = stackedProcesses[key]
         //     clearTimeout(item.timeout)

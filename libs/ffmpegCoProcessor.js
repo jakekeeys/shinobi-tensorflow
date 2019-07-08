@@ -140,27 +140,27 @@ module.exports = function(s,config,lang,ffmpeg){
         if(commandString === x.input){
             return false
         }
-        s.group[e.ke].mon[e.mid].coProcessorCmd = commandString
+        s.group[e.ke].activeMonitors[e.mid].coProcessorCmd = commandString
         return spawn(config.ffmpegDir,s.splitForFFPMEG((commandString).replace(/\s+/g,' ').trim()),{detached: true,stdio:x.stdioPipes})
     }
     s.coSpawnLauncher = function(e){
-        if(s.group[e.ke].mon[e.id].isStarted === true && e.coProcessor === true){
+        if(s.group[e.ke].activeMonitors[e.id].isStarted === true && e.coProcessor === true){
             s.coSpawnClose(e)
-            s.group[e.ke].mon[e.id].coSpawnProcessor = s.ffmpegCoProcessor(e)
-            if(s.group[e.ke].mon[e.id].coSpawnProcessor === false){
+            s.group[e.ke].activeMonitors[e.id].coSpawnProcessor = s.ffmpegCoProcessor(e)
+            if(s.group[e.ke].activeMonitors[e.id].coSpawnProcessor === false){
                 return
             }
-            s.userLog(e,{type:lang['coProcessor Started'],msg:{msg:lang.coProcessorTextStarted,cmd:s.group[e.ke].mon[e.id].coProcessorCmd}});
-            s.group[e.ke].mon[e.id].coSpawnProcessorExit = function(){
-                s.userLog(e,{type:lang['coProcess Unexpected Exit'],msg:{msg:lang['coProcess Crashed for Monitor']+' : '+e.id,cmd:s.group[e.ke].mon[e.id].coProcessorCmd}});
+            s.userLog(e,{type:lang['coProcessor Started'],msg:{msg:lang.coProcessorTextStarted,cmd:s.group[e.ke].activeMonitors[e.id].coProcessorCmd}});
+            s.group[e.ke].activeMonitors[e.id].coSpawnProcessorExit = function(){
+                s.userLog(e,{type:lang['coProcess Unexpected Exit'],msg:{msg:lang['coProcess Crashed for Monitor']+' : '+e.id,cmd:s.group[e.ke].activeMonitors[e.id].coProcessorCmd}});
                 setTimeout(function(){
                     s.coSpawnLauncher(e)
                 },2000)
             }
-            s.group[e.ke].mon[e.id].coSpawnProcessor.on('end',s.group[e.ke].mon[e.id].coSpawnProcessorExit)
-            s.group[e.ke].mon[e.id].coSpawnProcessor.on('exit',s.group[e.ke].mon[e.id].coSpawnProcessorExit)
+            s.group[e.ke].activeMonitors[e.id].coSpawnProcessor.on('end',s.group[e.ke].activeMonitors[e.id].coSpawnProcessorExit)
+            s.group[e.ke].activeMonitors[e.id].coSpawnProcessor.on('exit',s.group[e.ke].activeMonitors[e.id].coSpawnProcessorExit)
             var checkLog = function(d,x){return d.indexOf(x)>-1;}
-            s.group[e.ke].mon[e.id].coSpawnProcessor.stderr.on('data',function(d){
+            s.group[e.ke].activeMonitors[e.id].coSpawnProcessor.stderr.on('data',function(d){
                 d=d.toString();
                 switch(true){
                     case checkLog(d,'deprecated pixel format used'):
@@ -176,34 +176,34 @@ module.exports = function(s,config,lang,ffmpeg){
                 s.userLog(e,{type:lang.coProcessor,msg:d});
             })
             if(e.frame_to_stream){
-                s.group[e.ke].mon[e.id].coSpawnProcessor.stdout.on('data',e.frame_to_stream)
+                s.group[e.ke].activeMonitors[e.id].coSpawnProcessor.stdout.on('data',e.frame_to_stream)
             }
             if(e.details.detector === '1'){
                 s.ocvTx({f:'init_monitor',id:e.id,ke:e.ke})
                 //frames from motion detect
                 if(e.details.detector_pam === '1'){
                    s.createPamDiffEngine(e)
-                   s.group[e.ke].mon[e.id].coSpawnProcessor.stdio[3].pipe(s.group[e.ke].mon[e.id].p2p).pipe(s.group[e.ke].mon[e.id].pamDiff)
+                   s.group[e.ke].activeMonitors[e.id].coSpawnProcessor.stdio[3].pipe(s.group[e.ke].activeMonitors[e.id].p2p).pipe(s.group[e.ke].activeMonitors[e.id].pamDiff)
                     if(e.details.detector_use_detect_object === '1'){
-                        s.group[e.ke].mon[e.id].coSpawnProcessor.stdio[4].on('data',function(d){
-                            s.group[e.ke].mon[e.id].lastJpegDetectorFrame = d
+                        s.group[e.ke].activeMonitors[e.id].coSpawnProcessor.stdio[4].on('data',function(d){
+                            s.group[e.ke].activeMonitors[e.id].lastJpegDetectorFrame = d
                         })
                     }
                 }else if(s.isAtleatOneDetectorPluginConnected){
-                    s.group[e.ke].mon[e.id].coSpawnProcessor.stdio[3].on('data',function(d){
-                        s.ocvTx({f:'frame',mon:s.group[e.ke].mon_conf[e.id].details,ke:e.ke,id:e.id,time:s.formattedTime(),frame:d});
+                    s.group[e.ke].activeMonitors[e.id].coSpawnProcessor.stdio[3].on('data',function(d){
+                        s.ocvTx({f:'frame',mon:s.group[e.ke].rawMonitorConfigurations[e.id].details,ke:e.ke,id:e.id,time:s.formattedTime(),frame:d});
                     })
                 }
             }
         }
     }
     s.coSpawnClose = function(e){
-        if(s.group[e.ke].mon[e.id].coSpawnProcessor){
-            s.group[e.ke].mon[e.id].coSpawnProcessor.removeListener('end',s.group[e.ke].mon[e.id].coSpawnProcessorExit);
-            s.group[e.ke].mon[e.id].coSpawnProcessor.removeListener('exit',s.group[e.ke].mon[e.id].coSpawnProcessorExit);
-            s.group[e.ke].mon[e.id].coSpawnProcessor.stdin.pause()
-            s.group[e.ke].mon[e.id].coSpawnProcessor.kill()
-            delete(s.group[e.ke].mon[e.id].coSpawnProcessor)
+        if(s.group[e.ke].activeMonitors[e.id].coSpawnProcessor){
+            s.group[e.ke].activeMonitors[e.id].coSpawnProcessor.removeListener('end',s.group[e.ke].activeMonitors[e.id].coSpawnProcessorExit);
+            s.group[e.ke].activeMonitors[e.id].coSpawnProcessor.removeListener('exit',s.group[e.ke].activeMonitors[e.id].coSpawnProcessorExit);
+            s.group[e.ke].activeMonitors[e.id].coSpawnProcessor.stdin.pause()
+            s.group[e.ke].activeMonitors[e.id].coSpawnProcessor.kill()
+            delete(s.group[e.ke].activeMonitors[e.id].coSpawnProcessor)
             s.userLog(e,{type:lang['coProcessor Stopped'],msg:{msg:lang.coProcessorTextStopped+' : '+e.id}});
         }
     }

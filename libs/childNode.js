@@ -76,17 +76,17 @@ module.exports = function(s,config,lang,app,io){
                                 }
                             break;
                             case'created_timelapse_file_chunk':
-                                if(!s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename]){
+                                if(!s.group[d.ke].activeMonitors[d.mid].childNodeStreamWriters[d.filename]){
                                     var dir = s.getTimelapseFrameDirectory(d.d) + `${d.currentDate}/`
-                                    s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename] = fs.createWriteStream(dir+d.filename)
+                                    s.group[d.ke].activeMonitors[d.mid].childNodeStreamWriters[d.filename] = fs.createWriteStream(dir+d.filename)
                                 }
-                                s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename].write(d.chunk)
+                                s.group[d.ke].activeMonitors[d.mid].childNodeStreamWriters[d.filename].write(d.chunk)
                             break;
                             case'created_timelapse_file':
-                                if(!s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename]){
+                                if(!s.group[d.ke].activeMonitors[d.mid].childNodeStreamWriters[d.filename]){
                                     return console.log('FILE NOT EXIST')
                                 }
-                                s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename].end()
+                                s.group[d.ke].activeMonitors[d.mid].childNodeStreamWriters[d.filename].end()
                                 tx({
                                     f: 'deleteTimelapseFrame',
                                     file: d.filename,
@@ -100,17 +100,17 @@ module.exports = function(s,config,lang,app,io){
                                 },d.queryInfo)
                             break;
                             case'created_file_chunk':
-                                if(!s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename]){
-                                    d.dir = s.getVideoDirectory(s.group[d.ke].mon_conf[d.mid])
-                                    s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename] = fs.createWriteStream(d.dir+d.filename)
+                                if(!s.group[d.ke].activeMonitors[d.mid].childNodeStreamWriters[d.filename]){
+                                    d.dir = s.getVideoDirectory(s.group[d.ke].rawMonitorConfigurations[d.mid])
+                                    s.group[d.ke].activeMonitors[d.mid].childNodeStreamWriters[d.filename] = fs.createWriteStream(d.dir+d.filename)
                                 }
-                                s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename].write(d.chunk)
+                                s.group[d.ke].activeMonitors[d.mid].childNodeStreamWriters[d.filename].write(d.chunk)
                             break;
                             case'created_file':
-                                if(!s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename]){
+                                if(!s.group[d.ke].activeMonitors[d.mid].childNodeStreamWriters[d.filename]){
                                     return console.log('FILE NOT EXIST')
                                 }
-                                s.group[d.ke].mon[d.mid].childNodeStreamWriters[d.filename].end();
+                                s.group[d.ke].activeMonitors[d.mid].childNodeStreamWriters[d.filename].end();
                                 tx({
                                     f:'delete',
                                     file:d.filename,
@@ -145,8 +145,8 @@ module.exports = function(s,config,lang,app,io){
                                 s.purgeDiskForGroup(d)
                                 //send new diskUsage values
                                 s.setDiskUsedForGroup(d,insert.filesizeMB)
-                                clearTimeout(s.group[d.ke].mon[d.mid].recordingChecker)
-                                clearTimeout(s.group[d.ke].mon[d.mid].streamChecker)
+                                clearTimeout(s.group[d.ke].activeMonitors[d.mid].recordingChecker)
+                                clearTimeout(s.group[d.ke].activeMonitors[d.mid].streamChecker)
                             break;
                         }
                     }
@@ -160,8 +160,8 @@ module.exports = function(s,config,lang,app,io){
                     activeCameraKeys.forEach(function(key){
                         var monitor = s.childNodes[cn.ip].activeCameras[key]
                         s.camera('stop',s.cleanMonitorObject(monitor))
-                        delete(s.group[monitor.ke].mon[monitor.mid].childNode)
-                        delete(s.group[monitor.ke].mon[monitor.mid].childNodeId)
+                        delete(s.group[monitor.ke].activeMonitors[monitor.mid].childNode)
+                        delete(s.group[monitor.ke].activeMonitors[monitor.mid].childNodeId)
                         setTimeout(function(){
                             s.camera(monitor.mode,s.cleanMonitorObject(monitor))
                         },1300)
@@ -218,12 +218,12 @@ module.exports = function(s,config,lang,app,io){
                 break;
                 case'kill':
                     s.initiateMonitorObject(d.d);
-                    s.cameraDestroy(s.group[d.d.ke].mon[d.d.id].spawn,d.d)
+                    s.cameraDestroy(s.group[d.d.ke].activeMonitors[d.d.id].spawn,d.d)
                 break;
                 case'sync':
                     s.initiateMonitorObject(d.sync);
                     Object.keys(d.sync).forEach(function(v){
-                        s.group[d.sync.ke].mon[d.sync.mid][v]=d.sync[v];
+                        s.group[d.sync.ke].activeMonitors[d.sync.mid][v]=d.sync[v];
                     });
                 break;
                 case'delete'://delete video

@@ -21,7 +21,7 @@ module.exports = function(s,config,lang,app,io){
                             var filenameParts = filePath.replace(s.dir.videos + user.ke + '/','').split('/')
                             var ke = user.ke
                             var mid = filenameParts[0].replace('_timelapse','')
-                            var monitor = s.group[ke].mon_conf[mid]
+                            var monitor = s.group[ke].rawMonitorConfigurations[mid]
                             var filename = filenameParts[filenameParts.length - 1]
                             if(s.isCorrectFilenameSyntax(filename)){
                                 if(filenameParts[0].indexOf('_timelapse')){

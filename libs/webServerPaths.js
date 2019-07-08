@@ -30,8 +30,8 @@ module.exports = function(s,config,lang,app,io){
     //res = response, only needed for express (http server)
     //request = request, only needed for express (http server)
     s.checkChildProxy = function(params,cb,res,req){
-        if(s.group[params.ke] && s.group[params.ke].mon[params.id] && s.group[params.ke].mon[params.id].childNode){
-            var url = 'http://' + s.group[params.ke].mon[params.id].childNode// + req.originalUrl
+        if(s.group[params.ke] && s.group[params.ke].activeMonitors[params.id] && s.group[params.ke].activeMonitors[params.id].childNode){
+            var url = 'http://' + s.group[params.ke].activeMonitors[params.id].childNode// + req.originalUrl
             proxy.web(req, res, { target: url })
         }else{
             cb()
@@ -626,8 +626,8 @@ module.exports = function(s,config,lang,app,io){
                     r = filteredByGroup;
                 }
                 r.forEach(function(v,n){
-                    if(s.group[v.ke]&&s.group[v.ke].mon[v.mid]&&s.group[v.ke].mon[v.mid].watch){
-                        r[n].currentlyWatching=Object.keys(s.group[v.ke].mon[v.mid].watch).length
+                    if(s.group[v.ke]&&s.group[v.ke].activeMonitors[v.mid]&&s.group[v.ke].activeMonitors[v.mid].watch){
+                        r[n].currentlyWatching=Object.keys(s.group[v.ke].activeMonitors[v.mid].watch).length
                     }
                     r[n].subStream={}
                     var details = JSON.parse(r[n].details)
@@ -848,10 +848,10 @@ module.exports = function(s,config,lang,app,io){
             }
             s.sqlQuery(req.sql,req.ar,function(err,r){
                 r.forEach(function(v,n){
-                    if(s.group[v.ke] && s.group[v.ke].mon[v.mid]){
-                        r[n].currentlyWatching = Object.keys(s.group[v.ke].mon[v.mid].watch).length
-                        r[n].currentCpuUsage = s.group[v.ke].mon[v.mid].currentCpuUsage
-                        r[n].status = s.group[v.ke].mon[v.mid].monitorStatus
+                    if(s.group[v.ke] && s.group[v.ke].activeMonitors[v.mid]){
+                        r[n].currentlyWatching = Object.keys(s.group[v.ke].activeMonitors[v.mid].watch).length
+                        r[n].currentCpuUsage = s.group[v.ke].activeMonitors[v.mid].currentCpuUsage
+                        r[n].status = s.group[v.ke].activeMonitors[v.mid].monitorStatus
                     }
                     var buildStreamURL = function(type,channelNumber){
                         var streamURL
@@ -1432,7 +1432,7 @@ module.exports = function(s,config,lang,app,io){
                 if(r&&r[0]){
                     req.ar=[];
                     r.forEach(function(v){
-                        if(s.group[req.params.ke]&&s.group[req.params.ke].mon[v.mid]&&s.group[req.params.ke].mon[v.mid].isStarted === true){
+                        if(s.group[req.params.ke]&&s.group[req.params.ke].activeMonitors[v.mid]&&s.group[req.params.ke].activeMonitors[v.mid].isStarted === true){
                             req.ar.push(v)
                         }
                     })
@@ -1464,25 +1464,25 @@ module.exports = function(s,config,lang,app,io){
             s.sqlQuery('SELECT * FROM Monitors WHERE ke=? AND mid=?',[req.params.ke,req.params.id],function(err,r){
                 if(r&&r[0]){
                     r=r[0];
-                    if(req.query.reset==='1'||(s.group[r.ke]&&s.group[r.ke].mon_conf[r.mid].mode!==req.params.f)||req.query.fps&&(!s.group[r.ke].mon[r.mid].currentState||!s.group[r.ke].mon[r.mid].currentState.trigger_on)){
-                        if(req.query.reset!=='1'||!s.group[r.ke].mon[r.mid].trigger_timer){
-                            if(!s.group[r.ke].mon[r.mid].currentState)s.group[r.ke].mon[r.mid].currentState={}
-                            s.group[r.ke].mon[r.mid].currentState.mode=r.mode.toString()
-                            s.group[r.ke].mon[r.mid].currentState.fps=r.fps.toString()
-                            if(!s.group[r.ke].mon[r.mid].currentState.trigger_on){
-                               s.group[r.ke].mon[r.mid].currentState.trigger_on=true
+                    if(req.query.reset==='1'||(s.group[r.ke]&&s.group[r.ke].rawMonitorConfigurations[r.mid].mode!==req.params.f)||req.query.fps&&(!s.group[r.ke].activeMonitors[r.mid].currentState||!s.group[r.ke].activeMonitors[r.mid].currentState.trigger_on)){
+                        if(req.query.reset!=='1'||!s.group[r.ke].activeMonitors[r.mid].trigger_timer){
+                            if(!s.group[r.ke].activeMonitors[r.mid].currentState)s.group[r.ke].activeMonitors[r.mid].currentState={}
+                            s.group[r.ke].activeMonitors[r.mid].currentState.mode=r.mode.toString()
+                            s.group[r.ke].activeMonitors[r.mid].currentState.fps=r.fps.toString()
+                            if(!s.group[r.ke].activeMonitors[r.mid].currentState.trigger_on){
+                               s.group[r.ke].activeMonitors[r.mid].currentState.trigger_on=true
                             }else{
-                                s.group[r.ke].mon[r.mid].currentState.trigger_on=false
+                                s.group[r.ke].activeMonitors[r.mid].currentState.trigger_on=false
                             }
                             r.mode=req.params.f;
                             try{r.details=JSON.parse(r.details);}catch(er){}
                             if(req.query.fps){
                                 r.fps=parseFloat(r.details.detector_trigger_record_fps)
-                                s.group[r.ke].mon[r.mid].currentState.detector_trigger_record_fps=r.fps
+                                s.group[r.ke].activeMonitors[r.mid].currentState.detector_trigger_record_fps=r.fps
                             }
                             r.id=r.mid;
                             s.sqlQuery('UPDATE Monitors SET mode=? WHERE ke=? AND mid=?',[r.mode,r.ke,r.mid]);
-                            s.group[r.ke].mon_conf[r.mid]=r;
+                            s.group[r.ke].rawMonitorConfigurations[r.mid]=r;
                             s.tx({f:'monitor_edit',mid:r.mid,ke:r.ke,mon:r},'GRP_'+r.ke);
                             s.tx({f:'monitor_edit',mid:r.mid,ke:r.ke,mon:r},'STR_'+r.ke);
                             s.camera('stop',s.cleanMonitorObject(r));
@@ -1497,7 +1497,7 @@ module.exports = function(s,config,lang,app,io){
                         req.ret.ok=true;
                         if(req.params.ff&&req.params.f!=='stop'){
                             req.params.ff=parseFloat(req.params.ff);
-                            clearTimeout(s.group[r.ke].mon[r.mid].trigger_timer)
+                            clearTimeout(s.group[r.ke].activeMonitors[r.mid].trigger_timer)
                             switch(req.params.fff){
                                 case'day':case'days':
                                     req.timeout=req.params.ff*1000*60*60*24
@@ -1512,17 +1512,17 @@ module.exports = function(s,config,lang,app,io){
                                     req.timeout=req.params.ff*1000
                                 break;
                             }
-                            s.group[r.ke].mon[r.mid].trigger_timer=setTimeout(function(){
-                                delete(s.group[r.ke].mon[r.mid].trigger_timer)
-                                s.sqlQuery('UPDATE Monitors SET mode=? WHERE ke=? AND mid=?',[s.group[r.ke].mon[r.mid].currentState.mode,r.ke,r.mid]);
+                            s.group[r.ke].activeMonitors[r.mid].trigger_timer=setTimeout(function(){
+                                delete(s.group[r.ke].activeMonitors[r.mid].trigger_timer)
+                                s.sqlQuery('UPDATE Monitors SET mode=? WHERE ke=? AND mid=?',[s.group[r.ke].activeMonitors[r.mid].currentState.mode,r.ke,r.mid]);
                                 r.neglectTriggerTimer=1;
-                                r.mode=s.group[r.ke].mon[r.mid].currentState.mode;
-                                r.fps=s.group[r.ke].mon[r.mid].currentState.fps;
+                                r.mode=s.group[r.ke].activeMonitors[r.mid].currentState.mode;
+                                r.fps=s.group[r.ke].activeMonitors[r.mid].currentState.fps;
                                 s.camera('stop',s.cleanMonitorObject(r),function(){
-                                    if(s.group[r.ke].mon[r.mid].currentState.mode!=='stop'){
-                                        s.camera(s.group[r.ke].mon[r.mid].currentState.mode,s.cleanMonitorObject(r));
+                                    if(s.group[r.ke].activeMonitors[r.mid].currentState.mode!=='stop'){
+                                        s.camera(s.group[r.ke].activeMonitors[r.mid].currentState.mode,s.cleanMonitorObject(r));
                                     }
-                                    s.group[r.ke].mon_conf[r.mid]=r;
+                                    s.group[r.ke].rawMonitorConfigurations[r.mid]=r;
                                 });
                                 s.tx({f:'monitor_edit',mid:r.mid,ke:r.ke,mon:r},'GRP_'+r.ke);
                                 s.tx({f:'monitor_edit',mid:r.mid,ke:r.ke,mon:r},'STR_'+r.ke);
@@ -2003,13 +2003,13 @@ module.exports = function(s,config,lang,app,io){
         var checkOrigin = function(search){return req.headers.host.indexOf(search)>-1}
         if(checkOrigin('127.0.0.1')){
             if(!req.params.feed){req.params.feed='1'}
-            if(!s.group[req.params.ke].mon[req.params.id].streamIn[req.params.feed]){
-                s.group[req.params.ke].mon[req.params.id].streamIn[req.params.feed] = new events.EventEmitter().setMaxListeners(0)
+            if(!s.group[req.params.ke].activeMonitors[req.params.id].streamIn[req.params.feed]){
+                s.group[req.params.ke].activeMonitors[req.params.id].streamIn[req.params.feed] = new events.EventEmitter().setMaxListeners(0)
             }
             //req.params.feed = Feed Number
             res.connection.setTimeout(0);
             req.on('data', function(buffer){
-                s.group[req.params.ke].mon[req.params.id].streamIn[req.params.feed].emit('data',buffer)
+                s.group[req.params.ke].activeMonitors[req.params.id].streamIn[req.params.feed].emit('data',buffer)
             });
             req.on('end',function(){
     //            console.log('streamIn closed',req.params);
@@ -2164,10 +2164,10 @@ module.exports = function(s,config,lang,app,io){
                     completeAction(command)
                 }
             }
-            if(!s.group[req.params.ke].mon[req.params.id].onvifConnection){
+            if(!s.group[req.params.ke].activeMonitors[req.params.id].onvifConnection){
                 //prepeare onvif connection
                 var controlURL
-                var monitorConfig = s.group[req.params.ke].mon_conf[req.params.id]
+                var monitorConfig = s.group[req.params.ke].rawMonitorConfigurations[req.params.id]
                 if(!monitorConfig.details.control_base_url||monitorConfig.details.control_base_url===''){
                     controlURL = s.buildMonitorUrl(monitorConfig, true)
                 }else{
@@ -2175,19 +2175,19 @@ module.exports = function(s,config,lang,app,io){
                 }
                 var controlURLOptions = s.cameraControlOptionsFromUrl(controlURL,monitorConfig)
                 //create onvif connection
-                s.group[req.params.ke].mon[req.params.id].onvifConnection = new onvif.OnvifDevice({
+                s.group[req.params.ke].activeMonitors[req.params.id].onvifConnection = new onvif.OnvifDevice({
                     xaddr : 'http://' + controlURLOptions.host + ':' + controlURLOptions.port + '/onvif/device_service',
                     user : controlURLOptions.username,
                     pass : controlURLOptions.password
                 })
-                var device = s.group[req.params.ke].mon[req.params.id].onvifConnection
+                var device = s.group[req.params.ke].activeMonitors[req.params.id].onvifConnection
                 device.init().then((info) => {
                     if(info)doAction(device)
                 }).catch(function(error){
                     return errorMessage('Device responded with an error',error)
                 })
             }else{
-                doAction(s.group[req.params.ke].mon[req.params.id].onvifConnection)
+                doAction(s.group[req.params.ke].activeMonitors[req.params.id].onvifConnection)
             }
         },res,req);
     })

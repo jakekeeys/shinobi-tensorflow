@@ -72,8 +72,8 @@ module.exports = function(s,config,lang){
     }
     var onAccountSaveForSftp = function(group,userDetails,user){
         if(s.group[user.ke] && s.group[user.ke].sftp && s.group[user.ke].init.use_sftp !== '0' && s.group[user.ke].init.sftp_save === '1'){
-            Object.keys(s.group[user.ke].mon_conf).forEach(function(monitorId){
-                createSftpDirectory(s.group[user.ke].mon_conf[monitorId])
+            Object.keys(s.group[user.ke].rawMonitorConfigurations).forEach(function(monitorId){
+                createSftpDirectory(s.group[user.ke].rawMonitorConfigurations[monitorId])
             })
         }
     }

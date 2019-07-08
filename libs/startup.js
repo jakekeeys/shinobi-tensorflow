@@ -50,7 +50,7 @@ module.exports = function(s,config,lang,io){
                     if(!orphanedVideosForMonitors[monitor.ke])orphanedVideosForMonitors[monitor.ke] = {}
                     if(!orphanedVideosForMonitors[monitor.ke][monitor.mid])orphanedVideosForMonitors[monitor.ke][monitor.mid] = 0
                     s.initiateMonitorObject(monitor)
-                    s.group[monitor.ke].mon_conf[monitor.mid] = monitor
+                    s.group[monitor.ke].rawMonitorConfigurations[monitor.mid] = monitor
                     s.sendMonitorStatus({id:monitor.mid,ke:monitor.ke,status:'Stopped'});
                     var monObj = Object.assign(monitor,{id : monitor.mid})
                     s.camera(monitor.mode,monObj)

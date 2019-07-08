@@ -23,9 +23,9 @@ module.exports = function(s,config,lang,app,io){
         var onMonitorStop = function(monitorConfig){
             var ke = monitorConfig.ke
             var mid = monitorConfig.mid
-            if(s.group[monitorConfig.ke].mon[monitorConfig.mid].dropInEventWatcher){
-                s.group[monitorConfig.ke].mon[monitorConfig.mid].dropInEventWatcher.close()
-                delete(s.group[monitorConfig.ke].mon[monitorConfig.mid].dropInEventWatcher)
+            if(s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventWatcher){
+                s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventWatcher.close()
+                delete(s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventWatcher)
             }
             var monitorEventDropDir = getDropInEventDir(monitorConfig)
             if(fs.existsSync(monitorEventDropDir))execSync('rm -rf ' + monitorEventDropDir)
@@ -44,7 +44,7 @@ module.exports = function(s,config,lang,app,io){
                 fs.mkdirSync(monitorEventDropDir)
             }
             var fileQueue = {}
-            s.group[monitorConfig.ke].mon[monitorConfig.mid].dropInEventFileQueue = fileQueue
+            s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventFileQueue = fileQueue
             var search = function(searchIn,searchFor){
                 return searchIn.indexOf(searchFor) > -1
             }
@@ -75,7 +75,7 @@ module.exports = function(s,config,lang,app,io){
                             var writeStream = fs.createWriteStream(recordingPath)
                             fs.createReadStream(filePath).pipe(writeStream)
                             writeStream.on('finish', () => {
-                                s.insertCompletedVideo(s.group[monitorConfig.ke].mon_conf[monitorConfig.mid],{
+                                s.insertCompletedVideo(s.group[monitorConfig.ke].rawMonitorConfigurations[monitorConfig.mid],{
                                     file : shinobiFilename
                                 },function(){
                                 })
@@ -122,7 +122,7 @@ module.exports = function(s,config,lang,app,io){
                     }
                 })
             })
-            s.group[monitorConfig.ke].mon[monitorConfig.mid].dropInEventWatcher = directoryWatch
+            s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventWatcher = directoryWatch
         }
         // FTP Server
         if(config.ftpServer === true){
@@ -171,6 +171,7 @@ module.exports = function(s,config,lang,app,io){
     // allow starting SMTP server without dropInEventServer
     if(config.smtpServer === true){
         var SMTPServer = require("smtp-server").SMTPServer;
+        const simpleParser = require('mailparser').simpleParser;
         if(!config.smtpServerPort && (config.smtpServerSsl && config.smtpServerSsl.enabled !== false || config.ssl)){config.smtpServerPort = 465}else if(!config.smtpServerPort){config.smtpServerPort = 25}
         var smtpOptions = {
             onAuth(auth, session, callback) {
@@ -188,7 +189,7 @@ module.exports = function(s,config,lang,app,io){
                 var split = address.address.split('@')
                 var monitorId = split[0]
                 var ke = session.user
-                if(s.group[ke].mon_conf[monitorId] && s.group[ke].mon[monitorId].isStarted === true){
+                if(s.group[ke].rawMonitorConfigurations[monitorId] && s.group[ke].activeMonitors[monitorId].isStarted === true){
                     s.triggerEvent({
                         id: monitorId,
                         ke: ke,

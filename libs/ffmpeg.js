@@ -989,7 +989,7 @@ module.exports = function(s,config,lang,onFinish){
         ffmpeg.assembleMainPieces(e,x)
         ffmpeg.createPipeArray(e,x)
         //hold ffmpeg command for log stream
-        s.group[e.ke].mon[e.mid].ffmpeg = x.ffmpegCommandString
+        s.group[e.ke].activeMonitors[e.mid].ffmpeg = x.ffmpegCommandString
         //clean the string of spatial impurities and split for spawn()
         x.ffmpegCommandString = s.splitForFFPMEG(x.ffmpegCommandString)
         //launch that bad boy

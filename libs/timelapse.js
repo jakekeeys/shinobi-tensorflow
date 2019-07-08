@@ -34,7 +34,7 @@ module.exports = function(s,config,lang,app,io){
                 f: 'open_timelapse_file_transfer',
                 ke: e.ke,
                 mid: e.id,
-                d: s.group[e.ke].mon_conf[e.id],
+                d: s.group[e.ke].rawMonitorConfigurations[e.id],
                 filename: filename,
                 currentDate: currentDate,
                 queryInfo: queryInfo
@@ -49,7 +49,7 @@ module.exports = function(s,config,lang,app,io){
                     time: formattedTime,
                     filesize: e.filesize,
                     chunk: data,
-                    d: s.group[e.ke].mon_conf[e.id],
+                    d: s.group[e.ke].rawMonitorConfigurations[e.id],
                     filename: filename,
                     currentDate: currentDate,
                     queryInfo: queryInfo
@@ -62,7 +62,7 @@ module.exports = function(s,config,lang,app,io){
                     mid: e.id,
                     time: formattedTime,
                     filesize: e.filesize,
-                    d: s.group[e.ke].mon_conf[e.id],
+                    d: s.group[e.ke].rawMonitorConfigurations[e.id],
                     filename: filename,
                     currentDate: currentDate,
                     queryInfo: queryInfo
