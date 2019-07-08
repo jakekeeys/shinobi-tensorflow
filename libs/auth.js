@@ -53,7 +53,7 @@ module.exports = function(s,config,lang){
                             editSession(params,{
                                 mail: user.mail,
                                 details: s.parseJSON(user.details),
-                                lang: s.getLanguageFile(s.api[params.auth].details.lang)
+                                lang: s.getLanguageFile(user.details.lang)
                             })
                         }catch(er){
                             console.log(er)
