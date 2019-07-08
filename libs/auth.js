@@ -5,11 +5,7 @@ module.exports = function(s,config,lang){
     s.superUsersApi = {}
     s.factorAuth = {}
     s.failedLoginAttempts = {}
-    //auth handler
-    //params = parameters
-    //cb = callback
-    //res = response, only needed for express (http server)
-    //request = request, only needed for express (http server)
+    //
     var getUserByUID = function(params,columns,callback){
         if(!columns)columns = '*'
         s.sqlQuery(`SELECT ${columns} FROM Users WHERE uid=? AND ke=?`,[params.uid,params.ke],function(err,r){
@@ -26,8 +22,6 @@ module.exports = function(s,config,lang){
         })
     }
     var loginWithUsernameAndPassword = function(params,columns,callback){
-        //no key in memory, query db to see if key exists
-        //check if using username and password in plain text or md5
         if(!columns)columns = '*'
         s.sqlQuery(`SELECT ${columns} FROM Users WHERE mail=? AND (pass=? OR pass=?) LIMIT 1`,[params.username,params.password,s.createHash(params.password)],function(err,r){
             if(!r)r = []
@@ -207,8 +201,8 @@ module.exports = function(s,config,lang){
                 }
                 callback({
                     ip : ip,
-                    $user:userSelected,
-                    users:adminUsersSelected,
+                    $user: userSelected,
+                    users: adminUsersSelected,
                     config: chosenConfig,
                     lang:lang
                 })
