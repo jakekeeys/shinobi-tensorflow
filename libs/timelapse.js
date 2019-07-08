@@ -69,15 +69,50 @@ module.exports = function(s,config,lang,app,io){
                 })
             })
         }else{
-            s.insertTimelapseFrameDatabaseRow(e,queryInfo)
+            s.insertTimelapseFrameDatabaseRow(e,queryInfo,filePath)
         }
     }
-    s.insertTimelapseFrameDatabaseRow = function(e,queryInfo){
+    s.insertTimelapseFrameDatabaseRow = function(e,queryInfo,filePath){
         s.sqlQuery('INSERT INTO `Timelapse Frames` ('+Object.keys(queryInfo).join(',')+') VALUES (?,?,?,?,?,?)',Object.values(queryInfo))
         s.setDiskUsedForGroup(e,queryInfo.size / 1000000,'timelapeFrames')
         s.purgeDiskForGroup(e)
         s.onInsertTimelapseFrameExtensions.forEach(function(extender){
-            extender(e,queryInfo)
+            extender(e,queryInfo,filePath)
+        })
+    }
+    s.onDeleteTimelapseFrameFromCloudExtensions = {}
+    s.onDeleteTimelapseFrameFromCloudExtensionsRunner = function(e,storageType,video){
+        // e = user
+        if(!storageType){
+            var videoDetails = JSON.parse(r.details)
+            videoDetails.type = videoDetails.type || 's3'
+        }
+        if(s.onDeleteTimelapseFrameFromCloudExtensions[storageType]){
+            s.onDeleteTimelapseFrameFromCloudExtensions[storageType](e,video,function(){
+                s.tx({
+                    f: 'timelapse_frame_delete_cloud',
+                    mid: e.mid,
+                    ke: e.ke,
+                    time: e.time,
+                    end: e.end
+                },'GRP_'+e.ke);
+            })
+        }
+    }
+    s.deleteTimelapseFrameFromCloud = function(e){
+        // e = video object
+        s.checkDetails(e)
+        var frameSelector = [e.id,e.ke,new Date(e.time)]
+        s.sqlQuery('SELECT * FROM `Cloud Timelapse Frames` WHERE `mid`=? AND `ke`=? AND `time`=?',frameSelector,function(err,r){
+            if(r&&r[0]){
+                r = r[0]
+                s.sqlQuery('DELETE FROM `Cloud Timelapse Frames` WHERE `mid`=? AND `ke`=? AND `time`=?',frameSelector,function(){
+                    s.onDeleteTimelapseFrameFromCloudExtensionsRunner(e,r)
+                })
+            }else{
+//                    console.log('Delete Failed',e)
+//                    console.error(err)
+            }
         })
     }
 }
