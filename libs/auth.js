@@ -10,104 +10,168 @@ module.exports = function(s,config,lang){
     //cb = callback
     //res = response, only needed for express (http server)
     //request = request, only needed for express (http server)
-    s.auth = function(params,cb,res,req){
+    var getUserByUID = function(params,columns,callback){
+        if(!columns)columns = '*'
+        s.sqlQuery(`SELECT ${columns} FROM Users WHERE uid=? AND ke=?`,[params.uid,params.ke],function(err,r){
+            if(!r)r = []
+            var user = r[0]
+            callback(err,user)
+        })
+    }
+    var getUserBySessionKey = function(params,callback){
+        s.sqlQuery('SELECT * FROM Users WHERE auth=? AND ke=?',[params.auth,params.ke],function(err,r){
+            if(!r)r = []
+            var user = r[0]
+            callback(err,user)
+        })
+    }
+    var loginWithUsernameAndPassword = function(params,columns,callback){
+        //no key in memory, query db to see if key exists
+        //check if using username and password in plain text or md5
+        if(!columns)columns = '*'
+        s.sqlQuery(`SELECT ${columns} FROM Users WHERE mail=? AND (pass=? OR pass=?) LIMIT 1`,[params.username,params.password,s.createHash(params.password)],function(err,r){
+            if(!r)r = []
+            var user = r[0]
+            createSession(user)
+            callback(err,user)
+        })
+    }
+    var getApiKey = function(params,columns,callback){
+        if(!columns)columns = '*'
+        s.sqlQuery(`SELECT ${columns} FROM API WHERE code=? AND ke=?`,[params.auth,params.ke],function(err,r){
+            if(!r)r = []
+            var apiKey = r[0]
+            callback(err,apiKey)
+        })
+    }
+    var loginWithApiKey = function(params,callback){
+        getApiKey(params,'*',function(err,apiKey){
+            var isSessionKey = false
+            if(apiKey){
+                createSession(apiKey,{
+                    auth: params.auth,
+                    permissions: JSON.parse(r.details),
+                    details: {}
+                })
+                getUserByUid(apiKey,'mail,details',function(err,user){
+                    if(user){
+                        try{
+                            editSession(params,{
+                                mail: user.mail,
+                                details: s.parseJSON(user.details),
+                                lang: s.getLanguageFile(s.api[params.auth].details.lang)
+                            })
+                        }catch(er){
+                            console.log(er)
+                        }
+                    }
+                    callback(err,s.api[params.auth])
+                })
+            }else{
+                getUserBySessionKey(params,function(err,user){
+                    if(user){
+                        isSessionKey = true
+                        createSession(apiKey,{
+                            details: JSON.parse(r.details),
+                            permissions: {}
+                        })
+                        callback(err,user,isSessionKey)
+                    }
+                })
+            }
+        })
+    }
+    var createSession = function(user,additionalData){
+        if(user){
+            if(!additionalData)additionalData = {}
+            if(!user.ip)user.ip = '0.0.0.0'
+            user.auth = s.gid(20)
+            user.details = JSON.parse(user.details)
+            user.permissions = {}
+            s.api[user.auth] = Object.assign(user,additionalData)
+        }
+    }
+    var editSession = function(user,additionalData){
+        if(user){
+            if(!additionalData)additionalData = {}
+            Object.keys(additionalData).forEach(function(value,key){
+                s.api[user.auth][key] = value
+            })
+        }
+    }
+    var failHttpAuthentication = function(res,req,message){
+        if(!message)message = lang['Not Authorized']
+        res.end(s.prettyPrint({
+            ok: false,
+            msg: msg
+        }))
+    }
+    var resetActiveSessionTimer = function(activeSession){
+        clearTimeout(activeSession.timeout)
+        activeSession.timeout = setTimeout(function(){
+            delete(activeSession)
+        },1000 * 60 * 5)
+    }
+    s.auth = function(params,onSuccessComplete,res,req){
         if(req){
             //express (http server) use of auth function
-            params.ip=req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-            var failed=function(){
-                if(!req.ret){req.ret={ok:false}}
-                req.ret.msg=lang['Not Authorized'];
-                res.end(s.s(req.ret));
+            params.ip = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.connection.remoteAddress
+            var onFail = function(message){
+                failHttpAuthentication(res,req,message)
             }
         }else{
             //socket.io use of auth function
-            var failed = function(){
+            var onFail = function(){
                 //maybe log
             }
         }
-        var clearAfterTime=function(){
-            //remove temp key from memory
-            clearTimeout(s.api[params.auth].timeout)
-            s.api[params.auth].timeout=setTimeout(function(){
-                delete(s.api[params.auth])
-            },1000*60*5)
-        }
-        //check IP address of connecting user
-        var finish=function(user){
-            if(s.api[params.auth].ip.indexOf('0.0.0.0')>-1||s.api[params.auth].ip.indexOf(params.ip)>-1){
+        var onSuccess = function(user){
+            var activeSession = s.api[params.auth]
+            if(
+                activeSession.ip.indexOf('0.0.0.0') > -1 ||
+                activeSession.ip.indexOf(params.ip) > -1
+            ){
                 if(!user.lang){
                     var details = s.parseJSON(user.details).lang
                     user.lang = s.getDefinitonFile(user.details.lang) || s.copySystemDefaultLanguage()
                 }
-                cb(user);
+                onSuccessComplete(user)
             }else{
-                failed();
+                onFail()
             }
         }
-        //check if auth key is user's temporary session key
-        if(s.group[params.ke]&&s.group[params.ke].users&&s.group[params.ke].users[params.auth]){
-            s.group[params.ke].users[params.auth].permissions={};
-            if(!s.group[params.ke].users[params.auth].lang){
-                s.group[params.ke].users[params.auth].lang = s.copySystemDefaultLanguage()
+        if(s.group[params.ke] && s.group[params.ke].users && s.group[params.ke].users[params.auth]){
+            var activeSession = s.group[params.ke].users[params.auth]
+            activeSession.permissions = {}
+            if(!activeSession.lang){
+                activeSession.lang = s.copySystemDefaultLanguage()
             }
-            cb(s.group[params.ke].users[params.auth])
+            onSuccessComplete(activeSession)
         }else{
-            //check if key is already in memory to save query time
-            if(s.api[params.auth]&&s.api[params.auth].details){
-                finish(s.api[params.auth]);
-                if(s.api[params.auth].timeout){
-                   clearAfterTime()
+            if(s.api[params.auth] && s.api[params.auth].details){
+                var activeSession = s.api[params.auth]
+                onSuccess(activeSession)
+                if(activeSession.timeout){
+                   resetActiveSessionTimer(activeSession)
                 }
             }else{
-                //no key in memory, query db to see if key exists
-                //check if using username and password in plain text or md5
-                if(params.username&&params.username!==''&&params.password&&params.password!==''){
-                    s.sqlQuery('SELECT * FROM Users WHERE mail=? AND (pass=? OR pass=?)',[params.username,params.password,s.createHash(params.password)],function(err,r){
-                        if(r&&r[0]){
-                            r=r[0];
-                            r.ip='0.0.0.0';
-                            r.auth = s.gid(20);
-                            params.auth = r.auth;
-                            r.details=JSON.parse(r.details);
-                            r.permissions = {};
-                            s.api[r.auth]=r;
-                            clearAfterTime();
-                            finish(r);
+                if(params.username && params.username !== '' && params.password && params.password !== ''){
+                    loginWithUsernameAndPassword(params,'*',function(err,user){
+                        if(user){
+                            params.auth = user.auth
+                            resetActiveSessionTimer(s.api[params.auth])
+                            onSuccess(user)
                         }else{
-                            failed();
+                            onFail()
                         }
                     })
                 }else{
-                    //not using plain login
-                    s.sqlQuery('SELECT * FROM API WHERE code=? AND ke=?',[params.auth,params.ke],function(err,r){
-                        if(r&&r[0]){
-                            r=r[0];
-                            s.api[params.auth]={ip:r.ip,uid:r.uid,ke:r.ke,permissions:JSON.parse(r.details),details:{}};
-                            s.sqlQuery('SELECT mail,details FROM Users WHERE uid=? AND ke=?',[r.uid,r.ke],function(err,rr){
-                                if(rr&&rr[0]){
-                                    rr=rr[0];
-                                    try{
-                                        s.api[params.auth].mail=rr.mail
-                                        s.api[params.auth].details=JSON.parse(rr.details)
-                                        s.api[params.auth].lang=s.getLanguageFile(s.api[params.auth].details.lang)
-                                    }catch(er){}
-                                }
-                                finish(s.api[params.auth]);
-                            })
+                    loginWithApiKey(params,function(err,user,isSessionKey){
+                        if(isSessionKey)resetActiveSessionTimer(s.api[params.auth])
+                        if(user){
+                            onSuccess(s.api[params.auth])
                         }else{
-                            s.sqlQuery('SELECT * FROM Users WHERE auth=? AND ke=?',[params.auth,params.ke],function(err,r){
-                                if(r&&r[0]){
-                                    r=r[0];
-                                    r.ip='0.0.0.0'
-                                    s.api[params.auth]=r
-                                    s.api[params.auth].details=JSON.parse(r.details)
-                                    s.api[params.auth].permissions={}
-                                    clearAfterTime()
-                                    finish(r)
-                                }else{
-                                    failed();
-                                }
-                            })
+                            onFail()
                         }
                     })
                 }
@@ -124,7 +188,7 @@ module.exports = function(s,config,lang){
                 var chosenConfig = config
                 if(req && res){
                     chosenConfig = s.getConfigWithBranding(req.hostname)
-                    res.setHeader('Content-Type', 'application/json');
+                    res.setHeader('Content-Type', 'application/json')
                     var ip = req.headers['cf-connecting-ip']||req.headers["CF-Connecting-IP"]||req.headers["'x-forwarded-for"]||req.connection.remoteAddress;
                     var resp = {
                         ok: userFound,
@@ -204,28 +268,9 @@ module.exports = function(s,config,lang){
     s.basicOrApiAuthentication = function(username,password,callback){
         var splitUsername = username.split('@')
         if(splitUsername[1] && splitUsername[1].toLowerCase().indexOf('shinobi') > -1){
-            s.sqlQuery('SELECT ke,uid FROM API WHERE code=? AND ke=?',[
-                splitUsername[0], //code
-                password //ke
-            ],function(err,r){
-                var apiKey
-                if(r && r[0]){
-                    apiKey = r[0]
-                }
-                callback(err,apiKey)
-            })
+            getApiKey(params,'ke,uid',callback)
         }else{
-            s.sqlQuery('SELECT ke,uid FROM Users WHERE mail=? AND (pass=? OR pass=?)',[
-                username,
-                password,
-                s.createHash(password)
-            ],function(err,r){
-                var user
-                if(r && r[0]){
-                    user = r[0]
-                }
-                callback(err,user)
-            })
+            loginWithUsernameAndPassword(params,'ke,uid',callback)
         }
     }
 }
