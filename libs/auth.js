@@ -41,8 +41,9 @@ module.exports = function(s,config,lang){
         getApiKey(params,'*',function(err,apiKey){
             var isSessionKey = false
             if(apiKey){
-                var sessionKey = createSession(apiKey,{
-                    auth: params.auth,
+                var sessionKey = params.auth
+                createSession(apiKey,{
+                    auth: sessionKey,
                     permissions: s.parseJSON(apiKey.details),
                     details: {}
                 })
@@ -57,7 +58,7 @@ module.exports = function(s,config,lang){
                                 lang: s.getLanguageFile(user.details.lang)
                             })
                         }catch(er){
-                            console.log(er)
+                            console.log('FAILED TO EDIT',er)
                         }
                     }
                     callback(err,s.api[params.auth])
@@ -78,13 +79,17 @@ module.exports = function(s,config,lang){
     }
     var createSession = function(user,additionalData){
         if(user){
-            var generatedId = s.gid(20)
+            var generatedId
             if(!additionalData)additionalData = {}
             if(!user.ip)user.ip = '0.0.0.0'
-            if(!user.auth)user.auth = generatedId
-            user.details = JSON.parse(user.details)
+            if(!user.auth && !user.code){
+                generatedId = s.gid(20)
+            }else{
+                generatedId = user.auth || user.code
+            }
+            user.details = s.parseJSON(user.details)
             user.permissions = {}
-            s.api[user.auth] = Object.assign(user,additionalData)
+            s.api[generatedId] = Object.assign(user,additionalData)
             return generatedId
         }
     }
@@ -172,6 +177,9 @@ module.exports = function(s,config,lang){
                     loginWithApiKey(params,function(err,user,isSessionKey){
                         if(isSessionKey)resetActiveSessionTimer(s.api[params.auth])
                         if(user){
+                            createSession(user,{
+                                auth: params.auth
+                            })
                             onSuccess(s.api[params.auth])
                         }else{
                             onFail()
