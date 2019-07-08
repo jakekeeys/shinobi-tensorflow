@@ -139,7 +139,12 @@ module.exports = function(s,config,lang){
                                "name": "RTMP",
                                "value": "rtmp",
                                "info": `Learn to connect here : <a href="https://shinobi.video/articles/2019-02-14-how-to-push-streams-to-shinobi-with-rtmp" target="_blank">Article : How to Push Streams via RTMP to Shinobi</a>`
-                            }
+                            },
+                            {
+                               "name": "MxPEG",
+                               "value": "mxpeg",
+                               "info": "Mobotix MJPEG Stream"
+                            },
                          ]
                     },
                     {

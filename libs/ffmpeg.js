@@ -492,8 +492,7 @@ module.exports = function(s,config,lang,onFinish){
             if(e.details.stream_timestamp_box_color&&e.details.stream_timestamp_box_color!==''){x.stream_timestamp_box_color=e.details.stream_timestamp_box_color}else{x.stream_timestamp_box_color='0x00000000@1'}
             //text size
             if(e.details.stream_timestamp_font_size&&e.details.stream_timestamp_font_size!==''){x.stream_timestamp_font_size=e.details.stream_timestamp_font_size}else{x.stream_timestamp_font_size='10'}
-
-            x.stream_video_filters.push('drawtext=fontfile='+x.stream_timestamp_font+':text=\'%{localtime}\':x='+x.stream_timestamp_x+':y='+x.stream_timestamp_y+':fontcolor='+x.stream_timestamp_color+':box=1:boxcolor='+x.stream_timestamp_box_color+':fontsize='+x.stream_timestamp_font_size);
+            x.stream_video_filters.push('drawtext="fontfile='+x.stream_timestamp_font+':text=\'%{localtime}\':x='+x.stream_timestamp_x+':y='+x.stream_timestamp_y+':fontcolor='+x.stream_timestamp_color+':box=1:boxcolor='+x.stream_timestamp_box_color+':fontsize='+x.stream_timestamp_font_size + '"');
         }
         //stream - watermark for -vf
         if(e.details.stream_watermark&&e.details.stream_watermark=="1"&&e.details.stream_watermark_location&&e.details.stream_watermark_location!==''){
@@ -668,7 +667,7 @@ module.exports = function(s,config,lang,onFinish){
             x.dimensions = e.details.stream_scale_x+'x'+e.details.stream_scale_y;
         }
         //record - segmenting
-        x.segment=' -f segment -segment_format_options movflags=faststart+frag_keyframe+empty_moov -segment_atclocktime 1 -reset_timestamps 1 -strftime 1 -segment_list pipe:2 -segment_time '+(60*e.cutoff)+' "'+e.dir+'%Y-%m-%dT%H-%M-%S.'+e.ext+'"';
+        x.segment = ' -f segment -segment_format_options movflags=faststart+frag_keyframe+empty_moov -segment_atclocktime 1 -reset_timestamps 1 -strftime 1 -segment_list pipe:2 -segment_time '+(60*e.cutoff)+' "'+e.dir+'%Y-%m-%dT%H-%M-%S.'+e.ext+'"';
         //record - set defaults for extension, video quality
         switch(e.ext){
             case'mp4':
@@ -938,6 +937,9 @@ module.exports = function(s,config,lang,onFinish){
             break;
             case'mjpeg':
                 x.ffmpegCommandString += ' -reconnect 1 -f mjpeg'+x.cust_input+x.hwaccel+' -i "'+e.url+'"';
+            break;
+            case'mxpeg':
+                x.ffmpegCommandString += ' -reconnect 1 -f mxg'+x.cust_input+x.hwaccel+' -i "'+e.url+'"';
             break;
             case'rtmp':
                 if(!e.details.rtmp_key)e.details.rtmp_key = ''
