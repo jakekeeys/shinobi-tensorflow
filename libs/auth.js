@@ -26,7 +26,6 @@ module.exports = function(s,config,lang){
         s.sqlQuery(`SELECT ${columns} FROM Users WHERE mail=? AND (pass=? OR pass=?) LIMIT 1`,[params.username,params.password,s.createHash(params.password)],function(err,r){
             if(!r)r = []
             var user = r[0]
-            createSession(user)
             callback(err,user)
         })
     }
@@ -44,7 +43,7 @@ module.exports = function(s,config,lang){
             if(apiKey){
                 var sessionKey = createSession(apiKey,{
                     auth: params.auth,
-                    permissions: JSON.parse(apiKey.details),
+                    permissions: s.parseJSON(apiKey.details),
                     details: {}
                 })
                 getUserByUid(apiKey,'mail,details',function(err,user){
@@ -82,7 +81,7 @@ module.exports = function(s,config,lang){
             var generatedId = s.gid(20)
             if(!additionalData)additionalData = {}
             if(!user.ip)user.ip = '0.0.0.0'
-            user.auth = generatedId
+            if(!user.auth)user.auth = generatedId
             user.details = JSON.parse(user.details)
             user.permissions = {}
             s.api[user.auth] = Object.assign(user,additionalData)
@@ -105,10 +104,12 @@ module.exports = function(s,config,lang){
         }))
     }
     var resetActiveSessionTimer = function(activeSession){
-        clearTimeout(activeSession.timeout)
-        activeSession.timeout = setTimeout(function(){
-            delete(activeSession)
-        },1000 * 60 * 5)
+        if(activeSession){
+            clearTimeout(activeSession.timeout)
+            activeSession.timeout = setTimeout(function(){
+                delete(activeSession)
+            },1000 * 60 * 5)
+        }
     }
     s.auth = function(params,onSuccessComplete,res,req){
         if(req){
@@ -126,8 +127,11 @@ module.exports = function(s,config,lang){
         var onSuccess = function(user){
             var activeSession = s.api[params.auth]
             if(
-                activeSession.ip.indexOf('0.0.0.0') > -1 ||
-                activeSession.ip.indexOf(params.ip) > -1
+                activeSession &&
+                (
+                    activeSession.ip.indexOf('0.0.0.0') > -1 ||
+                    activeSession.ip.indexOf(params.ip) > -1
+                )
             ){
                 if(!user.lang){
                     var details = s.parseJSON(user.details).lang
@@ -157,6 +161,7 @@ module.exports = function(s,config,lang){
                     loginWithUsernameAndPassword(params,'*',function(err,user){
                         if(user){
                             params.auth = user.auth
+                            createSession(user)
                             resetActiveSessionTimer(s.api[params.auth])
                             onSuccess(user)
                         }else{
