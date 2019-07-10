@@ -171,7 +171,6 @@ module.exports = function(s,config,lang,app,io){
     // allow starting SMTP server without dropInEventServer
     if(config.smtpServer === true){
         var SMTPServer = require("smtp-server").SMTPServer;
-        const simpleParser = require('mailparser').simpleParser;
         if(!config.smtpServerPort && (config.smtpServerSsl && config.smtpServerSsl.enabled !== false || config.ssl)){config.smtpServerPort = 465}else if(!config.smtpServerPort){config.smtpServerPort = 25}
         var smtpOptions = {
             onAuth(auth, session, callback) {
