@@ -102,9 +102,10 @@ module.exports = function(s,config,lang){
             fileStream.on('error', function (err) {
                 console.error(err)
             })
+            var bucketName = s.group[e.ke].init.whcs_bucket
             var saveLocation = s.group[e.ke].init.whcs_dir+e.ke+'/'+e.mid+'/'+k.filename
             s.group[e.ke].whcs.upload({
-                Bucket: s.group[e.ke].init.whcs_bucket,
+                Bucket: bucketName,
                 Key: saveLocation,
                 Body:fileStream,
                 ACL:'public-read',
@@ -114,7 +115,8 @@ module.exports = function(s,config,lang){
                     s.userLog(e,{type:lang['Wasabi Hot Cloud Storage Upload Error'],msg:err})
                 }
                 if(s.group[e.ke].init.whcs_log === '1' && data && data.Location){
-                    console.log(data.Location)
+                    var cloudLink = data.Location
+                    fixCloudianUrl(e,cloudLink)
                     var save = [
                         e.mid,
                         e.ke,
@@ -126,7 +128,7 @@ module.exports = function(s,config,lang){
                         }),
                         k.filesize,
                         k.endTime,
-                        data.Location
+                        cloudLink
                     ]
                     s.sqlQuery('INSERT INTO `Cloud Videos` (mid,ke,time,status,details,size,end,href) VALUES (?,?,?,?,?,?,?,?)',save)
                     s.setCloudDiskUsedForGroup(e,{
@@ -198,6 +200,22 @@ module.exports = function(s,config,lang){
             if (err) console.log(err);
             callback()
         });
+    }
+    var fixCloudianUrl = function(e,cloudLink){
+        if(cloudLink.indexOf('http') === -1){
+            var bucketName = s.group[e.ke].init.whcs_bucket
+            var endPointSplit = s.group[e.ke].init.whcs_endpoint.split('://')
+            endPoint = endPointSplit[1] || endPointSplit[0]
+            var protocol = `https`
+            if(endPointSplit[1])protocol = endPointSplit[0]
+            var cloudLinkPrefix = `${protocol}://${bucketName}.${endPoint}`
+            var truncatedLink = cloudLink.substring(0, bucketName.length + 3)
+            if(truncatedLink.indexOf(`${bucketName}/`) > -1){
+                cloudLink = cloudLink.replace(`${bucketName}/`,'')
+            }
+            cloudLink = s.checkCorrectPathEnding(cloudLinkPrefix) + cloudLink
+        }
+        return cloudLink
     }
     //wasabi
     s.addCloudUploader({
