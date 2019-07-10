@@ -482,7 +482,7 @@ module.exports = function(s,config,lang){
                     var fileStats = fs.statSync(finalMp4OutputLocation)
                     var details = {}
                     s.sqlQuery('INSERT INTO `Files` (ke,mid,details,name,size,time) VALUES (?,?,?,?,?,?)',[ke,mid,s.s(details),finalFileName + '.mp4',fileStats.size,timeNow])
-                    s.setDiskUsedForGroup({ke: ke},fileStats.size / 1000000)
+                    s.setDiskUsedForGroup({ke: ke},fileStats.size / 1000000,'fileBin')
                     fs.unlink(commandTempLocation,function(){
 
                     })
