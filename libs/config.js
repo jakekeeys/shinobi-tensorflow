@@ -58,5 +58,9 @@ module.exports = function(s){
         console.error('!! You can do this in the Super User panel or from terminal.   !!')
         console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     }
+    s.getConfigWithBranding = function(){
+        //placeholer function
+        return Object.assign({},config)
+    }
     return config
 }
