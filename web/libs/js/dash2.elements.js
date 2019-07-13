@@ -632,7 +632,7 @@ $(document).ready(function(e){
                             e.b.css({
                                 overflow: 'auto',
                                 height: '100%',
-                            });
+                            }).scrollTop(0);
                             if(showThumbnail){
                                 var i = 0
                                 var getThumbnail = function(){
