@@ -1660,38 +1660,47 @@ module.exports = function(s,config,lang,app,io){
      */
      app.get(config.webPaths.apiPrefix+':auth/motion/:ke/:id', function (req,res){
          s.auth(req.params,function(user){
-             var end = function(endData){
-                 res.end(s.prettyPrint(endData))
-             }
              if(req.query.data){
                  try{
                      var d = {
                          id: req.params.id,
                          ke: req.params.ke,
-                         details: JSON.parse(req.query.data)
+                         details: s.parseJSON(req.query.data)
                      }
                  }catch(err){
-                     res.end('Data Broken',err)
+                     s.closeJsonResponse(res,{
+                         ok: false,
+                         msg: user.lang['Data Broken']
+                     })
                      return
                  }
              }else{
-                 res.end('No Data')
+                 s.closeJsonResponse(res,{
+                     ok: false,
+                     msg: user.lang['No Data']
+                 })
                  return
              }
              if(!d.ke||!d.id||!s.group[d.ke]){
-                 res.end(user.lang['No Group with this key exists'])
+                 s.closeJsonResponse(res,{
+                     ok: false,
+                     msg: user.lang['No Group with this key exists']
+                 })
                  return
              }
              if(!s.group[d.ke].rawMonitorConfigurations[d.id]){
-                 res.end(user.lang['No Group with this key exists'])
+                 s.closeJsonResponse(res,{
+                     ok: false,
+                     msg: user.lang['Monitor or Key does not exist.']
+                 })
                  return
              }
              var details = s.group[d.ke].rawMonitorConfigurations[d.id].details
              var detectorHttpApi = details.detector_http_api
-             var detectorOn = (details.detector_http_api === '1')
+             var detectorOn = (details.detector === '1')
              switch(detectorHttpApi){
                  case'0':
-                     end({
+                     s.closeJsonResponse(res,{
                          ok: false,
                          msg: user.lang['Trigger Blocked']
                      })
@@ -1699,7 +1708,7 @@ module.exports = function(s,config,lang,app,io){
                  break;
                  case'2':
                     if(!detectorOn){
-                        end({
+                        s.closeJsonResponse(res,{
                             ok: false,
                             msg: user.lang['Trigger Blocked']
                         })
@@ -1708,7 +1717,7 @@ module.exports = function(s,config,lang,app,io){
                  break;
                  case'2':
                     if(detectorOn){
-                        end({
+                        s.closeJsonResponse(res,{
                             ok: false,
                             msg: user.lang['Trigger Blocked']
                         })
@@ -1717,7 +1726,7 @@ module.exports = function(s,config,lang,app,io){
                  break;
              }
              s.triggerEvent(d)
-             end({
+             s.closeJsonResponse(res,{
                  ok: true,
                  msg: user.lang['Trigger Successful']
              })
