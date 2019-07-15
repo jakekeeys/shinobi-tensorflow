@@ -1846,6 +1846,73 @@ module.exports = function(s,config,lang){
                    },
                 ]
              },
+             "Timelapse Watermark": {
+                "id": "monSectionRecordingWatermark",
+                "name": lang['Recording Watermark'],
+                "color": "red",
+                isAdvanced: true,
+                "section-class": "h_rec_ti_input h_rec_ti_1",
+                "isSection": true,
+                "info": [
+                    {
+                       "name": "detail=record_timelapse_watermark",
+                       "field": lang.Enabled,
+                       "description": "An image that is burned onto the frames of the recorded video.",
+                       "default": "0",
+                       "example": "",
+                       "fieldType": "select",
+                       "selector": "h_wat_timelapse",
+                       "possible": [
+                           {
+                              "name": "No",
+                              "value": "0"
+                           },
+                           {
+                              "name": "Yes",
+                              "value": "1"
+                           }
+                       ]
+                   },
+                   {
+                       hidden: true,
+                      "name": "detail=record_timelapse_watermark_location",
+                      "field": lang['Image Location'],
+                      "description": "Image Location that will be used as Watermark.",
+                      "default": "0",
+                      "example": "/usr/share/watermark.logo",
+                      "form-group-class": "h_wat_timelapse_input h_wat_timelapse_1",
+                      "possible": ""
+                   },
+                   {
+                       hidden: true,
+                       "name": "detail=record_timelapse_watermark_position",
+                       "field": lang['Image Position'],
+                       "description": "An image that is burned onto the frames of the recorded video.",
+                       "default": "0",
+                       "example": "",
+                       "fieldType": "select",
+                       "form-group-class": "h_wat_timelapse_input h_wat_timelapse_1",
+                       "possible": [
+                           {
+                              "name": lang["Top Right"],
+                              "value": "tr"
+                           },
+                           {
+                              "name": lang["Top Left"],
+                              "value": "tl"
+                           },
+                           {
+                              "name": lang["Bottom Right"],
+                              "value": "br"
+                           },
+                           {
+                              "name": lang["Bottom Left"],
+                              "value": "bl"
+                           }
+                        ]
+                   },
+                ]
+             },
              "Custom": {
                 "name": "Custom",
                 "color": "navy",
@@ -1960,6 +2027,32 @@ module.exports = function(s,config,lang){
                             "name": "Yes",
                             "value": "1"
                          }
+                      ]
+                   },
+                   {
+                      "name": "detail=detector_http_api",
+                      "field": lang["Allow API Trigger"],
+                      "description": "Do you want to allow HTTP triggers to this camera?",
+                      "default": "1",
+                      "example": "",
+                      "fieldType": "select",
+                      "possible": [
+                         {
+                            "name": `${lang.Always} (${lang.Default})`,
+                            "value": "1"
+                         },
+                         {
+                            "name": lang[`When Detector is On`],
+                            "value": "2"
+                        },
+                         {
+                            "name": lang[`When Detector is Off`],
+                            "value": "3"
+                        },
+                        {
+                            "name": lang.Never,
+                            "value": "0"
+                        }
                       ]
                    },
                    {

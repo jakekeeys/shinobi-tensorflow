@@ -1660,8 +1660,8 @@ module.exports = function(s,config,lang,app,io){
      */
      app.get(config.webPaths.apiPrefix+':auth/motion/:ke/:id', function (req,res){
          s.auth(req.params,function(user){
-             var endData = {
-
+             var end = function(endData){
+                 res.end(s.prettyPrint(endData))
              }
              if(req.query.data){
                  try{
@@ -1682,8 +1682,45 @@ module.exports = function(s,config,lang,app,io){
                  res.end(user.lang['No Group with this key exists'])
                  return
              }
+             if(!s.group[d.ke].rawMonitorConfigurations[d.id]){
+                 res.end(user.lang['No Group with this key exists'])
+                 return
+             }
+             var details = s.group[d.ke].rawMonitorConfigurations[d.id].details
+             var detectorHttpApi = details.detector_http_api
+             var detectorOn = (details.detector_http_api === '1')
+             switch(detectorHttpApi){
+                 case'0':
+                     end({
+                         ok: false,
+                         msg: user.lang['Trigger Blocked']
+                     })
+                    return
+                 break;
+                 case'2':
+                    if(!detectorOn){
+                        end({
+                            ok: false,
+                            msg: user.lang['Trigger Blocked']
+                        })
+                        return
+                    }
+                 break;
+                 case'2':
+                    if(detectorOn){
+                        end({
+                            ok: false,
+                            msg: user.lang['Trigger Blocked']
+                        })
+                        return
+                    }
+                 break;
+             }
              s.triggerEvent(d)
-             res.end(user.lang['Trigger Successful'])
+             end({
+                 ok: true,
+                 msg: user.lang['Trigger Successful']
+             })
          },res,req)
      })
     /**
