@@ -17,11 +17,15 @@ var tempFolder = `${__dirname}/customAutoLoad`
 var moduleList = selectedModule.split(',')
 var moveModule = function(myModule){
     exec(`mv ${tempFolder}/samples/${myModule} ${customAutoLoadFolder}${myModule}`,function(err){
-        console.log(`# Module "${myModule}" already exists or there is no source data.`)
+        if(err){
+            console.log(`# Module "${myModule}" already exists or there is no source data.`)
+        }else{
+            console.log(`# Getting Module "${myModule}"`)
+        }
     })
 }
 exec(`git clone https://gitlab.com/Shinobi-Systems/customautoload-samples.git ${tempFolder}`,function(err){
-    console.log('# customAutoLoad directory seems to already exist.')
+    if(err)console.log('# customAutoLoad directory seems to already exist.')
     moduleList.forEach(function(myModule,number){
         moveModule(myModule)
         if(moduleList.length === number + 1){

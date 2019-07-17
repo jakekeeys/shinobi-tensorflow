@@ -5,8 +5,6 @@ if(!selectedModule){
     console.log('Example:')
     console.log('# node removeCustomAutoLoadModule.js ExtraBlocks')
     return
-}else{
-    console.log(`## Removing ${selectedModule}`)
 }
 var exec = require('child_process').exec
 var request = require('request')
@@ -16,7 +14,7 @@ var tempFolder = `${__dirname}/customAutoLoad`
 
 var deleteModule = function(myModule){
     exec(`rm -rf ${customAutoLoadFolder}${myModule}`,function(){
-
+        console.log(`## Removing "${myModule}"`)
     })
 }
 selectedModule.split(',').forEach(function(myModule){
