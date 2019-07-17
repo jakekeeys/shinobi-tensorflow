@@ -717,7 +717,7 @@ module.exports = function(s,config,lang){
     s.resetStreamCheck = function(e){
         clearTimeout(s.group[e.ke].activeMonitors[e.id].streamChecker)
         s.group[e.ke].activeMonitors[e.id].streamChecker = setTimeout(function(){
-            if(s.group[e.ke].activeMonitors[e.id].isStarted === true){
+            if(s.group[e.ke].activeMonitors[e.id] && s.group[e.ke].activeMonitors[e.id].isStarted === true){
                 s.launchMonitorProcesses(e);
                 s.userLog(e,{type:lang['Camera is not streaming'],msg:{msg:lang['Restarting Process']}});
                 s.orphanedVideoCheck(e,2,null,true)
@@ -814,6 +814,14 @@ module.exports = function(s,config,lang){
         }
         e.captureOne()
     }
+    var onDetectorJpegOutputAlone = function(e,d){
+        s.ocvTx({f:'frame',mon:s.group[e.ke].rawMonitorConfigurations[e.id].details,ke:e.ke,id:e.id,time:s.formattedTime(),frame:d});
+    }
+    var onDetectorJpegOutputSecondary = function(e,d){
+        s.group[e.ke].activeMonitors[e.id].lastJpegDetectorFrame = d
+    }
+    s.onMonitorDetectorDataOutputAlone = onDetectorJpegOutputAlone
+    s.onMonitorDetectorDataOutputSecondary = onDetectorJpegOutputSecondary
     s.createCameraFfmpegProcess = function(e){
         //launch ffmpeg (main)
         s.tx({
@@ -938,27 +946,13 @@ module.exports = function(s,config,lang){
                s.createPamDiffEngine(e)
                s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].pipe(s.group[e.ke].activeMonitors[e.id].p2p).pipe(s.group[e.ke].activeMonitors[e.id].pamDiff)
                 if(e.details.detector_use_detect_object === '1'){
-                    s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(d){
-                        s.group[e.ke].activeMonitors[e.id].lastJpegDetectorFrame = d
+                    s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
+                        s.onMonitorDetectorDataOutputSecondary(e,data)
                     })
                 }
             }else if(s.isAtleatOneDetectorPluginConnected){
-                // function chunky (buffer, chunkSize) {
-                //     var result = [];
-                //     var len = buffer.length;
-                //     var i = 0;
-                //
-                //     while (i < len) {
-                //         result.push(buffer.slice(i, i += chunkSize));
-                //     }
-                //
-                //     return result;
-                // }
-                s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].on('data',function(d){
-                    // chunky(d,1).forEach(function(bufferChunk){
-                    //     s.ocvTx({f:'frame',mon:s.group[e.ke].rawMonitorConfigurations[e.id].details,ke:e.ke,id:e.id,time:s.formattedTime(),frame:bufferChunk});
-                    // })
-                    s.ocvTx({f:'frame',mon:s.group[e.ke].rawMonitorConfigurations[e.id].details,ke:e.ke,id:e.id,time:s.formattedTime(),frame:d});
+                s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].on('data',function(data){
+                    s.onMonitorDetectorDataOutputAlone(e,data)
                 })
             }
         }
