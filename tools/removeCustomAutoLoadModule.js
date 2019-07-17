@@ -8,10 +8,17 @@ if(!selectedModule){
 }else{
     console.log(`## Removing ${selectedModule}`)
 }
-var exec = require('child_process').execSync
+var exec = require('child_process').exec
 var request = require('request')
 var homeDirectory = __dirname + '/../'
 var customAutoLoadFolder = `${homeDirectory}libs/customAutoLoad/`
 var tempFolder = `${__dirname}/customAutoLoad`
 
-exec(`rm -rf ${customAutoLoadFolder}${selectedModule}`)
+var deleteModule = function(myModule){
+    exec(`rm -rf ${customAutoLoadFolder}${myModule}`,function(){
+
+    })
+}
+selectedModule.split(',').forEach(function(myModule){
+    deleteModule(myModule)
+})
