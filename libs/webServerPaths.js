@@ -1078,7 +1078,10 @@ module.exports = function(s,config,lang,app,io){
     /**
     * API : Get Events
      */
-    app.get([config.webPaths.apiPrefix+':auth/events/:ke',config.webPaths.apiPrefix+':auth/events/:ke/:id',config.webPaths.apiPrefix+':auth/events/:ke/:id/:limit',config.webPaths.apiPrefix+':auth/events/:ke/:id/:limit/:start',config.webPaths.apiPrefix+':auth/events/:ke/:id/:limit/:start/:end'], function (req,res){
+    app.get([
+		config.webPaths.apiPrefix+':auth/events/:ke',
+		config.webPaths.apiPrefix+':auth/events/:ke/:id'
+	], function (req,res){
         req.ret={ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
@@ -1104,20 +1107,42 @@ module.exports = function(s,config,lang,app,io){
                     return;
                 }
             }
-            if(req.params.start&&req.params.start!==''){
-                req.params.start = s.stringToSqlTime(req.params.start)
-                if(req.params.end&&req.params.end!==''){
-                    req.params.end = s.stringToSqlTime(req.params.end)
-                    req.sql+=' AND `time` >= ? AND `time` <= ?';
-                    req.ar.push(decodeURIComponent(req.params.start))
-                    req.ar.push(decodeURIComponent(req.params.end))
-                }else{
-                    req.sql+=' AND `time` >= ?';
-                    req.ar.push(decodeURIComponent(req.params.start))
+            if(req.query.start||req.query.end){
+                if(req.query.start && req.query.start !== ''){
+                    req.query.start = s.stringToSqlTime(req.query.start)
+                }
+                if(req.query.end && req.query.end !== ''){
+                    req.query.end = s.stringToSqlTime(req.query.end)
+                }
+                if(!req.query.startOperator||req.query.startOperator==''){
+                    req.query.startOperator='>='
+                }
+                if(!req.query.endOperator||req.query.endOperator==''){
+                    req.query.endOperator='<='
+                }
+                switch(true){
+                    case(req.query.start&&req.query.start!==''&&req.query.end&&req.query.end!==''):
+                        req.sql+=' AND `time` '+req.query.startOperator+' ? AND `time` '+req.query.endOperator+' ?';
+                        req.ar.push(req.query.start)
+                        req.ar.push(req.query.end)
+                    break;
+                    case(req.query.start&&req.query.start!==''):
+                        req.sql+=' AND `time` '+req.query.startOperator+' ?';
+                        req.ar.push(req.query.start)
+                    break;
+                    case(req.query.end&&req.query.end!==''):
+                        req.sql+=' AND `time` '+req.query.endOperator+' ?';
+                        req.ar.push(req.query.end)
+                    break;
                 }
             }
-            if(!req.params.limit||req.params.limit==''){req.params.limit=100}
-            req.sql+=' ORDER BY `time` DESC LIMIT '+req.params.limit+'';
+            req.sql+=' ORDER BY `time` DESC';
+            if(!req.query.limit||req.query.limit==''){
+                req.query.limit='100'
+            }
+            if(req.query.limit!=='0'){
+                req.sql+=' LIMIT '+req.query.limit
+            }
             s.sqlQuery(req.sql,req.ar,function(err,r){
                 if(err){
                     err.sql=req.sql;
