@@ -101,14 +101,13 @@ module.exports = function(s,config,lang){
         }else{
             options = ' '+options
         }
+        var streamDir = s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
         var url
         var runExtraction = function(){
             try{
                 var snapBuffer = []
-                var snapProcess = spawn(config.ffmpegDir,('-loglevel quiet -re -i '+url+options+' -frames:v 1 -f image2pipe pipe:1').split(' '),{detached: true})
-                snapProcess.stdout.on('data',function(data){
-                    if(snapBuffer && snapBuffer.push)snapBuffer.push(data)
-                })
+                var temporaryImageFile = 'pipe:1'
+                var snapProcess = spawn(config.ffmpegDir,(`-loglevel quiet -re -probesize 1000000 -analyzeduration 1000000 -i ${url}${options} -frames:v 1 -f image2pipe ${temporaryImageFile}`).split(' '),{detached: true})
                 snapProcess.stderr.on('data',function(data){
                     console.log(data.toString())
                 })
@@ -127,8 +126,8 @@ module.exports = function(s,config,lang){
                 callback(s.readFileSync(config.defaultMjpeg,'binary'),false)
             }
         }
-        var checkExists = function(localStream,callback){
-            s.fileStats(localStream,function(err){
+        var checkExists = function(streamDir,callback){
+            s.fileStats(streamDir,function(err){
                 if(err){
                     callback(false)
                 }else{
@@ -136,26 +135,25 @@ module.exports = function(s,config,lang){
                 }
             })
         }
-        var localStream = s.dir.streams+monitor.ke+'/'+monitor.mid+'/'
-        checkExists(localStream+'s.jpg',function(success){
+        checkExists(streamDir + 's.jpg',function(success){
             if(success === false){
-                checkExists(localStream+'detectorStream.m3u8',function(success){
+                checkExists(streamDir + 'detectorStream.m3u8',function(success){
                     if(success === false){
-                        checkExists(localStream+'s.m3u8',function(success){
+                        checkExists(streamDir + 's.m3u8',function(success){
                             if(success === false){
                                 url = s.buildMonitorUrl(monitor)
                             }else{
-                                url = localStream+'s.m3u8'
+                                url = streamDir + 's.m3u8'
                             }
                             runExtraction()
                         })
                     }else{
-                        url = localStream+'detectorStream.m3u8'
+                        url = streamDir + 'detectorStream.m3u8'
                         runExtraction()
                     }
                 })
             }else{
-                s.readFile(localStream+'s.jpg',function(err,snapBuffer){
+                s.readFile(streamDir + 's.jpg',function(err,snapBuffer){
                     callback(snapBuffer,true)
                 })
             }
@@ -815,7 +813,14 @@ module.exports = function(s,config,lang){
         e.captureOne()
     }
     var onDetectorJpegOutputAlone = function(e,d){
-        s.ocvTx({f:'frame',mon:s.group[e.ke].rawMonitorConfigurations[e.id].details,ke:e.ke,id:e.id,time:s.formattedTime(),frame:d});
+        s.ocvTx({
+            f: 'frame',
+            mon: s.group[e.ke].rawMonitorConfigurations[e.id].details,
+            ke: e.ke,
+            id: e.id,
+            time: s.formattedTime(),
+            frame: d
+        })
     }
     var onDetectorJpegOutputSecondary = function(e,d){
         s.group[e.ke].activeMonitors[e.id].lastJpegDetectorFrame = d
