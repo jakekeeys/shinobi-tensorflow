@@ -2044,15 +2044,15 @@ module.exports = function(s,config,lang){
                          {
                             "name": lang[`When Detector is On`],
                             "value": "2"
-                        },
+                         },
                          {
                             "name": lang[`When Detector is Off`],
                             "value": "3"
-                        },
-                        {
+                         },
+                         {
                             "name": lang.Never,
                             "value": "0"
-                        }
+                         }
                       ]
                    },
                    {
@@ -3791,14 +3791,21 @@ module.exports = function(s,config,lang){
                       "name": "detail=size_video_percent",
                       "field": lang["Video Share"],
                       "description": "Percent of Max Storage Amount the videos can record to.",
-                      "default": "60",
+                      "default": "90",
                       "notForSubAccount": true,
                    },
                    {
                       "name": "detail=size_timelapse_percent",
                       "field": lang["Timelapse Frames Share"],
                       "description": "Percent of Max Storage Amount the timelapse frames can record to.",
-                      "default": "40",
+                      "default": "5",
+                      "notForSubAccount": true,
+                   },
+                   {
+                      "name": "detail=size_filebin_percent",
+                      "field": lang["FileBin Share"],
+                      "description": "Percent of Max Storage Amount the FileBin archive can use.",
+                      "default": "5",
                       "notForSubAccount": true,
                    },
                    {
