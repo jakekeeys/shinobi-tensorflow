@@ -108,7 +108,7 @@ module.exports = function(s,config,lang){
             try{
                 var snapBuffer = []
                 var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
-                var ffmpegCmd = `-loglevel quiet -re -probesize 10000 -analyzeduration 10000 ${inputOptions.join(' ')} -i ${url}${options} -vframes 1 ${temporaryImageFile}`
+                var ffmpegCmd = `-loglevel quiet -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i ${url}${options} -vframes 1 ${temporaryImageFile}`
                 var snapProcess = spawn(config.ffmpegDir,s.splitForFFPMEG(ffmpegCmd),{detached: true})
                 snapProcess.stderr.on('data',function(data){
                     console.log(data.toString())
@@ -603,7 +603,10 @@ module.exports = function(s,config,lang){
                 s.fileStats(pathDir+'icon.jpg',function(err){
                     if(!err){
                         s.readFile(pathDir+'icon.jpg',function(err,data){
-                            if(err){s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke);return};
+                            if(err){
+                                s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
+                                return
+                            };
                             s.tx({f:'monitor_snapshot',snapshot:data,snapshot_format:'ab',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
                         })
                     }else{
