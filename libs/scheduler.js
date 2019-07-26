@@ -79,7 +79,6 @@ module.exports = function(s,config,lang,app,io){
     var checkDaysAgainstSchedule = function(schedule,callback){
         var days = schedule.details.days
         if(!callback)callback = function(){}
-        console.log(days)
         try{
             if(
                 days

@@ -101,38 +101,46 @@ module.exports = function(s,config,lang){
         }else{
             options = ' '+options
         }
+        var inputOptions = []
         var streamDir = s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
         var url
         var runExtraction = function(){
             try{
                 var snapBuffer = []
-                var temporaryImageFile = 'pipe:1'
-                var snapProcess = spawn(config.ffmpegDir,(`-loglevel quiet -re -probesize 1000000 -analyzeduration 1000000 -i ${url}${options} -frames:v 1 -f image2pipe ${temporaryImageFile}`).split(' '),{detached: true})
+                var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
+                var ffmpegCmd = `-loglevel quiet -re -probesize 10000 -analyzeduration 10000 ${inputOptions.join(' ')} -i ${url}${options} -vframes 1 ${temporaryImageFile}`
+                var snapProcess = spawn(config.ffmpegDir,s.splitForFFPMEG(ffmpegCmd),{detached: true})
                 snapProcess.stderr.on('data',function(data){
                     console.log(data.toString())
                 })
                 snapProcess.on('exit',function(data){
                     clearTimeout(snapProcessTimeout)
                     delete(snapProcessTimeout)
-                    snapBuffer = Buffer.concat(snapBuffer)
-                    callback(snapBuffer,false)
+                    fs.readFile(temporaryImageFile,function(err,buffer){
+                        callback(buffer,false)
+                        fs.unlink(temporaryImageFile,function(){})
+                    })
                 })
                 var snapProcessTimeout = setTimeout(function(){
                     snapProcess.stdin.setEncoding('utf8')
                     snapProcess.stdin.write('q')
                     snapProcess.kill()
-                },10000)
+                },30000)
             }catch(err){
-                callback(s.readFileSync(config.defaultMjpeg,'binary'),false)
+                fs.readFile(config.defaultMjpeg,function(err,buffer){
+                    callback(buffer,false)
+                })
             }
         }
         var checkExists = function(streamDir,callback){
             s.fileStats(streamDir,function(err){
+                var response = false
                 if(err){
-                    callback(false)
+                    s.debugLog(err)
                 }else{
-                    callback(true)
+                    response = true
                 }
+                callback(response)
             })
         }
         checkExists(streamDir + 's.jpg',function(success){
@@ -148,6 +156,7 @@ module.exports = function(s,config,lang){
                             runExtraction()
                         })
                     }else{
+                        inputOptions.push('-ss 00:00:05')
                         url = streamDir + 'detectorStream.m3u8'
                         runExtraction()
                     }
