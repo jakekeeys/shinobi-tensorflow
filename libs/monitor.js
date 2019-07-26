@@ -97,18 +97,18 @@ module.exports = function(s,config,lang){
     s.getRawSnapshotFromMonitor = function(monitor,options,callback){
         if(!callback){
             callback = options
-            var options = ''
+            var options = {flags: ''}
         }else{
-            options = ' '+options
+            options.flags = ' ' + options.flags
         }
         var inputOptions = []
         var streamDir = s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
-        var url
+        var url = options.url
         var runExtraction = function(){
             try{
                 var snapBuffer = []
                 var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
-                var ffmpegCmd = `-loglevel quiet -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i ${url}${options} -vframes 1 ${temporaryImageFile}`
+                var ffmpegCmd = `-loglevel quiet -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i ${url}${options.flags} -vframes 1 ${temporaryImageFile}`
                 var snapProcess = spawn(config.ffmpegDir,s.splitForFFPMEG(ffmpegCmd),{detached: true})
                 snapProcess.stderr.on('data',function(data){
                     console.log(data.toString())
@@ -132,41 +132,45 @@ module.exports = function(s,config,lang){
                 })
             }
         }
-        var checkExists = function(streamDir,callback){
-            s.fileStats(streamDir,function(err){
-                var response = false
-                if(err){
-                    s.debugLog(err)
-                }else{
-                    response = true
-                }
-                callback(response)
-            })
-        }
-        checkExists(streamDir + 's.jpg',function(success){
-            if(success === false){
-                checkExists(streamDir + 'detectorStream.m3u8',function(success){
-                    if(success === false){
-                        checkExists(streamDir + 's.m3u8',function(success){
-                            if(success === false){
-                                url = s.buildMonitorUrl(monitor)
-                            }else{
-                                url = streamDir + 's.m3u8'
-                            }
-                            runExtraction()
-                        })
+        if(url){
+            runExtraction()
+        }else{
+            var checkExists = function(streamDir,callback){
+                s.fileStats(streamDir,function(err){
+                    var response = false
+                    if(err){
+                        // s.debugLog(err)
                     }else{
-                        inputOptions.push('-ss 00:00:05')
-                        url = streamDir + 'detectorStream.m3u8'
-                        runExtraction()
+                        response = true
                     }
-                })
-            }else{
-                s.readFile(streamDir + 's.jpg',function(err,snapBuffer){
-                    callback(snapBuffer,true)
+                    callback(response)
                 })
             }
-        })
+            checkExists(streamDir + 's.jpg',function(success){
+                if(success === false){
+                    checkExists(streamDir + 'detectorStream.m3u8',function(success){
+                        if(success === false){
+                            checkExists(streamDir + 's.m3u8',function(success){
+                                if(success === false){
+                                    url = s.buildMonitorUrl(monitor)
+                                }else{
+                                    url = streamDir + 's.m3u8'
+                                }
+                                runExtraction()
+                            })
+                        }else{
+                            inputOptions.push('-ss 00:00:05')
+                            url = streamDir + 'detectorStream.m3u8'
+                            runExtraction()
+                        }
+                    })
+                }else{
+                    s.readFile(streamDir + 's.jpg',function(err,snapBuffer){
+                        callback(snapBuffer,true)
+                    })
+                }
+            })
+        }
     }
     s.mergeDetectorBufferChunks = function(monitor,callback){
         var pathDir = s.dir.streams+monitor.ke+'/'+monitor.id+'/'
@@ -600,34 +604,22 @@ module.exports = function(s,config,lang){
         if(config.doSnapshot === true){
             if(e.mon.mode !== 'stop'){
                 var pathDir = s.dir.streams+e.ke+'/'+e.mid+'/'
-                s.fileStats(pathDir+'icon.jpg',function(err){
-                    if(!err){
-                        s.readFile(pathDir+'icon.jpg',function(err,data){
-                            if(err){
-                                s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
-                                return
-                            };
-                            s.tx({f:'monitor_snapshot',snapshot:data,snapshot_format:'ab',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
-                        })
+                var url = s.buildMonitorUrl(e.mon)
+                s.getRawSnapshotFromMonitor(e.mon,{
+                    flags: '-s 200x200',
+                    url: url
+                },function(data,isStaticFile){
+                    if(data && (data[data.length-2] === 0xFF && data[data.length-1] === 0xD9)){
+                        s.tx({
+                            f: 'monitor_snapshot',
+                            snapshot: data.toString('base64'),
+                            snapshot_format: 'b64',
+                            mid: e.mid,
+                            ke: e.ke
+                        },'GRP_'+e.ke)
                     }else{
-                        e.url = s.buildMonitorUrl(e.mon)
-                        s.getRawSnapshotFromMonitor(e.mon,'-s 200x200',function(data,isStaticFile){
-                            if((data[data.length-2] === 0xFF && data[data.length-1] === 0xD9)){
-                                if(!isStaticFile){
-                                    fs.writeFile(s.dir.streams+e.ke+'/'+e.mid+'/icon.jpg',data,function(){})
-                                }
-                                s.tx({
-                                    f: 'monitor_snapshot',
-                                    snapshot: data.toString('base64'),
-                                    snapshot_format: 'b64',
-                                    mid: e.mid,
-                                    ke: e.ke
-                                },'GRP_'+e.ke)
-                            }else{
-                                s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
-                           }
-                        })
-                    }
+                        s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
+                   }
                 })
             }else{
                 s.tx({f:'monitor_snapshot',snapshot:'Disabled',snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)

@@ -50,7 +50,7 @@ module.exports = function(s,config,lang){
             var onEventTriggerForDiscord = function(d,filter){
                 // d = event object
                 //discord bot
-                if(filter.discord && d.mon.details.detector_discordbot === '1' && !s.group[d.ke].activeMonitors[d.id].detector_discordbot){
+                if(filter.discord && s.group[d.ke].discordBot && d.mon.details.detector_discordbot === '1' && !s.group[d.ke].activeMonitors[d.id].detector_discordbot){
                     var detector_discordbot_timeout
                     if(!d.mon.details.detector_discordbot_timeout||d.mon.details.detector_discordbot_timeout===''){
                         detector_discordbot_timeout = 1000*60*10;
@@ -103,7 +103,7 @@ module.exports = function(s,config,lang){
                         })
                     }
                     s.getRawSnapshotFromMonitor(d.mon,function(data){
-                        if((data[data.length-2] === 0xFF && data[data.length-1] === 0xD9)){
+                        if(data && (data[data.length-2] === 0xFF && data[data.length-1] === 0xD9)){
                             d.screenshotBuffer = data
                             files.push({
                                 attachment: d.screenshotBuffer,
