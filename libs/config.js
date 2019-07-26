@@ -27,7 +27,8 @@ module.exports = function(s){
     if(config.cron.deleteOverMaxOffset === undefined)config.cron.deleteOverMaxOffset=0.9;
     if(config.cron.deleteLogs === undefined)config.cron.deleteLogs=true;
     if(config.cron.deleteEvents === undefined)config.cron.deleteEvents=true;
-    if(config.cron.deleteFileBins === undefined)config.cron.deleteFileBins=true;
+    if(config.cron.deleteFileBinsOverMax === undefined)config.cron.deleteFileBins=true;
+    if(config.deleteFileBins === undefined)config.deleteFileBinsOverMax=true;
     if(config.cron.interval === undefined)config.cron.interval=1;
     if(config.databaseType === undefined){config.databaseType='mysql'}
     if(config.pluginKeys === undefined)config.pluginKeys={};

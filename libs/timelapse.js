@@ -337,8 +337,8 @@ module.exports = function(s,config,lang,app,io){
             var dateNow = new Date()
             var hoursNow = dateNow.getHours()
             if(hoursNow === 1){
-                var dateNowMoment = moment(dateNow).utc().format('YYYY-MM-DD')
-                var dateMinusOneDay = moment(dateNow).utc().subtract(1, 'days').format('YYYY-MM-DD')
+                var dateNowMoment = moment(dateNow).utc().format('YYYY-MM-DDTHH:mm:ss')
+                var dateMinusOneDay = moment(dateNow).utc().subtract(1, 'days').format('YYYY-MM-DDTHH:mm:ss')
                 s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE time => ? AND time =< ?',[dateMinusOneDay,dateNowMoment],function(err,frames){
                     console.log(frames.length)
                     var groups = {}
