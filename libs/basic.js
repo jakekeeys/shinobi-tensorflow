@@ -264,6 +264,10 @@ module.exports = function(s,config){
     s.fileStats = function(filename, callback){
         return fileStats.push(filename, callback)
     }
+    s.kilobyteToMegabyte = function(kb,places){
+        if(!places)places = 2
+        return (kb/1000000).toFixed(places)
+    }
     Object.defineProperty(Array.prototype, 'chunk', {
         value: function(chunkSize){
             var temporal = [];

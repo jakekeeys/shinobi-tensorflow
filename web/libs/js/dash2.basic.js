@@ -297,3 +297,47 @@ $.ccio.destroyStream = function(d,user,killElement){
         }
     }
 }
+jQuery(function () {
+    jQuery('body').on('click', '.table-header-sorter', function () {
+        var $sort = jQuery(this).find('i');
+        var currentSort = undefined;
+        if ($sort.hasClass('fa-sort-asc')) {
+            currentSort = 'asc';
+        } else if ($sort.hasClass('fa-sort-desc')) {
+            currentSort = 'desc';
+        }
+
+        jQuery(this)
+            .parent()
+            .find('i.fa')
+            .removeClass('fa-sort-asc')
+            .removeClass('fa-sort-desc')
+            .addClass('fa-sort');
+
+        jQuery(this)
+            .find('i.fa')
+            .toggleClass('fa-sort', currentSort === 'desc')
+            .toggleClass('fa-sort-asc', currentSort === undefined)
+            .toggleClass('fa-sort-desc', currentSort === 'asc');
+
+        const field = jQuery(this).data('field');
+        const $body = jQuery(this)
+            .closest('.table')
+            .find('tbody');
+
+        const sortedRows = $body
+            .find('tr')
+            .detach()
+            .sort(function(a,b) {
+                const data1 = jQuery(a).data('sort');
+                const data2 = jQuery(b).data('sort');
+                if (currentSort === undefined)
+                    return data1[field] > data2[field] ? 1 : data1[field] < data2[field] ? -1 : 0;
+                else if (currentSort === 'asc')
+                    return data1[field] > data2[field] ? -1 : data1[field] < data2[field] ? 1 : 0;
+                else
+                    return data1._no > data2._no ? 1 : data1._no < data2._no ? -1 : 0;
+            });
+        $body.append(sortedRows);
+    });
+});

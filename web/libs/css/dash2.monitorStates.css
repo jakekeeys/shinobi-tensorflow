@@ -1,0 +1,26 @@
+.state-monitor-row-fields{
+    border-bottom: 1px solid #444;
+    border-radius: 5px;
+}
+.state-monitor-row-fields .list-group{
+    height: 300px
+}
+.state-monitor-row .list-group .list-group-item:first-child{
+    border-top:0;
+}
+.state-monitor-row .list-group .list-group-item:last-child{
+    border-bottom:0;
+}
+
+.state-monitor-row-select-container {
+    margin-bottom: 10px;
+}
+
+.state-monitor-row-fields-container {
+    border: 1px solid #444;
+    border-radius: 5px;
+}
+
+.state-monitor-row-fields-field {
+    margin-top: 5px;
+}

@@ -15,6 +15,10 @@ module.exports = function(s,config,lang,app,io){
         var schedule = Object.assign(row,{})
         if(!s.schedules[schedule.ke])s.schedules[schedule.ke] = {}
         s.checkDetails(schedule)
+        schedule.timezoneOffset = parseInt(schedule.details.timezone) || 0
+        schedule.details.days.forEach(function(dayNumber,key){
+            schedule.details.days[key] = parseInt(dayNumber)
+        })
         if(!s.schedules[schedule.ke][schedule.name]){
             s.schedules[schedule.ke][schedule.name] = schedule
         }else{
@@ -22,7 +26,10 @@ module.exports = function(s,config,lang,app,io){
         }
     }
     //check time in schedule
-    s.checkTimeAgainstSchedule = function(start,end,callback){
+    var checkTimeAgainstSchedule = function(schedule,callback){
+        var start = schedule.start
+        var end = schedule.end
+        if(!callback)callback = function(){}
         try{
             if(
                 start
@@ -32,16 +39,17 @@ module.exports = function(s,config,lang,app,io){
                 var startHour = parseInt(startSplit[0])
                 var startMin = parseInt(startSplit[1])
                 checkStartTime.setHours(startHour)
-                checkStartTime.setMinutes(startMin)
+                checkStartTime.setMinutes(startMin - schedule.timezoneOffset)
                 if(end){
                     var checkEndTime = new Date()
                     var endSplit = end.split(':')
                     var endHour = parseInt(endSplit[0])
                     var endMin = parseInt(endSplit[1])
                     checkEndTime.setHours(endHour)
-                    checkEndTime.setMinutes(endMin)
+                    checkEndTime.setMinutes(endMin - schedule.timezoneOffset)
                 }
                 var currentDate = new Date()
+                currentDate.setMinutes(currentDate.getMinutes() - schedule.timezoneOffset)
                 if(
                     (
                         currentDate >= checkStartTime &&
@@ -50,6 +58,7 @@ module.exports = function(s,config,lang,app,io){
                     currentDate >= checkStartTime && !end
                 ){
                     callback()
+                    return true
                 }else{
                     callback({
                         currentDate : currentDate,
@@ -58,12 +67,45 @@ module.exports = function(s,config,lang,app,io){
                     })
                 }
             }else{
-                callback()
+                callback({}) //no start time selected, failed
             }
         }catch(err){
             console.log(err)
-            callback()
+            callback(err)
         }
+        return false
+    }
+    //check days in schedule
+    var checkDaysAgainstSchedule = function(schedule,callback){
+        var days = schedule.details.days
+        if(!callback)callback = function(){}
+        try{
+            if(
+                days
+            ){
+                var currentDate = new Date()
+                currentDate.setMinutes(currentDate.getMinutes() - schedule.timezoneOffset)
+                var currentDay = currentDate.getDay()
+                if(
+                    days.indexOf(currentDay) > -1 // if currentDay of week is found in schedule selection
+                ){
+                    callback()
+                    return true
+                }else{
+                    callback({
+                        currentDate: currentDate,
+                        currentDay: currentDay
+                    })
+                }
+            }else{
+                callback() //no days selected, succeed
+                return true
+            }
+        }catch(err){
+            console.log(err)
+            callback(err)
+        }
+        return false
     }
     //check all Schedules
     s.checkSchedules = function(v,callback){
@@ -73,25 +115,25 @@ module.exports = function(s,config,lang,app,io){
             scheduleNames.forEach(function(name){
                 var schedule = s.schedules[key][name]
                 if(!schedule.active && schedule.enabled === 1 && schedule.start && schedule.details.monitorStates){
-                    s.checkTimeAgainstSchedule(schedule.start,schedule.end,function(err){
-                        if(!err){
-                            schedule.active = true
-                            var monitorStates = schedule.details.monitorStates
-                            monitorStates.forEach(function(stateName){
-                                s.activateMonitorStates(key,stateName,{
-                                    ke: key,
-                                    uid: 'System',
-                                    details: {},
-                                    permissions: {},
-                                    lang: lang
-                                },function(endData){
-                                    // console.log(endData)
-                                })
+                    var timePasses = checkTimeAgainstSchedule(schedule)
+                    var daysPasses = checkDaysAgainstSchedule(schedule)
+                    if(timePasses && daysPasses){
+                        schedule.active = true
+                        var monitorStates = schedule.details.monitorStates
+                        monitorStates.forEach(function(stateName){
+                            s.activateMonitorStates(key,stateName,{
+                                ke: key,
+                                uid: 'System',
+                                details: {},
+                                permissions: {},
+                                lang: lang
+                            },function(endData){
+                                // console.log(endData)
                             })
-                        }else{
-                            schedule.active = false
-                        }
-                    })
+                        })
+                    }else{
+                        schedule.active = false
+                    }
                 }
             })
         })

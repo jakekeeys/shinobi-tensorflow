@@ -98,7 +98,6 @@ img{max-width:100%}
 
 .demo-blog .demo-blog__posts.montage{max-width:100%}
 
-/* .mdl-layout__drawer{overflow-y: visible!important} */
 .hide-side .mdl-layout__drawer{overflow-y: hidden}
 .mdl-layout__header-row{padding-left:10!important}
 .mdl-layout__header-row .nav>li>a{border-radius:50%;}
@@ -417,3 +416,25 @@ ul.msg_list li .message {
 .slider.slider-horizontal {
     width:100%!important
 }
+/*  */
+.epic-text {
+    margin:15px 0 0 0;
+    text-align:center;
+    color:#777;
+    font-family: sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 3pt;
+    font-size: 8pt;
+}
+/* Start of custom table sorter */
+.table .table-header-sorter {
+    cursor: pointer;
+    white-space: nowrap;
+}
+.table th.table-header-sorter i.fa-sort {
+    color: #ccc;
+}
+.table th.table-header-sorter i {
+    margin-left: 10px;
+}
+/* End of custom table sorter */

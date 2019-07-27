@@ -50,7 +50,7 @@ loadLib('ffmpeg')(s,config,lang,function(ffmpeg){
     //user and group functions
     loadLib('user')(s,config,lang)
     //timelapse functions
-    loadLib('timelapse')(s,config,lang)
+    loadLib('timelapse')(s,config,lang,app,io)
     //monitor/camera handlers
     loadLib('monitor')(s,config,lang)
     //event functions : motion, object matrix handler

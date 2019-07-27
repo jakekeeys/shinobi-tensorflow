@@ -89,8 +89,8 @@ module.exports = function(s,config,lang){
         if(!k)k={};
         e.dir = s.getVideoDirectory(e)
         k.dir = e.dir.toString()
-        if(s.group[e.ke].mon[e.id].childNode){
-            s.cx({f:'insertCompleted',d:s.group[e.ke].mon_conf[e.id],k:k},s.group[e.ke].mon[e.id].childNodeId);
+        if(s.group[e.ke].activeMonitors[e.id].childNode){
+            s.cx({f:'insertCompleted',d:s.group[e.ke].rawMonitorConfigurations[e.id],k:k},s.group[e.ke].activeMonitors[e.id].childNodeId);
         }else{
             //get file directory
             k.fileExists = fs.existsSync(k.dir+k.file)
@@ -140,8 +140,8 @@ module.exports = function(s,config,lang){
                         })
                     })
                     .on('close',function(){
-                        clearTimeout(s.group[e.ke].mon[e.id].recordingChecker)
-                        clearTimeout(s.group[e.ke].mon[e.id].streamChecker)
+                        clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingChecker)
+                        clearTimeout(s.group[e.ke].activeMonitors[e.id].streamChecker)
                         s.cx({
                             f:'created_file',
                             mid:e.id,
@@ -461,7 +461,7 @@ module.exports = function(s,config,lang){
         })
         var commandTempLocation = `${s.dir.streams}${ke}/${mid}/mergeJpegs_${finalFileName}.sh`
         var finalMp4OutputLocation = `${s.dir.fileBin}${ke}/${mid}/${finalFileName}.mp4`
-        if(!s.group[ke].mon[mid].buildingTimelapseVideo){
+        if(!s.group[ke].activeMonitors[mid].buildingTimelapseVideo){
             if(!fs.existsSync(finalMp4OutputLocation)){
                 var currentFile = 0
                 var completionTimeout
@@ -482,11 +482,11 @@ module.exports = function(s,config,lang){
                     var fileStats = fs.statSync(finalMp4OutputLocation)
                     var details = {}
                     s.sqlQuery('INSERT INTO `Files` (ke,mid,details,name,size,time) VALUES (?,?,?,?,?,?)',[ke,mid,s.s(details),finalFileName + '.mp4',fileStats.size,timeNow])
-                    s.setDiskUsedForGroup({ke: ke},fileStats.size / 1000000)
+                    s.setDiskUsedForGroup({ke: ke},fileStats.size / 1000000,'fileBin')
                     fs.unlink(commandTempLocation,function(){
 
                     })
-                    delete(s.group[ke].mon[mid].buildingTimelapseVideo)
+                    delete(s.group[ke].activeMonitors[mid].buildingTimelapseVideo)
                 })
                 var readFile = function(){
                     var filePath = concatFiles[currentFile]
@@ -503,7 +503,7 @@ module.exports = function(s,config,lang){
                     }
                 }
                 readFile()
-                s.group[ke].mon[mid].buildingTimelapseVideo = videoBuildProcess
+                s.group[ke].activeMonitors[mid].buildingTimelapseVideo = videoBuildProcess
                 callback({
                     ok: true,
                     fileExists: false,
@@ -530,7 +530,7 @@ module.exports = function(s,config,lang){
     s.getVideoStorageIndex = function(video){
         var details = s.parseJSON(video.details)
         var storageId = details.storageId
-        if(s.group[video.ke] && s.group[video.ke].mon[video.id] && s.group[video.ke].mon[video.id].addStorageId)storageId = s.group[video.ke].mon[video.id].addStorageId
+        if(s.group[video.ke] && s.group[video.ke].activeMonitors[video.id] && s.group[video.ke].activeMonitors[video.id].addStorageId)storageId = s.group[video.ke].activeMonitors[video.id].addStorageId
         if(storageId){
             return s.group[video.ke].addStorageUse[storageId]
         }

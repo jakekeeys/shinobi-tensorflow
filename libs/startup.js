@@ -50,7 +50,7 @@ module.exports = function(s,config,lang,io){
                     if(!orphanedVideosForMonitors[monitor.ke])orphanedVideosForMonitors[monitor.ke] = {}
                     if(!orphanedVideosForMonitors[monitor.ke][monitor.mid])orphanedVideosForMonitors[monitor.ke][monitor.mid] = 0
                     s.initiateMonitorObject(monitor)
-                    s.group[monitor.ke].mon_conf[monitor.mid] = monitor
+                    s.group[monitor.ke].rawMonitorConfigurations[monitor.mid] = monitor
                     s.sendMonitorStatus({id:monitor.mid,ke:monitor.ke,status:'Stopped'});
                     var monObj = Object.assign(monitor,{id : monitor.mid})
                     s.camera(monitor.mode,monObj)
@@ -164,22 +164,45 @@ module.exports = function(s,config,lang,io){
             }
             if(s.cloudDiskUseStartupExtensions[storageType])s.cloudDiskUseStartupExtensions[storageType](user,userDetails)
         })
-        s.sqlQuery('SELECT * FROM `Cloud Videos` WHERE ke=? AND status!=?',[user.ke,0],function(err,videos){
-            if(videos && videos[0]){
-                videos.forEach(function(video){
-                    var storageType = JSON.parse(video.details).type
-                    if(!storageType)storageType = 's3'
-                    user.cloudDiskUse[storageType].usedSpace += (video.size /1000000)
-                    ++user.cloudDiskUse[storageType].firstCount
-                })
-                s.cloudDisksLoaded.forEach(function(storageType){
-                    var firstCount = user.cloudDiskUse[storageType].firstCount
-                    s.systemLog(user.mail+' : '+lang.startUpText1+' : '+firstCount,storageType,user.cloudDiskUse[storageType].usedSpace)
-                    delete(user.cloudDiskUse[storageType].firstCount)
-                })
-            }
-            s.group[user.ke].cloudDiskUse = user.cloudDiskUse
-            callback()
+        var loadCloudVideos = function(callback){
+            s.sqlQuery('SELECT * FROM `Cloud Videos` WHERE ke=? AND status!=?',[user.ke,0],function(err,videos){
+                if(videos && videos[0]){
+                    videos.forEach(function(video){
+                        var storageType = JSON.parse(video.details).type
+                        if(!storageType)storageType = 's3'
+                        var videoSize = video.size / 1000000
+                        user.cloudDiskUse[storageType].usedSpace += videoSize
+                        user.cloudDiskUse[storageType].usedSpaceVideos += videoSize
+                        ++user.cloudDiskUse[storageType].firstCount
+                    })
+                    s.cloudDisksLoaded.forEach(function(storageType){
+                        var firstCount = user.cloudDiskUse[storageType].firstCount
+                        s.systemLog(user.mail+' : '+lang.startUpText1+' : '+firstCount,storageType,user.cloudDiskUse[storageType].usedSpace)
+                        delete(user.cloudDiskUse[storageType].firstCount)
+                    })
+                }
+                callback()
+            })
+        }
+        var loadCloudTimelapseFrames = function(callback){
+            s.sqlQuery('SELECT * FROM `Cloud Timelapse Frames` WHERE ke=?',[user.ke],function(err,frames){
+                if(frames && frames[0]){
+                    frames.forEach(function(frame){
+                        var storageType = JSON.parse(frame.details).type
+                        if(!storageType)storageType = 's3'
+                        var frameSize = frame.size / 1000000
+                        user.cloudDiskUse[storageType].usedSpace += frameSize
+                        user.cloudDiskUse[storageType].usedSpaceTimelapseFrames += frameSize
+                    })
+                }
+                callback()
+            })
+        }
+        loadCloudVideos(function(){
+            loadCloudTimelapseFrames(function(){
+                s.group[user.ke].cloudDiskUse = user.cloudDiskUse
+                callback()
+            })
         })
     }
     var loadAddStorageDiskUseForUser = function(user,data,callback){

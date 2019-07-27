@@ -76,7 +76,7 @@ module.exports = function(s,config,lang){
        if(wfs && s.group[e.ke].init.use_webdav !== '0' && s.group[e.ke].init.webdav_save === "1"){
            var webdavUploadDir = s.group[e.ke].init.webdav_dir+e.ke+'/'+e.mid+'/'
            var startWebDavUpload = function(){
-               s.group[e.ke].mon[e.id].webdavDirExist = true
+               s.group[e.ke].activeMonitors[e.id].webdavDirExist = true
                var wfsWriteStream =
                fs.createReadStream(k.dir + k.filename).pipe(wfs.createWriteStream(webdavUploadDir + k.filename))
                if(s.group[e.ke].init.webdav_log === '1'){
@@ -102,7 +102,7 @@ module.exports = function(s,config,lang){
                    s.purgeCloudDiskForGroup(e,'webdav')
                }
            }
-           if(s.group[e.ke].mon[e.id].webdavDirExist !== true){
+           if(s.group[e.ke].activeMonitors[e.id].webdavDirExist !== true){
                //check if webdav dir exist
                var parentPoint = 0
                var webDavParentz = webdavUploadDir.split('/')

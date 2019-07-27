@@ -50,7 +50,7 @@ module.exports = function(s,config,lang){
             var onEventTriggerForDiscord = function(d,filter){
                 // d = event object
                 //discord bot
-                if(filter.discord && d.mon.details.detector_discordbot === '1' && !s.group[d.ke].mon[d.id].detector_discordbot){
+                if(filter.discord && s.group[d.ke].discordBot && d.mon.details.detector_discordbot === '1' && !s.group[d.ke].activeMonitors[d.id].detector_discordbot){
                     var detector_discordbot_timeout
                     if(!d.mon.details.detector_discordbot_timeout||d.mon.details.detector_discordbot_timeout===''){
                         detector_discordbot_timeout = 1000*60*10;
@@ -58,16 +58,16 @@ module.exports = function(s,config,lang){
                         detector_discordbot_timeout = parseFloat(d.mon.details.detector_discordbot_timeout)*1000*60;
                     }
                     //lock mailer so you don't get emailed on EVERY trigger event.
-                    s.group[d.ke].mon[d.id].detector_discordbot=setTimeout(function(){
+                    s.group[d.ke].activeMonitors[d.id].detector_discordbot = setTimeout(function(){
                         //unlock so you can mail again.
-                        clearTimeout(s.group[d.ke].mon[d.id].detector_discordbot);
-                        delete(s.group[d.ke].mon[d.id].detector_discordbot);
-                    },detector_discordbot_timeout);
+                        clearTimeout(s.group[d.ke].activeMonitors[d.id].detector_discordbot);
+                        delete(s.group[d.ke].activeMonitors[d.id].detector_discordbot);
+                    },detector_discordbot_timeout)
                     var files = []
                     var sendAlert = function(){
                         s.discordMsg({
                             author: {
-                              name: s.group[d.ke].mon_conf[d.id].name,
+                              name: s.group[d.ke].rawMonitorConfigurations[d.id].name,
                               icon_url: config.iconURL
                             },
                             title: lang.Event+' - '+d.screenshotName,
@@ -84,7 +84,7 @@ module.exports = function(s,config,lang){
                         s.mergeDetectorBufferChunks(d,function(mergedFilepath,filename){
                             s.discordMsg({
                                 author: {
-                                  name: s.group[d.ke].mon_conf[d.id].name,
+                                  name: s.group[d.ke].rawMonitorConfigurations[d.id].name,
                                   icon_url: config.iconURL
                                 },
                                 title: filename,
@@ -103,7 +103,7 @@ module.exports = function(s,config,lang){
                         })
                     }
                     s.getRawSnapshotFromMonitor(d.mon,function(data){
-                        if((data[data.length-2] === 0xFF && data[data.length-1] === 0xD9)){
+                        if(data && (data[data.length-2] === 0xFF && data[data.length-1] === 0xD9)){
                             d.screenshotBuffer = data
                             files.push({
                                 attachment: d.screenshotBuffer,
@@ -251,7 +251,7 @@ module.exports = function(s,config,lang){
             filter.mail = true
         }
         var onEventTriggerForEmail = function(d,filter){
-            if(filter.mail && config.mail && !s.group[d.ke].mon[d.id].detector_mail && d.mon.details.detector_mail === '1'){
+            if(filter.mail && config.mail && !s.group[d.ke].activeMonitors[d.id].detector_mail && d.mon.details.detector_mail === '1'){
                 s.sqlQuery('SELECT mail FROM Users WHERE ke=? AND details NOT LIKE ?',[d.ke,'%"sub"%'],function(err,r){
                     r=r[0];
                     var detector_mail_timeout
@@ -261,10 +261,10 @@ module.exports = function(s,config,lang){
                         detector_mail_timeout = parseFloat(d.mon.details.detector_mail_timeout)*1000*60;
                     }
                     //lock mailer so you don't get emailed on EVERY trigger event.
-                    s.group[d.ke].mon[d.id].detector_mail=setTimeout(function(){
+                    s.group[d.ke].activeMonitors[d.id].detector_mail=setTimeout(function(){
                         //unlock so you can mail again.
-                        clearTimeout(s.group[d.ke].mon[d.id].detector_mail);
-                        delete(s.group[d.ke].mon[d.id].detector_mail);
+                        clearTimeout(s.group[d.ke].activeMonitors[d.id].detector_mail);
+                        delete(s.group[d.ke].activeMonitors[d.id].detector_mail);
                     },detector_mail_timeout);
                     var files = []
                     var mailOptions = {

@@ -123,6 +123,67 @@ module.exports = function(s,config,lang){
             })
         }
     }
+    var onInsertTimelapseFrame = function(monitorObject,queryInfo,filePath){
+        var e = monitorObject
+        if(s.group[e.ke].aws_s3 && s.group[e.ke].init.use_aws_s3 !== '0' && s.group[e.ke].init.aws_s3_save === '1'){
+            var fileStream = fs.createReadStream(filePath)
+            fileStream.on('error', function (err) {
+                console.error(err)
+            })
+            var saveLocation = s.group[e.ke].init.aws_s3_dir + e.ke + '/' + e.mid + '_timelapse/' + queryInfo.filename
+            s.group[e.ke].aws_s3.upload({
+                Bucket: s.group[e.ke].init.aws_s3_bucket,
+                Key: saveLocation,
+                Body: fileStream,
+                ACL:'public-read',
+                ContentType:'image/jpeg'
+            },function(err,data){
+                if(err){
+                    s.userLog(e,{type:lang['Wasabi Hot Cloud Storage Upload Error'],msg:err})
+                }
+                if(s.group[e.ke].init.aws_s3_log === '1' && data && data.Location){
+                    var save = [
+                        queryInfo.mid,
+                        queryInfo.ke,
+                        queryInfo.time,
+                        s.s({
+                            type : 's3',
+                            location : saveLocation,
+                        }),
+                        queryInfo.size,
+                        data.Location
+                    ]
+                    s.sqlQuery('INSERT INTO `Cloud Timelapse Frames` (mid,ke,time,details,size,href) VALUES (?,?,?,?,?,?,?,?)',save)
+                    s.setCloudDiskUsedForGroup(e,{
+                        amount : s.kilobyteToMegabyte(queryInfo.size),
+                        storageType : 's3'
+                    },'timelapseFrames')
+                    s.purgeCloudDiskForGroup(e,'s3','timelapseFrames')
+                }
+            })
+        }
+    }
+    var onDeleteTimelapseFrameFromCloud = function(e,frame,callback){
+        // e = user
+        try{
+            var frameDetails = JSON.parse(frame.details)
+        }catch(err){
+            var frameDetails = frame.details
+        }
+        if(frameDetails.type !== 's3'){
+            return
+        }
+        if(!frameDetails.location){
+            frameDetails.location = frame.href.split(locationUrl)[1]
+        }
+        s.group[e.ke].aws_s3.deleteObject({
+            Bucket: s.group[e.ke].init.aws_s3_bucket,
+            Key: frameDetails.location,
+        }, function(err, data) {
+            if (err) console.log(err);
+            callback()
+        });
+    }
     //amazon s3
     s.addCloudUploader({
         name: 's3',
@@ -133,6 +194,8 @@ module.exports = function(s,config,lang){
         cloudDiskUseStartupExtensions: cloudDiskUseStartupForAmazonS3,
         beforeAccountSave: beforeAccountSaveForAmazonS3,
         onAccountSave: cloudDiskUseStartupForAmazonS3,
+        onInsertTimelapseFrame: onInsertTimelapseFrame,
+        onDeleteTimelapseFrameFromCloud: onDeleteTimelapseFrameFromCloud
     })
     //return fields that will appear in settings
     return {
