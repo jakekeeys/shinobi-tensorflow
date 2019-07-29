@@ -2336,6 +2336,30 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
+                      "name": "detail=detector_webhook_method",
+                      "field": lang['Call Method'],
+                      "description": "",
+                      "default": "GET",
+                      "example": "",
+                      "form-group-class": "h_det_web_input h_det_web_1",
+                      "form-group-class-pre-layer": "h_det_input h_det_1",
+                      "fieldType": "select",
+                      "possible": [
+                          {
+                             "name": `GET (${lang.Default})`,
+                             "value": "GET"
+                          },
+                          {
+                             "name": "PUT",
+                             "value": "PUT"
+                          },
+                          {
+                             "name": "POST",
+                             "value": "POST"
+                          }
+                       ]
+                   },
+                   {
                       "name": "detail=detector_command_enable",
                       "field": lang['Command on Trigger'],
                       "description": "",
