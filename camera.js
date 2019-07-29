@@ -27,6 +27,8 @@ loadLib('folders')(s,config)
 var lang = loadLib('language')(s,config)
 //code test module
 loadLib('codeTester')(s,config,lang)
+//get version
+loadLib('version')(s,config,lang)
 //video processing engine
 loadLib('ffmpeg')(s,config,lang,function(ffmpeg){
     //ffmpeg coProcessor
@@ -51,6 +53,8 @@ loadLib('ffmpeg')(s,config,lang,function(ffmpeg){
     loadLib('user')(s,config,lang)
     //timelapse functions
     loadLib('timelapse')(s,config,lang,app,io)
+    //fileBin functions
+    loadLib('fileBin')(s,config,lang,app,io)
     //monitor/camera handlers
     loadLib('monitor')(s,config,lang)
     //event functions : motion, object matrix handler
