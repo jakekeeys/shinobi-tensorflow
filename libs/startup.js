@@ -332,6 +332,7 @@ module.exports = function(s,config,lang,io){
         //run prerequsite queries
         s.preQueries()
         setTimeout(function(){
+            //check commander
             checkForTerminalCommands(function(){
                 //load monitors (for groups)
                 loadMonitors(function(){
