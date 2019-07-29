@@ -317,7 +317,7 @@ module.exports = function(s,config,lang){
                 var detector_webhook_url = addEventDetailsToString(d,currentConfig.detector_webhook_url)
                 var webhookMethod = currentConfig.detector_webhook_method
                 if(!webhookMethod || webhookMethod === '')webhookMethod = 'GET'
-                request(detector_webhook_url,{method:'GET',encoding:null},function(err,data){
+                request(detector_webhook_url,{method: webhookMethod,encoding:null},function(err,data){
                     if(err){
                         s.userLog(d,{type:lang["Event Webhook Error"],msg:{error:err,data:data}})
                     }
