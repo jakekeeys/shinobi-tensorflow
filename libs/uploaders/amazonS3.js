@@ -153,7 +153,7 @@ module.exports = function(s,config,lang){
                         queryInfo.size,
                         data.Location
                     ]
-                    s.sqlQuery('INSERT INTO `Cloud Timelapse Frames` (mid,ke,time,details,size,href) VALUES (?,?,?,?,?,?,?,?)',save)
+                    s.sqlQuery('INSERT INTO `Cloud Timelapse Frames` (mid,ke,time,details,size,href) VALUES (?,?,?,?,?,?)',save)
                     s.setCloudDiskUsedForGroup(e,{
                         amount : s.kilobyteToMegabyte(queryInfo.size),
                         storageType : 's3'

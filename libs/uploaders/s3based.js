@@ -116,7 +116,7 @@ module.exports = function(s,config,lang){
                 }
                 if(s.group[e.ke].init.whcs_log === '1' && data && data.Location){
                     var cloudLink = data.Location
-                    fixCloudianUrl(e,cloudLink)
+                    cloudLink = fixCloudianUrl(e,cloudLink)
                     var save = [
                         e.mid,
                         e.ke,
@@ -170,7 +170,7 @@ module.exports = function(s,config,lang){
                         queryInfo.size,
                         data.Location
                     ]
-                    s.sqlQuery('INSERT INTO `Cloud Timelapse Frames` (mid,ke,time,details,size,href) VALUES (?,?,?,?,?,?,?,?)',save)
+                    s.sqlQuery('INSERT INTO `Cloud Timelapse Frames` (mid,ke,time,details,size,href) VALUES (?,?,?,?,?,?)',save)
                     s.setCloudDiskUsedForGroup(e,{
                         amount : s.kilobyteToMegabyte(queryInfo.size),
                         storageType : 'whcs'
