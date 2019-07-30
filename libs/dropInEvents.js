@@ -104,9 +104,13 @@ module.exports = function(s,config,lang,app,io){
             var eventTrigger = function(eventType,filename,stats){
                 if(stats.isDirectory()){
                     fs.readdir(monitorEventDropDir + filename,function(err,files){
-                        files.forEach(function(filename){
-                            processFile(filename)
-                        })
+                        if(files){
+                            files.forEach(function(filename){
+                                processFile(filename)
+                            })
+                        }else if(err){
+                            console.log(err)
+                        }
                     })
                 }else{
                     processFile(filename)

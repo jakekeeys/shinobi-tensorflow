@@ -279,9 +279,15 @@ module.exports = function(s,config,lang){
     s.basicOrApiAuthentication = function(username,password,callback){
         var splitUsername = username.split('@')
         if(splitUsername[1] && splitUsername[1].toLowerCase().indexOf('shinobi') > -1){
-            getApiKey(params,'ke,uid',callback)
+            getApiKey({
+                auth: splitUsername,
+                ke: password
+            },'ke,uid',callback)
         }else{
-            loginWithUsernameAndPassword(params,'ke,uid',callback)
+            loginWithUsernameAndPassword({
+                username: username,
+                password: password
+            },'ke,uid',callback)
         }
     }
 }

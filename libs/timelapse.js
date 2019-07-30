@@ -330,36 +330,37 @@ module.exports = function(s,config,lang,app,io){
             })
         },res,req);
     });
+    var buildTimelapseVideos = function(){
+        var dateNow = new Date()
+        var hoursNow = dateNow.getHours()
+        if(hoursNow === 1){
+            var dateNowMoment = moment(dateNow).utc().format('YYYY-MM-DDTHH:mm:ss')
+            var dateMinusOneDay = moment(dateNow).utc().subtract(1, 'days').format('YYYY-MM-DDTHH:mm:ss')
+            s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE time => ? AND time =< ?',[dateMinusOneDay,dateNowMoment],function(err,frames){
+                console.log(frames.length)
+                var groups = {}
+                frames.forEach(function(frame){
+                    if(groups[frame.ke])groups[frame.ke] = {}
+                    if(groups[frame.ke][frame.mid])groups[frame.ke][frame.mid] = []
+                    groups[frame.ke][frame.mid].push(frame)
+                })
+                Object.keys(groups).forEach(function(groupKey){
+                    Object.keys(groups[groupKey]).forEach(function(monitorId){
+                        var frameSet = groups[groupKey][monitorId]
+                        s.createVideoFromTimelapse(frameSet,30,function(response){
+                            if(response.ok){
 
-    // Auto Build Timelapse Videos
-    if(config.autoBuildTimelapseVideosDaily === true){
-        setInterval(function(){
-            var dateNow = new Date()
-            var hoursNow = dateNow.getHours()
-            if(hoursNow === 1){
-                var dateNowMoment = moment(dateNow).utc().format('YYYY-MM-DDTHH:mm:ss')
-                var dateMinusOneDay = moment(dateNow).utc().subtract(1, 'days').format('YYYY-MM-DDTHH:mm:ss')
-                s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE time => ? AND time =< ?',[dateMinusOneDay,dateNowMoment],function(err,frames){
-                    console.log(frames.length)
-                    var groups = {}
-                    frames.forEach(function(frame){
-                        if(groups[frame.ke])groups[frame.ke] = {}
-                        if(groups[frame.ke][frame.mid])groups[frame.ke][frame.mid] = []
-                        groups[frame.ke][frame.mid].push(frame)
-                    })
-                    Object.keys(groups).forEach(function(groupKey){
-                        Object.keys(groups[groupKey]).forEach(function(monitorId){
-                            var frameSet = groups[groupKey][monitorId]
-                            s.createVideoFromTimelapse(frameSet,30,function(response){
-                                if(response.ok){
-
-                                }
-                                console.log(response.fileLocation)
-                            })
+                            }
+                            console.log(response.fileLocation)
                         })
                     })
                 })
-            }
-        },1000 * 60 * 60 * 0.75)//every 45 minutes
+            })
+        }
+    }
+    // Auto Build Timelapse Videos
+    if(config.autoBuildTimelapseVideosDaily === true){
+        setInterval(buildTimelapseVideos,1000 * 60 * 60 * 0.75)//every 45 minutes
+        buildTimelapseVideos()
     }
 }
