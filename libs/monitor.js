@@ -875,8 +875,6 @@ module.exports = function(s,config,lang){
             }
             s.group[e.ke].activeMonitors[e.id].getMonitorCpuUsage = setInterval(function(){
                 if(e.details.skip_ping !== '1'){
-                    sendProcessCpuUsage()
-                }else{
                     connectionTester.test(strippedHost,e.port,2000,function(err,response){
                         if(response.success){
                             sendProcessCpuUsage()
@@ -884,6 +882,8 @@ module.exports = function(s,config,lang){
                             s.launchMonitorProcesses(e)
                         }
                     })
+                }else{
+                    sendProcessCpuUsage()
                 }
             },1000 * 60)
         }
