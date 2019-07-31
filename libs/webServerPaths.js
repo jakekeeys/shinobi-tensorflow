@@ -108,8 +108,11 @@ module.exports = function(s,config,lang,app,io){
     * Page : Superuser Login Screen
     */
     app.get(config.webPaths.super, function (req,res){
-
-        s.renderPage(req,res,config.renderPaths.index,{lang:lang,config: s.getConfigWithBranding(req.hostname),screen:'super'})
+        s.renderPage(req,res,config.renderPaths.index,{
+            lang: lang,
+            config: s.getConfigWithBranding(req.hostname),
+            screen: 'super'
+        })
     });
     /**
     * API : Get User Info
@@ -516,6 +519,7 @@ module.exports = function(s,config,lang,app,io){
                             }
                             data.Logs = r
                             data.customAutoLoad = s.customAutoLoadTree
+                            data.currentVersion = s.currentVersion
                             fs.readFile(s.location.config,'utf8',function(err,file){
                                 data.plainConfig = JSON.parse(file)
                                 renderPage(config.renderPaths.super,data)
@@ -2069,6 +2073,30 @@ module.exports = function(s,config,lang,app,io){
                 })
             }else{
                 endData.msg = lang.postDataBroken
+            }
+            s.closeJsonResponse(res,endData)
+        },res,req)
+    })
+    /**
+    * API : Get Definitions JSON
+     */
+    app.get(config.webPaths.apiPrefix+':auth/definitions/:ke',function (req,res){
+        s.auth(req.params,function(user){
+            var endData = {
+                ok: true,
+                definitions: s.getDefinitonFile(user.details.lang)
+            }
+            s.closeJsonResponse(res,endData)
+        },res,req)
+    })
+    /**
+    * API : Get Language JSON
+     */
+    app.get(config.webPaths.apiPrefix+':auth/language/:ke',function (req,res){
+        s.auth(req.params,function(user){
+            var endData = {
+                ok: true,
+                definitions: s.getLanguageFile(user.details.lang)
             }
             s.closeJsonResponse(res,endData)
         },res,req)
