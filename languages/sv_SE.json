@@ -26,7 +26,6 @@
   "Add Map": "Lägg Till Karta",
   "Add Monitor": "Lägg Till Kamera",
   "Add New": "Lägg Till Ny",
-  "Add Account": "Lägg till Konto",
   "Admin": "Admin",
   "Advanced": "Avancerad",
   "Again": "Igen",
@@ -913,7 +912,5 @@
   "vp8_cuvid": "VP8 NVENC (NVIDIA HW Accel)",
   "vp8_qsv": "VP8 (Quick Sync Video)",
   "vp9_cuvid": "VP9 NVENC (NVIDIA HW Accel)",
-  "years": "år",
-  "Clear Logs": "Rensa Logg",
-  "Logout": "Logga ut"
+  "years": "år"
 }
