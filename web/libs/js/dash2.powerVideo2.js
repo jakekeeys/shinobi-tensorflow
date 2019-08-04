@@ -439,6 +439,7 @@ $(document).ready(function(e){
     var nextVideoAllSlots = function(){
         Object.keys(currentlyPlayingVideos).forEach(function(monitorId){
             var video = currentlyPlayingVideos[monitorId]
+            visuallyDeselectItemInRow(video)
             visuallySelectItemInRow(video.videoAfter)
             loadVideoIntoMonitorSlot(video.videoAfter,0)
         })
@@ -446,6 +447,7 @@ $(document).ready(function(e){
     var previousVideoAllSlots = function(){
         Object.keys(currentlyPlayingVideos).forEach(function(monitorId){
             var video = currentlyPlayingVideos[monitorId]
+            visuallyDeselectItemInRow(video)
             visuallySelectItemInRow(video.videoBefore)
             loadVideoIntoMonitorSlot(video.videoBefore,0)
         })

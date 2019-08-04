@@ -365,19 +365,6 @@ $(document).ready(function(e){
                     })
                 }
             break;
-            case'timelapse':
-                $.timelapse.e.modal('show')
-                $.timelapse.monitors.find('.monitor').remove()
-                $.each($.ccio.mon,function(n,v){
-                    $.timelapse.monitors.append('<option class="monitor" value="'+v.mid+'">'+v.name+'</option>')
-                })
-                e.e=$.timelapse.monitors.find('.monitor').prop('selected',false)
-                if(e.mid!==''){
-                    e.e=$.timelapse.monitors.find('.monitor[value="'+e.mid+'"]')
-                }
-                e.e.first().prop('selected',true)
-                $.timelapse.f.submit()
-            break;
             case'timelapseJpeg':
                 $.timelapseJpeg.e.modal('show')
                 $.timelapseJpeg.monitors.find('.monitor').remove()
@@ -389,9 +376,6 @@ $(document).ready(function(e){
                     e.e=$.timelapseJpeg.monitors.find('.monitor[value="'+e.mid+'"]')
                 }
                 e.e.first().prop('selected',true)
-            break;
-            case'powerview':
-                $.powerVideoViewer.window.modal('show')
             break;
             case'region':
                 if(!e.mon){

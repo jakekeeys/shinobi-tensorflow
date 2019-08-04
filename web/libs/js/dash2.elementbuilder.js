@@ -43,12 +43,12 @@ $.ccio.tm=function(x,d,z,user){
                       "class": "default",
                       "icon": "external-link"
                    },
-                   "Power Viewer": {
-                      "label": lang['Power Viewer'],
-                      "attr": "monitor=\"powerview\"",
-                      "class": "default",
-                      "icon": "map-marker"
-                   },
+                   // "Power Viewer": {
+                   //    "label": lang['Power Viewer'],
+                   //    "attr": "monitor=\"powerview\"",
+                   //    "class": "default",
+                   //    "icon": "map-marker"
+                   // },
                    "Videos List": {
                       "label": lang['Videos List'],
                       "attr": "monitor=\"videos_table\"",
@@ -129,15 +129,15 @@ $.ccio.tm=function(x,d,z,user){
                       "class": "default ",
                       "icon": "calendar"
                    },
-                   "Power Viewer": {
-                      "label": lang['Power Viewer'],
-                      "attr": "monitor=\"powerview\"",
-                      "class": "default",
-                      "icon": "map-marker"
-                   },
+                   // "Power Viewer": {
+                   //    "label": lang['Power Viewer'],
+                   //    "attr": "monitor=\"powerview\"",
+                   //    "class": "default",
+                   //    "icon": "map-marker"
+                   // },
                    "Time-lapse": {
                       "label": lang['Time-lapse'],
-                      "attr": "monitor=\"timelapse\"",
+                      "attr": "monitor=\"timelapseJpeg\"",
                       "class": "default",
                       "icon": "angle-double-right"
                    },
