@@ -716,9 +716,10 @@ module.exports = function(s,config,lang,io){
                                         getVideos(function(videos){
                                             getEvents(function(events){
                                                 tx({
-                                                    f:'drawPowerVideoMainTimeLine',
-                                                    videos:videos,
-                                                    events:events
+                                                    f: 'videos&events',
+                                                    id: d.mid,
+                                                    videos: videos,
+                                                    events: events
                                                 })
                                             })
                                         })

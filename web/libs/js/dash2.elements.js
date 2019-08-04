@@ -391,17 +391,7 @@ $(document).ready(function(e){
                 e.e.first().prop('selected',true)
             break;
             case'powerview':
-                $.pwrvid.e.modal('show')
-                $.pwrvid.m.empty()
-                $.each($.ccio.mon,function(n,v){
-                    $.pwrvid.m.append('<option value="'+v.mid+'">'+v.name+'</option>')
-                })
-                e.e=$.pwrvid.m.find('option').prop('selected',false)
-                if(e.mid!==''){
-                    e.e=$.pwrvid.m.find('[value="'+e.mid+'"]')
-                }
-                e.e.first().prop('selected',true)
-                $.pwrvid.f.submit()
+                $.powerVideoViewer.window.modal('show')
             break;
             case'region':
                 if(!e.mon){
