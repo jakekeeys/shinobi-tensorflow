@@ -503,17 +503,17 @@ $(document).ready(function(e){
     powerVideoWindow.on('shown.bs.modal',function(){
         drawMonitorsList()
     })
-    $.powerVideoViewer = {
-        window: powerVideoWindow,
-        drawMonitorsList: drawMonitorsList,
-        activeTimeline: activeTimeline,
-        monitorListElement: powerVideoMonitorsListElement,
-        monitorViewsElement: powerVideoMonitorViewsElement,
-        timelineStripsElement: powerVideoTimelineStripsContainer,
-        dateRangeElement: powerVideoDateRangeElement,
-        loadedVideos: powerVideoLoadedVideos,
-        loadedEvents: powerVideoLoadedEvents,
-        loadedChartData: powerVideoLoadedChartData,
-        loadedTableGroupIds: loadedTableGroupIds
-    }
+    // $.powerVideoViewer = {
+    //     window: powerVideoWindow,
+    //     drawMonitorsList: drawMonitorsList,
+    //     activeTimeline: activeTimeline,
+    //     monitorListElement: powerVideoMonitorsListElement,
+    //     monitorViewsElement: powerVideoMonitorViewsElement,
+    //     timelineStripsElement: powerVideoTimelineStripsContainer,
+    //     dateRangeElement: powerVideoDateRangeElement,
+    //     loadedVideos: powerVideoLoadedVideos,
+    //     loadedEvents: powerVideoLoadedEvents,
+    //     loadedChartData: powerVideoLoadedChartData,
+    //     loadedTableGroupIds: loadedTableGroupIds
+    // }
 })

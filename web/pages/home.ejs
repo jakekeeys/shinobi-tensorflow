@@ -27,7 +27,6 @@
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.ptzcontrols.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.regioneditor.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.righttoleft.css">
-<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.timelapse.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.sidemenu.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.darktheme.css">
 <% customAutoLoad.LibsCss.forEach(function(lib){ %>
@@ -142,7 +141,6 @@
             <ul class="mdl-menu mdl-menu--bottom-left mdl-js-menu mdl-js-ripple-effect" for="accbtn">
                 <li class="mdl-menu__item" data-toggle="modal" data-target="#multi_mon"><div><i class="fa fa-clone"></i><div><%- lang['Monitors'] %></div></div></li>
                 <li class="mdl-menu__item" mid="" ke=""><div class="flex" monitor="powerview"><i class="fa fa-map-marker"></i><div><%- lang['Power Viewer'] %></div></div></li>
-                <li class="mdl-menu__item" mid="" ke=""><div class="flex" monitor="timelapse"><i class="fa fa-angle-double-right"></i><div><%- lang['Time-lapse'] %></div></div></li>
                 <li class="mdl-menu__item" mid="" ke=""><div class="flex" monitor="timelapseJpeg"><i class="fa fa-angle-double-right"></i><div><%- lang['Timelapse'] %></div></div></li>
                 <li class="mdl-menu__item permission_user_change" data-toggle="modal" data-target="#settings"><div><i class="fa fa-gears"></i><div><%- lang.Settings %></div></div></li>
                 <li class="mdl-menu__item" data-toggle="modal" data-target="#apis"><div><i class="fa fa-code"></i><div><%- lang.API %></div></div></li>
