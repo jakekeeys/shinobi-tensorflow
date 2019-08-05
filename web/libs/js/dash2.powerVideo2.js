@@ -429,7 +429,7 @@ $(document).ready(function(e){
         })
     }
     var setPlaySpeedOnAllSlots = function(playSpeed){
-        Object.keys(monitorSlotPlaySpeeds).forEach(function(monitorId){
+        Object.keys(powerVideoLoadedVideos).forEach(function(monitorId){
             monitorSlotPlaySpeeds[monitorId] = playSpeed
         })
         getAllActiveVideosInSlots().each(function(n,video){
