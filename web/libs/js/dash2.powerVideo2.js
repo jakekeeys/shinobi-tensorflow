@@ -105,9 +105,18 @@ $(document).ready(function(e){
             })
         })
         $.each(events,function(n,event){
+            var eventReason = event.details.reason.toUpperCase()
+            var eventSlotTag = eventReason
+            if(eventReason === 'OBJECT' && event.details.matrices[0]){
+                eventSlotTag = []
+                event.details.matrices.forEach(function(matrix){
+                    eventSlotTag.push(matrix.tag)
+                })
+                eventSlotTag = eventSlotTag.join(', ')
+            }
             chartData.push({
                 group: loadedTableGroupIds[monitorId + '_events'],
-                content: `<div timeline-event="${event.time}">${event.details.reason.toUpperCase()}</div>`,
+                content: `<div timeline-event="${event.time}">${eventSlotTag}</div>`,
                 start: event.time,
                 eventInfo: event
             })
