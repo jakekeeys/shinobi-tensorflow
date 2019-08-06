@@ -38,21 +38,6 @@ $(document).ready(function(e){
         powerVideoLoadedVideos[monitorId] = videos
         powerVideoLoadedEvents[monitorId] = events
     }
-    var addMonitorToTimeLine = function(){
-
-    }
-    var removeMonitorFromTimeLine = function(){
-
-    }
-    var addBulkMonitorToTimeLine = function(){
-
-    }
-    var removeAllMonitorsFromTimeLine = function(){
-
-    }
-    var playVideosAtSelectedTime = function(){
-
-    }
     var drawMonitorsList = function(){
         var html = ''
         $.each($.ccio.mon,function(n,monitor){
@@ -108,8 +93,8 @@ $(document).ready(function(e){
         eventsLabeledByTime[monitorId] = {}
         $.each(videos,function(n,video){
             eventsLabeledByTime[monitorId][video.time] = {}
-            video.videoAfter = videos[n - 1]
-            video.videoBefore = videos[n + 1]
+            if(videos[n - 1])video.videoAfter = videos[n - 1]
+            if(videos[n + 1])video.videoBefore = videos[n + 1]
             checkEventsAgainstVideo(video,events)
             chartData.push({
                 group: loadedTableGroupIds[monitorId],
@@ -376,12 +361,10 @@ $(document).ready(function(e){
         ){
             switch(true){
                 case videoIsSame:
-                    var videoNow = videoContainer.find('video.videoNow')
-                    if(videoNow[0].paused === true){
-                        videoNow[0].play()
-                    }else{
-                        videoNow[0].pause()
-                    }
+                    var videoNow = videoContainer.find('video.videoNow')[0]
+                    if(!videoNow.paused)videoNow.pause()
+                    videoNow.currentTime = timeToStartAt / 1000
+                    if(videoNow.paused)videoNow.play()
                     return
                 break;
                 case videoIsAfter:
