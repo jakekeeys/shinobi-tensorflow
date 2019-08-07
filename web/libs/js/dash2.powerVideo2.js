@@ -228,6 +228,7 @@ $(document).ready(function(e){
         var detectionInfoContainerRaw = videoPlayerContainer.find(`.videoPlayer-detection-info-raw`)
         var motionMeterProgressBar = videoPlayerContainer.find(`.videoPlayer-motion-meter .progress-bar`)
         var motionMeterProgressBarTextBox = videoPlayerContainer.find(`.videoPlayer-motion-meter .progress-bar span`)
+        var preloadedNext = false
         var reinitializeStreamObjectsContainer = function(){
             height = videoElement.height()
             width = videoElement.width()
@@ -265,6 +266,13 @@ $(document).ready(function(e){
                         detectionInfoContainerMotion.html(html)
                         // detectionInfoContainerRaw.html($.ccio.init('jsontoblock',{`${lang['Plug']}`:event.details.plug}))
                     }
+                }
+                var currentTime = this.currentTime;
+                var watchPoint = Math.floor((currentTime/this.duration) * 100)
+                if(!preloadedNext && watchPoint >= 75){
+                    preloadedNext = true
+                    var videoAfter = videoPlayerContainer.find(`video.videoAfter`)[0]
+                    videoAfter.setAttribute('preload',true)
                 }
             })
             var onEnded = function() {
@@ -360,7 +368,7 @@ $(document).ready(function(e){
                 videoData = video
             }
             if(videoData){
-               videoContainer.append('<video class="video_video '+position+'" video="'+videoData.href+'" playsinline preload><source src="'+video.href+'" type="video/'+video.ext+'"></video>')
+               videoContainer.append('<video class="video_video '+position+'" video="'+videoData.href+'" playsinline><source src="'+video.href+'" type="video/'+video.ext+'"></video>')
             }
         }
         if(
@@ -399,6 +407,7 @@ $(document).ready(function(e){
         var videoNow = videoContainer.find('video.videoNow')[0]
         attachEventsToVideoActiveElement(video)
         //
+        videoNow.setAttribute('preload',true)
         videoNow.muted = true
         videoNow.playbackRate = monitorSlotPlaySpeeds[video.mid] || 1
         videoNow.currentTime = timeToStartAt / 1000
