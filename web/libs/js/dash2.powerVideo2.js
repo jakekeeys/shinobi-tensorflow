@@ -98,7 +98,12 @@ $(document).ready(function(e){
             checkEventsAgainstVideo(video,events)
             chartData.push({
                 group: loadedTableGroupIds[monitorId],
-                content: `<div timeline-video-file="${video.time}">${video.time}</div>`,
+                content: `<div timeline-video-file="${video.mid}${video.time}">
+                    ${video.time}
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-danger" role="progressbar" style="width:0%;"><span></span></div>
+                    </div>
+                </div>`,
                 start: video.time,
                 end: video.end,
                 videoInfo: video
@@ -135,10 +140,10 @@ $(document).ready(function(e){
         return chartData
     }
     var visuallySelectItemInRow = function(video){
-        powerVideoTimelineStripsContainer.find(`[timeline-video-file="${video.time}"]`).parents('.vis-item').addClass('vis-selected')
+        powerVideoTimelineStripsContainer.find(`[timeline-video-file="${video.mid}${video.time}"]`).parents('.vis-item').addClass('vis-selected')
     }
     var visuallyDeselectItemInRow = function(video){
-        powerVideoTimelineStripsContainer.find(`[timeline-video-file="${video.time}"]`).parents('.vis-item').removeClass('vis-selected')
+        powerVideoTimelineStripsContainer.find(`[timeline-video-file="${video.mid}${video.time}"]`).parents('.vis-item').removeClass('vis-selected')
     }
     var drawTableTimeout = null
     var drawLoadedTableData = function(){
@@ -179,6 +184,7 @@ $(document).ready(function(e){
                 var options = {
                     selectable: false,
                     stack: false,
+                    showCurrentTime: false,
                 }
                 // Create a Timeline
                 var timeline = new vis.Timeline(container, items, groupsDataSet, options)
@@ -228,6 +234,7 @@ $(document).ready(function(e){
         var detectionInfoContainerRaw = videoPlayerContainer.find(`.videoPlayer-detection-info-raw`)
         var motionMeterProgressBar = videoPlayerContainer.find(`.videoPlayer-motion-meter .progress-bar`)
         var motionMeterProgressBarTextBox = videoPlayerContainer.find(`.videoPlayer-motion-meter .progress-bar span`)
+        var videoCurrentTimeProgressBar = powerVideoTimelineStripsContainer.find(`[timeline-video-file="${video.mid}${video.time}"] .progress-bar`)[0]
         var preloadedNext = false
         var reinitializeStreamObjectsContainer = function(){
             height = videoElement.height()
@@ -274,6 +281,7 @@ $(document).ready(function(e){
                     var videoAfter = videoPlayerContainer.find(`video.videoAfter`)[0]
                     videoAfter.setAttribute('preload',true)
                 }
+                videoCurrentTimeProgressBar.style.width = `${watchPoint}px`
             })
             var onEnded = function() {
                 visuallyDeselectItemInRow(video)

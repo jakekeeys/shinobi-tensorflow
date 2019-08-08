@@ -162,3 +162,15 @@
 #powerVideo .vis-time-axis .vis-text {
     color: #fff;
 }
+
+[timeline-video-file] .progress{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    opacity: 0;
+}
+.vis-selected [timeline-video-file] .progress{
+    opacity: 1;
+}
