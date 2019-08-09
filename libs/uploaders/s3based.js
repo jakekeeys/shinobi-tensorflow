@@ -240,16 +240,16 @@ module.exports = function(s,config,lang){
               "selector":"autosave_whcs",
               "field": lang.Autosave,
               "description": "",
-              "default": "No",
+              "default": lang.No,
               "example": "",
               "fieldType": "select",
               "possible": [
                   {
-                     "name": "No",
+                     "name": lang.No,
                      "value": "0"
                   },
                   {
-                     "name": "Yes",
+                     "name": lang.Yes,
                      "value": "1"
                   }
               ]
@@ -419,11 +419,11 @@ module.exports = function(s,config,lang){
              "example": "",
              "possible": [
                  {
-                    "name": "No",
+                    "name": lang.No,
                     "value": "0"
                  },
                  {
-                    "name": "Yes",
+                    "name": lang.Yes,
                     "value": "1"
                  }
              ]
@@ -441,11 +441,11 @@ module.exports = function(s,config,lang){
             "example": "",
             "possible":  [
                 {
-                   "name": "No",
+                   "name": lang.No,
                    "value": "0"
                 },
                 {
-                   "name": "Yes",
+                   "name": lang.Yes,
                    "value": "1"
                 }
             ]
