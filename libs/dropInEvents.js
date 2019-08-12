@@ -2,7 +2,6 @@ var fs = require('fs')
 var execSync = require('child_process').execSync
 module.exports = function(s,config,lang,app,io){
     if(config.dropInEventServer === true){
-        if(config.dropInEventForceSaveEvent === undefined)config.dropInEventForceSaveEvent = true
         if(config.dropInEventDeleteFileAfterTrigger === undefined)config.dropInEventDeleteFileAfterTrigger = true
         var beforeMonitorsLoadedOnStartup = function(){
             if(!config.dropInEventsDir){
@@ -63,11 +62,10 @@ module.exports = function(s,config,lang,app,io){
                                 name: filename,
                                 plug: "dropInEvent",
                                 reason: "ftpServer"
-                            },
-                        },config.dropInEventForceSaveEvent)
+                            }
+                        })
                     })
                 }else{
-                    var reason = "ftpServer"
                     if(search(filename,'.mp4')){
                         fs.stat(filePath,function(err,stats){
                             var startTime = stats.ctime
@@ -84,9 +82,6 @@ module.exports = function(s,config,lang,app,io){
                             })
                         })
                     }
-                    if(search(filename,'.txt')){
-                        reason = fs.readFileSync(filePath,{encoding: 'utf-8'}).split('\n')[0] || filename
-                    }
                     s.triggerEvent({
                         id: mid,
                         ke: ke,
@@ -94,9 +89,9 @@ module.exports = function(s,config,lang,app,io){
                             confidence: 100,
                             name: filename,
                             plug: "dropInEvent",
-                            reason: reason
+                            reason: "ftpServer"
                         }
-                    },config.dropInEventForceSaveEvent)
+                    })
                 }
                 if(config.dropInEventDeleteFileAfterTrigger){
                     setTimeout(function(){
@@ -207,7 +202,7 @@ module.exports = function(s,config,lang,app,io){
                             plug: "dropInEvent",
                             reason: "smtpServer"
                         }
-                    },config.dropInEventForceSaveEvent)
+                    })
                 }else{
                     return callback(new Error(lang['No Monitor Exists with this ID.']))
                 }

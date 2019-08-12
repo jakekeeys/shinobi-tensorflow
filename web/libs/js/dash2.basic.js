@@ -297,9 +297,8 @@ $.ccio.destroyStream = function(d,user,killElement){
         }
     }
 }
-$(document).ready(function(){
-    $('body')
-    .on('click', '.table-header-sorter', function () {
+jQuery(function () {
+    jQuery('body').on('click', '.table-header-sorter', function () {
         var $sort = jQuery(this).find('i');
         var currentSort = undefined;
         if ($sort.hasClass('fa-sort-asc')) {
@@ -340,16 +339,5 @@ $(document).ready(function(){
                     return data1._no > data2._no ? 1 : data1._no < data2._no ? -1 : 0;
             });
         $body.append(sortedRows);
-    })
-    .on('click','[tab-chooser]',function(){
-        var el = $(this)
-        var parent = el.parents('[tab-chooser-parent]')
-        var tabName = el.attr('tab-chooser')
-        var allTabsInParent = parent.find('[tab-section]')
-        var allTabChoosersInParent = parent.find('[tab-chooser]')
-        allTabsInParent.hide()
-        allTabChoosersInParent.removeClass('active')
-        el.addClass('active')
-        parent.find(`[tab-section="${tabName}"]`).show()
-    })
-})
+    });
+});
