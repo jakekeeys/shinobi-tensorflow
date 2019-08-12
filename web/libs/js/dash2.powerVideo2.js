@@ -13,16 +13,6 @@ $(document).ready(function(e){
     var eventsLabeledByTime = {}
     var monitorSlotPlaySpeeds = {}
     var currentlyPlayingVideos = {}
-    var extenders = {
-        onVideoPlayerTimeUpdateExtensions: [],
-        onVideoPlayerTimeUpdate: function(extender){
-            extenders.onVideoPlayerTimeUpdateExtensions.push(extender)
-        },
-        onVideoPlayerCreateExtensions: [],
-        onVideoPlayerCreate: function(extender){
-            extenders.onVideoPlayerCreateExtensions.push(extender)
-        },
-    }
     var activeTimeline = null
     // fix utc/localtime translation (use timelapseJpeg as guide, it works as expected) >
     powerVideoDateRangeElement.daterangepicker({
@@ -255,15 +245,6 @@ $(document).ready(function(e){
             .resize(reinitializeStreamObjectsContainer)
             .off('loadeddata').on('loadeddata', function() {
                 reinitializeStreamObjectsContainer()
-                var allLoaded = true
-                getAllActiveVideosInSlots().each(function(n,videoElement){
-                    if(!videoElement.readyState === 4)allLoaded = false
-                })
-                setTimeout(function(){
-                    if(allLoaded){
-                        playAllSlots()
-                    }
-                },1000)
             })
             // .off("pause").on("pause",function(){
             //     console.log(monitorId,'pause')
@@ -301,9 +282,6 @@ $(document).ready(function(e){
                     videoAfter.setAttribute('preload',true)
                 }
                 videoCurrentTimeProgressBar.style.width = `${watchPoint}px`
-                extenders.onVideoPlayerTimeUpdateExtensions.forEach(function(extender){
-                    extender(videoElement,watchPoint)
-                })
             })
             var onEnded = function() {
                 visuallyDeselectItemInRow(video)
@@ -356,7 +334,6 @@ $(document).ready(function(e){
         var timeToStartAt = selectedTime - new Date(video.time) || 0
         var numberOfMonitors = Object.keys(powerVideoLoadedVideos).length
         // if(numberOfMonitors > 3)numberOfMonitors = 3 //start new row after 3
-        if(numberOfMonitors == 1)numberOfMonitors = 2 //make single monitor not look like a doofus
         var widthOfBlock = 100 / numberOfMonitors
         var videoContainer = powerVideoMonitorViewsElement.find(`.videoPlayer[data-mid=${video.mid}] .videoPlayer-buffers`)
         if(videoContainer.length === 0){
@@ -442,10 +419,7 @@ $(document).ready(function(e){
         videoNow.muted = true
         videoNow.playbackRate = monitorSlotPlaySpeeds[video.mid] || 1
         videoNow.currentTime = timeToStartAt / 1000
-        // videoNow.play()
-        extenders.onVideoPlayerCreateExtensions.forEach(function(extender){
-            extender(videoElement,watchPoint)
-        })
+        videoNow.play()
     }
     var getSelectedMonitors = function(){
         return powerVideoMonitorsListElement.find('.active')
@@ -540,18 +514,17 @@ $(document).ready(function(e){
     powerVideoWindow.on('shown.bs.modal',function(){
         drawMonitorsList()
     })
-    $.powerVideoViewer = {
-        window: powerVideoWindow,
-        drawMonitorsList: drawMonitorsList,
-        activeTimeline: activeTimeline,
-        monitorListElement: powerVideoMonitorsListElement,
-        monitorViewsElement: powerVideoMonitorViewsElement,
-        timelineStripsElement: powerVideoTimelineStripsContainer,
-        dateRangeElement: powerVideoDateRangeElement,
-        loadedVideos: powerVideoLoadedVideos,
-        loadedEvents: powerVideoLoadedEvents,
-        loadedChartData: powerVideoLoadedChartData,
-        loadedTableGroupIds: loadedTableGroupIds,
-        extenders: extenders
-    }
+    // $.powerVideoViewer = {
+    //     window: powerVideoWindow,
+    //     drawMonitorsList: drawMonitorsList,
+    //     activeTimeline: activeTimeline,
+    //     monitorListElement: powerVideoMonitorsListElement,
+    //     monitorViewsElement: powerVideoMonitorViewsElement,
+    //     timelineStripsElement: powerVideoTimelineStripsContainer,
+    //     dateRangeElement: powerVideoDateRangeElement,
+    //     loadedVideos: powerVideoLoadedVideos,
+    //     loadedEvents: powerVideoLoadedEvents,
+    //     loadedChartData: powerVideoLoadedChartData,
+    //     loadedTableGroupIds: loadedTableGroupIds
+    // }
 })
