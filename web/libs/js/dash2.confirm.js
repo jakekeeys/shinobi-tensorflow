@@ -22,6 +22,14 @@ $(document).ready(function(){
             createButton(x,0,e)
         }
     }
+    $.confirm.create = function(options){
+        if(options.title && options.body){
+            $.confirm.e.modal('show')
+            $.confirm.title.text(options.title)
+            $.confirm.body.html(options.body)
+        }
+        if(options.clickOptions && options.clickCallback)$.confirm.click(options.clickOptions,options.clickCallback)
+    }
     $.confirm.e.on('hidden.bs.modal', function () {
         $.confirm.footer.find('.confirmaction').remove()
     })

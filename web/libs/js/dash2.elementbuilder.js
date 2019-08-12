@@ -111,8 +111,8 @@ $.ccio.tm=function(x,d,z,user){
                       "class": "default arrows",
                       "icon": "arrows"
                    },
-                   "Status Indicator": {
-                      "label": lang['Status Indicator'],
+                   "Reconnect Stream": {
+                      "label": lang['Reconnect Stream'],
                       "attr": "monitor=\"watch_on\"",
                       "class": "success signal",
                       "icon": "plug"
