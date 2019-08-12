@@ -493,7 +493,6 @@ $(document).ready(function(e){
                                         center: 'title',
                                         right: 'month,agendaWeek,agendaDay,listWeek'
                                     },
-                                    locale: user.details.lang.substring(0, 2),
                                     defaultDate: $.ccio.timeObject(d.videos[0].time).format('YYYY-MM-DD'),
                                     navLinks: true,
                                     eventLimit: true,
