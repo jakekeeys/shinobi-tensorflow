@@ -467,7 +467,7 @@ $.system.e.find('[system]').click(function(e){
     switch($(this).attr('system')){
         case'deleteLogs':
             $.confirm.e.modal('show');
-            $.confirm.title.html('<%= Delete%> <%= Logs%> <small>'+e.u+'</small>')
+            $.confirm.title.html('<%=lang.Delete%> <%=lang.Logs%> <small>'+e.u+'</small>')
             e.html='Do you want to delete these logs? User logs will <b>not</b> be deleted.'
             $.confirm.body.html(e.html)
             $.confirm.click({title:lang.Delete,class:'btn-danger'},function(){
