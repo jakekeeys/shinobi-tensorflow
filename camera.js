@@ -21,10 +21,10 @@ loadLib('extenders')(s)
 var config = loadLib('config')(s)
 //basic functions
 loadLib('basic')(s,config)
-//working directories : videos, streams, fileBin..
-loadLib('folders')(s,config)
 //language loader
 var lang = loadLib('language')(s,config)
+//working directories : videos, streams, fileBin..
+loadLib('folders')(s,config,lang)
 //code test module
 loadLib('codeTester')(s,config,lang)
 //get version
