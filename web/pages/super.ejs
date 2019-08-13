@@ -480,7 +480,7 @@ $.system.e.find('[system]').click(function(e){
         break;
         case'update':
             $.confirm.e.modal('show')
-            $.confirm.title.html('<%= Update%> Shinobi?')
+            $.confirm.title.html('<%=lang.Update%> Shinobi?')
             $.confirm.body.html('Updating Shinobi means overwriting files. If you have modified any files yourself you should update Shinobi manually.')
             $.confirm.click({title:lang.Update,class:'btn-danger'},function(){
                 // $.ccio.cx({f:'system',ff:'update'})
