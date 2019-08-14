@@ -111,6 +111,7 @@ echo "============="
 echo "Shinobi - Install NPM Libraries"
 sudo npm i npm -g
 sudo npm install --unsafe-perm
+sudo npm install mp4frag@latest cws@latest
 sudo npm audit fix --force
 echo "============="
 echo "Shinobi - Install PM2"
