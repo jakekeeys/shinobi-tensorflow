@@ -158,6 +158,10 @@ module.exports = function(s,config){
     s.insertCompletedVideoExtender = function(callback){
         s.insertCompletedVideoExtensions.push(callback)
     }
+    s.onBeforeInsertCompletedVideoExtensions = []
+    s.onBeforeInsertCompletedVideo = function(callback){
+        s.onBeforeInsertCompletedVideoExtensions.push(callback)
+    }
     /////// TIMELAPSE ////////
     s.onInsertTimelapseFrameExtensions = []
     s.onInsertTimelapseFrame = function(callback){

@@ -103,7 +103,7 @@ module.exports = function(s,config,lang){
                         })
                     }
                     s.getRawSnapshotFromMonitor(d.mon,function(data){
-                        if(data && (data[data.length-2] === 0xFF && data[data.length-1] === 0xD9)){
+                        if(data[data.length - 2] === 0xFF && data[data.length - 1] === 0xD9){
                             d.screenshotBuffer = data
                             files.push({
                                 attachment: d.screenshotBuffer,
@@ -308,7 +308,7 @@ module.exports = function(s,config,lang){
                     }
                     if(d.screenshotBuffer){
                         files.push({
-                            filename: d.screenshotName+'.jpg',
+                            filename: d.screenshotName + '.jpg',
                             content: d.screenshotBuffer
                         })
                         sendMail()
@@ -316,7 +316,7 @@ module.exports = function(s,config,lang){
                         s.getRawSnapshotFromMonitor(d.mon,function(data){
                             d.screenshotBuffer = data
                             files.push({
-                                filename: d.screenshotName+'.jpg',
+                                filename: d.screenshotName + '.jpg',
                                 content: data
                             })
                             sendMail()
