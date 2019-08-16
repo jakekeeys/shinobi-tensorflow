@@ -127,7 +127,7 @@ module.exports = function(s,config,lang,app,io){
                         clearTimeout(fileQueue[filename])
                         fileQueue[filename] = setTimeout(function(){
                             eventTrigger(eventType,filename,stats)
-                        },10000)
+                        },1750)
                     }
                 })
             })
