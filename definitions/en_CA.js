@@ -5,7 +5,7 @@ module.exports = function(s,config,lang){
           "blocks": {
              "Identity": {
                 "name": lang.Identity,
-                "headerTitle": lang.Identity,
+                                             
                 "color": "grey",
                 "isSection": true,
                 "id":"monSectionIdentity",
@@ -78,7 +78,7 @@ module.exports = function(s,config,lang){
              },
              "Connection": {
                 "name": lang.Connection,
-                "headerTitle": lang.Connection,
+                                               
                 "color": "orange",
                 "id": "monSectionConnection",
                 "isSection": true,
@@ -400,7 +400,7 @@ module.exports = function(s,config,lang){
             },
              "Input": {
                 "name": lang.Input,
-                "headerTitle": lang.Input,
+                                          
                 "color": "forestgreen",
                 "id": "monSectionInput",
                 "isSection": true,
@@ -634,7 +634,7 @@ module.exports = function(s,config,lang){
              },
              "Stream": {
                 "name": lang.Stream,
-                "headerTitle": lang.Stream,
+                                           
                 "color": "navy",
                 "id": "monSectionStream",
                 "isSection": true,
@@ -754,7 +754,7 @@ module.exports = function(s,config,lang){
                             "info": "Used for MP4 video."
                          },
                          {
-                            "name": "copy",
+                            "name": lang.copy,
                             "value": "copy",
                             "info": "Used for MP4 video. Has very low CPU usage but cannot use video filters and filesizes may be gigantic.  Best to setup your MP4 settings camera-side when using this option."
                          },
@@ -1044,6 +1044,7 @@ module.exports = function(s,config,lang){
              "Stream Timestamp": {
                 "id": "monSectionStreamTimestamp",
                 "name": lang["Stream Timestamp"],
+                                                        
                 "color": "blue",
                 isAdvanced: true,
                 "section-class": "h_hls_v_input h_hls_v_libx264 h_hls_v_libx265 h_hls_v_h264_nvenc h_hls_v_hevc_nvenc h_hls_v_no",
@@ -1133,6 +1134,7 @@ module.exports = function(s,config,lang){
              "Stream Watermark": {
                 "id": "monSectionStreamWatermark",
                 "name": lang['Stream Watermark'],
+                                                        
                 "color": "blue",
                 isAdvanced: true,
                 "section-class": "h_hls_v_input h_hls_v_libx264 h_hls_v_libx265 h_hls_v_h264_nvenc h_hls_v_hevc_nvenc h_hls_v_no",
@@ -1275,7 +1277,7 @@ module.exports = function(s,config,lang){
              "Recording": {
                 "id": "monSectionRecording",
                 "name": lang.Recording,
-                "headerTitle": lang.Recording,
+                                              
                 "color": "red",
                 "isSection": true,
                 "input-mapping": "record",
@@ -1583,7 +1585,7 @@ module.exports = function(s,config,lang){
              "Recording Timestamp": {
                 "id": "monSectionRecordingTimestamp",
                 "name": lang['Recording Timestamp'],
-                "headerTitle": lang['Recording Timestamp'],
+                                                           
                 "color": "red",
                 isAdvanced: true,
                 "section-pre-class": "h_vc_input h_vc_libvpx h_vc_libvpx-vp9 h_vc_libx264 h_vc_libx265 h_vc_hevc_nvenc h_vc_h264_nvenc h_vc_h264_vaapi h_vc_hevc_vaapi h_vc_h264_qsv h_vc_hevc_qsv h_vc_mpeg2_qsv h_vc_default h_vc_none",
@@ -1674,7 +1676,7 @@ module.exports = function(s,config,lang){
              "Recording Watermark": {
                 "id": "monSectionRecordingWatermark",
                 "name": lang['Recording Watermark'],
-                "headerTitle": lang['Recording Watermark'],
+                                                           
                 "color": "red",
                 isAdvanced: true,
                 "section-pre-class": "h_vc_input h_vc_libvpx h_vc_libvpx-vp9 h_vc_libx264 h_vc_libx265 h_vc_hevc_nvenc h_vc_h264_nvenc h_vc_h264_vaapi h_vc_hevc_vaapi h_vc_h264_qsv h_vc_hevc_qsv h_vc_mpeg2_qsv h_vc_default h_vc_none",
@@ -1742,7 +1744,7 @@ module.exports = function(s,config,lang){
              },
              "Timelapse": {
                 "name": lang['Timelapse'],
-                "headerTitle": lang['Timelapse'],
+                                                 
                 "id": "monSectionTimelapse",
                 "color": "red",
                 "isSection": true,
@@ -1857,7 +1859,7 @@ module.exports = function(s,config,lang){
              "Timelapse Watermark": {
                 "id": "monSectionRecordingWatermark",
                 "name": lang['Recording Watermark'],
-                "headerTitle": lang['Recording Watermark'],
+                                                           
                 "color": "red",
                 isAdvanced: true,
                 "section-class": "h_rec_ti_input h_rec_ti_1",
@@ -1924,7 +1926,7 @@ module.exports = function(s,config,lang){
              },
              "Custom": {
                 "name": lang.Custom,
-                "headerTitle": lang.Custom,
+                                           
                 "color": "navy",
                 "isSection": true,
                 isAdvanced: true,
@@ -1932,7 +1934,7 @@ module.exports = function(s,config,lang){
                 "info": [
                    {
                       "name": "detail=cust_input",
-                      "field": "Input Flags",
+                      "field": lang['Input Flags'],
                       "description": "Custom Flags that bind to the Input of the FFMPEG process.",
                       "default": "",
                       "example": "",
@@ -2174,7 +2176,7 @@ module.exports = function(s,config,lang){
                    {
                        hidden: true,
                       "name": "detail=detector_trigger",
-                      "field": "Trigger Record",
+                      "field": lang['Trigger Record'],
                       "description": "This will order the camera to record if it is set to \"Watch-Only\" when a motion even is detected.",
                       "default": "0",
                       "example": "",
@@ -2411,7 +2413,7 @@ module.exports = function(s,config,lang){
                    },
                    {
                       "name": "detail=detector_mail",
-                      "field": "Email on Trigger",
+                      "field": lang['Email on Trigger'],
                       "description": "Recieve an email of an image during a motion event to the master account for the camera group. You must setup SMTP details in conf.json.",
                       "default": "0",
                       "example": "",
@@ -2431,7 +2433,7 @@ module.exports = function(s,config,lang){
                    },
                    {
                       "name": "detail=detector_mail_timeout",
-                      "field": "Allow Next Email",
+                      "field": lang['Allow Next Email'],
                       "description": "The amount of time until a trigger is allowed to send another email with motion details and another image.",
                       "default": "10",
                       "example": "",
@@ -2679,7 +2681,7 @@ module.exports = function(s,config,lang){
                    {
                        hidden: true,
                       "name": lang['\"No Motion"\ Detector'],
-                      "headerTitle": lang['\"No Motion"\ Detector'],
+                                                                    
                       "color": "orange",
                       id: "monSectionNoMotionDetector",
                       isSection: true,
@@ -2736,7 +2738,7 @@ module.exports = function(s,config,lang){
                    {
                        hidden: true,
                       "name": lang['Audio Detector'],
-                      "headerTitle": lang['Audio Detector'],
+                                                            
                       "color": "orange",
                       id: "monSectionAudioDetector",
                       isSection: true,
@@ -2979,7 +2981,7 @@ module.exports = function(s,config,lang){
                    {
                        hidden: true,
                       "name": lang['Traditional Recording'],
-                      "headerTitle": lang['Traditional Recording'],
+                                                                   
                       "color": "orange",
                       id: "monSectionDetectorTraditionalRecording",
                       isSection: true,
@@ -3027,7 +3029,7 @@ module.exports = function(s,config,lang){
                              "fieldType": "select",
                              "possible": [
                                  {
-                                    "name": "No Audio",
+                                    "name": lang['No Audio'],
                                     "value": "no"
                                  },
                                  {
@@ -3107,7 +3109,7 @@ module.exports = function(s,config,lang){
              },
              "Control": {
                 "name": "PTZ " + lang.Control,
-                "headerTitle": "PTZ " + lang.Control,
+                                                     
                 "color": "blue",
                 id: "monSectionControl",
                 isSection: true,
@@ -3380,7 +3382,7 @@ module.exports = function(s,config,lang){
              "Copy Settings": {
                 id: "monSectionCopying",
                "name": lang['Copy Settings'],
-               "headerTitle": lang['Copy Settings'],
+                                                    
                "color": "orange",
                 isSection: true,
                "info": [
@@ -3617,7 +3619,7 @@ module.exports = function(s,config,lang){
              },
              "Logging": {
                 "name": lang.Logging,
-                "headerTitle": lang.Logging,
+                                            
                 "color": "green",
                 id: "monSectionLogging",
                 isAdvanced: true,
