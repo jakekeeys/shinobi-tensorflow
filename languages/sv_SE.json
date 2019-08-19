@@ -194,6 +194,8 @@
   "Delete Selected Videos": "Ta Bort Valda Videor",
   "Delete Video": "Ta Bort Video",
   "Delete selected": "Radera utvalda",
+  "Controls and Logs": "Kontroll och loggar",
+  "Delete Logs": "Radera Loggar",
   "DeleteMonitorText": "Vill du ta bort denna kamera? Du kan inte återställa den. Du kan välja att behålla filerna i filsystemet. Om du väljer att återskapa en skärm med samma ID-videor och händelser som kommer att bli synliga i översikten.",
   "DeleteMonitorsText": "Vill du ta bort dessa Kameror? Du kan inte återställa dem. Du kan välja att behålla filerna för dessa Id: n i filsystemet. Om du väljer att återskapa en kamera med en av de IDs videor och händelser som kommer att bli synliga i översikten.",
   "DeleteSelectedVideosMsg": "Vill du ta bort dessa filmer? Du kan inte återställa dem.",
