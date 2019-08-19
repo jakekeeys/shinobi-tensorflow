@@ -5,7 +5,6 @@ module.exports = function(s,config,lang){
           "blocks": {
              "Identity": {
                 "name": lang.Identity,
-                                             
                 "color": "grey",
                 "isSection": true,
                 "id":"monSectionIdentity",
@@ -78,7 +77,6 @@ module.exports = function(s,config,lang){
              },
              "Connection": {
                 "name": lang.Connection,
-                                               
                 "color": "orange",
                 "id": "monSectionConnection",
                 "isSection": true,
@@ -400,7 +398,6 @@ module.exports = function(s,config,lang){
             },
              "Input": {
                 "name": lang.Input,
-                                          
                 "color": "forestgreen",
                 "id": "monSectionInput",
                 "isSection": true,
@@ -1044,7 +1041,6 @@ module.exports = function(s,config,lang){
              "Stream Timestamp": {
                 "id": "monSectionStreamTimestamp",
                 "name": lang["Stream Timestamp"],
-                                                        
                 "color": "blue",
                 isAdvanced: true,
                 "section-class": "h_hls_v_input h_hls_v_libx264 h_hls_v_libx265 h_hls_v_h264_nvenc h_hls_v_hevc_nvenc h_hls_v_no",
@@ -1134,7 +1130,6 @@ module.exports = function(s,config,lang){
              "Stream Watermark": {
                 "id": "monSectionStreamWatermark",
                 "name": lang['Stream Watermark'],
-                                                        
                 "color": "blue",
                 isAdvanced: true,
                 "section-class": "h_hls_v_input h_hls_v_libx264 h_hls_v_libx265 h_hls_v_h264_nvenc h_hls_v_hevc_nvenc h_hls_v_no",
@@ -1277,7 +1272,6 @@ module.exports = function(s,config,lang){
              "Recording": {
                 "id": "monSectionRecording",
                 "name": lang.Recording,
-                                              
                 "color": "red",
                 "isSection": true,
                 "input-mapping": "record",
@@ -1585,7 +1579,6 @@ module.exports = function(s,config,lang){
              "Recording Timestamp": {
                 "id": "monSectionRecordingTimestamp",
                 "name": lang['Recording Timestamp'],
-                                                           
                 "color": "red",
                 isAdvanced: true,
                 "section-pre-class": "h_vc_input h_vc_libvpx h_vc_libvpx-vp9 h_vc_libx264 h_vc_libx265 h_vc_hevc_nvenc h_vc_h264_nvenc h_vc_h264_vaapi h_vc_hevc_vaapi h_vc_h264_qsv h_vc_hevc_qsv h_vc_mpeg2_qsv h_vc_default h_vc_none",
@@ -1676,7 +1669,6 @@ module.exports = function(s,config,lang){
              "Recording Watermark": {
                 "id": "monSectionRecordingWatermark",
                 "name": lang['Recording Watermark'],
-                                                           
                 "color": "red",
                 isAdvanced: true,
                 "section-pre-class": "h_vc_input h_vc_libvpx h_vc_libvpx-vp9 h_vc_libx264 h_vc_libx265 h_vc_hevc_nvenc h_vc_h264_nvenc h_vc_h264_vaapi h_vc_hevc_vaapi h_vc_h264_qsv h_vc_hevc_qsv h_vc_mpeg2_qsv h_vc_default h_vc_none",
@@ -1744,7 +1736,6 @@ module.exports = function(s,config,lang){
              },
              "Timelapse": {
                 "name": lang['Timelapse'],
-                                                 
                 "id": "monSectionTimelapse",
                 "color": "red",
                 "isSection": true,
@@ -1926,7 +1917,6 @@ module.exports = function(s,config,lang){
              },
              "Custom": {
                 "name": lang.Custom,
-                                           
                 "color": "navy",
                 "isSection": true,
                 isAdvanced: true,
@@ -2681,7 +2671,6 @@ module.exports = function(s,config,lang){
                    {
                        hidden: true,
                       "name": lang['\"No Motion"\ Detector'],
-                                                                    
                       "color": "orange",
                       id: "monSectionNoMotionDetector",
                       isSection: true,
@@ -2738,7 +2727,6 @@ module.exports = function(s,config,lang){
                    {
                        hidden: true,
                       "name": lang['Audio Detector'],
-                                                            
                       "color": "orange",
                       id: "monSectionAudioDetector",
                       isSection: true,
@@ -3108,8 +3096,7 @@ module.exports = function(s,config,lang){
                 ]
              },
              "Control": {
-                "name": "PTZ " + lang.Control,
-                                                     
+                "name": lang.Control,
                 "color": "blue",
                 id: "monSectionControl",
                 isSection: true,
@@ -3619,7 +3606,6 @@ module.exports = function(s,config,lang){
              },
              "Logging": {
                 "name": lang.Logging,
-                                            
                 "color": "green",
                 id: "monSectionLogging",
                 isAdvanced: true,
