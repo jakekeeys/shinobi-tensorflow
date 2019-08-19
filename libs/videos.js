@@ -26,7 +26,7 @@ module.exports = function(s,config,lang){
      */
     s.buildVideoLinks = function(videos,options){
         videos.forEach(function(v){
-            var details = JSON.parse(v.details)
+            var details = s.parseJSON(v.details)
             var queryString = []
             if(details.isUTC === true){
                 queryString.push('isUTC=true')
@@ -59,8 +59,7 @@ module.exports = function(s,config,lang){
     s.insertDatabaseRow = function(e,k,callback){
         s.checkDetails(e)
         //save database row
-        k.details = {}
-        if(e.details&&e.details.dir&&e.details.dir!==''){
+        if(e.details && e.details.dir && e.details.dir !== ''){
             k.details.dir = e.details.dir
         }
         if(config.useUTC === true)k.details.isUTC = config.useUTC;
@@ -108,6 +107,7 @@ module.exports = function(s,config,lang){
             }
             if(k.fileExists===true){
                 //close video row
+                k.details = {}
                 k.stat = fs.statSync(k.dir+k.file)
                 k.filesize = k.stat.size
                 k.filesizeMB = parseFloat((k.filesize/1000000).toFixed(2))
@@ -178,6 +178,9 @@ module.exports = function(s,config,lang){
                     }else{
                         s.setDiskUsedForGroup(e,k.filesizeMB)
                     }
+                    s.onBeforeInsertCompletedVideoExtensions.forEach(function(extender){
+                        extender(e,k)
+                    })
                     s.insertDatabaseRow(e,k,callback)
                     s.insertCompletedVideoExtensions.forEach(function(extender){
                         extender(e,k)
@@ -528,7 +531,7 @@ module.exports = function(s,config,lang){
         }
     }
     s.getVideoStorageIndex = function(video){
-        var details = s.parseJSON(video.details)
+        var details = s.parseJSON(video.details) || {}
         var storageId = details.storageId
         if(s.group[video.ke] && s.group[video.ke].activeMonitors[video.id] && s.group[video.ke].activeMonitors[video.id].addStorageId)storageId = s.group[video.ke].activeMonitors[video.id].addStorageId
         if(storageId){

@@ -41,7 +41,7 @@ module.exports = function(s,config,lang){
             extender(x,d)
         })
     }
-    s.triggerEvent = function(d){
+    s.triggerEvent = function(d,forceSave){
         var filter = {
             halt : false,
             addToMotionCounter : true,
@@ -254,7 +254,7 @@ module.exports = function(s,config,lang){
                 })
             }
             //save this detection result in SQL, only coords. not image.
-            if(filter.save && currentConfig.detector_save === '1'){
+            if(forceSave || (filter.save && currentConfig.detector_save === '1')){
                 s.sqlQuery('INSERT INTO Events (ke,mid,details,time) VALUES (?,?,?,?)',[d.ke,d.id,detailString,eventTime])
             }
             if(currentConfig.detector_notrigger === '1'){

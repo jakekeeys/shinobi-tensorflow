@@ -861,7 +861,8 @@ module.exports = function(s,config,lang){
         })
         s.userLog(e,{type:lang['Process Started'],msg:{cmd:s.group[e.ke].activeMonitors[e.id].ffmpeg}})
         if(s.isWin === false){
-            s.group[e.ke].activeMonitors[e.id].getMonitorCpuUsage = setInterval(function(){
+            var strippedHost = s.stripAuthFromHost(e)
+            var sendProcessCpuUsage = function(){
                 s.getMonitorCpuUsage(e,function(percent){
                     s.group[e.ke].activeMonitors[e.id].currentCpuUsage = percent
                     s.tx({
@@ -871,6 +872,19 @@ module.exports = function(s,config,lang){
                         percent: percent
                     },'MON_STREAM_'+e.ke+e.id)
                 })
+            }
+            s.group[e.ke].activeMonitors[e.id].getMonitorCpuUsage = setInterval(function(){
+                if(e.details.skip_ping !== '1'){
+                    connectionTester.test(strippedHost,e.port,2000,function(err,response){
+                        if(response.success){
+                            sendProcessCpuUsage()
+                        }else{
+                            s.launchMonitorProcesses(e)
+                        }
+                    })
+                }else{
+                    sendProcessCpuUsage()
+                }
             },1000 * 60)
         }
     }

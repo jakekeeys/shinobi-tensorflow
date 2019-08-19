@@ -75,7 +75,7 @@ $(document).ready(function(e){
         $.logWriter.floodTimeout = setTimeout(function(){
             delete($.logWriter.floodTimeout)
             $.logWriter.floodCounter = 0
-        },1000)
+        },2000)
         $.ccio.tm(4,d,'#logs,'+id+'.monitor_item .logs:visible,'+id+'#add_monitor:visible .logs',user)
     }
     //open all monitors
@@ -320,6 +320,32 @@ $(document).ready(function(e){
                 user=$user
             }
         switch(e.a){
+            case'zoomStreamWithMouse':
+                var streamWindow = $('.monitor_item[mid="'+e.mid+'"][ke="'+e.ke+'"][auth="'+e.auth+'"]')
+                if(e.mon.magnifyStreamEnabled){
+                    e.mon.magnifyStreamEnabled = false
+                    streamWindow
+                        .off('mousemove')
+                        .off('touchmove')
+                        .find('.zoomGlass').remove()
+                }else{
+                    e.mon.magnifyStreamEnabled = true
+                    const magnifyStream = function(e){
+                        $.ccio.magnifyStream({
+                            p: streamWindow,
+                            zoomAmount: 1,
+                            auto: false,
+                            animate: false,
+                            pageX: e.pageX,
+                            pageY:  e.pageY,
+                            attribute: 'monitor="zoomStreamWithMouse"'
+                        },user)
+                    }
+                    streamWindow
+                        .on('mousemove', magnifyStream)
+                        .on('touchmove', magnifyStream)
+                }
+            break;
             case'show_data':
                 e.p.toggleClass('show_data')
                 var dataBlocks = e.p.find('.stream-block,.mdl-data_window')
@@ -365,19 +391,6 @@ $(document).ready(function(e){
                     })
                 }
             break;
-            case'timelapse':
-                $.timelapse.e.modal('show')
-                $.timelapse.monitors.find('.monitor').remove()
-                $.each($.ccio.mon,function(n,v){
-                    $.timelapse.monitors.append('<option class="monitor" value="'+v.mid+'">'+v.name+'</option>')
-                })
-                e.e=$.timelapse.monitors.find('.monitor').prop('selected',false)
-                if(e.mid!==''){
-                    e.e=$.timelapse.monitors.find('.monitor[value="'+e.mid+'"]')
-                }
-                e.e.first().prop('selected',true)
-                $.timelapse.f.submit()
-            break;
             case'timelapseJpeg':
                 $.timelapseJpeg.e.modal('show')
                 $.timelapseJpeg.monitors.find('.monitor').remove()
@@ -389,19 +402,6 @@ $(document).ready(function(e){
                     e.e=$.timelapseJpeg.monitors.find('.monitor[value="'+e.mid+'"]')
                 }
                 e.e.first().prop('selected',true)
-            break;
-            case'powerview':
-                $.pwrvid.e.modal('show')
-                $.pwrvid.m.empty()
-                $.each($.ccio.mon,function(n,v){
-                    $.pwrvid.m.append('<option value="'+v.mid+'">'+v.name+'</option>')
-                })
-                e.e=$.pwrvid.m.find('option').prop('selected',false)
-                if(e.mid!==''){
-                    e.e=$.pwrvid.m.find('[value="'+e.mid+'"]')
-                }
-                e.e.first().prop('selected',true)
-                $.pwrvid.f.submit()
             break;
             case'region':
                 if(!e.mon){
@@ -819,6 +819,4 @@ $(document).ready(function(e){
     .on('dblclick','.stream-hud',function(){
         $(this).parents('[mid]').find('[monitor="fullscreen"]').click();
     })
-    //.on('mousemove',".magnifyStream",$.ccio.magnifyStream)
-    //.on('touchmove',".magnifyStream",$.ccio.magnifyStream);
 })

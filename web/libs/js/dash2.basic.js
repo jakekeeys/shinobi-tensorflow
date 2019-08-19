@@ -12,6 +12,16 @@ $.ccio.permissionCheck = function(toCheck,monitorId){
     }
     return false
 }
+$.parseJSON = function(string){
+    var parsed
+    try{
+        parsed = JSON.parse(string)
+    }catch(err){
+
+    }
+    if(!parsed)parsed = string
+    return parsed
+}
 $.ccio.op = function(r,rr,rrr){
     if(!rrr){rrr={};};if(typeof rrr === 'string'){rrr={n:rrr}};if(!rrr.n){rrr.n='ShinobiOptions_'+location.host}
     ii={o:localStorage.getItem(rrr.n)};try{ii.o=JSON.parse(ii.o)}catch(e){ii.o={}}
@@ -113,25 +123,27 @@ $.ccio.base64ArrayBuffer = function(arrayBuffer) {
 
   return base64
 }
-$.ccio.snapshot=function(e,cb){
-    var image_data,url;
-    e.details=JSON.parse(e.mon.details);
+$.ccio.snapshot = function(options,cb){
+    var image_data
+    var url
+    var monitor = options.mon || options.monitor || options
+    var details = $.parseJSON(monitor.details)
     if($.ccio.op().jpeg_on!==true){
         var extend=function(image_data,width,height){
             var len = image_data.length
-            var arraybuffer = new Uint8Array( len );
+            var arraybuffer = new Uint8Array( len )
             for (var i = 0; i < len; i++)        {
-                arraybuffer[i] = image_data.charCodeAt(i);
+                arraybuffer[i] = image_data.charCodeAt(i)
             }
             try {
-                var blob = new Blob([arraybuffer], {type: 'application/octet-stream'});
+                var blob = new Blob([arraybuffer], {type: 'application/octet-stream'})
             } catch (e) {
-                var bb = new (window.WebKitBlobBuilder || window.MozBlobBuilder);
+                var bb = new (window.WebKitBlobBuilder || window.MozBlobBuilder)
                 bb.append(arraybuffer);
                 var blob = bb.getBlob('application/octet-stream');
             }
-            url = (window.URL || window.webkitURL).createObjectURL(blob);
-            finish(url,image_data,width,height);
+            url = (window.URL || window.webkitURL).createObjectURL(blob)
+            finish(url,image_data,width,height)
             try{
                 setTimeout(function(){
                     URL.revokeObjectURL(url)
@@ -139,142 +151,191 @@ $.ccio.snapshot=function(e,cb){
             }catch(er){}
         }
         var finish = function(url,image_data,width,height){
-            cb(url,image_data,width,height);
+            cb(url,image_data,width,height)
         }
-        switch(JSON.parse(e.mon.details).stream_type){
+        switch(details.stream_type){
             case'hls':case'flv':case'mp4':
-                $.ccio.snapshotVideo($('[mid='+e.mon.mid+'].monitor_item video')[0],function(base64,video_data,width,height){
+                $.ccio.snapshotVideo($('[mid='+monitor.mid+'][ke='+monitor.ke+'][auth='+monitor.user.auth_token+'].monitor_item video')[0],function(base64,video_data,width,height){
                     extend(video_data,width,height)
                 })
             break;
             case'mjpeg':
                 $('#temp').html('<canvas></canvas>')
-                var c = $('#temp canvas')[0];
-                var img = $('img',$('[mid='+e.mon.mid+'].monitor_item .stream-element').contents())[0];
-                c.width = img.width;
-                c.height = img.height;
-                var ctx = c.getContext('2d');
-                ctx.drawImage(img, 0, 0,c.width,c.height);
+                var c = $('#temp canvas')[0]
+                var img = $('img',$('[mid='+monitor.mid+'][ke='+monitor.ke+'][auth='+monitor.user.auth_token+'].monitor_item .stream-element').contents())[0]
+                c.width = img.width
+                c.height = img.height
+                var ctx = c.getContext('2d')
+                ctx.drawImage(img, 0, 0,c.width,c.height)
                 extend(atob(c.toDataURL('image/jpeg').split(',')[1]),c.width,c.height)
             break;
             case'h265':
-                var c = $('[mid='+e.mon.mid+'].monitor_item canvas')[0];
-                var ctx = c.getContext('2d');
+                var c = $('[mid='+monitor.mid+'][ke='+monitor.ke+'][auth='+monitor.user.auth_token+'].monitor_item canvas')[0]
+                var ctx = c.getContext('2d')
                 extend(atob(c.toDataURL('image/jpeg').split(',')[1]),c.width,c.height)
             break;
             case'b64':
-                base64 = e.mon.last_frame.split(',')[1];
-                var image_data = new Image();
-                image_data.src = base64;
+                base64 = monitor.last_frame.split(',')[1]
+                var image_data = new Image()
+                image_data.src = base64
                 extend(atob(base64),image_data.width,image_data.height)
             break;
-            case'jpeg':case'h265':
-                url=e.p.find('.stream-element').attr('src');
-                image_data = new Image();
-                image_data.src = url;
-                finish(url,image_data,image_data.width,image_data.height);
+            case'jpeg':
+                url=e.p.find('.stream-element').attr('src')
+                image_data = new Image()
+                image_data.src = url
+                finish(url,image_data,image_data.width,image_data.height)
             break;
         }
     }else{
-        url=e.p.find('.stream-element').attr('src');
-        image_data = new Image();
-        image_data.src = url;
-        cb(url,image_data,image_data.width,image_data.height);
+        url = e.p.find('.stream-element').attr('src')
+        image_data = new Image()
+        image_data.src = url
+        cb(url,image_data,image_data.width,image_data.height)
     }
 }
-$.ccio.snapshotVideo=function(videoElement,cb){
-    var image_data;
+$.ccio.snapshotVideo = function(videoElement,cb){
+    var image_data
     var base64
     $('#temp').html('<canvas></canvas>')
-    var c = $('#temp canvas')[0];
-    var img = videoElement;
-    c.width = img.videoWidth;
-    c.height = img.videoHeight;
-    var ctx = c.getContext('2d');
-    ctx.drawImage(img, 0, 0,c.width,c.height);
+    var c = $('#temp canvas')[0]
+    var img = videoElement
+    c.width = img.videoWidth
+    c.height = img.videoHeight
+    var ctx = c.getContext('2d')
+    ctx.drawImage(img, 0, 0,c.width,c.height)
     base64=c.toDataURL('image/jpeg')
-    image_data=atob(base64.split(',')[1]);
-    var arraybuffer = new ArrayBuffer(image_data.length);
-    var view = new Uint8Array(arraybuffer);
+    image_data=atob(base64.split(',')[1])
+    var arraybuffer = new ArrayBuffer(image_data.length)
+    var view = new Uint8Array(arraybuffer)
     for (var i=0; i<image_data.length; i++) {
-        view[i] = image_data.charCodeAt(i) & 0xff;
+        view[i] = image_data.charCodeAt(i) & 0xff
     }
     try {
-        var blob = new Blob([arraybuffer], {type: 'application/octet-stream'});
+        var blob = new Blob([arraybuffer], {type: 'application/octet-stream'})
     } catch (e) {
-        var bb = new (window.WebKitBlobBuilder || window.MozBlobBuilder);
-        bb.append(arraybuffer);
-        var blob = bb.getBlob('application/octet-stream');
+        var bb = new (window.WebKitBlobBuilder || window.MozBlobBuilder)
+        bb.append(arraybuffer)
+        var blob = bb.getBlob('application/octet-stream')
     }
-    cb(base64,image_data,c.width,c.height);
+    cb(base64,image_data,c.width,c.height)
 }
-$.ccio.magnifyStream = function(e){
-    if(!e.p){
-        e.e=$(this),
-        e.p=e.e.parents('[mid]')
+$.ccio.magnifyStream = function(options,user){
+    if(!user)user = $user
+    if(!options.p && !options.parent){
+        var el = $(this),
+        parent = el.parents('[mid]')
+    }else{
+        parent = options.p || options.parent
     }
-    if(e.animate === true){
+    if(!options.attribute){
+        options.attribute = ''
+    }
+    if(options.animate === true){
         var zoomGlassAnimate = 'animate'
     }else{
         var zoomGlassAnimate = 'css'
     }
-    if(e.auto === true){
+    if(!options.magnifyOffsetElement){
+        options.magnifyOffsetElement = '.stream-block'
+    }
+    if(!options.targetForZoom){
+        options.targetForZoom = '.stream-element'
+    }
+    if(options.auto === true){
         var streamBlockOperator = 'position'
     }else{
         var streamBlockOperator = 'offset'
     }
-    if(e.useCanvas === true){
-        var magnifiedElement = 'canvas'
+    var magnifiedElement
+    if(!options.videoUrl){
+        if(options.useCanvas === true){
+            magnifiedElement = 'canvas'
+        }else{
+            magnifiedElement = 'iframe'
+        }
     }else{
-        var magnifiedElement = 'iframe'
+        magnifiedElement = 'video'
     }
-    e.ke=e.p.attr('ke'),//group key
-    e.mid=e.p.attr('mid'),//monitor id
-    e.auth=e.p.attr('auth'),//authkey
-    e.mon=$.ccio.mon[e.ke+e.mid+e.auth]//monitor configuration
-    if(e.zoomAmount)e.mon.zoomAmount=3;
-    if(!e.mon.zoomAmount)e.mon.zoomAmount=3;
-    e.height=parseFloat(e.p.attr('realHeight')) * e.mon.zoomAmount//height of stream
-    e.width=parseFloat(e.p.attr('realWidth')) * e.mon.zoomAmount;//width of stream
-    var targetForZoom = e.p.find('.stream-element');
-    zoomGlass = e.p.find(".zoomGlass");
+    if(!options.mon && !options.monitor){
+        var groupKey = parent.attr('ke')//group key
+        var monitorId = parent.attr('mid')//monitor id
+        var sessionKey = parent.attr('auth')//authkey
+        var monitor = $.ccio.mon[groupKey + monitorId + sessionKey]//monitor configuration
+    }else{
+        var monitor = options.mon || options.monitor
+        var groupKey = monitor.ke//group key
+        var monitorId = monitor.mid//monitor id
+        var sessionKey = monitor.auth//authkey
+    }
+    if(options.zoomAmount)zoomAmount = 3
+    if(!zoomAmount)zoomAmount = 3
+    var realHeight = parent.attr('realHeight')
+    var realWidth = parent.attr('realWidth')
+    var height = parseFloat(realHeight) * zoomAmount//height of stream
+    var width = parseFloat(realWidth) * zoomAmount//width of stream
+    var targetForZoom = parent.find(options.targetForZoom)
+    zoomGlass = parent.find(".zoomGlass")
     var zoomFrame = function(){
-        var magnify_offset = e.p.find('.stream-block')[streamBlockOperator]();
-        var mx = e.pageX - magnify_offset.left;
-        var my = e.pageY - magnify_offset.top;
-        var rx = Math.round(mx/targetForZoom.width()*e.width - zoomGlass.width()/2)*-1;
-        var ry = Math.round(my/targetForZoom.height()*e.height - zoomGlass.height()/2)*-1;
-        var px = mx - zoomGlass.width()/2;
-        var py = my - zoomGlass.height()/2;
-        zoomGlass[zoomGlassAnimate]({left: px, top: py}).find(magnifiedElement)[zoomGlassAnimate]({left: rx, top: ry});
+        var magnify_offset = parent.find(options.magnifyOffsetElement)[streamBlockOperator]()
+        var mx = options.pageX - magnify_offset.left
+        var my = options.pageY - magnify_offset.top
+        var rx = Math.round(mx/targetForZoom.width()*width - zoomGlass.width()/2)*-1
+        var ry = Math.round(my/targetForZoom.height()*height - zoomGlass.height()/2)*-1
+        var px = mx - zoomGlass.width()/2
+        var py = my - zoomGlass.height()/2
+        zoomGlass[zoomGlassAnimate]({left: px, top: py}).find(magnifiedElement)[zoomGlassAnimate]({left: rx, top: ry})
     }
-    if(!e.height||!e.width||zoomGlass.length===0){
-        $.ccio.snapshot(e,function(url,buffer,width,height){
-            e.width = width * e.mon.zoomAmount;
-            e.height = height * e.mon.zoomAmount;
-            e.p.attr('realWidth',width)
-            e.p.attr('realHeight',height)
-            zoomGlass = e.p.find(".zoomGlass");
-            if(zoomGlass.length===0){
-                if(e.useCanvas === true){
-                    e.p.append('<div class="zoomGlass"><canvas class="blenderCanvas"></canvas></div>');
-                }else{
-                    e.p.append('<div class="zoomGlass"><iframe src="'+e.auth+'/embed/'+e.ke+'/'+e.mid+'/fullscreen|jquery|relative"/><div class="hoverShade"></div></div>');
-                }
-                zoomGlass = e.p.find(".zoomGlass");
-            }
-            zoomGlass.find(magnifiedElement).css({height:e.height,width:e.width});
-            zoomFrame()
+    var commit = function(height,width){
+        zoomGlass.find(magnifiedElement).css({
+            height: height,
+            width: width
         })
-    }else{
-        zoomGlass.find(magnifiedElement).css({height:e.height,width:e.width});
         zoomFrame()
+    }
+    if(!height || !width || zoomGlass.length === 0){
+        zoomGlass = parent.find(".zoomGlass")
+        var zoomGlassShell = function(contents){return `<div ${options.attribute} class="zoomGlass">${contents}</div>`}
+        if(!options.videoUrl){
+            $.ccio.snapshot(monitor,function(url,buffer,w,h){
+                parent.attr('realWidth',w)
+                parent.attr('realHeight',h)
+                if(zoomGlass.length === 0){
+                    if(options.useCanvas === true){
+                        parent.append(zoomGlassShell('<canvas class="blenderCanvas"></canvas>'))
+                    }else{
+                        parent.append(zoomGlassShell('<iframe src="'+$.ccio.init('location',user)+sessionKey+'/embed/'+groupKey+'/'+monitorId+'/fullscreen|jquery|relative"/><div class="hoverShade"></div>'))
+                    }
+                    zoomGlass = parent.find(".zoomGlass")
+                }
+                commit(h,w)
+            })
+        }else{
+            if(zoomGlass.length === 0){
+                parent.append(zoomGlassShell(`<video src="${options.videoUrl}" preload></video>`))
+            }
+            if(options.setTime){
+                var video = zoomGlass.find('video')[0]
+                video.currentTime = options.setTime
+                height = video.videoHeight
+                width = video.videoWidth
+                parent.attr('realWidth',width)
+                parent.attr('realHeight',height)
+            }
+            commit(height,width)
+        }
+    }else{
+        if(options.setTime){
+            var video = zoomGlass.find('video')
+            var src = video.attr('src')
+            video[0].currentTime = options.setTime
+            if(options.videoUrl !== src)zoomGlass.html(`<video src="${options.videoUrl}" preload></video>`)
+        }
+        commit(height,width)
     }
 }
 $.ccio.destroyStream = function(d,user,killElement){
     if(d.mid && !d.id)d.id = d.mid
-    console.log(d.ke+d.id+user.auth_token)
-    console.log($.ccio.mon[d.ke+d.id+user.auth_token])
     if($.ccio.mon[d.ke+d.id+user.auth_token]){
         console.log('destroy')
         $.ccio.init('closeVideo',{mid:d.id,ke:d.ke},user);
@@ -297,8 +358,9 @@ $.ccio.destroyStream = function(d,user,killElement){
         }
     }
 }
-jQuery(function () {
-    jQuery('body').on('click', '.table-header-sorter', function () {
+$(document).ready(function(){
+    $('body')
+    .on('click', '.table-header-sorter', function () {
         var $sort = jQuery(this).find('i');
         var currentSort = undefined;
         if ($sort.hasClass('fa-sort-asc')) {
@@ -339,5 +401,16 @@ jQuery(function () {
                     return data1._no > data2._no ? 1 : data1._no < data2._no ? -1 : 0;
             });
         $body.append(sortedRows);
-    });
-});
+    })
+    .on('click','[tab-chooser]',function(){
+        var el = $(this)
+        var parent = el.parents('[tab-chooser-parent]')
+        var tabName = el.attr('tab-chooser')
+        var allTabsInParent = parent.find('[tab-section]')
+        var allTabChoosersInParent = parent.find('[tab-chooser]')
+        allTabsInParent.hide()
+        allTabChoosersInParent.removeClass('active')
+        el.addClass('active')
+        parent.find(`[tab-section="${tabName}"]`).show()
+    })
+})

@@ -2,6 +2,7 @@ var fs = require('fs')
 var execSync = require('child_process').execSync
 module.exports = function(s,config,lang,app,io){
     if(config.dropInEventServer === true){
+        if(config.dropInEventForceSaveEvent === undefined)config.dropInEventForceSaveEvent = true
         if(config.dropInEventDeleteFileAfterTrigger === undefined)config.dropInEventDeleteFileAfterTrigger = true
         var beforeMonitorsLoadedOnStartup = function(){
             if(!config.dropInEventsDir){
@@ -62,10 +63,11 @@ module.exports = function(s,config,lang,app,io){
                                 name: filename,
                                 plug: "dropInEvent",
                                 reason: "ftpServer"
-                            }
-                        })
+                            },
+                        },config.dropInEventForceSaveEvent)
                     })
                 }else{
+                    var reason = "ftpServer"
                     if(search(filename,'.mp4')){
                         fs.stat(filePath,function(err,stats){
                             var startTime = stats.ctime
@@ -82,6 +84,9 @@ module.exports = function(s,config,lang,app,io){
                             })
                         })
                     }
+                    if(search(filename,'.txt')){
+                        reason = fs.readFileSync(filePath,{encoding: 'utf-8'}).split('\n')[0] || filename
+                    }
                     s.triggerEvent({
                         id: mid,
                         ke: ke,
@@ -89,9 +94,9 @@ module.exports = function(s,config,lang,app,io){
                             confidence: 100,
                             name: filename,
                             plug: "dropInEvent",
-                            reason: "ftpServer"
+                            reason: reason
                         }
-                    })
+                    },config.dropInEventForceSaveEvent)
                 }
                 if(config.dropInEventDeleteFileAfterTrigger){
                     setTimeout(function(){
@@ -122,7 +127,7 @@ module.exports = function(s,config,lang,app,io){
                         clearTimeout(fileQueue[filename])
                         fileQueue[filename] = setTimeout(function(){
                             eventTrigger(eventType,filename,stats)
-                        },10000)
+                        },1750)
                     }
                 })
             })
@@ -174,9 +179,11 @@ module.exports = function(s,config,lang,app,io){
     // SMTP Server
     // allow starting SMTP server without dropInEventServer
     if(config.smtpServer === true){
+        if(config.smtpServerHideStartTls === undefined)config.smtpServerHideStartTls = null
         var SMTPServer = require("smtp-server").SMTPServer;
         if(!config.smtpServerPort && (config.smtpServerSsl && config.smtpServerSsl.enabled !== false || config.ssl)){config.smtpServerPort = 465}else if(!config.smtpServerPort){config.smtpServerPort = 25}
         var smtpOptions = {
+            hideSTARTTLS: config.smtpServerHideStartTls,
             onAuth(auth, session, callback) {
                 var username = auth.username
                 var password = auth.password
@@ -193,20 +200,60 @@ module.exports = function(s,config,lang,app,io){
                 var monitorId = split[0]
                 var ke = session.user
                 if(s.group[ke].rawMonitorConfigurations[monitorId] && s.group[ke].activeMonitors[monitorId].isStarted === true){
-                    s.triggerEvent({
-                        id: monitorId,
-                        ke: ke,
-                        details: {
-                            confidence: 100,
-                            name: address.address,
-                            plug: "dropInEvent",
-                            reason: "smtpServer"
-                        }
-                    })
+                    session.monitorId = monitorId
                 }else{
                     return callback(new Error(lang['No Monitor Exists with this ID.']))
                 }
                 callback()
+            },
+            onData(stream, session, callback) {
+                if(session.monitorId){
+                    var ke = session.user
+                    var monitorId = session.monitorId
+                    var reasonTag = 'smtpServer'
+                    var text = ''
+                    stream.on('data',function(data){
+                        text += data.toString()
+                    }) // print message to console
+                    stream.on("end", function(){
+                        var contentPart = text.split('--PartBoundary12345678')
+                        contentPart.forEach(function(part){
+                            var parsed = {}
+                            var lines = part.split(/\r?\n/)
+                            lines.forEach(function(line,n){
+                                var pieces = line.split(':')
+                                if(pieces[1]){
+                                    var nextLine = lines[n + 1]
+                                    var keyName = pieces[0].trim().toLowerCase()
+                                    pieces.shift()
+                                    var parsedValue = pieces.join(':')
+                                    parsed[keyName] = parsedValue
+                                }
+                            })
+                            if(parsed['content-type'] && parsed['content-type'].indexOf('image/jpeg') > -1){
+                                // console.log(lines)
+                            }
+                            if(parsed['alarm event']){
+                                reasonTag = parsed['alarm event']
+                            }else if(parsed.subject){
+                                reasonTag = parsed.subject
+                            }
+                        })
+                        s.triggerEvent({
+                            id: monitorId,
+                            ke: ke,
+                            details: {
+                                confidence: 100,
+                                name: 'smtpServer',
+                                plug: "dropInEvent",
+                                reason: reasonTag
+                            }
+                        },config.dropInEventForceSaveEvent)
+                        callback()
+                    })
+                }else{
+                    callback()
+                }
             }
         }
         if(config.smtpServerSsl && config.smtpServerSsl.enabled !== false || config.ssl && config.ssl.cert && config.ssl.key){

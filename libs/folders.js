@@ -1,5 +1,5 @@
 var fs = require('fs');
-module.exports = function(s,config){
+module.exports = function(s,config,lang){
     //directories
     s.group = {}
     if(!config.windowsTempDir&&s.isWin===true){config.windowsTempDir='C:/Windows/Temp'}
@@ -41,7 +41,7 @@ module.exports = function(s,config){
     }
     //additional storage areas
     s.listOfStorage = [{
-        name: "Main",
+        name: lang['Default'],
         value: ""
     }]
     s.dir.addStorage.forEach(function(v,n){
@@ -57,7 +57,7 @@ module.exports = function(s,config){
     //get audio files list
     s.listOfAudioFiles = [
         {
-            name:"No Sound",
+            name:lang['No Sound'],
             value:""
         }
     ]
@@ -70,7 +70,7 @@ module.exports = function(s,config){
     //get themes list
     s.listOfThemes = [
         {
-            name:"Default",
+            name:lang['Default'],
             value:""
         }
     ]

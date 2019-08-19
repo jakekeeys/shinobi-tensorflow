@@ -33,7 +33,10 @@ else
 fi
 echo "-----------------------------------"
 echo "Installing Modules.."
-npm install --unsafe-perm
+apt install node-pre-gyp -y
+npm install nopt npmlog rimraf semver -g
+npm install
+npm uninstall nopt npmlog rimraf semver -g
 echo "Finding and Fixing Module Vulnerabilities.."
 npm audit fix --force
 echo "Shinobi - Do you want to start the plugin?"

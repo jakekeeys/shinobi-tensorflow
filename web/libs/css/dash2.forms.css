@@ -24,6 +24,7 @@ form.modal-body{margin:0}
 .dark .form-group-group .mdl-list__item:hover{background:#555;}
 .form-group-group:visible:last-child,.form-group-group > .form-group:last-child{margin-bottom:0}
 .form-group-group > h4{margin:0 -10px 15px -10px;padding:15px;background:#ddd;}
+.form-group-group > h4:empty{padding:2px}
 .form-group-group > h4 small{color:#fff;}
 .form-group-group.red{border-color:#d9534f}
 .form-group-group.red > h4{background:#d9534f;color:#fff}

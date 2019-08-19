@@ -38,25 +38,25 @@ $.ccio.tm=function(x,d,z,user){
             tmp+='<div class="btn-group btn-group-xs">'
                 var buttons = {
                    "Pop": {
-                      "label": "Pop",
+                      "label": lang['Pop'],
                       "attr": "monitor=\"pop\"",
                       "class": "default",
                       "icon": "external-link"
                    },
-                   "Power Viewer": {
-                      "label": "Power Viewer",
-                      "attr": "monitor=\"powerview\"",
-                      "class": "default",
-                      "icon": "map-marker"
-                   },
+                   // "Power Viewer": {
+                   //    "label": lang['Power Viewer'],
+                   //    "attr": "monitor=\"powerview\"",
+                   //    "class": "default",
+                   //    "icon": "map-marker"
+                   // },
                    "Videos List": {
-                      "label": "Videos List",
+                      "label": lang['Videos List'],
                       "attr": "monitor=\"videos_table\"",
                       "class": "default",
                       "icon": "film"
                    },
                    "Monitor Settings": {
-                      "label": "Monitor Settings",
+                      "label": lang['Monitor Settings'],
                       "attr": "monitor=\"edit\"",
                       "class": "default",
                       "icon": "wrench"
@@ -94,50 +94,56 @@ $.ccio.tm=function(x,d,z,user){
             tmp+='<div class="btn-group btn-group-sm">'//start of btn list
                 var buttons = {
                    "Snapshot": {
-                      "label": "Snapshot",
+                      "label": lang['Snapshot'],
                       "attr": "monitor=\"snapshot\"",
                       "class": "primary",
                       "icon": "camera"
                    },
                    "Show Logs": {
-                      "label": "Show Logs",
+                      "label": lang['Show Logs'],
                       "attr": "monitor=\"show_data\"",
                       "class": "warning",
                       "icon": "exclamation-triangle"
                    },
                    "Control": {
-                      "label": "Control",
+                      "label": lang['Control'],
                       "attr": "monitor=\"control_toggle\"",
                       "class": "default arrows",
                       "icon": "arrows"
                    },
-                   "Status Indicator": {
-                      "label": "Status Indicator",
+                   "Reconnect Stream": {
+                      "label": lang['Reconnect Stream'],
                       "attr": "monitor=\"watch_on\"",
                       "class": "success signal",
                       "icon": "plug"
                    },
                    "Pop": {
-                      "label": "Pop",
+                      "label": lang['Pop'],
                       "attr": "monitor=\"pop\"",
                       "class": "default",
                       "icon": "external-link"
                    },
+                   "Pop": {
+                      "label": lang['Zoom In'],
+                      "attr": "monitor=\"zoomStreamWithMouse\"",
+                      "class": "default",
+                      "icon": "search-plus"
+                   },
                    "Calendar": {
-                      "label": "Calendar",
+                      "label": lang['Calendar'],
                       "attr": "monitor=\"calendar\"",
                       "class": "default ",
                       "icon": "calendar"
                    },
-                   "Power Viewer": {
-                      "label": "Power Viewer",
-                      "attr": "monitor=\"powerview\"",
-                      "class": "default",
-                      "icon": "map-marker"
-                   },
+                   // "Power Viewer": {
+                   //    "label": lang['Power Viewer'],
+                   //    "attr": "monitor=\"powerview\"",
+                   //    "class": "default",
+                   //    "icon": "map-marker"
+                   // },
                    "Time-lapse": {
-                      "label": "Time-lapse",
-                      "attr": "monitor=\"timelapse\"",
+                      "label": lang['Time-lapse'],
+                      "attr": "monitor=\"timelapseJpeg\"",
                       "class": "default",
                       "icon": "angle-double-right"
                    },
@@ -148,25 +154,25 @@ $.ccio.tm=function(x,d,z,user){
                       "icon": "th"
                    },
                    "Videos List": {
-                      "label": "Videos List",
+                      "label": lang['Videos List'],
                       "attr": "monitor=\"videos_table\"",
                       "class": "default",
                       "icon": "film"
                    },
                    "Monitor Settings": {
-                      "label": "Monitor Settings",
+                      "label": lang['Monitor Settings'],
                       "attr": "monitor=\"edit\"",
                       "class": "default",
                       "icon": "wrench"
                    },
                    "Fullscreen": {
-                      "label": "Fullscreen",
+                      "label": lang['Fullscreen'],
                       "attr": "monitor=\"fullscreen\"",
                       "class": "default",
                       "icon": "arrows-alt"
                    },
                    "Close": {
-                      "label": "Close",
+                      "label": lang['Close'],
                       "attr": "monitor=\"watch_off\"",
                       "class": "danger",
                       "icon": "times"

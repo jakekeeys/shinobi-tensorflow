@@ -109,19 +109,15 @@ $.vidview.e.find('.export_selected').click(function(){
     $.confirm.e.modal('show');
     $.confirm.title.text(lang['Export Selected Videos'])
     var html = lang.ExportSelectedVideosMsg+'<div style="margin-bottom:15px"></div>'
+    var selectedVideos = []
     $.each(videos,function(n,v){
         html+=v.filename+'<br>';
+        selectedVideos.push($.vidview.loadedVideos[v.filename])
     })
     $.confirm.body.html(html)
     $.confirm.click({title:'Export Video',class:'btn-danger'},function(){
-        var queryVariables = []
-        queryVariables.push('videos='+JSON.stringify(videos))
-        if($.ccio.useUTC === true){
-            queryVariables.push('isUTC=true')
-        }
-        var downloadZip = $.ccio.init('location',$user)+$user.auth_token+'/zipVideos/'+$user.ke+'?'+queryVariables.join('&')
-        $('#temp').html('<iframe>a</iframe>').find('iframe').attr('src',downloadZip);
-    });
+        $.zipVideosAndDownload(selectedVideos)
+    })
 })
 $.vidview.e.find('.merge_selected').click(function(){
     e = {}
