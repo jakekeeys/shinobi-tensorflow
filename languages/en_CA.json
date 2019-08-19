@@ -322,7 +322,7 @@
    "DeleteSelectedVideosMsg": "Do you want to delete these videos? You cannot recover them.",
    "ExportSelectedVideosMsg": "Do you want to export these videos? It may take some time to zip and download.",
    "MergeSelectedVideosMsg": "Do you want to merge these videos? It may take some time to merge and download. The moment the connection is closed the file will be deleted. Ensure you keep the browser open until it is complete.",
-   "clientStreamFailedattemptingReconnect": "Client side ctream check failed, attempting reconnect.",
+   "clientStreamFailedattemptingReconnect": "Client side stream check failed, attempting reconnect.",
    "Export Video": "Export Video",
    "Merge Video": "Merge Video",
    "Delete Filter": "Delete Filter",
