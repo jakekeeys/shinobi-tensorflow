@@ -123,7 +123,7 @@ echo "========================================================="
 echo "Installing NPM libraries..."
 sudo npm i npm -g
 sudo npm install --unsafe-perm
-sudo npm install ffbinaries
+sudo npm install ffbinaries mp4frag@latest cws@latest
 sudo npm audit fix --force
 
 echo "========================================================="
