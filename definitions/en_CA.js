@@ -3848,7 +3848,7 @@ module.exports = function(s,config,lang){
                    },
                    {
                       "name": "detail=days",
-                      "field": lang["Number of Days to keep"] + lang['Videos'],
+                      "field": lang["Number of Days to keep"] + ' ' + lang['Videos'],
                       "description": "The number of days to keep videos before purging.",
                       "default": "5",
                       "example": "30",
@@ -3858,7 +3858,7 @@ module.exports = function(s,config,lang){
                    },
                    {
                       "name": "detail=event_days",
-                      "field": lang["Number of Days to keep"] + lang['Events'],
+                      "field": lang["Number of Days to keep"] + ' ' + lang['Events'],
                       "description": "The number of days to keep events before purging.",
                       "default": "10",
                       "example": "30",
@@ -3868,7 +3868,7 @@ module.exports = function(s,config,lang){
                    },
                    {
                       "name": "detail=log_days",
-                      "field": lang["Number of Days to keep"] + lang['Logs'],
+                      "field": lang["Number of Days to keep"] + ' ' + lang['Logs'],
                       "description": "The number of days to keep logs before purging.",
                       "default": "10",
                       "example": "30",
@@ -3879,7 +3879,7 @@ module.exports = function(s,config,lang){
                   {
                      "name": "detail=lang",
                      "field": lang["Dashboard Language"],
-                     "description": "The primary language of text elements.",
+                     "description": 'The primary language of text elements. For complete translation add your language in conf.json e.g:<code>"language": "en_CA",</code>',
                      "default": "en_CA",
                      "example": "",
                      "fieldType": "select",
