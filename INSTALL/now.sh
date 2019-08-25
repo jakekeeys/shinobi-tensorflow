@@ -35,7 +35,7 @@ sh INSTALL/opensuse.sh
   ;;
 "6")
 chmod +x "INSTALL/CentOS - Quick Install.sh"
-sh "INSTALL/CentOS - Quick Install.sh"
+sh "INSTALL/CentOS - Quick Install.sh" 1
   ;;
 
 *)
