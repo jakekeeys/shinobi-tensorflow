@@ -7,8 +7,8 @@ echo "This script will install Shinobi CCTV with minimal user"
 echo "intervention. When prompted you may answer yes by typing"
 echo "the letter [Y] and pressing [Enter]. The default response"
 echo "is no, [N]."
-echo 
-echo "You may skip any components you already have or do not" 
+echo
+echo "You may skip any components you already have or do not"
 echo "wish to install."
 echo "========================================================="
 read -p "Press [Enter] to begin..."
@@ -43,8 +43,10 @@ fi
 
 if ! [ -x "$(command -v node)" ]; then
     echo "========================================================="
-    echo "Node.js not found, installing..."
-    sudo curl --silent --location https://rpm.nodesource.com/setup_10.x | bash -
+    echo "Node.js not found"
+    echo "Downloading Node.js... Please Wait..."
+    sudo curl --location https://rpm.nodesource.com/setup_8.x | bash -
+    echo "Installing Node.js 8..."
     sudo yum install nodejs -y
 else
     echo "Node.js is already installed..."
@@ -71,7 +73,7 @@ echo "========================================================="
 echo "Do you want to use MariaDB or SQLite3?"
 echo "MariaDB (MySQL) is better for medium to large installations"
 echo "while SQLite is better for small installations"
-echo 
+echo
 echo "Press [ENTER] for default [MariaDB]"
 echo "[M]ariaDB, [S]QLite3 or [N]othing"
 read sqliteormariadb
@@ -100,7 +102,7 @@ elif [ "$sqliteormariadb" = "m" ] || [ "$sqliteormariadb" = "M" ] || [ "$sqliteo
     sudo systemctl enable mariadb
     #Run mysql install
     sudo mysql_secure_installation
-	
+
 	echo "========================================================="
     echo "Install default database?"
     echo "[Y]es or [N]o"
@@ -113,12 +115,12 @@ elif [ "$sqliteormariadb" = "m" ] || [ "$sqliteormariadb" = "M" ] || [ "$sqliteo
         sudo mysql -u $sqluser -p$sqlpass -e "source sql/user.sql" || true
         sudo mysql -u $sqluser -p$sqlpass -e "source sql/framework.sql" || true
     fi
-	
+
 elif [ "$sqliteormariadb" = "n" ] || [ "$sqliteormariadb" = "N" ]; then
     echo "========================================================="
     echo "Skipping database server installation..."
 fi
-	
+
 echo "========================================================="
 echo "Installing NPM libraries..."
 sudo npm i npm -g
@@ -156,11 +158,11 @@ if [ ! -e "./super.json" ]; then
     echo "in commercial deployments"
     echo "[Y]es or [N]o"
     read createSuperJson
-    if [ "$createSuperJson" = "y" ] || [ "$createSuperJson" = "Y" ]; then        
+    if [ "$createSuperJson" = "y" ] || [ "$createSuperJson" = "Y" ]; then
         sudo cp super.sample.json super.json
     fi
 fi
-	
+
 echo "========================================================="
 echo "Start Shinobi on boot?"
 echo "[Y]es or [N]o"
@@ -192,6 +194,6 @@ if [ "$createSuperJson" = "y" ] || [ "$createSuperJson" = "Y" ]; then
     echo "|| Default Superuser : admin@shinobi.video             ||"
     echo "|| Default Password : admin                            ||"
 	echo "|| You can edit these settings in \"super.json\"       ||"
-	echo "|| located in the Shinobi directory.                   ||"        
+	echo "|| located in the Shinobi directory.                   ||"
     echo "========================================================="
 fi
