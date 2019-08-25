@@ -27,18 +27,24 @@ yum install nano $vm dos2unix net-tools curl wget git make zip -y
 echo "Updating system"
 sudo yum update -y
 
-#Clone git repo and change directory
-sudo git clone https://gitlab.com/Shinobi-Systems/Shinobi.git Shinobi
-cd Shinobi
+#Skip if running from the Ninja installer
+if [ "$1" != 1 ]; then
+	#Clone git repo and change directory
+	sudo git clone https://gitlab.com/Shinobi-Systems/Shinobi.git Shinobi
+	cd Shinobi
 
-echo "========================================================="
-echo "Do you want to use the Master or Development branch of Shinobi?"
-echo "[M]aster or [D]ev"
-read gitbranch
-if [ "$gitbranch" = "d" ] || [ "$gitbranch" = "D" ]; then
-    #Change to dev branch
-    sudo git checkout dev
-    sudo git pull
+	echo "========================================================="
+	echo "Do you want to use the Master or Development branch of Shinobi?"
+	read -p "[M]aster or [D]ev " gitbranch
+
+	#Changes input to uppercase
+	gitbranch=${gitbranch^}
+
+	if [ "$gitbranch" = "D" ]; then
+		#Change to dev branch
+		sudo git checkout dev
+		sudo git pull
+	fi
 fi
 
 if ! [ -x "$(command -v node)" ]; then
@@ -57,10 +63,12 @@ if ! [ -x "$(command -v npm)" ]; then
 fi
 
 echo "========================================================="
-echo "Do you want to install FFMPEG?"
-echo "[Y]es or [N]o"
-read ffmpeginstall
-if [ "$ffmpeginstall" = "y" ] || [ "$ffmpeginstall" = "Y" ]; then
+read -p "Do you want to install FFMPEG? Y/N " ffmpeginstall
+
+#Changes input to uppercase
+ffmpeginstall=${ffmpeginstall^}
+
+if [ "$ffmpeginstall" = "Y" ]; then
     #Install EPEL Repo
     sudo yum install epel-release -y
     #Enable Nux Dextop repo for FFMPEG
@@ -75,9 +83,12 @@ echo "MariaDB (MySQL) is better for medium to large installations"
 echo "while SQLite is better for small installations"
 echo
 echo "Press [ENTER] for default [MariaDB]"
-echo "[M]ariaDB, [S]QLite3 or [N]othing"
-read sqliteormariadb
-if [ "$sqliteormariadb" = "S" ] || [ "$sqliteormariadb" = "s" ]; then
+read -p "[M]ariaDB, [S]QLite3 or [N]othing " sqliteormariadb
+
+#Changes input to uppercase
+sqliteormariadb=${sqliteormariadb^}
+
+if [ "$sqliteormariadb" = "S" ]; then
     echo "========================================================="
     echo "Installing SQLite3..."
     sudo npm install jsonfile
@@ -90,7 +101,7 @@ if [ "$sqliteormariadb" = "S" ] || [ "$sqliteormariadb" = "s" ]; then
     else
         echo "shinobi.sqlite already exists. Continuing..."
     fi
-elif [ "$sqliteormariadb" = "m" ] || [ "$sqliteormariadb" = "M" ] || [ "$sqliteormariadb" = "" ]; then
+elif [ "$sqliteormariadb" = "M" ] || [ "$sqliteormariadb" = "" ]; then
     echo "========================================================="
     echo "Installing MariaDB repository..."
 	#Add the MariaDB repository to yum
@@ -104,10 +115,12 @@ elif [ "$sqliteormariadb" = "m" ] || [ "$sqliteormariadb" = "M" ] || [ "$sqliteo
     sudo mysql_secure_installation
 
 	echo "========================================================="
-    echo "Install default database?"
-    echo "[Y]es or [N]o"
-    read mysqlDefaultData
-    if [ "$mysqlDefaultData" = "y" ] || [ "$mysqlDefaultData" = "Y" ]; then
+    read -p "Install default database? Y/N " mysqlDefaultData
+
+	#Changes input to uppercase
+	mysqlDefaultData=${mysqlDefaultData^}
+
+    if [ "$mysqlDefaultData" = "Y" ]; then
         echo "Please enter your MariaDB Username"
         read sqluser
         echo "Please enter your MariaDB Password"
@@ -138,13 +151,15 @@ dos2unix INSTALL/shinobi
 ln -s INSTALL/shinobi /usr/bin/shinobi
 
 echo "========================================================="
-echo "Automatically create firewall rules?"
-echo "[Y]es or [N]o"
-read createfirewallrules
-    if [ "$createfirewallrules" = "y" ] || [ "$createfirewallrules" = "Y" ]; then
-        sudo firewall-cmd --permanent --add-port=8080/tcp -q
-        sudo firewall-cmd --reload -q
-    fi
+read -p "Automatically create firewall rules? Y/N " createfirewallrules
+
+#Changes input to uppercase
+createfirewallrules=${createfirewallrules^}
+
+if [ "$createfirewallrules" = "Y" ]; then
+    sudo firewall-cmd --permanent --add-port=8080/tcp -q
+    sudo firewall-cmd --reload -q
+fi
 
 #Create default configuration file
 if [ ! -e "./conf.json" ]; then
@@ -164,20 +179,24 @@ if [ ! -e "./super.json" ]; then
 fi
 
 echo "========================================================="
-echo "Start Shinobi on boot?"
-echo "[Y]es or [N]o"
-read startupShinobi
-if [ "$startupShinobi" = "y" ] || [ "$startupShinobi" = "Y" ] || [ "$startupShinobi" = "yes" ] || [ "$startupShinobi" = "Yes" ]; then
+read -p "Start Shinobi on boot? Y/N " startupShinobi
+
+	#Changes input to uppercase
+	startupShinobi=${startupShinobi^}
+
+if [ "$startupShinobi" = "Y" ]; then
     sudo pm2 startup
     sudo pm2 save
     sudo pm2 list
 fi
 
 echo "========================================================="
-echo "Start Shinobi now?"
-echo "[Y]es or [N]o"
-read startShinobi
-if [ "$startShinobi" = "y" ] || [ "$startShinobi" = "Y" ] || [ "$startShinobi" = "yes" ] || [ "$startShinobi" = "Yes" ]; then
+read -p "Start Shinobi now? Y/N " startShinobi
+
+	#Changes input to uppercase
+	startShinobi=${startShinobi^}
+
+if [ "$startShinobi" = "Y" ]; then
     sudo pm2 start camera.js
     sudo pm2 start cron.js
 fi
@@ -188,7 +207,7 @@ echo "||=============== Installation Complete ===============||"
 echo "========================================================="
 echo "|| Login with the Superuser and create a new user!!    ||"
 echo "========================================================="
-echo "|| Open http://$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'):8080/super in your web browser.||"
+echo "|| Open http://$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'):8080/super in your browser. ||"
 echo "========================================================="
 if [ "$createSuperJson" = "y" ] || [ "$createSuperJson" = "Y" ]; then
     echo "|| Default Superuser : admin@shinobi.video             ||"
