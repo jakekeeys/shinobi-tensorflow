@@ -5,9 +5,16 @@ echo "========================================================="
 echo "To answer yes type the letter (y) in lowercase and press ENTER."
 echo "Default is no (N). Skip any components you already have or don't need."
 echo "============="
+  
+#Create default configuration file
 if [ ! -e "./conf.json" ]; then
     cp conf.sample.json conf.json
+	
+    #Generate a random Cron key for the config file
+    cronKey=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c${1:-30})
+    sed -i -e 's/change_this_to_something_very_random__just_anything_other_than_this/'"$cronKey"'/g' conf.json
 fi
+
 if [ ! -e "./super.json" ]; then
     echo "Default Superuser : admin@shinobi.video"
     echo "Default Password : admin"
