@@ -520,6 +520,7 @@ $(document).ready(function(e){
                                         right: 'month,agendaWeek,agendaDay,listWeek'
                                     },
                                     defaultDate: $.ccio.timeObject(d.videos[0].time).format('YYYY-MM-DD'),
+                                    locale: user.details.lang.substring(0, 2),
                                     navLinks: true,
                                     eventLimit: true,
                                     events:e.ar,
