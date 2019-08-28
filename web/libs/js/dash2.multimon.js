@@ -17,7 +17,7 @@ $.multimon.e.find('.import_config').click(function(){
   var e={};e.e=$(this);e.mid=e.e.parents('[mid]').attr('mid');
     $.confirm.e.modal('show');
     $.confirm.title.text(lang['Import Monitor Configuration'])
-    e.html=lang.ImportMultiMonitorConfigurationText+'<div style="margin-top:15px"><div class="form-group"><textarea placeholder="'+lang['Paste JSON here.']+'" class="form-control"></textarea></div><label class="upload_file btn btn-primary btn-block"> Upload File <input class="upload" type=file name="files[]"></label></div>';
+    e.html=lang.ImportMultiMonitorConfigurationText+'<div style="margin-top:15px"><div class="form-group"><textarea placeholder="'+lang['Paste JSON here.']+'" class="form-control"></textarea></div><label class="upload_file btn btn-primary btn-block">'+lang['Upload File']+'<input class="upload" type=file name="files[]"></label></div>';
     $.confirm.body.html(e.html)
     $.confirm.e.find('.upload').change(function(e){
         var files = e.target.files; // FileList object
@@ -28,7 +28,7 @@ $.multimon.e.find('.import_config').click(function(){
         }
         reader.readAsText(f);
     });
-    $.confirm.click({title:'Import',class:'btn-primary'},function(){
+    $.confirm.click({title:lang['Import'],class:'btn-primary'},function(){
 //        setTimeout(function(){
 //            $.confirm.e.modal('show');
 //        },1000)
@@ -116,7 +116,7 @@ $.multimon.getSelectedMonitors = function(unclean){
 $.multimon.e.find('.delete').click(function(){
     var arr=$.multimon.getSelectedMonitors(true);
     if(arr.length===0){
-        $.ccio.init('note',{title:'No Monitors Selected',text:'Select atleast one monitor to delete.',type:'error'});
+        $.ccio.init('note',{title:lang['No Monitors Selected'],text:lang['Select atleast one monitor to delete'],type:'error'});
         return
     }
     $.confirm.e.modal('show');
@@ -125,7 +125,7 @@ $.multimon.e.find('.delete').click(function(){
     $.confirm.body.html(e.html)
     $.confirm.click([
         {
-            title:'Delete Monitors',
+            title:lang['Delete']+' '+lang['Monitors'],
             class:'btn-danger',
             callback:function(){
                 $.each(arr,function(n,v){
@@ -136,7 +136,7 @@ $.multimon.e.find('.delete').click(function(){
             }
         },
         {
-            title:'Delete Monitors and Files',
+            title:lang['Delete Monitors and Files'],
             class:'btn-danger',
             callback:function(){
                 $.each(arr,function(n,v){
@@ -152,7 +152,7 @@ $.multimon.e.find('.delete').click(function(){
 //    var arr=$.multimon.getSelectedMonitors();
 //    var arrObject={}
 //    if(arr.length===0){
-//        $.ccio.init('note',{title:'No Monitors Selected',text:'Select atleast one monitor to delete.',type:'error'});
+//        $.ccio.init('note',{title:lang['No Monitors Selected'],text:lang['Select atleast one monitor to delete'],type:'error'});
 //        return
 //    }
 //    $.multimonedit.selectedList = arr;
@@ -162,7 +162,7 @@ $.multimon.e.find('.save_config').click(function(){
     var e={};e.e=$(this);
     var arr=$.multimon.getSelectedMonitors();
     if(arr.length===0){
-        $.ccio.init('note',{title:'No Monitors Selected',text:'Select atleast one monitor to delete.',type:'error'});
+        $.ccio.init('note',{title:lang['No Monitors Selected'],text:lang['Select atleast one monitor to delete'],type:'error'});
         return
     }
     e.dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(arr));
