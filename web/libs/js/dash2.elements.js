@@ -75,7 +75,7 @@ $(document).ready(function(e){
         $.logWriter.floodTimeout = setTimeout(function(){
             delete($.logWriter.floodTimeout)
             $.logWriter.floodCounter = 0
-        },1000)
+        },2000)
         $.ccio.tm(4,d,'#logs,'+id+'.monitor_item .logs:visible,'+id+'#add_monitor:visible .logs',user)
     }
     //open all monitors
@@ -320,6 +320,32 @@ $(document).ready(function(e){
                 user=$user
             }
         switch(e.a){
+            case'zoomStreamWithMouse':
+                var streamWindow = $('.monitor_item[mid="'+e.mid+'"][ke="'+e.ke+'"][auth="'+e.auth+'"]')
+                if(e.mon.magnifyStreamEnabled){
+                    e.mon.magnifyStreamEnabled = false
+                    streamWindow
+                        .off('mousemove')
+                        .off('touchmove')
+                        .find('.zoomGlass').remove()
+                }else{
+                    e.mon.magnifyStreamEnabled = true
+                    const magnifyStream = function(e){
+                        $.ccio.magnifyStream({
+                            p: streamWindow,
+                            zoomAmount: 1,
+                            auto: false,
+                            animate: false,
+                            pageX: e.pageX,
+                            pageY:  e.pageY,
+                            attribute: 'monitor="zoomStreamWithMouse"'
+                        },user)
+                    }
+                    streamWindow
+                        .on('mousemove', magnifyStream)
+                        .on('touchmove', magnifyStream)
+                }
+            break;
             case'show_data':
                 e.p.toggleClass('show_data')
                 var dataBlocks = e.p.find('.stream-block,.mdl-data_window')
@@ -494,6 +520,7 @@ $(document).ready(function(e){
                                         right: 'month,agendaWeek,agendaDay,listWeek'
                                     },
                                     defaultDate: $.ccio.timeObject(d.videos[0].time).format('YYYY-MM-DD'),
+                                    locale: user.details.lang.substring(0, 2),
                                     navLinks: true,
                                     eventLimit: true,
                                     events:e.ar,
@@ -793,6 +820,4 @@ $(document).ready(function(e){
     .on('dblclick','.stream-hud',function(){
         $(this).parents('[mid]').find('[monitor="fullscreen"]').click();
     })
-    //.on('mousemove',".magnifyStream",$.ccio.magnifyStream)
-    //.on('touchmove',".magnifyStream",$.ccio.magnifyStream);
 })

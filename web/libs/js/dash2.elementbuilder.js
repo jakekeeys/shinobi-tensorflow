@@ -123,6 +123,12 @@ $.ccio.tm=function(x,d,z,user){
                       "class": "default",
                       "icon": "external-link"
                    },
+                   "Pop": {
+                      "label": lang['Zoom In'],
+                      "attr": "monitor=\"zoomStreamWithMouse\"",
+                      "class": "default",
+                      "icon": "search-plus"
+                   },
                    "Calendar": {
                       "label": lang['Calendar'],
                       "attr": "monitor=\"calendar\"",

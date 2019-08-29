@@ -5,9 +5,16 @@ echo "========================================================="
 echo "To answer yes type the letter (y) in lowercase and press ENTER."
 echo "Default is no (N). Skip any components you already have or don't need."
 echo "============="
+  
+#Create default configuration file
 if [ ! -e "./conf.json" ]; then
     cp conf.sample.json conf.json
+	
+    #Generate a random Cron key for the config file
+    cronKey=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c${1:-30})
+    sed -i -e 's/change_this_to_something_very_random__just_anything_other_than_this/'"$cronKey"'/g' conf.json
 fi
+
 if [ ! -e "./super.json" ]; then
     echo "Default Superuser : admin@shinobi.video"
     echo "Default Password : admin"
@@ -27,20 +34,19 @@ if [ ! -e "./super.json" ]; then
 fi
 echo "Shinobi - Run yum update"
 sudo yum update -y
-sudo yum install make zip -y
+sudo yum install make zip dos2unix -y
 if ! [ -x "$(command -v node)" ]; then
     echo "============="
     echo "Shinobi - Installing Node.js"
-    sudo wget https://rpm.nodesource.com/setup_8.x
-    sudo chmod +x setup_8.x
-    ./setup_8.x
+	#Installs Node.js 10
+    sudo curl --silent --location https://rpm.nodesource.com/setup_8.x | bash -
     sudo yum install nodejs -y
 else
     echo "Node.js Found..."
     echo "Version : $(node -v)"
 fi
 if ! [ -x "$(command -v npm)" ]; then
-    sudo apt install npm -y
+    sudo yum install npm -y
 fi
 echo "============="
 echo "Shinobi - Do you want to Install FFMPEG?"
@@ -86,6 +92,8 @@ else
     echo "(y)es or (N)o"
     read mysqlagree
     if [ "$mysqlagree" = "y" ] || [ "$mysqlagree" = "Y" ]; then
+	    #Add the MariaDB repository to yum, this allows for a more current version of MariaDB to be installed
+	    sudo curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash -s -- --skip-maxscale
         sudo yum install mariadb mariadb-server -y
         #Start mysql and enable on boot
         sudo systemctl start mariadb
@@ -110,24 +118,16 @@ echo "============="
 echo "Shinobi - Install NPM Libraries"
 sudo npm i npm -g
 sudo npm install --unsafe-perm
+sudo npm install mp4frag@latest cws@latest
 sudo npm audit fix --force
 echo "============="
 echo "Shinobi - Install PM2"
-sudo npm install pm2@3.0.0 -g
+sudo npm install pm2@latest -g
 echo "Shinobi - Finished"
 sudo chmod -R 755 .
 touch INSTALL/installed.txt
 dos2unix /home/Shinobi/INSTALL/shinobi
 ln -s /home/Shinobi/INSTALL/shinobi /usr/bin/shinobi
-if [ "$mysqlDefaultData" = "y" ] || [ "$mysqlDefaultData" = "Y" ]; then
-    echo "=====================================" > INSTALL/installed.txt
-    echo "=======   Login Credentials   =======" >> INSTALL/installed.txt
-    echo "|| Username : $userEmail" >> INSTALL/installed.txt
-    echo "|| Password : $userPasswordPlain" >> INSTALL/installed.txt
-    echo "|| API Key : $apiKey" >> INSTALL/installed.txt
-    echo "=====================================" >> INSTALL/installed.txt
-    echo "=====================================" >> INSTALL/installed.txt
-fi
 echo "Shinobi - Start Shinobi and set to start on boot?"
 echo "(y)es or (N)o"
 read startShinobi
@@ -137,16 +137,6 @@ if [ "$startShinobi" = "y" ] || [ "$startShinobi" = "Y" ]; then
     sudo pm2 startup
     sudo pm2 save
     sudo pm2 list
-fi
-if [ "$mysqlDefaultData" = "y" ] || [ "$mysqlDefaultData" = "Y" ]; then
-    echo "details written to INSTALL/installed.txt"
-    echo "====================================="
-    echo "=======   Login Credentials   ======="
-    echo "|| Username : $userEmail"
-    echo "|| Password : $userPasswordPlain"
-    echo "|| API Key : $apiKey"
-    echo "====================================="
-    echo "====================================="
 fi
 echo "====================================="
 echo "||=====   Install Completed   =====||"

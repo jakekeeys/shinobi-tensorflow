@@ -282,7 +282,14 @@ ul.msg_list li .message {
     border: 3px solid #ddd;
     z-index:9999;
 }
-.zoomGlass iframe,.zoomGlass canvas{position:absolute;transition: none;}
+.zoomGlass iframe,
+.zoomGlass video,
+.zoomGlass canvas{
+    padding: 0!important;
+    max-width: none!important;
+    position: absolute;
+    transition: none;
+}
 .zoomGlass .hoverShade{position:absolute;width:100%;height:100%}
 
 

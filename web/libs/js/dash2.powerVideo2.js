@@ -253,18 +253,18 @@ $(document).ready(function(e){
         reinitializeStreamObjectsContainer()
         $(videoElement)
             .resize(reinitializeStreamObjectsContainer)
-            .off('loadeddata').on('loadeddata', function() {
-                reinitializeStreamObjectsContainer()
-                var allLoaded = true
-                getAllActiveVideosInSlots().each(function(n,videoElement){
-                    if(!videoElement.readyState === 4)allLoaded = false
-                })
-                setTimeout(function(){
-                    if(allLoaded){
-                        playAllSlots()
-                    }
-                },1000)
-            })
+            // .off('loadeddata').on('loadeddata', function() {
+            //     reinitializeStreamObjectsContainer()
+            //     var allLoaded = true
+            //     getAllActiveVideosInSlots().each(function(n,videoElement){
+            //         if(!videoElement.readyState === 4)allLoaded = false
+            //     })
+            //     setTimeout(function(){
+            //         if(allLoaded){
+            //             playAllSlots()
+            //         }
+            //     },1500)
+            // })
             // .off("pause").on("pause",function(){
             //     console.log(monitorId,'pause')
             // })
@@ -300,7 +300,7 @@ $(document).ready(function(e){
                     var videoAfter = videoPlayerContainer.find(`video.videoAfter`)[0]
                     videoAfter.setAttribute('preload',true)
                 }
-                videoCurrentTimeProgressBar.style.width = `${watchPoint}px`
+                if(videoCurrentTimeProgressBar)videoCurrentTimeProgressBar.style.width = `${watchPoint}px`
                 extenders.onVideoPlayerTimeUpdateExtensions.forEach(function(extender){
                     extender(videoElement,watchPoint)
                 })
@@ -353,10 +353,11 @@ $(document).ready(function(e){
         if(!video)return
         resetVisualDetectionDataForMonitorSlot(video.mid)
         currentlyPlayingVideos[video.mid] = video
-        var timeToStartAt = selectedTime - new Date(video.time) || 0
+        var timeToStartAt = selectedTime - new Date(video.time)
         var numberOfMonitors = Object.keys(powerVideoLoadedVideos).length
         // if(numberOfMonitors > 3)numberOfMonitors = 3 //start new row after 3
         if(numberOfMonitors == 1)numberOfMonitors = 2 //make single monitor not look like a doofus
+        if(timeToStartAt < 0)timeToStartAt = 0
         var widthOfBlock = 100 / numberOfMonitors
         var videoContainer = powerVideoMonitorViewsElement.find(`.videoPlayer[data-mid=${video.mid}] .videoPlayer-buffers`)
         if(videoContainer.length === 0){
@@ -399,7 +400,7 @@ $(document).ready(function(e){
                 videoData = video
             }
             if(videoData){
-               videoContainer.append('<video class="video_video '+position+'" video="'+videoData.href+'" playsinline><source src="'+video.href+'" type="video/'+video.ext+'"></video>')
+               videoContainer.append('<video class="video_video '+position+'" video="'+videoData.href+'" playsinline><source src="'+videoData.href+'" type="video/'+videoData.ext+'"></video>')
             }
         }
         if(
@@ -442,7 +443,7 @@ $(document).ready(function(e){
         videoNow.muted = true
         videoNow.playbackRate = monitorSlotPlaySpeeds[video.mid] || 1
         videoNow.currentTime = timeToStartAt / 1000
-        // videoNow.play()
+        videoNow.play()
         extenders.onVideoPlayerCreateExtensions.forEach(function(extender){
             extender(videoElement,watchPoint)
         })
@@ -456,6 +457,50 @@ $(document).ready(function(e){
     var pauseAllSlots = function(){
         getAllActiveVideosInSlots().each(function(n,video){
             if(!video.paused)video.pause()
+        })
+    }
+    var toggleZoomAllSlots = function(){
+        powerVideoMonitorViewsElement.find(`.videoPlayer`).each(function(n,videoContainer){
+            var streamWindow = $(videoContainer)
+            var monitorId = streamWindow.attr('data-mid')
+            var enabled = streamWindow.attr('zoomEnabled')
+            if(enabled === '1'){
+                streamWindow
+                    .attr('zoomEnabled','0')
+                    .off('mouseover')
+                    .off('mouseout')
+                    .off('mousemove')
+                    .off('touchmove')
+                    .find('.zoomGlass').remove()
+            }else{
+                const magnifyStream = function(e){
+                    var videoElement = streamWindow.find('video.videoNow')
+                    console.log(videoElement[0].currentTime)
+                    $.ccio.magnifyStream({
+                        p: streamWindow,
+                        videoUrl: streamWindow.find('video.videoNow').find('source').attr('src'),
+                        setTime: videoElement[0].currentTime,
+                        monitor: $.ccio.mon[$user.ke + monitorId + $user.auth_token],
+                        targetForZoom: 'video.videoNow',
+                        magnifyOffsetElement: '.videoPlayer-buffers',
+                        zoomAmount: 1,
+                        auto: false,
+                        animate: false,
+                        pageX: e.pageX,
+                        pageY:  e.pageY
+                    },$user)
+                }
+                streamWindow
+                    .attr('zoomEnabled','1')
+                    .on('mouseover', function(){
+                        streamWindow.find(".zoomGlass").show()
+                    })
+                    .on('mouseout', function(){
+                        streamWindow.find(".zoomGlass").hide()
+                    })
+                    .on('mousemove', magnifyStream)
+                    .on('touchmove', magnifyStream)
+            }
         })
     }
     var playAllSlots = function(){
@@ -516,6 +561,9 @@ $(document).ready(function(e){
             var el = $(this)
             var controlType = el.attr('powerVideo-control')
             switch(controlType){
+                case'toggleZoom':
+                    toggleZoomAllSlots()
+                break;
                 case'playAll':
                     playAllSlots()
                 break;

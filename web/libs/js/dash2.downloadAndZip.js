@@ -39,7 +39,7 @@ $(document).ready(function(){
         }
         getVideo(videos[numberOfCompletedDownloads])
     }
-    function saveFile(blob, filename) {
+    var saveFile = function(blob, filename) {
         console.log(blob,filename)
       if (window.navigator.msSaveOrOpenBlob) {
         window.navigator.msSaveOrOpenBlob(blob, filename);
