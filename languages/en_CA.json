@@ -663,6 +663,8 @@
    "Restart Core": "Restart Core",
    "Restart CRON": "Restart CRON",
    "Flush PM2 Logs": "Flush PM2 Logs",
+   "Controls and Logs": "Controls and Logs",
+   "Delete Logs": "Delete Logs",
    "Filter ID": "Filter ID",
    "Webdav Error": "Webdav Error",
    "WebdavErrorTextTryCreatingDir": "Cannot save. Trying to create directory.",
