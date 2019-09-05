@@ -325,7 +325,7 @@ module.exports = function(s,config,lang){
             }
 
             if(filter.command && currentConfig.detector_command_enable === '1' && !s.group[d.ke].activeMonitors[d.id].detector_command){
-                s.group[d.ke].activeMonitors[d.id].detector_command = s.createTimeout(s.group[d.ke].activeMonitors[d.id].detector_command,currentConfig.detector_command_timeout,10)
+                s.group[d.ke].activeMonitors[d.id].detector_command = s.createTimeout('detector_command',s.group[d.ke].activeMonitors[d.id],currentConfig.detector_command_timeout,10)
                 var detector_command = addEventDetailsToString(d,currentConfig.detector_command)
                 if(detector_command === '')return
                 exec(detector_command,{detached: true},function(err){

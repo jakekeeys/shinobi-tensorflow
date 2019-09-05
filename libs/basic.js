@@ -233,7 +233,7 @@ module.exports = function(s,config){
             break;
         }
     }
-    s.createTimeout = function(timeoutVar,timeoutLength,defaultLength,multiplier,callback){
+    s.createTimeout = function(timeoutVar,parentVar,timeoutLength,defaultLength,multiplier,callback){
         var theTimeout
         if(!multiplier)multiplier = 1000 * 60
         if(!timeoutLength || timeoutLength === ''){
@@ -241,13 +241,13 @@ module.exports = function(s,config){
         }else{
             theTimeout = parseFloat(timeoutLength) * multiplier
         }
-        clearTimeout(timeoutVar)
-        timeoutVar = setTimeout(function(){
-            clearTimeout(timeoutVar)
-            delete(timeoutVar)
+        clearTimeout(parentVar[timeoutVar])
+        parentVar[timeoutVar] = setTimeout(function(){
+            clearTimeout(parentVar[timeoutVar])
+            delete(parentVar[timeoutVar])
             if(callback)callback()
         },theTimeout)
-        return timeoutVar
+        return parentVar[timeoutVar]
     }
     s.isCorrectFilenameSyntax = function(string){
         return RegExp('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]').test(string)
