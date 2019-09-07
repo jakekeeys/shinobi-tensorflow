@@ -812,9 +812,11 @@ module.exports = function(s,config,lang,onFinish){
                 if(sendFramesGlobally)x.pipe += ' -an -c:v pam -pix_fmt gray -f image2pipe pipe:3'
                 if(e.details.detector_use_detect_object === '1'){
                     //for object detection
+                    x.detector_fps_object = '2'
                     x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
                     if(e.details.detector_scale_x_object&&e.details.detector_scale_x_object!==''&&e.details.detector_scale_y_object&&e.details.detector_scale_y_object!==''){x.dobjratio=' -s '+e.details.detector_scale_x_object+'x'+e.details.detector_scale_y_object}else{x.dobjratio=x.dratio}
-                    x.pipe += ' -r ' + x.detector_fps + x.dobjratio + x.cust_detect
+                    if(e.details.detector_fps_object){x.detector_fps_object = e.details.detector_fps_object}
+                    x.pipe += ' -r ' + x.detector_fps_object + x.dobjratio + x.cust_detect
                     if(e.details.detector_h264 === '1'){
                         x.pipe += h264Output
                     }else{
