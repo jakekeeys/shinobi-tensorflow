@@ -255,6 +255,17 @@ module.exports = function(s,config){
         },theTimeout)
         return parentVar[timeoutVar]
     }
+    s.handleFolderError = function(err){
+        if(err){
+            switch(err.code){
+                case'EEXIST':
+                break;
+                default:
+                    console.log(err)
+                break;
+            }
+        }
+    }
     s.isCorrectFilenameSyntax = function(string){
         return RegExp('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]').test(string)
     }

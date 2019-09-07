@@ -628,27 +628,16 @@ module.exports = function(s,config,lang){
             s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
         }
     }
-    var handleFolderError = function(err){
-        if(err){
-            switch(err.code){
-                case'EEXIST':
-                break;
-                default:
-                    console.log(err)
-                break;
-            }
-        }
-    }
     var createRecordingDirectory = function(e,callback){
         var directory
         if(e.details && e.details.dir && e.details.dir !== '' && config.childNodes.mode !== 'child'){
             //addStorage choice
             directory = s.checkCorrectPathEnding(e.details.dir) + e.ke + '/'
             fs.mkdir(directory,function(err){
-                handleFolderError(err)
+                s.handleFolderError(err)
                 directory = directory + e.id + ''
                 fs.mkdir(directory,function(err){
-                    handleFolderError(err)
+                    s.handleFolderError(err)
                     callback(err,directory)
                 })
             })
@@ -656,10 +645,10 @@ module.exports = function(s,config,lang){
             //MAIN videos dir
             directory = s.dir.videos + e.ke + '/'
             fs.mkdir(directory,function(err){
-                handleFolderError(err)
+                s.handleFolderError(err)
                 directory = s.dir.videos + e.ke + '/' + e.id + '/'
                 fs.mkdir(directory,function(err){
-                    handleFolderError(err)
+                    s.handleFolderError(err)
                     callback(err,directory)
                 })
             })
@@ -668,17 +657,17 @@ module.exports = function(s,config,lang){
     var createTimelapseDirectory = function(e,callback){
         var directory = s.getTimelapseFrameDirectory(e)
         fs.mkdir(directory,function(err){
-            handleFolderError(err)
+            s.handleFolderError(err)
             callback(err,directory)
         })
     }
     var createFileBinDirectory = function(e,callback){
         var directory = s.dir.fileBin + e.ke + '/'
         fs.mkdir(directory,function(err){
-            handleFolderError(err)
+            s.handleFolderError(err)
             directory = s.dir.fileBin + e.ke + '/' + e.id + '/'
             fs.mkdir(directory,function(err){
-                handleFolderError(err)
+                s.handleFolderError(err)
                 callback(err,directory)
             })
         })
@@ -690,7 +679,7 @@ module.exports = function(s,config,lang){
             var makeMonitorFolder = function(){
                 directory = s.dir.streams + e.ke + '/' + e.id + '/'
                 fs.mkdir(directory,function(err){
-                    handleFolderError(err)
+                    s.handleFolderError(err)
                     callback(err,directory)
                 })
             }
