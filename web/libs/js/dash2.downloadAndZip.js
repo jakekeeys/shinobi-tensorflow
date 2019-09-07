@@ -2,21 +2,33 @@ $(document).ready(function(){
     var downloadFile = function(remoteLink,onProgress,onSuccess){
         if(!onProgress)onProgress = function(){}
         if(!onSuccess)onSuccess = function(){}
-        return $.ajax({
-            xhr: function() {
-                var xhr = new window.XMLHttpRequest();
-               xhr.addEventListener("progress", function(evt) {
-                   if (evt.lengthComputable) {
-                       var percentComplete = (evt.loaded / evt.total * 100).toFixed(2);
-                       onProgress(percentComplete)
-                   }
-               }, false);
-               return xhr;
-            },
-            type: 'GET',
-            url: remoteLink,
-            success: onSuccess
-        });
+        var xhr = new window.XMLHttpRequest();
+        xhr.addEventListener("progress", function(evt) {
+           if (evt.lengthComputable) {
+               var percentComplete = (evt.loaded / evt.total * 100).toFixed(2);
+               onProgress(percentComplete)
+           }
+        }, false)
+        xhr.addEventListener('readystatechange', function(e) {
+        	if(xhr.readyState == 2 && xhr.status == 200) {
+        		// Download is being started
+        	}
+        	else if(xhr.readyState == 3) {
+        		// Download is under progress
+        	}
+        	else if(xhr.readyState == 4) {
+                onSuccess(xhr.response)
+        		// Downloaing has finished
+
+        		// request.response holds the file data
+        	}
+        })
+        xhr.responseType = 'blob'
+
+        // Downloading a JPEG file
+        xhr.open('get', remoteLink)
+
+        xhr.send()
     }
     var downloadBulkVideos = function(videos,onProgress,onSuccess){
         var fileBuffers = {}
