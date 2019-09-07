@@ -100,8 +100,12 @@ module.exports = function(s,config,lang,app,io){
                             },config.dropInEventForceSaveEvent)
                         }
                         if(search(filename,'.txt')){
-                            fs.readFile(filePath,{encoding: 'utf-8'},function(err,reason){
-                                reason = reason.split('\n')[0] || filename
+                            fs.readFile(filePath,{encoding: 'utf-8'},function(err,data){
+                                if(data){
+                                    reason = data.split('\n')[0] || filename
+                                }else if(filename){
+                                    reason = filename
+                                }
                                 completeAction()
                             })
                         }else{
@@ -152,15 +156,7 @@ module.exports = function(s,config,lang,app,io){
             config.ftpServerUrl = config.ftpServerUrl.replace('{{PORT}}',config.ftpServerPort)
             const FtpSrv = require('ftp-srv')
             const ftpServer = new FtpSrv({
-                // log: {
-                //     warn: function(){},
-                //     info: function(){},
-                //     child: function(){},
-                //     error: function(){},
-                //     trace: function(){},
-                // },
                 url: config.ftpServerUrl,
-                // log:{trace:function(){},error:function(){},child:function(){},info:function(){},warn:function(){}
             })
 
             ftpServer.on('login', (data, resolve, reject) => {
