@@ -403,7 +403,7 @@ module.exports = function(s,config,lang){
     }
     s.streamMp4FileOverHttp = function(filePath,req,res){
         var ext = filePath.split('.')
-        ext = filePath[filePath.length - 1]
+        ext = ext[ext.length - 1]
         var total = fs.statSync(filePath).size;
         if (req.headers['range']) {
             try{
@@ -415,15 +415,15 @@ module.exports = function(s,config,lang){
                 var end = partialend ? parseInt(partialend, 10) : total-1;
                 var chunksize = (end-start)+1;
                 var file = fs.createReadStream(filePath, {start: start, end: end});
-                req.headerWrite={ 'Content-Range': 'bytes ' + start + '-' + end + '/' + total, 'Accept-Ranges': 'bytes', 'Content-Length': chunksize, 'Content-Type': 'video/'+req.ext }
+                req.headerWrite={ 'Content-Range': 'bytes ' + start + '-' + end + '/' + total, 'Accept-Ranges': 'bytes', 'Content-Length': chunksize, 'Content-Type': 'video/'+ext }
                 req.writeCode=206
             }catch(err){
-                req.headerWrite={ 'Content-Length': total, 'Content-Type': 'video/'+req.ext};
+                req.headerWrite={ 'Content-Length': total, 'Content-Type': 'video/'+ext};
                 var file = fs.createReadStream(filePath)
                 req.writeCode=200
             }
         } else {
-            req.headerWrite={ 'Content-Length': total, 'Content-Type': 'video/'+req.ext};
+            req.headerWrite={ 'Content-Length': total, 'Content-Type': 'video/'+ext};
             var file = fs.createReadStream(filePath)
             req.writeCode=200
         }
