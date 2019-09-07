@@ -213,7 +213,7 @@ module.exports = function(s,config){
         }
         return url
     }
-    s.file=function(x,e){
+    s.file = function(x,e,callback){
         if(!e){e={}};
         switch(x){
             case'size':
@@ -221,15 +221,21 @@ module.exports = function(s,config){
             break;
             case'delete':
                 if(!e){return false;}
-                return exec('rm -f '+e,{detached: true});
+                return exec('rm -f '+e,{detached: true},function(err){
+                    if(callback)callback(err)
+                })
             break;
             case'deleteFolder':
                 if(!e){return false;}
-                return exec('rm -rf '+e,{detached: true});
+                exec('rm -rf '+e,{detached: true},function(err){
+                    if(callback)callback(err)
+                })
             break;
             case'deleteFiles':
                 if(!e.age_type){e.age_type='min'};if(!e.age){e.age='1'};
-                exec('find '+e.path+' -type f -c'+e.age_type+' +'+e.age+' -exec rm -f {} +',{detached: true});
+                exec('find '+e.path+' -type f -c'+e.age_type+' +'+e.age+' -exec rm -f {} +',{detached: true},function(err){
+                    if(callback)callback(err)
+                })
             break;
         }
     }
