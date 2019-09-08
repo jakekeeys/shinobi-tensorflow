@@ -297,13 +297,15 @@ module.exports = function(s,config,lang,app,io){
                         selectedDate = req.params.filename.split('T')[0]
                     }
                     fileLocation = `${fileLocation}${frame.ke}/${frame.mid}_timelapse/${selectedDate}/${req.params.filename}`
-                    if(fs.existsSync(fileLocation)){
-                        res.contentType('image/jpeg')
-                        res.on('finish',function(){res.end()})
-                        fs.createReadStream(fileLocation).pipe(res)
-                    }else{
-                        res.end(s.prettyPrint({ok: false, msg: lang[`Nothing exists`]}))
-                    }
+                    fs.stat(fileLocation,function(err,stats){
+                        if(!err){
+                            res.contentType('image/jpeg')
+                            res.on('finish',function(){res.end()})
+                            fs.createReadStream(fileLocation).pipe(res)
+                        }else{
+                            res.end(s.prettyPrint({ok: false, msg: lang[`Nothing exists`]}))
+                        }
+                    })
                 }else{
                     res.end(s.prettyPrint({ok: false, msg: lang[`Nothing exists`]}))
                 }
