@@ -462,71 +462,81 @@ module.exports = function(s,config,lang){
                 createLocation = fileLocationMid
             }
         })
-        var commandTempLocation = `${s.dir.streams}${ke}/${mid}/mergeJpegs_${finalFileName}.sh`
-        var finalMp4OutputLocation = `${s.dir.fileBin}${ke}/${mid}/${finalFileName}.mp4`
-        if(!s.group[ke].activeMonitors[mid].buildingTimelapseVideo){
-            if(!fs.existsSync(finalMp4OutputLocation)){
-                var currentFile = 0
-                var completionTimeout
-                var commandString = `ffmpeg -y -pattern_type glob -f image2pipe -vcodec mjpeg -r ${framesPerSecond} -analyzeduration 10 -i - -q:v 1 -c:v libx264 -r ${framesPerSecond} "${finalMp4OutputLocation}"`
-                fs.writeFileSync(commandTempLocation,commandString)
-                var videoBuildProcess = spawn('sh',[commandTempLocation])
-                videoBuildProcess.stderr.on('data',function(data){
-                    // console.log(data.toString())
-                    clearTimeout(completionTimeout)
-                    completionTimeout = setTimeout(function(){
-                        if(currentFile === concatFiles.length - 1){
-                            videoBuildProcess.kill('SIGTERM')
-                        }
-                    },4000)
-                })
-                videoBuildProcess.on('exit',function(data){
-                    var timeNow = new Date()
-                    var fileStats = fs.statSync(finalMp4OutputLocation)
-                    var details = {}
-                    s.sqlQuery('INSERT INTO `Files` (ke,mid,details,name,size,time) VALUES (?,?,?,?,?,?)',[ke,mid,s.s(details),finalFileName + '.mp4',fileStats.size,timeNow])
-                    s.setDiskUsedForGroup({ke: ke},fileStats.size / 1000000,'fileBin')
-                    fs.unlink(commandTempLocation,function(){
-
+        if(concatFiles.length > 30){
+            var commandTempLocation = `${s.dir.streams}${ke}/${mid}/mergeJpegs_${finalFileName}.sh`
+            var finalMp4OutputLocation = `${s.dir.fileBin}${ke}/${mid}/${finalFileName}.mp4`
+            if(!s.group[ke].activeMonitors[mid].buildingTimelapseVideo){
+                if(!fs.existsSync(finalMp4OutputLocation)){
+                    var currentFile = 0
+                    var completionTimeout
+                    var commandString = `ffmpeg -y -pattern_type glob -f image2pipe -vcodec mjpeg -r ${framesPerSecond} -analyzeduration 10 -i - -q:v 1 -c:v libx264 -r ${framesPerSecond} "${finalMp4OutputLocation}"`
+                    fs.writeFileSync(commandTempLocation,commandString)
+                    var videoBuildProcess = spawn('sh',[commandTempLocation])
+                    videoBuildProcess.stderr.on('data',function(data){
+                        // console.log(data.toString())
+                        clearTimeout(completionTimeout)
+                        completionTimeout = setTimeout(function(){
+                            if(currentFile === concatFiles.length - 1){
+                                videoBuildProcess.kill('SIGTERM')
+                            }
+                        },4000)
                     })
-                    delete(s.group[ke].activeMonitors[mid].buildingTimelapseVideo)
-                })
-                var readFile = function(){
-                    var filePath = concatFiles[currentFile]
-                    // console.log(filePath,currentFile,'/',concatFiles.length - 1)
-                    videoBuildProcess.stdin.write(fs.readFileSync(filePath))
-                    if(currentFile === concatFiles.length - 1){
-                        //is last
+                    videoBuildProcess.on('exit',function(data){
+                        var timeNow = new Date()
+                        var fileStats = fs.statSync(finalMp4OutputLocation)
+                        var details = {}
+                        s.sqlQuery('INSERT INTO `Files` (ke,mid,details,name,size,time) VALUES (?,?,?,?,?,?)',[ke,mid,s.s(details),finalFileName + '.mp4',fileStats.size,timeNow])
+                        s.setDiskUsedForGroup({ke: ke},fileStats.size / 1000000,'fileBin')
+                        fs.unlink(commandTempLocation,function(){
 
-                    }else{
-                        setTimeout(function(){
-                            ++currentFile
-                            readFile()
-                        },1/framesPerSecond)
+                        })
+                        delete(s.group[ke].activeMonitors[mid].buildingTimelapseVideo)
+                    })
+                    var readFile = function(){
+                        var filePath = concatFiles[currentFile]
+                        // console.log(filePath,currentFile,'/',concatFiles.length - 1)
+                        fs.readFile(filePath,function(err,buffer){
+                            if(!err)videoBuildProcess.stdin.write(buffer)
+                            if(currentFile === concatFiles.length - 1){
+                                //is last
+
+                            }else{
+                                setTimeout(function(){
+                                    ++currentFile
+                                    readFile()
+                                },1/framesPerSecond)
+                            }
+                        })
                     }
+                    readFile()
+                    s.group[ke].activeMonitors[mid].buildingTimelapseVideo = videoBuildProcess
+                    callback({
+                        ok: true,
+                        fileExists: false,
+                        fileLocation: finalMp4OutputLocation,
+                        msg: lang['Started Building']
+                    })
+                }else{
+                    callback({
+                        ok: false,
+                        fileExists: true,
+                        fileLocation: finalMp4OutputLocation,
+                        msg: lang['Already exists']
+                    })
                 }
-                readFile()
-                s.group[ke].activeMonitors[mid].buildingTimelapseVideo = videoBuildProcess
-                callback({
-                    ok: true,
-                    fileExists: false,
-                    fileLocation: finalMp4OutputLocation,
-                    msg: lang['Started Building']
-                })
             }else{
                 callback({
                     ok: false,
-                    fileExists: true,
+                    fileExists: false,
                     fileLocation: finalMp4OutputLocation,
-                    msg: lang['Already exists']
+                    msg: lang.Building
                 })
             }
         }else{
             callback({
                 ok: false,
                 fileExists: false,
-                fileLocation: finalMp4OutputLocation,
-                msg: lang.Building
+                msg: lang.notEnoughFramesText1
             })
         }
     }
