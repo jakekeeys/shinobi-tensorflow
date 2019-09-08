@@ -676,20 +676,18 @@ module.exports = function(s,config,lang){
         callback = callback || function(){}
         var directory = s.dir.streams + e.ke + '/'
         fs.mkdir(directory,function(err){
-            var makeMonitorFolder = function(){
-                directory = s.dir.streams + e.ke + '/' + e.id + '/'
-                fs.mkdir(directory,function(err){
+            directory = s.dir.streams + e.ke + '/' + e.id + '/'
+            s.handleFolderError(err)
+            fs.mkdir(directory,function(err){
+                if (err){
                     s.handleFolderError(err)
+                    s.file('deleteFolder',directory + '*',function(err){
+                        callback(err,directory)
+                    })
+                }else{
                     callback(err,directory)
-                })
-            }
-            if (err){
-                s.file('deleteFolder',directory + '*',function(err){
-                    makeMonitorFolder()
-                })
-            }else{
-                makeMonitorFolder()
-            }
+                }
+            })
         })
     }
     var createCameraFolders = function(e,callback){
@@ -1256,7 +1254,6 @@ module.exports = function(s,config,lang){
                 }
                 s.cameraSendSnapshot({mid:e.id,ke:e.ke,mon:e})
                 //check host to see if has password and user in it
-                createStreamDirectory(e)
                 clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingChecker)
                 if(s.group[e.ke].activeMonitors[e.id].isStarted === true){
                     e.errorCount = 0;
