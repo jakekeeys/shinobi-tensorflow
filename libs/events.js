@@ -237,7 +237,7 @@ module.exports = function(s,config,lang){
                 frame : s.group[d.ke].activeMonitors[d.id].lastJpegDetectorFrame
             })
         }else{
-            if(currentConfig.detector_multi_trigger === '1'){
+            if(currentConfig.det_multi_trig === '1'){
                 s.getCamerasForMultiTrigger(d.mon).forEach(function(monitor){
                     if(monitor.mid !== d.id){
                         s.triggerEvent({
