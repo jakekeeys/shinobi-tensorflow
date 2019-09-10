@@ -635,7 +635,7 @@ module.exports = function(s,config,lang){
             directory = s.checkCorrectPathEnding(e.details.dir) + e.ke + '/'
             fs.mkdir(directory,function(err){
                 s.handleFolderError(err)
-                directory = directory + e.id + ''
+                directory = directory + e.id + '/'
                 fs.mkdir(directory,function(err){
                     s.handleFolderError(err)
                     callback(err,directory)
