@@ -2,7 +2,7 @@ var fs = require('fs');
 var events = require('events');
 var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
-module.exports = function(s,config){
+module.exports = function(s,config,lang){
     s.purgeDiskForGroup = function(e){
         if(config.cron.deleteOverMax === true){
             s.group[e.ke].sizePurgeQueue.push(1)
