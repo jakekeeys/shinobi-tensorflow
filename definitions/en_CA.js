@@ -631,7 +631,7 @@ module.exports = function(s,config,lang){
              },
              "Stream": {
                 "name": lang.Stream,
-                                           
+
                 "color": "navy",
                 "id": "monSectionStream",
                 "isSection": true,
@@ -1850,7 +1850,7 @@ module.exports = function(s,config,lang){
              "Timelapse Watermark": {
                 "id": "monSectionRecordingWatermark",
                 "name": lang['Recording Watermark'],
-                                                           
+
                 "color": "red",
                 isAdvanced: true,
                 "section-class": "h_rec_ti_input h_rec_ti_1",
@@ -2969,7 +2969,7 @@ module.exports = function(s,config,lang){
                    {
                        hidden: true,
                       "name": lang['Traditional Recording'],
-                                                                   
+
                       "color": "orange",
                       id: "monSectionDetectorTraditionalRecording",
                       isSection: true,
@@ -3369,7 +3369,7 @@ module.exports = function(s,config,lang){
              "Copy Settings": {
                 id: "monSectionCopying",
                "name": lang['Copy Settings'],
-                                                    
+
                "color": "orange",
                 isSection: true,
                "info": [
@@ -3399,6 +3399,25 @@ module.exports = function(s,config,lang){
                       "example": "",
                       "fieldType": "select",
                       "attribute": `copy="field=mode"`,
+                      "form-group-class": "h_copy_settings_input h_copy_settings_1",
+                      "possible": [
+                         {
+                            "name": lang.No,
+                            "value": "0"
+                         },
+                         {
+                            "name": lang.Yes,
+                            "value": "1"
+                         }
+                      ]
+                   },
+                   {
+                      "field": lang['Copy Stream Channels'],
+                      "description": "",
+                      "default": "0",
+                      "example": "",
+                      "fieldType": "select",
+                      "attribute": `copy="field=detail=stream_channels"`,
                       "form-group-class": "h_copy_settings_input h_copy_settings_1",
                       "possible": [
                          {
