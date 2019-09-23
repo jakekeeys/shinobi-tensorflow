@@ -125,7 +125,6 @@ $.multimon.e.find('.import_config').click(function(){
                         var link = getUrlPieces(url)
                         var newMon = $.aM.generateDefaultMonitorSettings()
                         newMon.details = JSON.parse(newMon.details)
-                        newMon.details.stream_type = 'mp4'
                         newMon.mid = 'HLS' + name.toLowerCase()
                         newMon.name = name
                         newMon.port = link.port
@@ -137,9 +136,11 @@ $.multimon.e.find('.import_config').click(function(){
                         newMon.details.auto_host = url
                         newMon.details.stream_quality = '1'
                         newMon.details.stream_fps = ''
-                        newMon.details.stream_vcodec = 'copy'
+                        newMon.details.stream_vcodec = 'libx264'
                         newMon.details.stream_acodec = 'aac'
-                        newMon.type = 'hls'
+                        newMon.details.stream_type = 'hls'
+                        newMon.details.hls_time = '10'
+                        newMon.type = 'mp4'
                         newMon.details = JSON.stringify(newMon.details)
                         postMonitor(newMon)
                     })
