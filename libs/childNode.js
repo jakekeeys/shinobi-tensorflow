@@ -13,7 +13,10 @@ module.exports = function(s,config,lang,app,io){
             console.log(lang.Shinobi+' - CHILD NODE PORT : '+config.childNodes.port);
         });
         s.debugLog('childNodeWebsocket.attach(childNodeServer)')
-        childNodeWebsocket.attach(childNodeServer);
+        childNodeWebsocket.attach(childNodeServer,{
+            path:'/socket.io',
+            transports: ['websocket']
+        });
         //send data to child node function (experimental)
         s.cx = function(z,y,x){
             if(!z.mid && !z.d){
@@ -27,10 +30,12 @@ module.exports = function(s,config,lang,app,io){
         //child Node Websocket
         childNodeWebsocket.on('connection', function (cn) {
             //functions for dispersing work to child servers;
+            var ipAddress
             cn.on('c',function(d){
                 if(config.childNodes.key.indexOf(d.socketKey) > -1){
                     if(!cn.shinobi_child&&d.f=='init'){
-                        cn.ip = cn.request.connection.remoteAddress.replace('::ffff:','')+':'+d.port
+                        ipAddress = cn.request.connection.remoteAddress.replace('::ffff:','')+':'+d.port
+                        cn.ip = ipAddress
                         cn.shinobi_child = 1
                         tx = function(z){
                             cn.emit('c',z)
@@ -153,20 +158,22 @@ module.exports = function(s,config,lang,app,io){
                 }
             })
             cn.on('disconnect',function(){
-                console.log('childNodeWebsocket.disconnect')
-
-                if(s.childNodes[cn.ip]){
-                    var activeCameraKeys = Object.keys(s.childNodes[cn.ip].activeCameras)
-                    activeCameraKeys.forEach(function(key){
-                        var monitor = s.childNodes[cn.ip].activeCameras[key]
-                        s.camera('stop',s.cleanMonitorObject(monitor))
+                console.log('childNodeWebsocket.disconnect',ipAddress)
+                if(s.childNodes[ipAddress]){
+                    var activeCameras = Object.values(s.childNodes[ipAddress].activeCameras)
+                    console.log(activeCameras)
+                    activeCameras.forEach(function(monitor){
+                        var mode = monitor.mode + ''
+                        var cleanMonitor = s.cleanMonitorObject(monitor)
+                        s.camera('stop',Object.assign(cleanMonitor,{}))
                         delete(s.group[monitor.ke].activeMonitors[monitor.mid].childNode)
                         delete(s.group[monitor.ke].activeMonitors[monitor.mid].childNodeId)
                         setTimeout(function(){
-                            s.camera(monitor.mode,s.cleanMonitorObject(monitor))
-                        },1300)
+                            s.camera(mode,cleanMonitor)
+                        },5000)
                     })
-                    delete(s.childNodes[cn.ip]);
+                    s.childNodes[cn.ip].activeCameras = {}
+                    s.childNodes[cn.ip].dead = true
                 }
             })
         })
@@ -174,7 +181,9 @@ module.exports = function(s,config,lang,app,io){
     //setup Child for childNodes
     if(config.childNodes.enabled === true && config.childNodes.mode === 'child' && config.childNodes.host){
         s.connected = false;
-        childIO = require('socket.io-client')('ws://'+config.childNodes.host);
+        childIO = require('socket.io-client')('ws://'+config.childNodes.host,{
+            transports: ['websocket']
+        });
         s.cx = function(x){x.socketKey = config.childNodes.key;childIO.emit('c',x)}
         s.tx = function(x,y){s.cx({f:'s.tx',data:x,to:y})}
         s.userLog = function(x,y){s.cx({f:'s.userLog',mon:x,data:y})}

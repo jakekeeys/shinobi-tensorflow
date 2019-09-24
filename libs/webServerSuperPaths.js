@@ -634,4 +634,16 @@ module.exports = function(s,config,lang,app){
             res.end(s.prettyPrint(endData))
         },res,req)
     })
+    /**
+    * API : Superuser : Get Child Nodes
+    */
+    app.all(config.webPaths.superApiPrefix+':auth/getChildNodes', function (req,res){
+        s.superAuth(req.params,function(resp){
+            var endData = {
+                ok : true,
+                childNode: s.childNodes,
+            }
+            res.end(s.prettyPrint(endData))
+        },res,req)
+    })
 }

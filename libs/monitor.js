@@ -37,7 +37,7 @@ module.exports = function(s,config,lang){
         s.tx(Object.assign(e,{f:'monitor_status'}),'GRP_'+e.ke)
     }
     s.getMonitorCpuUsage = function(e,callback){
-        if(s.group[e.ke].activeMonitors[e.mid].spawn){
+        if(s.group[e.ke].activeMonitors[e.mid] && s.group[e.ke].activeMonitors[e.mid].spawn){
             var getUsage = function(callback2){
                 s.readFile("/proc/" + s.group[e.ke].activeMonitors[e.mid].spawn.pid + "/stat", function(err, data){
                     if(!err){
@@ -1364,7 +1364,7 @@ module.exports = function(s,config,lang){
                     var nodeWithLowestActiveCamerasCount = 65535
                     var nodeWithLowestActiveCameras = null
                     childNodeList.forEach(function(ip){
-                        if(Object.keys(s.childNodes[ip].activeCameras).length < nodeWithLowestActiveCamerasCount){
+                        if(Object.keys(s.childNodes[ip].activeCameras).length < nodeWithLowestActiveCamerasCount && s.childNodes[ip].cpu < 75){
                             nodeWithLowestActiveCameras = ip
                         }
                     })
