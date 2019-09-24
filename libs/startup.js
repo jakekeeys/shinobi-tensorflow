@@ -47,19 +47,21 @@ module.exports = function(s,config,lang,io){
                 var loadCompleted = 0
                 var orphanedVideosForMonitors = {}
                 var loadMonitor = function(monitor){
-                    if(!orphanedVideosForMonitors[monitor.ke])orphanedVideosForMonitors[monitor.ke] = {}
-                    if(!orphanedVideosForMonitors[monitor.ke][monitor.mid])orphanedVideosForMonitors[monitor.ke][monitor.mid] = 0
-                    s.initiateMonitorObject(monitor)
-                    s.group[monitor.ke].rawMonitorConfigurations[monitor.mid] = monitor
-                    s.sendMonitorStatus({id:monitor.mid,ke:monitor.ke,status:'Stopped'});
-                    var monObj = Object.assign(monitor,{id : monitor.mid})
-                    s.camera(monitor.mode,monObj)
-                    ++loadCompleted
-                    if(monitors[loadCompleted]){
-                        loadMonitor(monitors[loadCompleted])
-                    }else{
-                        callback()
-                    }
+                    setTimeout(function(){
+                        if(!orphanedVideosForMonitors[monitor.ke])orphanedVideosForMonitors[monitor.ke] = {}
+                        if(!orphanedVideosForMonitors[monitor.ke][monitor.mid])orphanedVideosForMonitors[monitor.ke][monitor.mid] = 0
+                        s.initiateMonitorObject(monitor)
+                        s.group[monitor.ke].rawMonitorConfigurations[monitor.mid] = monitor
+                        s.sendMonitorStatus({id:monitor.mid,ke:monitor.ke,status:'Stopped'});
+                        var monObj = Object.assign(monitor,{id : monitor.mid})
+                        s.camera(monitor.mode,monObj)
+                        ++loadCompleted
+                        if(monitors[loadCompleted]){
+                            loadMonitor(monitors[loadCompleted])
+                        }else{
+                            callback()
+                        }
+                    },2000)
                 }
                 loadMonitor(monitors[loadCompleted])
             }else{
