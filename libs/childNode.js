@@ -254,6 +254,14 @@ module.exports = function(s,config,lang,app,io){
             }
         })
         childIO.on('disconnect',function(d){
+            var groupKeys = Object.keys(s.group)
+            groupKeys.forEach(function(groupKey){
+                var activeMonitorKeys = Object.keys(s.group[groupKey].activeMonitors)
+                activeMonitorKeys.forEach(function(monitorKey){
+                    var activeMonitor = s.group[groupKey].activeMonitors[monitorKey]
+                    s.camera('stop',activeMonitor)
+                })
+            })
             s.connected = false;
         })
     }
