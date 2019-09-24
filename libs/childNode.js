@@ -43,6 +43,7 @@ module.exports = function(s,config,lang,app,io){
                         if(!s.childNodes[cn.ip]){
                             s.childNodes[cn.ip] = {}
                         };
+                        s.childNodes[cn.ip].dead = false
                         s.childNodes[cn.ip].cnid = cn.id
                         s.childNodes[cn.ip].cpu = 0
                         s.childNodes[cn.ip].activeCameras = {}
@@ -57,7 +58,7 @@ module.exports = function(s,config,lang,app,io){
                     }else{
                         switch(d.f){
                             case'cpu':
-                                s.childNodes[cn.ip].cpu = d.cpu;
+                                s.childNodes[ipAddress].cpu = d.cpu;
                             break;
                             case'sql':
                                 s.sqlQuery(d.query,d.values,function(err,rows){
@@ -161,7 +162,6 @@ module.exports = function(s,config,lang,app,io){
                 console.log('childNodeWebsocket.disconnect',ipAddress)
                 if(s.childNodes[ipAddress]){
                     var activeCameras = Object.values(s.childNodes[ipAddress].activeCameras)
-                    console.log(activeCameras)
                     activeCameras.forEach(function(monitor){
                         var mode = monitor.mode + ''
                         var cleanMonitor = s.cleanMonitorObject(monitor)
@@ -172,8 +172,8 @@ module.exports = function(s,config,lang,app,io){
                             s.camera(mode,cleanMonitor)
                         },5000)
                     })
-                    s.childNodes[cn.ip].activeCameras = {}
-                    s.childNodes[cn.ip].dead = true
+                    s.childNodes[ipAddress].activeCameras = {}
+                    s.childNodes[ipAddress].dead = true
                 }
             })
         })
@@ -201,9 +201,9 @@ module.exports = function(s,config,lang,app,io){
         }
         setInterval(function(){
             s.cpuUsage(function(cpu){
-                io.emit('c',{f:'cpu',cpu:parseFloat(cpu)});
+                s.cx({f:'cpu',cpu:parseFloat(cpu)})
             })
-        },2000);
+        },2000)
         childIO.on('connect', function(d){
             console.log('CHILD CONNECTION SUCCESS')
             s.cx({
@@ -254,15 +254,16 @@ module.exports = function(s,config,lang,app,io){
             }
         })
         childIO.on('disconnect',function(d){
+            s.connected = false;
             var groupKeys = Object.keys(s.group)
             groupKeys.forEach(function(groupKey){
                 var activeMonitorKeys = Object.keys(s.group[groupKey].activeMonitors)
                 activeMonitorKeys.forEach(function(monitorKey){
                     var activeMonitor = s.group[groupKey].activeMonitors[monitorKey]
-                    s.camera('stop',activeMonitor)
+                    if(activeMonitor && activeMonitor.spawn && activeMonitor.spawn.close)activeMonitor.spawn.close()
+                    if(activeMonitor && activeMonitor.spawn && activeMonitor.spawn.kill)activeMonitor.spawn.kill()
                 })
             })
-            s.connected = false;
         })
     }
 }
