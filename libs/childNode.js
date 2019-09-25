@@ -66,6 +66,9 @@ module.exports = function(s,config,lang,app,io){
                                     cn.emit('c',{f:'sqlCallback',rows:rows,err:err,callbackId:d.callbackId});
                                 });
                             break;
+                            case'clearCameraFromActiveList':
+                                if(s.childNodes[ipAddress])delete(s.childNodes[ipAddress].activeCameras[d.ke + d.id])
+                            break;
                             case'camera':
                                 s.camera(d.mode,d.data)
                             break;
@@ -239,6 +242,7 @@ module.exports = function(s,config,lang,app,io){
                 case'kill':
                     s.initiateMonitorObject(d.d);
                     s.cameraDestroy(s.group[d.d.ke].activeMonitors[d.d.id].spawn,d.d)
+                    var childNodeIp = s.group[d.d.ke].activeMonitors[d.d.id]
                 break;
                 case'sync':
                     s.initiateMonitorObject(d.sync);

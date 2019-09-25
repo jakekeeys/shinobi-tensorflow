@@ -7,8 +7,14 @@ var onvif = require('node-onvif');
 var request = require('request');
 var connectionTester = require('connection-tester')
 var SoundDetection = require('shinobi-sound-detection')
+var async = require("async");
 var URL = require('url')
 module.exports = function(s,config,lang){
+    const startMonitorInQueue = async.queue(function(action, callback) {
+        setTimeout(function(){
+            action(callback)
+        },2000)
+    }, 1)
     s.initiateMonitorObject = function(e){
         if(!s.group[e.ke]){s.group[e.ke]={}};
         if(!s.group[e.ke].activeMonitors){s.group[e.ke].activeMonitors={}}
@@ -339,6 +345,9 @@ module.exports = function(s,config,lang){
                     s.group[e.ke].activeMonitors[e.id].mp4frag[channel].removeAllListeners()
                     delete(s.group[e.ke].activeMonitors[e.id].mp4frag[channel])
                 })
+            }
+            if(config.childNodes.enabled === true && config.childNodes.mode === 'child' && config.childNodes.host){
+                s.cx({f:'clearCameraFromActiveList',ke:e.ke,id:e.id})
             }
             if(s.group[e.ke].activeMonitors[e.id].childNode){
                 s.cx({f:'kill',d:s.cleanMonitorObject(e)},s.group[e.ke].activeMonitors[e.id].childNodeId)
@@ -1166,7 +1175,7 @@ module.exports = function(s,config,lang){
         // e = monitor object
         //create host string without username and password
         var strippedHost = s.stripAuthFromHost(e)
-        var doOnThisMachine = function(){
+        var doOnThisMachine = function(callback){
             createCameraFolders(e,function(){
                 s.group[e.ke].activeMonitors[e.id].allowStdinWrite = false
                 s.txToDashcamUsers({
@@ -1312,6 +1321,7 @@ module.exports = function(s,config,lang){
                 }else{
                     s.cameraDestroy(s.group[e.ke].activeMonitors[e.id].spawn,e)
                 }
+                if(callback)callback()
             })
         }
         var doOnChildMachine = function(){
@@ -1356,10 +1366,6 @@ module.exports = function(s,config,lang){
                     var selectNode = function(ip){
                         e.childNodeFound = true
                         e.childNodeSelected = ip
-                        // s.childNodes[ip].coreCount
-                        s.group[e.ke].activeMonitors[e.id].onChildNodeExit = function(){
-                            if(s.childNodes[ip])delete(s.childNodes[ip].activeCameras[e.ke+e.id])
-                        }
                     }
                     var nodeWithLowestActiveCamerasCount = 65535
                     var nodeWithLowestActiveCameras = null
@@ -1378,16 +1384,16 @@ module.exports = function(s,config,lang){
                         s.cx({f:'sync',sync:s.group[e.ke].rawMonitorConfigurations[e.id],ke:e.ke,mid:e.id},s.group[e.ke].activeMonitors[e.id].childNodeId);
                         doOnChildMachine()
                     }else{
-                        doOnThisMachine()
+                        startMonitorInQueue.push(doOnThisMachine,function(){})
                     }
                 }else{
-                    doOnThisMachine()
+                    startMonitorInQueue.push(doOnThisMachine,function(){})
                 }
             }else{
-                doOnThisMachine()
+                startMonitorInQueue.push(doOnThisMachine,function(){})
             }
         }catch(err){
-            doOnThisMachine()
+            startMonitorInQueue.push(doOnThisMachine,function(){})
             console.log(err)
         }
     }
