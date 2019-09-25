@@ -1365,7 +1365,7 @@ module.exports = function(s,config,lang){
                     var nodeWithLowestActiveCameras = null
                     childNodeList.forEach(function(ip){
                         var nodeCameraCount = Object.keys(s.childNodes[ip].activeCameras).length
-                        if(nodeCameraCount < nodeWithLowestActiveCamerasCount && s.childNodes[ip].cpu < 75){
+                        if(!s.childNodes[ip].dead && nodeCameraCount < nodeWithLowestActiveCamerasCount && s.childNodes[ip].cpu < 75){
                             nodeWithLowestActiveCamerasCount = nodeCameraCount
                             nodeWithLowestActiveCameras = ip
                         }

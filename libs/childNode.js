@@ -46,6 +46,7 @@ module.exports = function(s,config,lang,app,io){
                         s.childNodes[cn.ip].dead = false
                         s.childNodes[cn.ip].cnid = cn.id
                         s.childNodes[cn.ip].cpu = 0
+                        s.childNodes[cn.ip].ip = ipAddress
                         s.childNodes[cn.ip].activeCameras = {}
                         d.availableHWAccels.forEach(function(accel){
                             if(config.availableHWAccels.indexOf(accel) === -1)config.availableHWAccels.push(accel)
