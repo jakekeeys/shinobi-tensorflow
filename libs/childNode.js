@@ -161,17 +161,27 @@ module.exports = function(s,config,lang,app,io){
             cn.on('disconnect',function(){
                 console.log('childNodeWebsocket.disconnect',ipAddress)
                 if(s.childNodes[ipAddress]){
-                    var activeCameras = Object.values(s.childNodes[ipAddress].activeCameras)
-                    activeCameras.forEach(function(monitor){
-                        var mode = monitor.mode + ''
-                        var cleanMonitor = s.cleanMonitorObject(monitor)
-                        s.camera('stop',Object.assign(cleanMonitor,{}))
-                        delete(s.group[monitor.ke].activeMonitors[monitor.mid].childNode)
-                        delete(s.group[monitor.ke].activeMonitors[monitor.mid].childNodeId)
-                        setTimeout(function(){
-                            s.camera(mode,cleanMonitor)
-                        },5000)
-                    })
+                    var monitors = Object.values(s.childNodes[ipAddress].activeCameras)
+                    if(monitors && monitors[0]){
+                        var loadCompleted = 0
+                        var loadMonitor = function(monitor){
+                            setTimeout(function(){
+                                var mode = monitor.mode + ''
+                                var cleanMonitor = s.cleanMonitorObject(monitor)
+                                s.camera('stop',Object.assign(cleanMonitor,{}))
+                                delete(s.group[monitor.ke].activeMonitors[monitor.mid].childNode)
+                                delete(s.group[monitor.ke].activeMonitors[monitor.mid].childNodeId)
+                                setTimeout(function(){
+                                    s.camera(mode,cleanMonitor)
+                                    ++loadCompleted
+                                    if(monitors[loadCompleted]){
+                                        loadMonitor(monitors[loadCompleted])
+                                    }
+                                },1000)
+                            },2000)
+                        }
+                        loadMonitor(monitors[loadCompleted])
+                    }
                     s.childNodes[ipAddress].activeCameras = {}
                     s.childNodes[ipAddress].dead = true
                 }
