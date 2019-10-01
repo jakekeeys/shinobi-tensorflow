@@ -110,6 +110,21 @@ module.exports = function(s,config,lang){
         var inputOptions = []
         var streamDir = s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
         var url = options.url
+        switch(monitor.type){
+            case'h264':
+                switch(monitor.protocol){
+                    case'rtsp':
+                        if(
+                            monitor.details.rtsp_transport
+                            && monitor.details.rtsp_transport !== ''
+                            && monitor.details.rtsp_transport !== 'no'
+                        ){
+                            inputOptions.push('-rtsp_transport ' + monitor.details.rtsp_transport)
+                        }
+                    break;
+                }
+            break;
+        }
         var runExtraction = function(){
             try{
                 var snapBuffer = []
