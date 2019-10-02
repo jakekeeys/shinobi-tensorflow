@@ -78,7 +78,7 @@
                                     <a class="nav-link" data-toggle="tab" href="#config" role="tab"><%-lang['Configuration']%></a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" data-toggle="tab" href="#system" role="tab">Controls and Logs</a>
+                                    <a class="nav-link" data-toggle="tab" href="#system" role="tab"><%-lang['Controls and Logs']%></a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" data-toggle="tab" href="#changeSuperPreferences" role="tab"><%-lang['Preferences']%></a>
@@ -401,7 +401,7 @@ $.conf.f.submit(function(e){
         e.html='<p>This is a change being applied to the configuration file (conf.json). Are you sure you want to do this? You must restart Shinobi for these changes to take effect. <b>The JSON below is what you are about to save.</b></p>'
         e.html+='<pre>'+JSON.stringify($.parseJSON($.conf.draw.val()),null,3)+'</pre>'
         $.confirm.body.html(e.html)
-        $.confirm.click({title:'Save',class:'btn-success'},function(){
+        $.confirm.click({title:lang.Save,class:'btn-success'},function(){
             $.post('<%=originalURL%><%=config.webPaths.superApiPrefix%>'+$user.sessionKey+'/system/configure',{
                 data: $.conf.draw.val()
             },function(data){
@@ -467,10 +467,10 @@ $.system.e.find('[system]').click(function(e){
     switch($(this).attr('system')){
         case'deleteLogs':
             $.confirm.e.modal('show');
-            $.confirm.title.html('Delete Logs <small>'+e.u+'</small>')
+            $.confirm.title.html('<%=lang['Delete Logs']%> <small>'+e.u+'</small>')
             e.html='Do you want to delete these logs? User logs will <b>not</b> be deleted.'
             $.confirm.body.html(e.html)
-            $.confirm.click({title:'Delete',class:'btn-danger'},function(){
+            $.confirm.click({title:lang.Delete,class:'btn-danger'},function(){
                 // $.ccio.cx({f:'logs',ff:'delete',ke:'$'})
                 $.get('<%=originalURL%><%=config.webPaths.superApiPrefix%>'+$user.sessionKey+'/logs/delete',function(data){
                     console.log(data)
@@ -480,9 +480,9 @@ $.system.e.find('[system]').click(function(e){
         break;
         case'update':
             $.confirm.e.modal('show')
-            $.confirm.title.html('Update Shinobi?')
+            $.confirm.title.html('<%=lang.Update%> Shinobi?')
             $.confirm.body.html('Updating Shinobi means overwriting files. If you have modified any files yourself you should update Shinobi manually.')
-            $.confirm.click({title:'Update',class:'btn-danger'},function(){
+            $.confirm.click({title:lang.Update,class:'btn-danger'},function(){
                 // $.ccio.cx({f:'system',ff:'update'})
                 $.get('<%=originalURL%><%=config.webPaths.superApiPrefix%>'+$user.sessionKey+'/system/update',function(data){
                     console.log(data)
@@ -509,9 +509,9 @@ $.system.e.find('[restart]').click(function(e){
             break;
         }
     })
-    $.confirm.title.html('Restart?')
+    $.confirm.title.html('<%=lang.Restart%>?')
     $.confirm.body.html(e.html)
-    $.confirm.click({title:'Restart',class:'btn-danger'},function(){
+    $.confirm.click({title:lang.Restart,class:'btn-danger'},function(){
         // $.ccio.cx({f:'system',ff:'restart',target:e.target})
         $.get('<%=originalURL%><%=config.webPaths.superApiPrefix%>'+$user.sessionKey+'/system/restart/'+encodeURIComponent(e.target),function(data){
             console.log(data)

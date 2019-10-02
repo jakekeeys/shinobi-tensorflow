@@ -37,7 +37,7 @@ $(document).ready(function(e){
     })
     $.timelapseJpeg.getLiveStream = function(){
         var selectedMonitor = $.timelapseJpeg.monitors.val()
-        $.timelapseJpeg.liveStreamView.html(`<iframe src="${data.url+'/'+$user.auth_token+'/embed/'+$user.ke+'/'+selectedMonitor+'/jquery|fullscreen'}"></iframe>`)
+        $.timelapseJpeg.liveStreamView.html(`<iframe src="${$.timelapseJpeg.pointer+$user.auth_token+'/embed/'+$user.ke+'/'+selectedMonitor+'/jquery|fullscreen'}"></iframe>`)
         $.timelapseJpeg.liveStreamView.find('iframe').width($.timelapseJpeg.playBackViewImg.width())
 
     }
@@ -135,7 +135,7 @@ $(document).ready(function(e){
             var queryString = ['fps=' + $.timelapseJpeg.timelapseJpegFps.val(),'start=' + startDate,'end=' + endDate,'mp4=1']
             var timerId = queryString.join('&')
             var selectedMonitor = $.timelapseJpeg.monitors.val()
-            var generatorUrl = data.url + '/' + $user.auth_token + '/timelapse/' + $user.ke + '/' + selectedMonitor
+            var generatorUrl = $.timelapseJpeg.pointer + $user.auth_token + '/timelapse/' + $user.ke + '/' + selectedMonitor
             $.getJSON(generatorUrl + '?' + queryString.join('&'),function(response){
                 if(response.fileExists){
                     _this.text(lang['Download'])

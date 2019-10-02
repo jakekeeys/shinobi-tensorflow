@@ -1,4 +1,17 @@
 $(document).ready(function(e){
+    var getUrlPieces = function(url){
+        var el = document.createElement('a');
+        el.href = url
+        return el
+        // el.host        // www.somedomain.com (includes port if there is one[1])
+        // el.hostname    // www.somedomain.com
+        // el.hash        // #top
+        // el.href        // http://www.somedomain.com/account/search?filter=a#top
+        // el.pathname    // /account/search
+        // el.port        // (port if there is one[1])
+        // el.protocol    // http:
+        // el.search      // ?filter=a
+    }
 //multi monitor manager
 $.multimon={e:$('#multi_mon')};
 $.multimon.table=$.multimon.e.find('.tableData tbody');
@@ -17,7 +30,7 @@ $.multimon.e.find('.import_config').click(function(){
   var e={};e.e=$(this);e.mid=e.e.parents('[mid]').attr('mid');
     $.confirm.e.modal('show');
     $.confirm.title.text(lang['Import Monitor Configuration'])
-    e.html=lang.ImportMultiMonitorConfigurationText+'<div style="margin-top:15px"><div class="form-group"><textarea placeholder="'+lang['Paste JSON here.']+'" class="form-control"></textarea></div><label class="upload_file btn btn-primary btn-block"> Upload File <input class="upload" type=file name="files[]"></label></div>';
+    e.html=lang.ImportMultiMonitorConfigurationText+'<div style="margin-top:15px"><div class="form-group"><textarea placeholder="'+lang['Paste JSON here.']+'" class="form-control"></textarea></div><label class="upload_file btn btn-primary btn-block">'+lang['Upload File']+'<input class="upload" type=file name="files[]"></label></div>';
     $.confirm.body.html(e.html)
     $.confirm.e.find('.upload').change(function(e){
         var files = e.target.files; // FileList object
@@ -28,7 +41,7 @@ $.multimon.e.find('.import_config').click(function(){
         }
         reader.readAsText(f);
     });
-    $.confirm.click({title:'Import',class:'btn-primary'},function(){
+    $.confirm.click({title:lang['Import'],class:'btn-primary'},function(){
 //        setTimeout(function(){
 //            $.confirm.e.modal('show');
 //        },1000)
@@ -67,7 +80,8 @@ $.multimon.e.find('.import_config').click(function(){
                     console.log(newMon)
                     return newMon
                 }
-                parsedData=JSON.parse($.confirm.e.find('textarea').val());
+                var textFieldData = $.confirm.e.find('textarea').val()
+                var parsedData = JSON.parse()
                 //zoneminder one monitor
                 if(parsedData.monitor){
                     $.aM.import({
@@ -95,8 +109,45 @@ $.multimon.e.find('.import_config').click(function(){
                     })
                 }
             }catch(err){
-                $.ccio.log(err)
-                $.ccio.init('note',{title:lang['Invalid JSON'],text:lang.InvalidJSONText,type:'error'})
+                //#EXTM3U
+                if(textFieldData.indexOf('#EXTM3U') > -1 && textFieldData.indexOf('{"') === -1){
+                    var m3u8List = textFieldData.replace('#EXTM3U','').trim().split('\n')
+                    var parsedList = {}
+                    var currentName
+                    m3u8List.forEach(function(line){
+                        if(line.indexOf('#EXTINF:-1,') > -1){
+                            currentName = line.replace('#EXTINF:-1,','').trim()
+                        }else{
+                            parsedList[currentName] = line.trim()
+                        }
+                    })
+                    $.each(parsedList,function(name,url){
+                        var link = getUrlPieces(url)
+                        var newMon = $.aM.generateDefaultMonitorSettings()
+                        newMon.details = JSON.parse(newMon.details)
+                        newMon.mid = 'HLS' + name.toLowerCase()
+                        newMon.name = name
+                        newMon.port = link.port
+                        newMon.host = link.hostname
+                        newMon.path = link.pathname
+                        newMon.details.tv_channel = '1'
+                        newMon.details.tv_channel_id = name
+                        newMon.details.auto_host_enable = '1'
+                        newMon.details.auto_host = url
+                        newMon.details.stream_quality = '1'
+                        newMon.details.stream_fps = ''
+                        newMon.details.stream_vcodec = 'libx264'
+                        newMon.details.stream_acodec = 'aac'
+                        newMon.details.stream_type = 'hls'
+                        newMon.details.hls_time = '10'
+                        newMon.type = 'mp4'
+                        newMon.details = JSON.stringify(newMon.details)
+                        postMonitor(newMon)
+                    })
+                }else{
+                    $.ccio.log(err)
+                    $.ccio.init('note',{title:lang['Invalid JSON'],text:lang.InvalidJSONText,type:'error'})
+                }
             }
 //        });
     });
@@ -116,7 +167,7 @@ $.multimon.getSelectedMonitors = function(unclean){
 $.multimon.e.find('.delete').click(function(){
     var arr=$.multimon.getSelectedMonitors(true);
     if(arr.length===0){
-        $.ccio.init('note',{title:'No Monitors Selected',text:'Select atleast one monitor to delete.',type:'error'});
+        $.ccio.init('note',{title:lang['No Monitors Selected'],text:lang['Select atleast one monitor to delete'],type:'error'});
         return
     }
     $.confirm.e.modal('show');
@@ -125,7 +176,7 @@ $.multimon.e.find('.delete').click(function(){
     $.confirm.body.html(e.html)
     $.confirm.click([
         {
-            title:'Delete Monitors',
+            title:lang['Delete']+' '+lang['Monitors'],
             class:'btn-danger',
             callback:function(){
                 $.each(arr,function(n,v){
@@ -136,7 +187,7 @@ $.multimon.e.find('.delete').click(function(){
             }
         },
         {
-            title:'Delete Monitors and Files',
+            title:lang['Delete Monitors and Files'],
             class:'btn-danger',
             callback:function(){
                 $.each(arr,function(n,v){
@@ -152,7 +203,7 @@ $.multimon.e.find('.delete').click(function(){
 //    var arr=$.multimon.getSelectedMonitors();
 //    var arrObject={}
 //    if(arr.length===0){
-//        $.ccio.init('note',{title:'No Monitors Selected',text:'Select atleast one monitor to delete.',type:'error'});
+//        $.ccio.init('note',{title:lang['No Monitors Selected'],text:lang['Select atleast one monitor to delete'],type:'error'});
 //        return
 //    }
 //    $.multimonedit.selectedList = arr;
@@ -162,7 +213,7 @@ $.multimon.e.find('.save_config').click(function(){
     var e={};e.e=$(this);
     var arr=$.multimon.getSelectedMonitors();
     if(arr.length===0){
-        $.ccio.init('note',{title:'No Monitors Selected',text:'Select atleast one monitor to delete.',type:'error'});
+        $.ccio.init('note',{title:lang['No Monitors Selected'],text:lang['Select atleast one monitor to delete'],type:'error'});
         return
     }
     e.dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(arr));

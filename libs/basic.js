@@ -213,7 +213,7 @@ module.exports = function(s,config){
         }
         return url
     }
-    s.file=function(x,e){
+    s.file = function(x,e,callback){
         if(!e){e={}};
         switch(x){
             case'size':
@@ -221,19 +221,25 @@ module.exports = function(s,config){
             break;
             case'delete':
                 if(!e){return false;}
-                return exec('rm -f '+e,{detached: true});
+                return exec('rm -f '+e,{detached: true},function(err){
+                    if(callback)callback(err)
+                })
             break;
             case'deleteFolder':
                 if(!e){return false;}
-                return exec('rm -rf '+e,{detached: true});
+                exec('rm -rf '+e,{detached: true},function(err){
+                    if(callback)callback(err)
+                })
             break;
             case'deleteFiles':
                 if(!e.age_type){e.age_type='min'};if(!e.age){e.age='1'};
-                exec('find '+e.path+' -type f -c'+e.age_type+' +'+e.age+' -exec rm -f {} +',{detached: true});
+                exec('find '+e.path+' -type f -c'+e.age_type+' +'+e.age+' -exec rm -f {} +',{detached: true},function(err){
+                    if(callback)callback(err)
+                })
             break;
         }
     }
-    s.createTimeout = function(timeoutVar,timeoutLength,defaultLength,multiplier,callback){
+    s.createTimeout = function(timeoutVar,parentVar,timeoutLength,defaultLength,multiplier,callback){
         var theTimeout
         if(!multiplier)multiplier = 1000 * 60
         if(!timeoutLength || timeoutLength === ''){
@@ -241,13 +247,24 @@ module.exports = function(s,config){
         }else{
             theTimeout = parseFloat(timeoutLength) * multiplier
         }
-        clearTimeout(timeoutVar)
-        timeoutVar = setTimeout(function(){
-            clearTimeout(timeoutVar)
-            delete(timeoutVar)
+        clearTimeout(parentVar[timeoutVar])
+        parentVar[timeoutVar] = setTimeout(function(){
+            clearTimeout(parentVar[timeoutVar])
+            delete(parentVar[timeoutVar])
             if(callback)callback()
         },theTimeout)
-        return timeoutVar
+        return parentVar[timeoutVar]
+    }
+    s.handleFolderError = function(err){
+        if(err){
+            switch(err.code){
+                case'EEXIST':
+                break;
+                default:
+                    console.log(err)
+                break;
+            }
+        }
     }
     s.isCorrectFilenameSyntax = function(string){
         return RegExp('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]').test(string)

@@ -35,6 +35,7 @@
    "Input Settings": "Input Settings",
    "Connection": "Connection",
    "Video Set": "Video Set",
+   "notEnoughFramesText1": "Not Enough Frames for compilation.",
    "Allow API Trigger": "Allow API Trigger",
    "When Detector is Off": "When Detector is Off",
    "When Detector is On": "When Detector is On",
@@ -663,6 +664,8 @@
    "Restart Core": "Restart Core",
    "Restart CRON": "Restart CRON",
    "Flush PM2 Logs": "Flush PM2 Logs",
+   "Controls and Logs": "Controls and Logs",
+   "Delete Logs": "Delete Logs",
    "Filter ID": "Filter ID",
    "Webdav Error": "Webdav Error",
    "WebdavErrorTextTryCreatingDir": "Cannot save. Trying to create directory.",
@@ -937,6 +940,7 @@
    "Show Regions of Interest":"Show Regions of Interest",
    "Confidence of Detection":"Confidence of Detection",
    "Edit Selected":"Edit Selected",
+   "Copy Stream Channels":"Copy Stream Channels",
    "Copy Settings":"Copy Settings",
    "Copy to Settings":"Copy to Settings",
    "Copy Mode":"Copy Mode",
@@ -957,5 +961,7 @@
    "Alert Sound Delay":"Alert Sound Delay",
    "powerVideoEventLimit":"You have set a high event limit. Are you sure you want to make this request?",
    "There are no monitors that you can view with this account.":"There are no monitors that you can view with this account.",
+   "Delete Monitors and Files": "Delete Monitors and Files",
+   "Select atleast one monitor to delete": "Select atleast one monitor to delete.",
    "Use Built-In":"Use Built-In"
 }

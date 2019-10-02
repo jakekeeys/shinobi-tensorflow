@@ -634,4 +634,42 @@ module.exports = function(s,config,lang,app){
             res.end(s.prettyPrint(endData))
         },res,req)
     })
+    /**
+    * API : Superuser : Get Child Nodes
+    */
+    app.all(config.webPaths.superApiPrefix+':auth/getChildNodes', function (req,res){
+        s.superAuth(req.params,function(resp){
+            var childNodesJson = {}
+            Object.values(s.childNodes).forEach(function(activeNode){
+                var activeCamerasCount = 0
+                var activeCameras = {}
+                Object.values(activeNode.activeCameras).forEach(function(monitor){
+                    ++activeCamerasCount
+                    if(!activeCameras[monitor.ke])activeCameras[monitor.ke] = {}
+                    activeCameras[monitor.ke][monitor.mid] = {
+                        name: monitor.name,
+                        mid: monitor.mid,
+                        ke: monitor.ke,
+                        details: {
+                            accelerator: monitor.details.accelerator,
+                            auto_host: monitor.details.auto_host,
+                        }
+                    }
+                })
+                childNodesJson[activeNode.ip] = {
+                    ip: activeNode.ip,
+                    cpu: activeNode.cpu,
+                    dead: activeNode.dead,
+                    countCount: activeNode.countCount,
+                    activeMonitorsCount: activeCamerasCount,
+                    activeMonitors: activeCameras,
+                }
+            })
+            var endData = {
+                ok : true,
+                childNodes: childNodesJson,
+            }
+            res.end(s.prettyPrint(endData))
+        },res,req)
+    })
 }

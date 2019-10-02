@@ -287,21 +287,25 @@ module.exports = function(s,config,lang){
                     }
                     if(d.mon.details.detector_mail_send_video === '1'){
                         s.mergeDetectorBufferChunks(d,function(mergedFilepath,filename){
-                            s.nodemailer.sendMail({
-                                from: config.mail.from,
-                                to: r.mail,
-                                subject: filename,
-                                html: '',
-                                attachments: [
-                                    {
-                                        filename: filename,
-                                        content: fs.readFileSync(mergedFilepath)
-                                    }
-                                ]
-                            }, (error, info) => {
-                                if (error) {
-                                    s.systemLog(lang.MailError,error)
-                                    return false;
+                            fs.readFile(mergedFilepath,function(err,buffer){
+                                if(buffer){
+                                    s.nodemailer.sendMail({
+                                        from: config.mail.from,
+                                        to: r.mail,
+                                        subject: filename,
+                                        html: '',
+                                        attachments: [
+                                            {
+                                                filename: filename,
+                                                content: buffer
+                                            }
+                                        ]
+                                    }, (error, info) => {
+                                        if (error) {
+                                            s.systemLog(lang.MailError,error)
+                                            return false;
+                                        }
+                                    })
                                 }
                             })
                         })

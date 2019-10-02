@@ -1,5 +1,4 @@
 var fs = require('fs')
-var execSync = require('child_process').execSync
 module.exports = function(s,config,lang,app,io){
     if(config.dropInEventServer === true){
         if(config.dropInEventForceSaveEvent === undefined)config.dropInEventForceSaveEvent = true
@@ -27,111 +26,128 @@ module.exports = function(s,config,lang,app,io){
             if(s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventWatcher){
                 s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventWatcher.close()
                 delete(s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventWatcher)
+                var monitorEventDropDir = getDropInEventDir(monitorConfig)
+                s.file('deleteFolder',monitorEventDropDir + '*')
             }
-            var monitorEventDropDir = getDropInEventDir(monitorConfig)
-            if(fs.existsSync(monitorEventDropDir))execSync('rm -rf ' + monitorEventDropDir)
         }
-        var onMonitorInit = function(monitorConfig){
-            onMonitorStop(monitorConfig)
-            var ke = monitorConfig.ke
-            var mid = monitorConfig.mid
-            var monitorEventDropDir = getDropInEventDir(monitorConfig)
-            var groupEventDropDir = s.dir.dropInEvents + ke
-            if(!fs.existsSync(groupEventDropDir)){
-                fs.mkdirSync(groupEventDropDir)
-            }
-            var monitorEventDropDir = groupEventDropDir + '/' + mid + '/'
-            if(!fs.existsSync(monitorEventDropDir)){
-                fs.mkdirSync(monitorEventDropDir)
-            }
-            var fileQueue = {}
-            s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventFileQueue = fileQueue
-            var search = function(searchIn,searchFor){
-                return searchIn.indexOf(searchFor) > -1
-            }
-            var processFile = function(filename){
-                var filePath = monitorEventDropDir + filename
-                if(search(filename,'.jpg') || search(filename,'.jpeg')){
-                    var snapPath = s.dir.streams + ke + '/' + mid + '/s.jpg'
-                    fs.unlink(snapPath,function(err){
-                        fs.createReadStream(filePath).pipe(fs.createWriteStream(snapPath))
-                        s.triggerEvent({
-                            id: mid,
-                            ke: ke,
-                            details: {
-                                confidence: 100,
-                                name: filename,
-                                plug: "dropInEvent",
-                                reason: "ftpServer"
-                            },
-                        },config.dropInEventForceSaveEvent)
-                    })
-                }else{
-                    var reason = "ftpServer"
-                    if(search(filename,'.mp4')){
-                        fs.stat(filePath,function(err,stats){
-                            var startTime = stats.ctime
-                            var endTime = stats.mtime
-                            var shinobiFilename = s.formattedTime(startTime) + '.mp4'
-                            var recordingPath = s.getVideoDirectory(monitorConfig) + shinobiFilename
-                            var writeStream = fs.createWriteStream(recordingPath)
-                            fs.createReadStream(filePath).pipe(writeStream)
-                            writeStream.on('finish', () => {
-                                s.insertCompletedVideo(s.group[monitorConfig.ke].rawMonitorConfigurations[monitorConfig.mid],{
-                                    file : shinobiFilename
-                                },function(){
-                                })
-                            })
-                        })
-                    }
-                    if(search(filename,'.txt')){
-                        reason = fs.readFileSync(filePath,{encoding: 'utf-8'}).split('\n')[0] || filename
-                    }
-                    s.triggerEvent({
-                        id: mid,
-                        ke: ke,
-                        details: {
-                            confidence: 100,
-                            name: filename,
-                            plug: "dropInEvent",
-                            reason: reason
-                        }
-                    },config.dropInEventForceSaveEvent)
-                }
-                if(config.dropInEventDeleteFileAfterTrigger){
-                    setTimeout(function(){
-                        fs.unlink(filePath,function(err){
-
-                        })
-                    },1000 * 60 * 5)
-                }
-            }
-            var eventTrigger = function(eventType,filename,stats){
-                if(stats.isDirectory()){
-                    fs.readdir(monitorEventDropDir + filename,function(err,files){
-                        if(files){
-                            files.forEach(function(filename){
-                                processFile(filename)
-                            })
-                        }else if(err){
-                            console.log(err)
-                        }
-                    })
-                }else{
-                    processFile(filename)
-                }
-            }
-            var directoryWatch = fs.watch(monitorEventDropDir,function(eventType,filename){
-                fs.stat(monitorEventDropDir + filename,function(err,stats){
-                    if(!err){
-                        clearTimeout(fileQueue[filename])
-                        fileQueue[filename] = setTimeout(function(){
-                            eventTrigger(eventType,filename,stats)
-                        },1750)
-                    }
+        var createDropInEventDirectory = function(e,callback){
+            var directory = s.dir.dropInEvents + e.ke + '/'
+            fs.mkdir(directory,function(err){
+                s.handleFolderError(err)
+                directory = s.dir.dropInEvents + e.ke + '/' + (e.id || e.mid) + '/'
+                fs.mkdir(directory,function(err){
+                    s.handleFolderError(err)
+                    callback(err,directory)
                 })
             })
-            s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventWatcher = directoryWatch
+        }
+        var onMonitorInit = function(monitorConfig){
+            var ke = monitorConfig.ke
+            var mid = monitorConfig.mid
+            var groupEventDropDir = s.dir.dropInEvents + ke
+            createDropInEventDirectory(monitorConfig,function(err,monitorEventDropDir){
+                var monitorEventDropDir = getDropInEventDir(monitorConfig)
+                var fileQueue = {}
+                s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventFileQueue = fileQueue
+                var search = function(searchIn,searchFor){
+                    return searchIn.indexOf(searchFor) > -1
+                }
+                var processFile = function(filename){
+                    var filePath = monitorEventDropDir + filename
+                    if(search(filename,'.jpg') || search(filename,'.jpeg')){
+                        var snapPath = s.dir.streams + ke + '/' + mid + '/s.jpg'
+                        fs.unlink(snapPath,function(err){
+                            fs.createReadStream(filePath).pipe(fs.createWriteStream(snapPath))
+                            s.triggerEvent({
+                                id: mid,
+                                ke: ke,
+                                details: {
+                                    confidence: 100,
+                                    name: filename,
+                                    plug: "dropInEvent",
+                                    reason: "ftpServer"
+                                },
+                            },config.dropInEventForceSaveEvent)
+                        })
+                    }else{
+                        var reason = "ftpServer"
+                        if(search(filename,'.mp4')){
+                            fs.stat(filePath,function(err,stats){
+                                var startTime = stats.ctime
+                                var endTime = stats.mtime
+                                var shinobiFilename = s.formattedTime(startTime) + '.mp4'
+                                var recordingPath = s.getVideoDirectory(monitorConfig) + shinobiFilename
+                                var writeStream = fs.createWriteStream(recordingPath)
+                                fs.createReadStream(filePath).pipe(writeStream)
+                                writeStream.on('finish', () => {
+                                    s.insertCompletedVideo(s.group[monitorConfig.ke].rawMonitorConfigurations[monitorConfig.mid],{
+                                        file : shinobiFilename
+                                    },function(){
+                                    })
+                                })
+                            })
+                        }
+                        var completeAction = function(){
+                            s.triggerEvent({
+                                id: mid,
+                                ke: ke,
+                                details: {
+                                    confidence: 100,
+                                    name: filename,
+                                    plug: "dropInEvent",
+                                    reason: reason
+                                }
+                            },config.dropInEventForceSaveEvent)
+                        }
+                        if(search(filename,'.txt')){
+                            fs.readFile(filePath,{encoding: 'utf-8'},function(err,data){
+                                if(data){
+                                    reason = data.split('\n')[0] || filename
+                                }else if(filename){
+                                    reason = filename
+                                }
+                                completeAction()
+                            })
+                        }else{
+                            completeAction()
+                        }
+
+                    }
+                    if(config.dropInEventDeleteFileAfterTrigger){
+                        setTimeout(function(){
+                            fs.unlink(filePath,function(err){
+
+                            })
+                        },1000 * 60 * 5)
+                    }
+                }
+                var eventTrigger = function(eventType,filename,stats){
+                    if(stats.isDirectory()){
+                        fs.readdir(monitorEventDropDir + filename,function(err,files){
+                            if(files){
+                                files.forEach(function(filename){
+                                    processFile(filename)
+                                })
+                            }else if(err){
+                                console.log(err)
+                            }
+                        })
+                    }else{
+                        processFile(filename)
+                    }
+                }
+                var directoryWatch = fs.watch(monitorEventDropDir,function(eventType,filename){
+                    fs.stat(monitorEventDropDir + filename,function(err,stats){
+                        if(!err){
+                            clearTimeout(fileQueue[filename])
+                            fileQueue[filename] = setTimeout(function(){
+                                eventTrigger(eventType,filename,stats)
+                            },1750)
+                        }
+                    })
+                })
+                s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventWatcher = directoryWatch
+            })
         }
         // FTP Server
         if(config.ftpServer === true){
@@ -140,15 +156,7 @@ module.exports = function(s,config,lang,app,io){
             config.ftpServerUrl = config.ftpServerUrl.replace('{{PORT}}',config.ftpServerPort)
             const FtpSrv = require('ftp-srv')
             const ftpServer = new FtpSrv({
-                // log: {
-                //     warn: function(){},
-                //     info: function(){},
-                //     child: function(){},
-                //     error: function(){},
-                //     trace: function(){},
-                // },
                 url: config.ftpServerUrl,
-                // log:{trace:function(){},error:function(){},child:function(){},info:function(){},warn:function(){}
             })
 
             ftpServer.on('login', (data, resolve, reject) => {

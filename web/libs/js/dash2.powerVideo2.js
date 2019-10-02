@@ -199,17 +199,28 @@ $(document).ready(function(e){
                 // Create a Timeline
                 var timeline = new vis.Timeline(container, items, groupsDataSet, options)
                 powerVideoTimelineStripsContainer.find('.loading').remove()
+                var timeChanging = false
+                timeline.on('rangechange', function(properties){
+                    timeChanging = true
+                })
+                timeline.on('rangechanged', function(properties){
+                    setTimeout(function(){
+                        timeChanging = false
+                    },300)
+                })
                 timeline.on('click', function(properties){
-                    var selectedTime = properties.time
-                    var videosAtSameTime = findAllVideosAtTime(selectedTime)
-                    powerVideoTimelineStripsContainer.find('.vis-item').removeClass('vis-selected')
-                    $.each(videosAtSameTime,function(monitorId,videos){
-                        var selectedVideo = videos[0]
-                        if(selectedVideo){
-                            loadVideoIntoMonitorSlot(selectedVideo,selectedTime)
-                            visuallySelectItemInRow(selectedVideo)
-                        }
-                    })
+                    if(!timeChanging){
+                        var selectedTime = properties.time
+                        var videosAtSameTime = findAllVideosAtTime(selectedTime)
+                        powerVideoTimelineStripsContainer.find('.vis-item').removeClass('vis-selected')
+                        $.each(videosAtSameTime,function(monitorId,videos){
+                            var selectedVideo = videos[0]
+                            if(selectedVideo){
+                                loadVideoIntoMonitorSlot(selectedVideo,selectedTime)
+                                visuallySelectItemInRow(selectedVideo)
+                            }
+                        })
+                    }
                 })
                 activeTimeline = timeline
             }else{

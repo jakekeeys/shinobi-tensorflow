@@ -43,7 +43,7 @@
                     var attributes = []
                     var styles = []
                     var sectionClass = []
-                    var headerTitle = monitorSettings.headerTitle || lang[monitorSettings.name]
+                    var headerTitle = monitorSettings.headerTitle || lang[monitorSettings.name] || monitorSettings.name
                     if(monitorSettings.hidden === true){
                         styles.push('display:none')
                     }

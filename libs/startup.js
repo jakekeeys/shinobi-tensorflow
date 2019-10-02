@@ -47,19 +47,21 @@ module.exports = function(s,config,lang,io){
                 var loadCompleted = 0
                 var orphanedVideosForMonitors = {}
                 var loadMonitor = function(monitor){
-                    if(!orphanedVideosForMonitors[monitor.ke])orphanedVideosForMonitors[monitor.ke] = {}
-                    if(!orphanedVideosForMonitors[monitor.ke][monitor.mid])orphanedVideosForMonitors[monitor.ke][monitor.mid] = 0
-                    s.initiateMonitorObject(monitor)
-                    s.group[monitor.ke].rawMonitorConfigurations[monitor.mid] = monitor
-                    s.sendMonitorStatus({id:monitor.mid,ke:monitor.ke,status:'Stopped'});
-                    var monObj = Object.assign(monitor,{id : monitor.mid})
-                    s.camera(monitor.mode,monObj)
-                    ++loadCompleted
-                    if(monitors[loadCompleted]){
-                        loadMonitor(monitors[loadCompleted])
-                    }else{
-                        callback()
-                    }
+                    setTimeout(function(){
+                        if(!orphanedVideosForMonitors[monitor.ke])orphanedVideosForMonitors[monitor.ke] = {}
+                        if(!orphanedVideosForMonitors[monitor.ke][monitor.mid])orphanedVideosForMonitors[monitor.ke][monitor.mid] = 0
+                        s.initiateMonitorObject(monitor)
+                        s.group[monitor.ke].rawMonitorConfigurations[monitor.mid] = monitor
+                        s.sendMonitorStatus({id:monitor.mid,ke:monitor.ke,status:'Stopped'});
+                        var monObj = Object.assign(monitor,{id : monitor.mid})
+                        s.camera(monitor.mode,monObj)
+                        ++loadCompleted
+                        if(monitors[loadCompleted]){
+                            loadMonitor(monitors[loadCompleted])
+                        }else{
+                            callback()
+                        }
+                    },2000)
                 }
                 loadMonitor(monitors[loadCompleted])
             }else{
@@ -314,19 +316,19 @@ module.exports = function(s,config,lang,io){
             exec('echo 3 > /proc/sys/vm/drop_caches',{detached: true})
         },60000*20)
     }
-    //master node - startup functions
-    setInterval(function(){
-        s.cpuUsage(function(cpu){
-            s.ramUsage(function(ram){
-                s.tx({f:'os',cpu:cpu,ram:ram},'CPU');
-            })
-        })
-    },10000)
-    //hourly check to see if sizePurge has failed to unlock
-    //checks to see if request count is the number of monitors + 10
-    s.checkForStalePurgeLocks()
-    //run prerequsite queries, load users and monitors
     if(config.childNodes.mode !== 'child'){
+        //master node - startup functions
+        setInterval(function(){
+            s.cpuUsage(function(cpu){
+                s.ramUsage(function(ram){
+                    s.tx({f:'os',cpu:cpu,ram:ram},'CPU');
+                })
+            })
+        },10000)
+        //hourly check to see if sizePurge has failed to unlock
+        //checks to see if request count is the number of monitors + 10
+        s.checkForStalePurgeLocks()
+        //run prerequsite queries, load users and monitors
         //sql/database connection with knex
         s.databaseEngine = require('knex')(s.databaseOptions)
         //run prerequsite queries
