@@ -108,6 +108,7 @@ module.exports = function(s,config,lang){
             options.flags = ' ' + options.flags
         }
         var inputOptions = []
+        var outputOptions = []
         var streamDir = s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
         var url = options.url
         switch(monitor.type){
@@ -129,16 +130,22 @@ module.exports = function(s,config,lang){
             try{
                 var snapBuffer = []
                 var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
-                var ffmpegCmd = `-loglevel quiet -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i ${url}${options.flags} -vframes 1 ${temporaryImageFile}`
+                var ffmpegCmd = `-loglevel quiet -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i ${url}${options.flags} ${outputOptions.join(' ')} -vframes 1 ${temporaryImageFile}`
                 var snapProcess = spawn(config.ffmpegDir,s.splitForFFPMEG(ffmpegCmd),{detached: true})
                 snapProcess.stderr.on('data',function(data){
                     console.log(data.toString())
                 })
-                snapProcess.on('exit',function(data){
+                snapProcess.on('close',function(data){
                     clearTimeout(snapProcessTimeout)
-                    delete(snapProcessTimeout)
                     fs.readFile(temporaryImageFile,function(err,buffer){
-                        callback(buffer,false)
+                        if(buffer){
+                            callback(buffer,false)
+                        }else{
+                            console.log(err)
+                            fs.readFile(config.defaultMjpeg,function(err,buffer){
+                                callback(buffer,false)
+                            })
+                        }
                         fs.unlink(temporaryImageFile,function(){})
                     })
                 })
@@ -175,12 +182,13 @@ module.exports = function(s,config,lang){
                                 if(success === false){
                                     url = s.buildMonitorUrl(monitor)
                                 }else{
+                                    outputOptions.push('-ss 00:00:06')
                                     url = streamDir + 's.m3u8'
                                 }
                                 runExtraction()
                             })
                         }else{
-                            inputOptions.push('-ss 00:00:05')
+                            outputOptions.push('-ss 00:00:06')
                             url = streamDir + 'detectorStream.m3u8'
                             runExtraction()
                         }
