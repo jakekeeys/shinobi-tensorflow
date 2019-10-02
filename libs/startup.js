@@ -336,10 +336,10 @@ module.exports = function(s,config,lang,io){
         setTimeout(function(){
             //check commander
             checkForTerminalCommands(function(){
-                //load monitors (for groups)
-                loadMonitors(function(){
-                    //load administrators (groups)
-                    loadAdminUsers(function(){
+                //load administrators (groups)
+                loadAdminUsers(function(){
+                    //load monitors (for groups)
+                    loadMonitors(function(){
                         //check for orphaned videos
                         checkForOrphanedVideos(function(){
                             s.processReady()
