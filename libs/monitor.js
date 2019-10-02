@@ -111,21 +111,8 @@ module.exports = function(s,config,lang){
         var outputOptions = []
         var streamDir = s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
         var url = options.url
-        switch(monitor.type){
-            case'h264':
-                switch(monitor.protocol){
-                    case'rtsp':
-                        if(
-                            monitor.details.rtsp_transport
-                            && monitor.details.rtsp_transport !== ''
-                            && monitor.details.rtsp_transport !== 'no'
-                        ){
-                            inputOptions.push('-rtsp_transport ' + monitor.details.rtsp_transport)
-                        }
-                    break;
-                }
-            break;
-        }
+        var secondsInward = options.secondsInward || '0'
+        if(secondsInward.length === 1)secondsInward = '0' + secondsInward
         var runExtraction = function(){
             try{
                 var snapBuffer = []
@@ -180,15 +167,30 @@ module.exports = function(s,config,lang){
                         if(success === false){
                             checkExists(streamDir + 's.m3u8',function(success){
                                 if(success === false){
+                                    switch(monitor.type){
+                                        case'h264':
+                                            switch(monitor.protocol){
+                                                case'rtsp':
+                                                    if(
+                                                        monitor.details.rtsp_transport
+                                                        && monitor.details.rtsp_transport !== ''
+                                                        && monitor.details.rtsp_transport !== 'no'
+                                                    ){
+                                                        inputOptions.push('-rtsp_transport ' + monitor.details.rtsp_transport)
+                                                    }
+                                                break;
+                                            }
+                                        break;
+                                    }
                                     url = s.buildMonitorUrl(monitor)
                                 }else{
-                                    outputOptions.push('-ss 00:00:06')
+                                    outputOptions.push(`-ss 00:00:${secondsInward}`)
                                     url = streamDir + 's.m3u8'
                                 }
                                 runExtraction()
                             })
                         }else{
-                            outputOptions.push('-ss 00:00:06')
+                            outputOptions.push(`-ss 00:00:${secondsInward}`)
                             url = streamDir + 'detectorStream.m3u8'
                             runExtraction()
                         }
