@@ -104,8 +104,6 @@ module.exports = function(s,config,lang){
         if(!callback){
             callback = options
             var options = {flags: ''}
-        }else{
-            options.flags = ' ' + options.flags
         }
         var inputOptions = []
         var outputOptions = []
@@ -113,11 +111,12 @@ module.exports = function(s,config,lang){
         var url = options.url
         var secondsInward = options.secondsInward || '0'
         if(secondsInward.length === 1)secondsInward = '0' + secondsInward
+        if(options.flags)outputOptions.push(options.flags)
         var runExtraction = function(){
             try{
                 var snapBuffer = []
                 var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
-                var ffmpegCmd = `-loglevel quiet -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i ${url}${options.flags} ${outputOptions.join(' ')} -vframes 1 ${temporaryImageFile}`
+                var ffmpegCmd = `-loglevel quiet -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -vframes 1 ${temporaryImageFile}`
                 var snapProcess = spawn(config.ffmpegDir,s.splitForFFPMEG(ffmpegCmd),{detached: true})
                 snapProcess.stderr.on('data',function(data){
                     console.log(data.toString())
