@@ -497,7 +497,7 @@ const processUser = function(number,rows){
 var theCronInterval = null
 const setIntervalForCron = function(){
     clearCronInterval()
-    theCronInterval = setTimeout(doCronJobs,parseFloat(config.cron.interval)*60000*60)
+    theCronInterval = setInterval(doCronJobs,parseFloat(config.cron.interval)*60000*60)
 }
 const clearCronInterval = function(){
     clearInterval(theCronInterval)
