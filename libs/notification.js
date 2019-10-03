@@ -102,7 +102,9 @@ module.exports = function(s,config,lang){
                             ],d.ke)
                         })
                     }
-                    s.getRawSnapshotFromMonitor(d.mon,function(data){
+                    s.getRawSnapshotFromMonitor(d.mon,{
+                        secondsInward: d.mon.details.snap_seconds_inward
+                    },function(data){
                         if(data[data.length - 2] === 0xFF && data[data.length - 1] === 0xD9){
                             d.screenshotBuffer = data
                             files.push({
@@ -317,7 +319,9 @@ module.exports = function(s,config,lang){
                         })
                         sendMail()
                     }else{
-                        s.getRawSnapshotFromMonitor(d.mon,function(data){
+                        s.getRawSnapshotFromMonitor(d.mon,{
+                            secondsInward: d.mon.details.snap_seconds_inward
+                        },function(data){
                             d.screenshotBuffer = data
                             files.push({
                                 filename: d.screenshotName + '.jpg',
