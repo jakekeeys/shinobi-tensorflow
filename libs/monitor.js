@@ -211,7 +211,7 @@ module.exports = function(s,config,lang){
             }
         }
         if(options.useIcon === true){
-            checkExists(streamDir + 's.jpg',function(success){
+            checkExists(streamDir + 'icon.jpg',function(success){
                 if(success === false){
                     noIconChecks()
                 }else{
