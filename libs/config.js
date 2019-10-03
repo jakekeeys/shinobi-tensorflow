@@ -11,7 +11,7 @@ module.exports = function(s){
     //config defaults
     if(config.cpuUsageMarker === undefined){config.cpuUsageMarker='%Cpu'}
     if(config.customCpuCommand === undefined){config.customCpuCommand=null}
-    if(config.autoDropCache === undefined){config.autoDropCache=true}
+    if(config.autoDropCache === undefined){config.autoDropCache=false}
     if(config.doSnapshot === undefined){config.doSnapshot=true}
     if(config.restart === undefined){config.restart={}}
     if(config.systemLog === undefined){config.systemLog=true}

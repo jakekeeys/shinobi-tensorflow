@@ -104,101 +104,124 @@ module.exports = function(s,config,lang){
         if(!callback){
             callback = options
             var options = {flags: ''}
-        }else{
-            options.flags = ' ' + options.flags
         }
+        s.checkDetails(monitor)
         var inputOptions = []
         var outputOptions = []
         var streamDir = s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
         var url = options.url
-        switch(monitor.type){
-            case'h264':
-                switch(monitor.protocol){
-                    case'rtsp':
-                        if(
-                            monitor.details.rtsp_transport
-                            && monitor.details.rtsp_transport !== ''
-                            && monitor.details.rtsp_transport !== 'no'
-                        ){
-                            inputOptions.push('-rtsp_transport ' + monitor.details.rtsp_transport)
-                        }
-                    break;
+        var secondsInward = options.secondsInward || '0'
+        if(secondsInward.length === 1)secondsInward = '0' + secondsInward
+        if(options.flags)outputOptions.push(options.flags)
+        const checkExists = function(streamDir,callback){
+            s.fileStats(streamDir,function(err){
+                var response = false
+                if(err){
+                    // s.debugLog(err)
+                }else{
+                    response = true
                 }
-            break;
+                callback(response)
+            })
         }
-        var runExtraction = function(){
-            try{
-                var snapBuffer = []
-                var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
-                var ffmpegCmd = `-loglevel quiet -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i ${url}${options.flags} ${outputOptions.join(' ')} -vframes 1 ${temporaryImageFile}`
-                var snapProcess = spawn(config.ffmpegDir,s.splitForFFPMEG(ffmpegCmd),{detached: true})
-                snapProcess.stderr.on('data',function(data){
-                    console.log(data.toString())
-                })
-                snapProcess.on('close',function(data){
-                    clearTimeout(snapProcessTimeout)
-                    fs.readFile(temporaryImageFile,function(err,buffer){
-                        if(buffer){
-                            callback(buffer,false)
-                        }else{
-                            console.log(err)
-                            fs.readFile(config.defaultMjpeg,function(err,buffer){
-                                callback(buffer,false)
-                            })
-                        }
-                        fs.unlink(temporaryImageFile,function(){})
+        const noIconChecks = function(){
+            const runExtraction = function(){
+                try{
+                    var snapBuffer = []
+                    var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
+                    var iconImageFile = streamDir + 'icon.jpg'
+                    var ffmpegCmd = `-loglevel quiet -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -vframes 1 "${temporaryImageFile}"`
+                    var snapProcess = spawn(config.ffmpegDir,s.splitForFFPMEG(ffmpegCmd),{detached: true})
+                    snapProcess.stderr.on('data',function(data){
+                        console.log(data.toString())
                     })
-                })
-                var snapProcessTimeout = setTimeout(function(){
-                    snapProcess.stdin.setEncoding('utf8')
-                    snapProcess.stdin.write('q')
-                    snapProcess.kill()
-                },30000)
-            }catch(err){
-                fs.readFile(config.defaultMjpeg,function(err,buffer){
-                    callback(buffer,false)
+                    snapProcess.on('close',function(data){
+                        clearTimeout(snapProcessTimeout)
+                        fs.readFile(temporaryImageFile,function(err,buffer){
+                            if(buffer){
+                                if(options.useIcon === true){
+                                    fs.writeFile(iconImageFile,buffer,function(){
+                                        callback(buffer,false)
+                                    })
+                                }else{
+                                    callback(buffer,false)
+                                }
+                            }else{
+                                fs.readFile(config.defaultMjpeg,function(err,buffer){
+                                    callback(buffer,false)
+                                })
+                            }
+                            fs.unlink(temporaryImageFile,function(){})
+                        })
+                    })
+                    var snapProcessTimeout = setTimeout(function(){
+                        snapProcess.stdin.setEncoding('utf8')
+                        snapProcess.stdin.write('q')
+                        snapProcess.kill()
+                    },30000)
+                }catch(err){
+                    fs.readFile(config.defaultMjpeg,function(err,buffer){
+                        callback(buffer,false)
+                    })
+                }
+            }
+            if(url){
+                runExtraction()
+            }else{
+                checkExists(streamDir + 's.jpg',function(success){
+                    if(success === false){
+                        checkExists(streamDir + 'detectorStream.m3u8',function(success){
+                            if(success === false){
+                                checkExists(streamDir + 's.m3u8',function(success){
+                                    if(success === false){
+                                        switch(monitor.type){
+                                            case'h264':
+                                                switch(monitor.protocol){
+                                                    case'rtsp':
+                                                        if(
+                                                            details.rtsp_transport
+                                                            && details.rtsp_transport !== ''
+                                                            && details.rtsp_transport !== 'no'
+                                                        ){
+                                                            inputOptions.push('-rtsp_transport ' + monitor.details.rtsp_transport)
+                                                        }
+                                                    break;
+                                                }
+                                            break;
+                                        }
+                                        url = s.buildMonitorUrl(monitor)
+                                    }else{
+                                        outputOptions.push(`-ss 00:00:${secondsInward}`)
+                                        url = streamDir + 's.m3u8'
+                                    }
+                                    runExtraction()
+                                })
+                            }else{
+                                outputOptions.push(`-ss 00:00:${secondsInward}`)
+                                url = streamDir + 'detectorStream.m3u8'
+                                runExtraction()
+                            }
+                        })
+                    }else{
+                        s.readFile(streamDir + 's.jpg',function(err,snapBuffer){
+                            callback(snapBuffer,true)
+                        })
+                    }
                 })
             }
         }
-        if(url){
-            runExtraction()
-        }else{
-            var checkExists = function(streamDir,callback){
-                s.fileStats(streamDir,function(err){
-                    var response = false
-                    if(err){
-                        // s.debugLog(err)
-                    }else{
-                        response = true
-                    }
-                    callback(response)
-                })
-            }
+        if(options.useIcon === true){
             checkExists(streamDir + 's.jpg',function(success){
                 if(success === false){
-                    checkExists(streamDir + 'detectorStream.m3u8',function(success){
-                        if(success === false){
-                            checkExists(streamDir + 's.m3u8',function(success){
-                                if(success === false){
-                                    url = s.buildMonitorUrl(monitor)
-                                }else{
-                                    outputOptions.push('-ss 00:00:06')
-                                    url = streamDir + 's.m3u8'
-                                }
-                                runExtraction()
-                            })
-                        }else{
-                            outputOptions.push('-ss 00:00:06')
-                            url = streamDir + 'detectorStream.m3u8'
-                            runExtraction()
-                        }
-                    })
+                    noIconChecks()
                 }else{
-                    s.readFile(streamDir + 's.jpg',function(err,snapBuffer){
+                    s.readFile(streamDir + 'icon.jpg',function(err,snapBuffer){
                         callback(snapBuffer,true)
                     })
                 }
             })
+        }else{
+            noIconChecks()
         }
     }
     s.mergeDetectorBufferChunks = function(monitor,callback){
@@ -631,16 +654,15 @@ module.exports = function(s,config,lang){
         }
         return options
     }
-    s.cameraSendSnapshot = function(e){
+    s.cameraSendSnapshot = function(e,options){
+        if(!options)options = {}
         s.checkDetails(e)
         if(config.doSnapshot === true){
             if(e.mon.mode !== 'stop'){
                 var pathDir = s.dir.streams+e.ke+'/'+e.mid+'/'
-                var url = s.buildMonitorUrl(e.mon)
-                s.getRawSnapshotFromMonitor(e.mon,{
-                    flags: '-s 200x200',
-                    url: url
-                },function(data,isStaticFile){
+                s.getRawSnapshotFromMonitor(e.mon,Object.assign({
+                    flags: '-s 200x200'
+                },options),function(data,isStaticFile){
                     if(data && (data[data.length-2] === 0xFF && data[data.length-1] === 0xD9)){
                         s.tx({
                             f: 'monitor_snapshot',
@@ -1284,7 +1306,7 @@ module.exports = function(s,config,lang){
                         s.resetStreamCheck(e)
                     })
                 }
-                s.cameraSendSnapshot({mid:e.id,ke:e.ke,mon:e})
+                s.cameraSendSnapshot({mid:e.id,ke:e.ke,mon:e},{useIcon: true})
                 //check host to see if has password and user in it
                 clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingChecker)
                 if(s.group[e.ke].activeMonitors[e.id].isStarted === true){
@@ -1627,7 +1649,7 @@ module.exports = function(s,config,lang){
                     s.group[e.ke].activeMonitors[e.id].isStarted = false
                     s.group[e.ke].activeMonitors[e.id].isRecording = false
                     s.tx({f:'monitor_stopping',mid:e.id,ke:e.ke,time:s.formattedTime()},'GRP_'+e.ke);
-                    s.cameraSendSnapshot({mid:e.id,ke:e.ke,mon:e})
+                    s.cameraSendSnapshot({mid:e.id,ke:e.ke,mon:e},{useIcon: true})
                     if(e.functionMode === 'stop'){
                         s.userLog(e,{type:lang['Monitor Stopped'],msg:lang.MonitorStoppedText});
                         clearTimeout(s.group[e.ke].activeMonitors[e.id].delete)

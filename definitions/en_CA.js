@@ -2402,6 +2402,12 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
+                      "name": "detail=snap_seconds_inward",
+                      "field": lang['Delay for Snapshot'],
+                      "description": lang['in seconds'],
+                      "default": "0",
+                   },
+                   {
                       "name": "detail=detector_mail",
                       "field": lang['Email on Trigger'],
                       "description": "Recieve an email of an image during a motion event to the master account for the camera group. You must setup SMTP details in conf.json.",
