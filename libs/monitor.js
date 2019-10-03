@@ -127,7 +127,7 @@ module.exports = function(s,config,lang){
                         if(buffer){
                             callback(buffer,false)
                         }else{
-                            console.log(err)
+                            s.debugLog(err,ffmpegCmd)
                             fs.readFile(config.defaultMjpeg,function(err,buffer){
                                 callback(buffer,false)
                             })
