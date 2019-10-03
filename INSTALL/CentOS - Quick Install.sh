@@ -4,11 +4,9 @@ echo "========================================================="
 echo "==   Shinobi : The Open Source CCTV and NVR Solution   =="
 echo "========================================================="
 echo "This script will install Shinobi CCTV with minimal user"
-echo "intervention. When prompted you may answer yes by typing"
-echo "the letter [Y] and pressing [Enter]. The default response"
-echo "is no, [N]."
-echo
-echo "You may skip any components you already have or do not"
+echo "intervention."
+echo 
+echo "You may skip any components you already have or do not" 
 echo "wish to install."
 echo "========================================================="
 read -p "Press [Enter] to begin..."
@@ -22,6 +20,7 @@ else
 fi
 #Installing deltarpm first will greatly increase the download speed of the other packages
 yum install deltarpm -y
+#Install remaining packages
 yum install nano $vm dos2unix net-tools curl wget git make zip -y
 
 echo "Updating system"
@@ -36,10 +35,10 @@ if [ "$1" != 1 ]; then
 	echo "========================================================="
 	echo "Do you want to use the Master or Development branch of Shinobi?"
 	read -p "[M]aster or [D]ev " gitbranch
-
+	
 	#Changes input to uppercase
 	gitbranch=${gitbranch^}
-
+	
 	if [ "$gitbranch" = "D" ]; then
 		#Change to dev branch
 		sudo git checkout dev
@@ -49,10 +48,8 @@ fi
 
 if ! [ -x "$(command -v node)" ]; then
     echo "========================================================="
-    echo "Node.js not found"
-    echo "Downloading Node.js... Please Wait..."
-    sudo curl --location https://rpm.nodesource.com/setup_8.x | bash -
-    echo "Installing Node.js 8..."
+    echo "Node.js not found, installing..."
+    sudo curl --silent --location https://rpm.nodesource.com/setup_10.x | bash -
     sudo yum install nodejs -y
 else
     echo "Node.js is already installed..."
@@ -81,7 +78,7 @@ echo "========================================================="
 echo "Do you want to use MariaDB or SQLite3?"
 echo "MariaDB (MySQL) is better for medium to large installations"
 echo "while SQLite is better for small installations"
-echo
+echo 
 echo "Press [ENTER] for default [MariaDB]"
 read -p "[M]ariaDB, [S]QLite3 or [N]othing " sqliteormariadb
 
@@ -113,27 +110,40 @@ elif [ "$sqliteormariadb" = "M" ] || [ "$sqliteormariadb" = "" ]; then
     sudo systemctl enable mariadb
     #Run mysql install
     sudo mysql_secure_installation
-
+	
 	echo "========================================================="
     read -p "Install default database? Y/N " mysqlDefaultData
-
+	
 	#Changes input to uppercase
 	mysqlDefaultData=${mysqlDefaultData^}
 
     if [ "$mysqlDefaultData" = "Y" ]; then
         echo "Please enter your MariaDB Username"
         read sqluser
-        echo "Please enter your MariaDB Password"
-        read sqlpass
+        until [ "$mariadbPasswordConfirmation" = "Y" ]; do
+			echo "Please enter your MariaDB Password"
+            read -s sqlpass
+			
+			echo "Please confirm your MariaDB Password"
+			read -s sqlpassconfirm
+			
+			if [ "$sqlpass" == "$sqlpassconfirm" ]; then
+				mariadbPasswordConfirmation = "Y"
+			else
+				echo "Passwords did not match."
+				echo "Please try again."
+			fi
+		done
+		
         sudo mysql -u $sqluser -p$sqlpass -e "source sql/user.sql" || true
         sudo mysql -u $sqluser -p$sqlpass -e "source sql/framework.sql" || true
     fi
-
-elif [ "$sqliteormariadb" = "n" ] || [ "$sqliteormariadb" = "N" ]; then
+	
+elif [ "$sqliteormariadb" = "N" ]; then
     echo "========================================================="
     echo "Skipping database server installation..."
 fi
-
+	
 echo "========================================================="
 echo "Installing NPM libraries..."
 sudo npm i npm -g
@@ -155,7 +165,7 @@ read -p "Automatically create firewall rules? Y/N " createfirewallrules
 
 #Changes input to uppercase
 createfirewallrules=${createfirewallrules^}
-
+	
 if [ "$createfirewallrules" = "Y" ]; then
     sudo firewall-cmd --permanent --add-port=8080/tcp -q
     sudo firewall-cmd --reload -q
@@ -167,6 +177,7 @@ if [ ! -e "./conf.json" ]; then
 	
     #Generate a random Cron key for the config file
     cronKey=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c${1:-30})
+	#Insert key into conf.json
     sed -i -e 's/change_this_to_something_very_random__just_anything_other_than_this/'"$cronKey"'/g' conf.json
 fi
 
@@ -174,14 +185,16 @@ if [ ! -e "./super.json" ]; then
     echo "========================================================="
     echo "Enable superuser access?"
     echo "This may be useful for account and password managment"
-    echo "in commercial deployments"
-    echo "[Y]es or [N]o"
-    read createSuperJson
-    if [ "$createSuperJson" = "y" ] || [ "$createSuperJson" = "Y" ]; then
+    read -p "in commercial deployments. Y/N " createSuperJson
+	
+	#Changes input to uppercase
+	createSuperJson=${createSuperJson^}
+	
+    if [ "$createSuperJson" = "Y" ]; then        
         sudo cp super.sample.json super.json
     fi
 fi
-
+	
 echo "========================================================="
 read -p "Start Shinobi on boot? Y/N " startupShinobi
 
@@ -213,10 +226,10 @@ echo "|| Login with the Superuser and create a new user!!    ||"
 echo "========================================================="
 echo "|| Open http://$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'):8080/super in your browser. ||"
 echo "========================================================="
-if [ "$createSuperJson" = "y" ] || [ "$createSuperJson" = "Y" ]; then
+if [ "$createSuperJson" = "Y" ]; then
     echo "|| Default Superuser : admin@shinobi.video             ||"
     echo "|| Default Password : admin                            ||"
 	echo "|| You can edit these settings in \"super.json\"       ||"
-	echo "|| located in the Shinobi directory.                   ||"
+	echo "|| located in the Shinobi directory.                   ||"        
     echo "========================================================="
 fi
