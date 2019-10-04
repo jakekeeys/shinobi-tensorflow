@@ -59,6 +59,7 @@ module.exports = function(s,config,lang){
     s.insertDatabaseRow = function(e,k,callback){
         s.checkDetails(e)
         //save database row
+        if(!k.details)k.details = {}
         if(e.details && e.details.dir && e.details.dir !== ''){
             k.details.dir = e.details.dir
         }
