@@ -144,7 +144,7 @@ s.debugLog = function(arg1,arg2){
 }
 
 //containers
-s.overlapLock={};
+var overlapLocks = {}
 s.alreadyDeletedRowsWithNoVideosOnStart={};
 //functions
 s.checkCorrectPathEnding=function(x){
@@ -194,7 +194,7 @@ s.getFileBinDirectory = function(e){
 }
 //filters set by the user in their dashboard
 //deleting old videos is part of the filter - config.cron.deleteOld
-s.checkFilterRules = function(v,callback){
+const checkFilterRules = function(v,callback){
     //filters
     if(!v.d.filters||v.d.filters==''){
         v.d.filters={};
@@ -301,7 +301,7 @@ s.checkFilterRules = function(v,callback){
     }
 }
 //database rows with no videos in the filesystem
-s.deleteRowsWithNoVideo = function(v,callback){
+const deleteRowsWithNoVideo = function(v,callback){
     if(
         config.cron.deleteNoVideo===true&&(
             config.cron.deleteNoVideoRecursion===true||
@@ -350,7 +350,7 @@ s.deleteRowsWithNoVideo = function(v,callback){
     }
 }
 //info about what the application is doing
-s.deleteOldLogs = function(v,callback){
+const deleteOldLogs = function(v,callback){
     if(!v.d.log_days||v.d.log_days==''){v.d.log_days=10}else{v.d.log_days=parseFloat(v.d.log_days)};
     if(config.cron.deleteLogs===true&&v.d.log_days!==0){
         s.sqlQuery("DELETE FROM Logs WHERE ke=? AND `time` < ?",[v.ke,s.sqlDate(v.d.log_days+' DAY')],function(err,rrr){
@@ -365,7 +365,7 @@ s.deleteOldLogs = function(v,callback){
     }
 }
 //events - motion, object, etc. detections
-s.deleteOldEvents = function(v,callback){
+const deleteOldEvents = function(v,callback){
     if(!v.d.event_days||v.d.event_days==''){v.d.event_days=10}else{v.d.event_days=parseFloat(v.d.event_days)};
     if(config.cron.deleteEvents===true&&v.d.event_days!==0){
         s.sqlQuery("DELETE FROM Events WHERE ke=? AND `time` < ?",[v.ke,s.sqlDate(v.d.event_days+' DAY')],function(err,rrr){
@@ -380,7 +380,7 @@ s.deleteOldEvents = function(v,callback){
     }
 }
 //check for temporary files (special archive)
-s.deleteOldFileBins = function(v,callback){
+const deleteOldFileBins = function(v,callback){
     if(!v.d.fileBin_days||v.d.fileBin_days==''){v.d.fileBin_days=10}else{v.d.fileBin_days=parseFloat(v.d.fileBin_days)};
     if(config.cron.deleteFileBins===true&&v.d.fileBin_days!==0){
         var fileBinQuery = " FROM Files WHERE ke=? AND `time` < ?";
@@ -409,7 +409,7 @@ s.deleteOldFileBins = function(v,callback){
     }
 }
 //check for files with no database row
-s.checkForOrphanedFiles = function(v,callback){
+const checkForOrphanedFiles = function(v,callback){
     if(config.cron.deleteOrphans === true){
         console.log('"config.cron.deleteOrphans" has been removed. It has been replace by a one-time-run at startup with "config.insertOrphans". As the variable name suggests, instead of deleting, it will insert videos found without a database row.')
         console.log('By default "config.orphanedVideoCheckMax" will only check up to 20 video. You can raise this value to any number you choose but be careful as it will check that number of videos on every start.')
@@ -417,7 +417,7 @@ s.checkForOrphanedFiles = function(v,callback){
     callback()
 }
 //user processing function
-s.processUser = function(number,rows){
+const processUser = function(number,rows){
     var v = rows[number];
     if(!v){
         //no user object given
@@ -427,9 +427,9 @@ s.processUser = function(number,rows){
     if(!s.alreadyDeletedRowsWithNoVideosOnStart[v.ke]){
         s.alreadyDeletedRowsWithNoVideosOnStart[v.ke]=false;
     }
-    if(!s.overlapLock[v.ke]){
+    if(!overlapLocks[v.ke]){
         // set overlap lock
-        s.overlapLock[v.ke]=true;
+        overlapLocks[v.ke] = true
         //set permissions
         v.d=JSON.parse(v.details);
         //size
@@ -468,20 +468,20 @@ s.processUser = function(number,rows){
                     };
                 }
             })
-            s.deleteOldLogs(v,function(){
+            deleteOldLogs(v,function(){
                 s.debugLog('--- deleteOldLogs Complete')
-                s.deleteOldFileBins(v,function(){
+                deleteOldFileBins(v,function(){
                     s.debugLog('--- deleteOldFileBins Complete')
-                    s.deleteOldEvents(v,function(){
+                    deleteOldEvents(v,function(){
                         s.debugLog('--- deleteOldEvents Complete')
-                        s.checkFilterRules(v,function(){
+                        checkFilterRules(v,function(){
                             s.debugLog('--- checkFilterRules Complete')
-                            s.deleteRowsWithNoVideo(v,function(){
+                            deleteRowsWithNoVideo(v,function(){
                                 s.debugLog('--- deleteRowsWithNoVideo Complete')
-                                s.checkForOrphanedFiles(v,function(){
+                                checkForOrphanedFiles(v,function(){
                                     //done user, unlock current, and do next
-                                    s.overlapLock[v.ke]=false;
-                                    s.processUser(number+1,rows)
+                                    overlapLocks[v.ke]=false;
+                                    processUser(number+1,rows)
                                 })
                             })
                         })
@@ -490,35 +490,39 @@ s.processUser = function(number,rows){
             })
         })
     }else{
-        s.processUser(number+1,rows)
+        processUser(number+1,rows)
     }
 }
 //recursive function
-s.cron=function(){
-    x={};
+var theCronInterval = null
+const setIntervalForCron = function(){
+    clearCronInterval()
+    theCronInterval = setInterval(doCronJobs,parseFloat(config.cron.interval)*60000*60)
+}
+const clearCronInterval = function(){
+    clearInterval(theCronInterval)
+}
+const doCronJobs = function(){
     s.cx({f:'start',time:moment()})
     s.sqlQuery('SELECT ke,uid,details,mail FROM Users WHERE details NOT LIKE \'%"sub"%\'', function(err,rows) {
         if(err){
             console.error(err)
         }
         if(rows&&rows[0]){
-            s.processUser(0,rows)
+            processUser(0,rows)
         }
     })
-    s.timeout=setTimeout(function(){
-        s.cron();
-    },parseFloat(config.cron.interval)*60000*60)
 }
-s.cron();
+setIntervalForCron()
+doCronJobs()
 //socket commander
 io.on('f',function(d){
     switch(d.f){
         case'start':case'restart':
-            clearTimeout(s.timeout);
-            s.cron();
+            setIntervalForCron()
         break;
         case'stop':
-            clearTimeout(s.timeout);
+            clearCronInterval()
         break;
     }
 })

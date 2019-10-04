@@ -179,9 +179,9 @@ module.exports = function(s,config,lang){
                                                 switch(monitor.protocol){
                                                     case'rtsp':
                                                         if(
-                                                            details.rtsp_transport
-                                                            && details.rtsp_transport !== ''
-                                                            && details.rtsp_transport !== 'no'
+                                                            monitor.details.rtsp_transport
+                                                            && monitor.details.rtsp_transport !== ''
+                                                            && monitor.details.rtsp_transport !== 'no'
                                                         ){
                                                             inputOptions.push('-rtsp_transport ' + monitor.details.rtsp_transport)
                                                         }
@@ -211,7 +211,7 @@ module.exports = function(s,config,lang){
             }
         }
         if(options.useIcon === true){
-            checkExists(streamDir + 's.jpg',function(success){
+            checkExists(streamDir + 'icon.jpg',function(success){
                 if(success === false){
                     noIconChecks()
                 }else{
@@ -778,7 +778,7 @@ module.exports = function(s,config,lang){
         }
         s.group[e.ke].activeMonitors[e.id].recordingChecker = setTimeout(function(){
             if(s.group[e.ke].activeMonitors[e.id].isStarted === true && s.group[e.ke].rawMonitorConfigurations[e.id].mode === 'record'){
-                s.launchMonitorProcesses(e);
+                s.launchMonitorProcesses(s.cleanMonitorObject(e));
                 s.sendMonitorStatus({id:e.id,ke:e.ke,status:lang.Restarting});
                 s.userLog(e,{type:lang['Camera is not recording'],msg:{msg:lang['Restarting Process']}});
                 s.orphanedVideoCheck(e,2,null,true)
@@ -789,7 +789,7 @@ module.exports = function(s,config,lang){
         clearTimeout(s.group[e.ke].activeMonitors[e.id].streamChecker)
         s.group[e.ke].activeMonitors[e.id].streamChecker = setTimeout(function(){
             if(s.group[e.ke].activeMonitors[e.id] && s.group[e.ke].activeMonitors[e.id].isStarted === true){
-                s.launchMonitorProcesses(e);
+                s.launchMonitorProcesses(s.cleanMonitorObject(e));
                 s.userLog(e,{type:lang['Camera is not streaming'],msg:{msg:lang['Restarting Process']}});
                 s.orphanedVideoCheck(e,2,null,true)
             }
@@ -879,7 +879,7 @@ module.exports = function(s,config,lang){
                 }
                 if(e.details.fatal_max !== 0 && e.errorCount > e.details.fatal_max){
                     clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingSnapper)
-                    s.launchMonitorProcesses(e)
+                    s.launchMonitorProcesses(s.cleanMonitorObject(e))
                 }
             })
         }
@@ -1451,7 +1451,7 @@ module.exports = function(s,config,lang){
                 if(e.details.fatal_max !== 0 && e.errorFatalCount > e.details.fatal_max){
                     s.camera('stop',{id:e.id,ke:e.ke})
                 }else{
-                    s.launchMonitorProcesses(e)
+                    s.launchMonitorProcesses(s.cleanMonitorObject(e))
                 };
             },5000);
         }else{

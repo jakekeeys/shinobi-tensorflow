@@ -440,7 +440,7 @@ module.exports = function(s,config,lang,io){
                             s.sqlQuery('SELECT * FROM Monitors WHERE ke=?', [d.ke], function(err,r) {
                                 if(r && r[0]){
                                     r.forEach(function(monitor){
-                                        s.cameraSendSnapshot({mid:monitor.mid,ke:monitor.ke,mon:monitor})
+                                        s.cameraSendSnapshot({mid:monitor.mid,ke:monitor.ke,mon:monitor},{useIcon: true})
                                     })
                                 }
                             })
