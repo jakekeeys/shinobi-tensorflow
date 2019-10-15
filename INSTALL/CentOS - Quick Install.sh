@@ -75,30 +75,15 @@ if [ "$ffmpeginstall" = "Y" ]; then
 fi
 
 echo "========================================================="
-echo "Do you want to use MariaDB or SQLite3?"
-echo "MariaDB (MySQL) is better for medium to large installations"
-echo "while SQLite is better for small installations"
+echo "Do you want to install MariaDB?"
 echo 
 echo "Press [ENTER] for default [MariaDB]"
-read -p "[M]ariaDB, [S]QLite3 or [N]othing " sqliteormariadb
+read -p "[M]ariaDB, or [N]othing " installdbserver
 
 #Changes input to uppercase
-sqliteormariadb=${sqliteormariadb^}
+sqliteormariadb=${installdbserver^}
 
-if [ "$sqliteormariadb" = "S" ]; then
-    echo "========================================================="
-    echo "Installing SQLite3..."
-    sudo npm install jsonfile
-    sudo yum install -y sqlite sqlite-devel -y
-    sudo npm install sqlite3
-    node ./tools/modifyConfiguration.js databaseType=sqlite3
-    if [ ! -e "./shinobi.sqlite" ]; then
-        echo "Creating shinobi.sqlite for SQLite3..."
-        sudo cp sql/shinobi.sample.sqlite shinobi.sqlite
-    else
-        echo "shinobi.sqlite already exists. Continuing..."
-    fi
-elif [ "$sqliteormariadb" = "M" ] || [ "$sqliteormariadb" = "" ]; then
+if [ "installdbserver" = "M" ] || [ "$installdbserver" = "" ]; then
     echo "========================================================="
     echo "Installing MariaDB repository..."
 	#Add the MariaDB repository to yum
@@ -139,7 +124,7 @@ elif [ "$sqliteormariadb" = "M" ] || [ "$sqliteormariadb" = "" ]; then
         sudo mysql -u $sqluser -p$sqlpass -e "source sql/framework.sql" || true
     fi
 	
-elif [ "$sqliteormariadb" = "N" ]; then
+elif [ "$installdbserver" = "N" ]; then
     echo "========================================================="
     echo "Skipping database server installation..."
 fi
