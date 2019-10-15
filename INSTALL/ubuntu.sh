@@ -69,53 +69,34 @@ else
     echo "Version : $(ffmpeg -version)"
 fi
 echo "============="
-echo "Shinobi - Do you want to use MariaDB or SQLite3?"
-echo "SQLite3 is better for small installs"
-echo "MariaDB (MySQL) is better for large installs"
-echo "(S)QLite3 or (M)ariaDB?"
-echo "Press [ENTER] for default (MariaDB)"
-read sqliteormariadb
-if [ "$sqliteormariadb" = "S" ] || [ "$sqliteormariadb" = "s" ]; then
-    sudo npm install jsonfile
-    sudo apt-get install sqlite3 libsqlite3-dev -y
-    sudo npm install sqlite3
-    node ./tools/modifyConfiguration.js databaseType=sqlite3
-    if [ ! -e "./shinobi.sqlite" ]; then
-        echo "Creating shinobi.sqlite for SQLite3..."
-        sudo cp sql/shinobi.sample.sqlite shinobi.sqlite
-    else
-        echo "shinobi.sqlite already exists. Continuing..."
-    fi
-else
-    echo "Shinobi - Do you want to Install MariaDB? Choose No if you already have it."
-    echo "(y)es or (N)o"
-    read mysqlagree
+echo "Shinobi - Do you want to Install MariaDB? Choose No if you already have it."
+echo "(y)es or (N)o"
+read mysqlagree
+if [ "$mysqlagree" = "y" ] || [ "$mysqlagree" = "Y" ]; then
+    echo "Shinobi - Installing MariaDB"
+    echo "Password for root SQL user, If you are installing SQL now then you may put anything:"
+    read sqlpass
+    echo "mariadb-server mariadb-server/root_password password $sqlpass" | debconf-set-selections
+    echo "mariadb-server mariadb-server/root_password_again password $sqlpass" | debconf-set-selections
+    sudo apt install mariadb-server -y
+    sudo service mysql start
+fi
+echo "============="
+echo "Shinobi - Database Installation"
+echo "(y)es or (N)o"
+read mysqlagreeData
+if [ "$mysqlagreeData" = "y" ] || [ "$mysqlagreeData" = "Y" ]; then
     if [ "$mysqlagree" = "y" ] || [ "$mysqlagree" = "Y" ]; then
-        echo "Shinobi - Installing MariaDB"
-        echo "Password for root SQL user, If you are installing SQL now then you may put anything:"
+        sqluser="root"
+    fi
+    if [ ! "$mysqlagree" = "y" ]; then
+        echo "What is your SQL Username?"
+        read sqluser
+        echo "What is your SQL Password?"
         read sqlpass
-        echo "mariadb-server mariadb-server/root_password password $sqlpass" | debconf-set-selections
-        echo "mariadb-server mariadb-server/root_password_again password $sqlpass" | debconf-set-selections
-        sudo apt install mariadb-server -y
-        sudo service mysql start
     fi
-    echo "============="
-    echo "Shinobi - Database Installation"
-    echo "(y)es or (N)o"
-    read mysqlagreeData
-    if [ "$mysqlagreeData" = "y" ] || [ "$mysqlagreeData" = "Y" ]; then
-        if [ "$mysqlagree" = "y" ] || [ "$mysqlagree" = "Y" ]; then
-            sqluser="root"
-        fi
-        if [ ! "$mysqlagree" = "y" ]; then
-            echo "What is your SQL Username?"
-            read sqluser
-            echo "What is your SQL Password?"
-            read sqlpass
-        fi
-        sudo mysql -u $sqluser -p$sqlpass -e "source sql/user.sql" || true
-        sudo mysql -u $sqluser -p$sqlpass -e "source sql/framework.sql" || true
-    fi
+    sudo mysql -u $sqluser -p$sqlpass -e "source sql/user.sql" || true
+    sudo mysql -u $sqluser -p$sqlpass -e "source sql/framework.sql" || true
 fi
 echo "============="
 echo "Shinobi - Install NPM Libraries"
