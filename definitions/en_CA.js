@@ -888,34 +888,6 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
-                      "name": "detail=signal_check",
-                      "field": lang["Check Signal Interval"],
-                      "description": "How often your client will check each stream to see if it is alive. This is calculated in minutes.",
-                      "default": "0",
-                      "example": "",
-                      "form-group-class": "h_st_input h_st_mjpeg h_st_b64 h_st_hls h_st_gif h_st_flv h_st_mp4 h_st_h265 h_hls_v_input h_hls_v_libx264 h_hls_v_libx265 h_hls_v_h264_nvenc h_hls_v_hevc_nvenc h_hls_v_no",
-                      "possible": ""
-                   },
-                   {
-                      "name": "detail=signal_check_log",
-                      "field": lang["Log Signal Event"],
-                      "description": "This is for the client side only. It will display in the log thread when client side signal checks occur.",
-                      "default": "0",
-                      "example": "",
-                      "fieldType": "select",
-                      "form-group-class": "h_st_input h_st_mjpeg h_st_b64 h_st_hls h_st_gif h_st_flv h_st_mp4 h_st_h265 h_hls_v_input h_hls_v_libx264 h_hls_v_libx265 h_hls_v_h264_nvenc h_hls_v_hevc_nvenc h_hls_v_no",
-                      "possible": [
-                         {
-                            "name": lang.No,
-                            "value": "0",
-                         },
-                         {
-                            "name": lang.Yes,
-                            "value": "1",
-                         }
-                      ]
-                   },
-                   {
                       "name": "detail=stream_quality",
                       "field": lang.Quality,
                       "description": "Low number means higher quality. Higher number means less quality.",
@@ -989,6 +961,32 @@ module.exports = function(s,config,lang){
                               "value": "3"
                            }
                         ]
+                   },
+                   {
+                      "name": "detail=signal_check",
+                      "field": lang["Check Signal Interval"],
+                      "description": "How often your client will check the stream to see if it is alive. This is calculated in minutes.",
+                      "default": "0",
+                      "example": "",
+                      "possible": ""
+                   },
+                   {
+                      "name": "detail=signal_check_log",
+                      "field": lang["Log Signal Event"],
+                      "description": "This is for the client side only. It will display in the log thread when client side signal checks occur.",
+                      "default": "0",
+                      "example": "",
+                      "fieldType": "select",
+                      "possible": [
+                         {
+                            "name": lang.No,
+                            "value": "0",
+                         },
+                         {
+                            "name": lang.Yes,
+                            "value": "1",
+                         }
+                      ]
                    },
                    {
                       "name": "detail=svf",
