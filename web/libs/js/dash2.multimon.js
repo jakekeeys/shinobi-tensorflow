@@ -81,7 +81,7 @@ $.multimon.e.find('.import_config').click(function(){
                     return newMon
                 }
                 var textFieldData = $.confirm.e.find('textarea').val()
-                var parsedData = JSON.parse()
+                var parsedData = JSON.parse(textFieldData)
                 //zoneminder one monitor
                 if(parsedData.monitor){
                     $.aM.import({
