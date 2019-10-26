@@ -1,45 +1,64 @@
-<!--Help Window-->
-<!--
-<div class="modal fade" id="help_window" tabindex="-1" role="dialog" aria-labelledby="help_windowLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-        <h4 class="modal-title" id="help_windowLabel"><i class="fa fa-question-circle"></i> &nbsp; <span><%-lang.Help%></span></h4>
-      </div>
-      <div class="modal-body">
-          <a href="http://shinobi.video/docs/donate"><img src="<%-window.libURL%>libs/img/icon/apple-touch-icon-152x152.png" class="pull-right" style="border-radius:50%;margin-left:20px;border: 1px solid #c3996b;"></a>
-          <p>For information about how to use Shinobi you can check out the <a target="_blank" href="http://shinobi.video/docs">Docs</a>.</p>
-          <p>If you would like to get professional support please consider ordering a <a href="http://shinobi.video/support">support package</a>. You can find <b>Moe Alam, The Author</b>, on the <a target="_blank" href="https://discord.gg/ehRd8Zz">Discord</a> Community Chat. For general questions and community support you can also try <a href="https://www.reddit.com/r/ShinobiCCTV">Reddit</a>.</p>
-          <p><strong>Support </strong> <a href="http://shinobi.video/support">from @moeiscool</a></p>
-        <p><b>Like Shinobi?</b> Please consider donating!</p>
-        <div><p><strong>Paypal Address :</strong> <a href="https://www.paypal.me/ShinobiCCTV" target="_blank">paypal@m03.ca</a></p>
+<% if(!config.userHasSubscribed){ %>
+    <div class="modal fade" id="help_window" tabindex="-1" role="dialog" aria-labelledby="help_windowLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title" id="help_windowLabel"><i class="fa fa-question-circle"></i> &nbsp; <span><%-lang.Help%></span></h4>
+          </div>
+          <div class="modal-body">
+              <blockquote class="blockquoteInHelp">
+                  <a href="https://licenses.shinobi.video/subscribe" target="_blank"><img src="<%-window.libURL%>libs/img/icon/apple-touch-icon-152x152.png" class="pull-right" style="border-radius:50%;margin-left:20px;border: 1px solid #c3996b;"></a>
+                  <p>For information about how to use Shinobi you can check out the <a target="_blank" href="http://shinobi.video/docs">Docs</a>.</p>
+                  <p><a target="_blank" href="https://discord.gg/ehRd8Zz">Discord</a> Community Chat is great for meeting people and asking questions. For general questions and community support you can also try the <a href="https://www.reddit.com/r/ShinobiCCTV">Reddit forum</a>.</p>
+              </blockquote>
+              <blockquote class="blockquoteInHelp" style="margin-bottom:10px">
+                  <b>Support the development by subscribing</b> to any of the following and put your subscription key in the configuration file (conf.json), then restart Shinobi and this annoying popup window won't appear anymore, thanks! <i class="fa fa-smile-o"></i>
+                  <br><br>
+                  <code>"subscriptionId":"sub_XXXXXXXXXXXX",</code>
+                  <br><br>
+                  <p>If you already are supporting the development in a different way, please contact us and we can get this popup to go away for you :) Cheers!</p>
+              </blockquote>
+              <div style="margin-bottom:10px;text-align:center">
+                  <a href="https://licenses.shinobi.video/subscribe?planSubscribe=plan_G31AZ9mknNCa6z" target="_blank" class="btn btn-default"><i class="fa fa-share-square-o" aria-hidden="true"></i> Shinobi Mobile License ($5/m)</a>
+                  <a href="https://licenses.shinobi.video/subscribe?planSubscribe=plan_G3LGdNwA8lSmQy" target="_blank" class="btn btn-default"><i class="fa fa-share-square-o" aria-hidden="true"></i> Shinobi Pro License ($75/m)</a> &nbsp;
+              </div>
+              <div style="margin-bottom:5px;text-align:center">
+                  <a href="https://licenses.shinobi.video/subscribe?planSubscribe=plan_G42jNgIqXaWmIC" target="_blank" class="btn btn-default"><i class="fa fa-share-square-o" aria-hidden="true"></i> Tiny Support Subscription ($10/m)</a> &nbsp;
+              </div>
+              <div>
+                  <!-- <iframe src="https://shinobi.video/ads" style="width:100%;height:250px;border:none;"></iframe> -->
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger pull-left hide_donate"><%-lang['Close']%></button>
+            <a target="_blank" href="http://discordapp.com/invite/mdhmvuH/" class="btn btn-primary"><%-lang['Chat on Discord']%></a>
+            <a target="_blank" href="http://shinobi.video/docs" class="btn btn-success"><%-lang.Documentation%></a>
+          </div>
         </div>
-        <p><strong>Bitcoin Address :</strong> 1FvC7M8P9wVT1hXwHj8ugxpZj8JGfGyUDu</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-danger pull-left hide_donate"><%-lang['Don\'t show this anymore']%></button>
-        <a target="_blank" href="http://discordapp.com/invite/mdhmvuH/" class="btn btn-primary"><%-lang['Chat on Discord']%></a>
-        <a target="_blank" href="http://shinobi.video/docs" class="btn btn-success"><%-lang.Documentation%></a>
       </div>
     </div>
-  </div>
-</div>
-<script>
-$(document).ready(function(){
-    $.help={hide:$('#help_window .hide_donate'),e:$('#help_window')}
-    if($.ccio.op().hide_donate!==1){
-        setTimeout(function(){
-            $.help.e.modal('show')
-        },1000*60*5)
-        $.help.hide.click(function(){
-            $.ccio.op('hide_donate',1);
-            $.help.e.modal('hide');
-        })
-    }else{
-        $.help.hide.hide()
-    }
-})
-</script>-->
+    <style>
+        .blockquoteInHelp:before,.blockquoteInHelp:after{
+            display:none;
+        }
+    </style>
+    <script>
+    $(document).ready(function(){
+        $.help={hide:$('#help_window .hide_donate'),e:$('#help_window')}
+        // if($.ccio.op().hide_donate !== 1){
+            setTimeout(function(){
+                $.help.e.modal('show')
+            },1000*60*0.2)
+            $.help.hide.click(function(){
+                // $.ccio.op('hide_donate',1);
+                $.help.e.modal('hide');
+            })
+        // }else{
+        //     $.help.hide.hide()
+        // }
+    })
+    </script>
+<% } %>
