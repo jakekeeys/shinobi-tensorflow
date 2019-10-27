@@ -226,7 +226,7 @@ module.exports = function(s,config,lang,onFinish){
         //`x` is an object used to contain temporary values.
         var x = {
             pipe: '',
-            cust_stream: ''
+            cust_stream: ' -strict -2'
         }
         if(!number||number==''){
             x.channel_sdir = e.sdir;
@@ -478,7 +478,7 @@ module.exports = function(s,config,lang,onFinish){
         //x = temporary values
         x.stream_video_filters = []
         x.pipe = ''
-        x.cust_stream = ''
+        x.cust_stream = ' -strict -2'
         //stream - timestamp
         if(e.details.stream_timestamp&&e.details.stream_timestamp=="1"&&e.details.vcodec!=='copy'){
             //font
@@ -659,6 +659,7 @@ module.exports = function(s,config,lang,onFinish){
         //x = temporary values
         x.record_video_filters = []
         x.record_string = ''
+        x.cust_record = e.details.cust_record ? e.details.cust_record.split(' ') : []
         //record - resolution
         if(e.record_scale_x!==''&&e.record_scale_y!==''&&e.record_scale_x!=='0'&&e.record_scale_y!=='0'&&!isNaN(e.record_scale_x)&&!isNaN(e.record_scale_y)){
             x.record_dimensions=' -s '+e.record_scale_x+'x'+e.record_scale_y
@@ -675,7 +676,7 @@ module.exports = function(s,config,lang,onFinish){
             case'mp4':
                 x.vcodec='libx264';x.acodec='aac';
                 if(e.details.crf&&e.details.crf!==''){x.vcodec+=' -crf '+e.details.crf}
-                x.record_video_filters.push(`-segment_format_options movflags=faststart+frag_keyframe+empty_moov`)
+                x.cust_record.push(`-segment_format_options movflags=faststart+frag_keyframe+empty_moov`)
             break;
             case'webm':
                 x.acodec='libvorbis',x.vcodec='libvpx';
@@ -689,10 +690,8 @@ module.exports = function(s,config,lang,onFinish){
         if(e.details.vcodec&&e.details.vcodec!==''&&e.details.vcodec!=='default'){x.vcodec=e.details.vcodec}
         //record - use custom audio codec
         if(e.details.acodec&&e.details.acodec!==''&&e.details.acodec!=='default'){x.acodec=e.details.acodec}
-        if(e.details.cust_record){
-            if(x.acodec=='aac'&&e.details.cust_record.indexOf('-strict -2')===-1){e.details.cust_record+=' -strict -2';}
-            if(e.details.cust_record.indexOf('-threads')===-1){e.details.cust_record+=' -threads 1';}
-        }
+        if(e.details.cust_record.indexOf('-strict -2') === -1){x.cust_record.push(' -strict -2')}
+        if(e.details.cust_record.indexOf('-threads')===-1){x.cust_record.push(' -threads 1')}
     //    if(e.details.cust_input&&(e.details.cust_input.indexOf('-use_wallclock_as_timestamps 1')>-1)===false){e.details.cust_input+=' -use_wallclock_as_timestamps 1';}
         //record - ready or reset codecs
         if(x.acodec!=='no'){
@@ -765,7 +764,7 @@ module.exports = function(s,config,lang,onFinish){
                 break;
             }
             //custom flags
-            if(e.details.cust_record&&e.details.cust_record!==''){x.record_string+=' '+e.details.cust_record;}
+            if(x.cust_record.length > 0){x.record_string+=' ' + x.cust_record.join(' ')}
             //preset flag
             if(e.details.preset_record&&e.details.preset_record!==''){x.record_string+=' -preset '+e.details.preset_record;}
             //main string write
