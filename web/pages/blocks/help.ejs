@@ -33,7 +33,7 @@
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-danger pull-left hide_donate"><%-lang['Close']%></button>
+            <button type="button" class="btn btn-danger pull-left hide_donate"><%-lang[`Don't Show for 1 Week`]%></button>
             <a target="_blank" href="http://discordapp.com/invite/mdhmvuH/" class="btn btn-primary"><%-lang['Chat on Discord']%></a>
             <a target="_blank" href="http://shinobi.video/docs" class="btn btn-success"><%-lang.Documentation%></a>
           </div>
@@ -47,18 +47,25 @@
     </style>
     <script>
     $(document).ready(function(){
+        var lessThanOneWeekAgo = (date) => {
+            const WEEK = 1000 * 60 * 60 * 24 * 7;
+            const aWeekAgo = Date.now() - WEEK;
+
+            return date < aWeekAgo;
+        }
         $.help={hide:$('#help_window .hide_donate'),e:$('#help_window')}
-        // if($.ccio.op().hide_donate !== 1){
+        if(!$.ccio.op().subscription_checked || lessThanOneWeekAgo(new Date($.ccio.op().subscription_checked))){
+
             setTimeout(function(){
                 $.help.e.modal('show')
-            },1000*60*0.2)
+            },1000 * 60 * 0.2)
             $.help.hide.click(function(){
-                // $.ccio.op('hide_donate',1);
+                $.ccio.op('subscription_checked',new Date());
                 $.help.e.modal('hide');
             })
-        // }else{
-        //     $.help.hide.hide()
-        // }
+        }
+        console.log('Please support the Shinobi developement.')
+        console.log('https://licenses.shinobi.video/subscribe')
     })
     </script>
 <% } %>
