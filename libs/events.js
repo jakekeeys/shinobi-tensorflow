@@ -257,7 +257,7 @@ module.exports = function(s,config,lang){
             if(forceSave || (filter.save && currentConfig.detector_save === '1')){
                 s.sqlQuery('INSERT INTO Events (ke,mid,details,time) VALUES (?,?,?,?)',[d.ke,d.id,detailString,eventTime])
             }
-            if(currentConfig.detector_notrigger === '1'){
+            if(currentConfig.detector === '1' && currentConfig.detector_notrigger === '1'){
                 s.setNoEventsDetector(s.group[d.ke].rawMonitorConfigurations[d.id])
             }
             var detector_timeout

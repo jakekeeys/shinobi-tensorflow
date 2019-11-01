@@ -219,7 +219,7 @@ module.exports = function(s,config,lang){
                         mailOptions.html+='<div><b>'+lang['Monitor ID']+' </b> : '+e.id+'</div>'
                         s.nodemailer.sendMail(mailOptions, (error, info) => {
                             if (error) {
-                               s.systemLog('detector:notrigger:sendMail',error)
+                                s.systemLog('detector:notrigger:sendMail',error)
                                 s.tx({f:'error',ff:'detector_notrigger_mail',id:e.id,ke:e.ke,error:error},'GRP_'+e.ke);
                                 return ;
                             }
