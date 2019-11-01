@@ -1215,6 +1215,17 @@ module.exports = function(s,config,lang){
             s.userLog(e,{type:"FFMPEG STDERR",msg:d})
         })
     }
+    //formerly known as "No Motion" Detector
+    s.setNoEventsDetector = function(e){
+        var monitorId = e.id || e.mid
+        var detector_notrigger_timeout = (parseFloat(e.details.detector_notrigger_timeout) || 10) * 1000 * 60
+        clearInterval(s.group[e.ke].activeMonitors[monitorId].detector_notrigger_timeout)
+        s.group[e.ke].activeMonitors[monitorId].detector_notrigger_timeout = setInterval(function(){
+            s.onDetectorNoTriggerTimeoutExtensions.forEach(function(extender){
+                extender(e)
+            })
+        },detector_notrigger_timeout)
+    }
     //set master based process launcher
     s.launchMonitorProcesses = function(e){
         // e = monitor object
@@ -1229,24 +1240,14 @@ module.exports = function(s,config,lang){
                     mid : e.id
                 },e.ke)
                 if(e.details.detector_trigger === '1'){
-                    s.group[e.ke].activeMonitors[e.id].motion_lock=setTimeout(function(){
-                        clearTimeout(s.group[e.ke].activeMonitors[e.id].motion_lock);
-                        delete(s.group[e.ke].activeMonitors[e.id].motion_lock);
+                    s.group[e.ke].activeMonitors[e.id].motion_lock = setTimeout(function(){
+                        clearTimeout(s.group[e.ke].activeMonitors[e.id].motion_lock)
+                        delete(s.group[e.ke].activeMonitors[e.id].motion_lock)
                     },15000)
                 }
                 //start "no motion" checker
                 if(e.details.detector === '1' && e.details.detector_notrigger === '1'){
-                    if(!e.details.detector_notrigger_timeout || e.details.detector_notrigger_timeout === ''){
-                        e.details.detector_notrigger_timeout = 10
-                    }
-                    e.detector_notrigger_timeout = parseFloat(e.details.detector_notrigger_timeout)*1000*60;
-                    s.group[e.ke].activeMonitors[e.id].detector_notrigger_timeout_function = function(){
-                        s.onDetectorNoTriggerTimeoutExtensions.forEach(function(extender){
-                            extender(e)
-                        })
-                    }
-                    clearInterval(s.group[e.ke].activeMonitors[e.id].detector_notrigger_timeout)
-                    s.group[e.ke].activeMonitors[e.id].detector_notrigger_timeout=setInterval(s.group[e.ke].activeMonitors[e.id].detector_notrigger_timeout_function,s.group[e.ke].activeMonitors[e.id].detector_notrigger_timeout)
+                    s.setNoEventsDetector(e)
                 }
                 if(e.details.snap === '1'){
                     var resetSnapCheck = function(){

@@ -258,14 +258,7 @@ module.exports = function(s,config,lang){
                 s.sqlQuery('INSERT INTO Events (ke,mid,details,time) VALUES (?,?,?,?)',[d.ke,d.id,detailString,eventTime])
             }
             if(currentConfig.detector_notrigger === '1'){
-                var detector_notrigger_timeout
-                if(!currentConfig.detector_notrigger_timeout||currentConfig.detector_notrigger_timeout === ''){
-                    detector_notrigger_timeout = 10
-                }
-                detector_notrigger_timeout = parseFloat(currentConfig.detector_notrigger_timeout)*1000*60;
-                s.group[d.ke].activeMonitors[d.id].detector_notrigger_timeout = detector_notrigger_timeout;
-                clearInterval(s.group[d.ke].activeMonitors[d.id].detector_notrigger_timeout)
-                s.group[d.ke].activeMonitors[d.id].detector_notrigger_timeout = setInterval(s.group[d.ke].activeMonitors[d.id].detector_notrigger_timeout_function,detector_notrigger_timeout)
+                s.setNoEventsDetector(s.group[d.ke].rawMonitorConfigurations[d.id])
             }
             var detector_timeout
             if(!currentConfig.detector_timeout||currentConfig.detector_timeout===''){

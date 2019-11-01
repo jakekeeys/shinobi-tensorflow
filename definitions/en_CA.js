@@ -2702,8 +2702,26 @@ module.exports = function(s,config,lang){
                          },
                          {
                             "name": "detail=detector_notrigger_mail",
-                            "field": `Email on "No Motion"`,
+                            "field": lang['Email'],
                             "description": "If motion has not been detected after the timeout period you will recieve an email.",
+                            "default": "0",
+                            "example": "",
+                            "fieldType": "select",
+                            "possible": [
+                               {
+                                  "name": lang.No,
+                                  "value": "0"
+                               },
+                               {
+                                  "name": lang.Yes,
+                                  "value": "1"
+                               }
+                            ]
+                         },
+                         {
+                            "name": "detail=detector_notrigger_discord",
+                            "field": lang['Discord'],
+                            "description": "If motion has not been detected after the timeout period you will recieve an Discord notification.",
                             "default": "0",
                             "example": "",
                             "fieldType": "select",
