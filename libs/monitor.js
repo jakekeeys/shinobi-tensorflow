@@ -1219,8 +1219,28 @@ module.exports = function(s,config,lang){
     s.setNoEventsDetector = function(e){
         var monitorId = e.id || e.mid
         var detector_notrigger_timeout = (parseFloat(e.details.detector_notrigger_timeout) || 10) * 1000 * 60
+        var currentConfig = s.group[e.ke].rawMonitorConfigurations[monitorId].details
         clearInterval(s.group[e.ke].activeMonitors[monitorId].detector_notrigger_timeout)
         s.group[e.ke].activeMonitors[monitorId].detector_notrigger_timeout = setInterval(function(){
+            if(currentConfig.detector_notrigger_webhook === '1' && !s.group[e.ke].activeMonitors[monitorId].detector_notrigger_webhook){
+                s.group[e.ke].activeMonitors[monitorId].detector_notrigger_webhook = s.createTimeout('detector_notrigger_webhook',s.group[e.ke].activeMonitors[monitorId],currentConfig.detector_notrigger_webhook_timeout,10)
+                var detector_notrigger_webhook_url = s.addEventDetailsToString(e,currentConfig.detector_notrigger_webhook_url)
+                var webhookMethod = currentConfig.detector_notrigger_webhook_method
+                if(!webhookMethod || webhookMethod === '')webhookMethod = 'GET'
+                request(detector_notrigger_webhook_url,{method: webhookMethod,encoding:null},function(err,data){
+                    if(err){
+                        s.userLog(d,{type:lang["Event Webhook Error"],msg:{error:err,data:data}})
+                    }
+                })
+            }
+            if(currentConfig.detector_notrigger_command_enable === '1' && !s.group[e.ke].activeMonitors[monitorId].detector_notrigger_command){
+                s.group[e.ke].activeMonitors[monitorId].detector_notrigger_command = s.createTimeout('detector_notrigger_command',s.group[e.ke].activeMonitors[monitorId],currentConfig.detector_notrigger_command_timeout,10)
+                var detector_notrigger_command = s.addEventDetailsToString(e,currentConfig.detector_notrigger_command)
+                if(detector_notrigger_command === '')return
+                exec(detector_notrigger_command,{detached: true},function(err){
+                    if(err)s.debugLog(err)
+                })
+            }
             s.onDetectorNoTriggerTimeoutExtensions.forEach(function(extender){
                 extender(e)
             })

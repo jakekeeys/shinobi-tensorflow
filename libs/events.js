@@ -4,7 +4,7 @@ var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var request = require('request');
 module.exports = function(s,config,lang){
-    var addEventDetailsToString = function(eventData,string,addOps){
+    s.addEventDetailsToString = function(eventData,string,addOps){
         //d = event data
         if(!addOps)addOps = {}
         var newString = string + ''
@@ -307,7 +307,7 @@ module.exports = function(s,config,lang){
             })
 
             if(filter.webhook && currentConfig.detector_webhook === '1'){
-                var detector_webhook_url = addEventDetailsToString(d,currentConfig.detector_webhook_url)
+                var detector_webhook_url = s.addEventDetailsToString(d,currentConfig.detector_webhook_url)
                 var webhookMethod = currentConfig.detector_webhook_method
                 if(!webhookMethod || webhookMethod === '')webhookMethod = 'GET'
                 request(detector_webhook_url,{method: webhookMethod,encoding:null},function(err,data){
@@ -319,7 +319,7 @@ module.exports = function(s,config,lang){
 
             if(filter.command && currentConfig.detector_command_enable === '1' && !s.group[d.ke].activeMonitors[d.id].detector_command){
                 s.group[d.ke].activeMonitors[d.id].detector_command = s.createTimeout('detector_command',s.group[d.ke].activeMonitors[d.id],currentConfig.detector_command_timeout,10)
-                var detector_command = addEventDetailsToString(d,currentConfig.detector_command)
+                var detector_command = s.addEventDetailsToString(d,currentConfig.detector_command)
                 if(detector_command === '')return
                 exec(detector_command,{detached: true},function(err){
                     if(err)s.debugLog(err)
