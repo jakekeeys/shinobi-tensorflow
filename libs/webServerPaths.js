@@ -11,6 +11,7 @@ var httpProxy = require('http-proxy');
 var onvif = require('node-onvif');
 var proxy = httpProxy.createProxyServer({})
 var ejs = require('ejs');
+var fileupload = require("express-fileupload");
 module.exports = function(s,config,lang,app,io){
     if(config.productType==='Pro'){
         var LdapAuth = require('ldapauth-fork');
@@ -1781,6 +1782,70 @@ module.exports = function(s,config,lang,app,io){
             s.cameraControl(req.params,function(resp){
                 res.end(s.prettyPrint(resp))
             });
+        },res,req);
+    })
+    /**
+    * API : Upload Video File
+     */
+    app.post(config.webPaths.apiPrefix+':auth/videos/:ke/:id',fileupload(), async (req,res) => {
+        var response = {ok:false}
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,function(user){
+            if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.video_delete.indexOf(req.params.id)===-1){
+                res.end(user.lang['Not Permitted'])
+                return
+            }
+            var time = new Date()
+            var origURL = req.originalUrl.split('/')
+            var videoParam = origURL[origURL.indexOf(req.params.auth) + 1]
+            var videoSet = 'Videos'
+            req.sql='SELECT * FROM `Monitors` WHERE ke=? AND mid=?';
+            req.ar=[req.params.ke,req.params.id];
+            s.sqlQuery(req.sql,req.ar,function(err,r){
+                if(r && r[0]){
+                    var monitor = r[0]
+                    // req.query.overwrite === '1'
+                    var filename = s.formattedTime(time) + '.' + monitor.ext
+                    if(s.group[req.params.ke] && s.group[req.params.ke].activeMonitors[req.params.id]){
+                        try {
+                            if(!req.files) {
+                                res.send({
+                                    status: false,
+                                    message: 'No file uploaded'
+                                });
+                            } else {
+                                let video = req.files.video;
+                                video.mv(s.getVideoDirectory(monitor) +  filename,function(){
+                                    s.insertCompletedVideo(monitor,{
+                                        file : filename
+                                    },function(){
+                                        response.ok = true
+                                        response.filename = filename
+                                        res.end(s.prettyPrint({
+                                            ok: true,
+                                            message: 'File is uploaded',
+                                            data: {
+                                                name: video.name,
+                                                mimetype: video.mimetype,
+                                                size: video.size
+                                            }
+                                        }))
+                                    })
+                                });
+                            }
+                        } catch (err) {
+                            response.err = err
+                            res.status(500).send(response)
+                        }
+                    }else{
+                        response.error = 'Non Existant Monitor'
+                        res.end(s.prettyPrint(response))
+                    }
+                }else{
+                    response.msg = user.lang['No such file']
+                    res.end(s.prettyPrint(response))
+                }
+            })
         },res,req);
     })
     /**
