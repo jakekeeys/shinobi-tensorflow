@@ -114,7 +114,7 @@ module.exports = function(s,config,lang){
                 k.filesizeMB = parseFloat((k.filesize/1000000).toFixed(2))
 
                 k.startTime = new Date(s.nameToTime(k.file))
-                k.endTime = new Date(k.stat.mtime)
+                k.endTime = new Date(k.endTime || k.stat.mtime)
                 if(config.useUTC === true){
                     fs.rename(k.dir+k.file, k.dir+s.formattedTime(k.startTime)+'.'+e.ext, (err) => {
                         if (err) return console.error(err);

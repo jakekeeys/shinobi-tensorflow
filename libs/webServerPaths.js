@@ -1795,7 +1795,6 @@ module.exports = function(s,config,lang,app,io){
                 res.end(user.lang['Not Permitted'])
                 return
             }
-            var time = new Date()
             var origURL = req.originalUrl.split('/')
             var videoParam = origURL[origURL.indexOf(req.params.auth) + 1]
             var videoSet = 'Videos'
@@ -1805,7 +1804,6 @@ module.exports = function(s,config,lang,app,io){
                 if(r && r[0]){
                     var monitor = r[0]
                     // req.query.overwrite === '1'
-                    var filename = s.formattedTime(time) + '.' + monitor.ext
                     if(s.group[req.params.ke] && s.group[req.params.ke].activeMonitors[req.params.id]){
                         try {
                             if(!req.files) {
@@ -1815,6 +1813,8 @@ module.exports = function(s,config,lang,app,io){
                                 });
                             } else {
                                 let video = req.files.video;
+                                var time = new Date(parseInt(video.name.split('.')[0]))
+                                var filename = s.formattedTime(time) + '.' + monitor.ext
                                 video.mv(s.getVideoDirectory(monitor) +  filename,function(){
                                     s.insertCompletedVideo(monitor,{
                                         file : filename
@@ -1835,7 +1835,7 @@ module.exports = function(s,config,lang,app,io){
                             }
                         } catch (err) {
                             response.err = err
-                            res.status(500).send(response)
+                            res.status(500).end(response)
                         }
                     }else{
                         response.error = 'Non Existant Monitor'
