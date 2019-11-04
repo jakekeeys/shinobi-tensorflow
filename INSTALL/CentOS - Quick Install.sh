@@ -12,19 +12,37 @@ echo "========================================================="
 read -p "Press [Enter] to begin..."
 
 echo "Installing dependencies and tools"
-#Check to see if we are running on a virtual machinie
+#Check to see if we are running on a virtual machine
 if hostnamectl | grep -oq "Chassis: vm"; then
     vm="open-vm-tools"
 else
     vm=""
 fi
-#Installing deltarpm first will greatly increase the download speed of the other packages
-yum install deltarpm -y
-#Install remaining packages
-yum install nano $vm dos2unix net-tools curl wget git make zip -y
+#Check to see if we are running CentOS 8 
+if hostnamectl | grep -oq "Operating System: CentOS Linux 8"; then
+    os="8"
+elif [ hostnamectl | grep -oq "Operating System: CentOS Linux 7" ]; then
+	os="7"
+else
+	os="7"
+fi
 
-echo "Updating system"
-sudo yum update -y
+if [ "$os" = "7" ]; then
+	#Installing deltarpm first will greatly increase the download speed of the other packages
+	sudo yum install deltarpm -y
+	#Install remaining packages
+	sudo yum install nano $vm dos2unix net-tools curl wget git make zip -y
+	#Ensure everything is up to date
+	echo "Updating system..."
+	sudo yum update -y
+elif [ "$os" = "8" ]; then
+	#Installing deltarpm first will greatly increase the download speed of the other packages
+	sudo dnf install drpm -y
+	#Install remaining packages
+	sudo dnf install nano $vm dos2unix net-tools curl wget git make zip
+	#Ensure everything is up to date
+fi
+
 
 #Skip if running from the Ninja installer
 if [ "$1" != 1 ]; then
