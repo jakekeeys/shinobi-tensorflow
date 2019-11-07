@@ -9,7 +9,7 @@ $.aM.e.find('.follow-list ul').affix();
 $.aM.generateDefaultMonitorSettings=function(){
     return {
    "mode": "start",
-   "mid": "Gdvu1tX6Eq",
+   "mid": $.ccio.gid(),
    "name": "Some Stream",
    "type": "h264",
    "host": "",
