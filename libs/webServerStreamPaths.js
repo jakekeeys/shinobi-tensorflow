@@ -10,7 +10,6 @@ var spawn = require('child_process').spawn;
 var httpProxy = require('http-proxy');
 var proxy = httpProxy.createProxyServer({})
 var ejs = require('ejs');
-var CircularJSON = require('circular-json');
 module.exports = function(s,config,lang,app){
     /**
     * Page : Get Embed Stream
@@ -25,7 +24,7 @@ module.exports = function(s,config,lang,app){
             if(s.group[req.params.ke]&&s.group[req.params.ke].activeMonitors[req.params.id]){
                 if(s.group[req.params.ke].activeMonitors[req.params.id].isStarted === true){
                     req.params.uid=user.uid;
-                    s.renderPage(req,res,config.renderPaths.embed,{data:req.params,baseUrl:req.protocol+'://'+req.hostname,config: s.getConfigWithBranding(req.hostname),lang:user.lang,mon:CircularJSON.parse(CircularJSON.stringify(s.group[req.params.ke].rawMonitorConfigurations[req.params.id])),originalURL:s.getOriginalUrl(req)});
+                    s.renderPage(req,res,config.renderPaths.embed,{data:req.params,baseUrl:req.protocol+'://'+req.hostname,config: s.getConfigWithBranding(req.hostname),lang:user.lang,mon:Object.assign(s.group[req.params.ke].rawMonitorConfigurations[req.params.id],{}),originalURL:s.getOriginalUrl(req)});
                     res.end()
                 }else{
                     res.end(user.lang['Cannot watch a monitor that isn\'t running.'])
@@ -123,33 +122,35 @@ module.exports = function(s,config,lang,app){
                         'Connection': 'keep-alive',
                         'Pragma': 'no-cache'
                         });
-                        var contentWriter,content = fs.readFileSync(config.defaultMjpeg,'binary');
-                        res.write("--shinobi\r\n");
-                        res.write("Content-Type: image/jpeg\r\n");
-                        res.write("Content-Length: " + content.length + "\r\n");
-                        res.write("\r\n");
-                        res.write(content,'binary');
-                        res.write("\r\n");
-                        var ip = s.getClientIp(req)
-                        s.camera('watch_on',{
-                            id : req.params.id,
-                            ke : req.params.ke
-                        },{
-                            id : req.params.auth + ip + req.headers['user-agent']
-                        })
-                        Emitter.on('data',contentWriter=function(d){
-                            content = d;
+                        var contentWriter
+                        fs.readFile(config.defaultMjpeg,'binary',function(err,content){
+                            res.write("--shinobi\r\n");
+                            res.write("Content-Type: image/jpeg\r\n");
+                            res.write("Content-Length: " + content.length + "\r\n");
+                            res.write("\r\n");
                             res.write(content,'binary');
-                        })
-                        res.on('close', function () {
-                            Emitter.removeListener('data',contentWriter)
-                            s.camera('watch_off',{
+                            res.write("\r\n");
+                            var ip = s.getClientIp(req)
+                            s.camera('watch_on',{
                                 id : req.params.id,
                                 ke : req.params.ke
                             },{
                                 id : req.params.auth + ip + req.headers['user-agent']
                             })
-                        });
+                            Emitter.on('data',contentWriter=function(d){
+                                content = d;
+                                res.write(content,'binary');
+                            })
+                            res.on('close', function () {
+                                Emitter.removeListener('data',contentWriter)
+                                s.camera('watch_off',{
+                                    id : req.params.id,
+                                    ke : req.params.ke
+                                },{
+                                    id : req.params.auth + ip + req.headers['user-agent']
+                                })
+                            })
+                        })
                     }else{
                         res.end();
                     }

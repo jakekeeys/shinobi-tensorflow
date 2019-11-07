@@ -162,11 +162,36 @@ module.exports = function(s,config,lang){
                     delete(s.group[user.ke].discordBot)
                 }
             }
+            var onDetectorNoTriggerTimeoutForDiscord = function(e){
+                //e = monitor object
+                var currentTime = new Date()
+                if(e.details.detector_notrigger_discord === '1'){
+                    var html = '*'+lang.NoMotionEmailText2+' ' + (e.details.detector_notrigger_timeout || 10) + ' '+lang.minutes+'.*\n'
+                    html += '**' + lang['Monitor Name'] + '** : '+e.name + '\n'
+                    html += '**' + lang['Monitor ID'] + '** : '+e.id + '\n'
+                    html += currentTime
+                    s.discordMsg({
+                        author: {
+                          name: s.group[e.ke].rawMonitorConfigurations[e.id].name,
+                          icon_url: config.iconURL
+                        },
+                        title: lang['\"No Motion"\ Detector'],
+                        description: html,
+                        fields: [],
+                        timestamp: currentTime,
+                        footer: {
+                          icon_url: config.iconURL,
+                          text: "Shinobi Systems"
+                        }
+                    },[],e.ke)
+                }
+            }
             s.loadGroupAppExtender(loadDiscordBotForUser)
             s.unloadGroupAppExtender(unloadDiscordBotForUser)
             s.onTwoFactorAuthCodeNotification(onTwoFactorAuthCodeNotificationForDiscord)
             s.onEventTrigger(onEventTriggerForDiscord)
             s.onEventTriggerBeforeFilter(onEventTriggerBeforeFilterForDiscord)
+            s.onDetectorNoTriggerTimeout(onDetectorNoTriggerTimeoutForDiscord)
         }catch(err){
             console.log(err)
             console.log('Could not start Discord bot, please run "npm install discord.js" inside the Shinobi folder.')
@@ -188,13 +213,13 @@ module.exports = function(s,config,lang){
                             from: config.mail.from, // sender address
                             to: r.mail, // list of receivers
                             subject: lang.NoMotionEmailText1+' '+e.name+' ('+e.id+')', // Subject line
-                            html: '<i>'+lang.NoMotionEmailText2+' '+e.details.detector_notrigger_timeout+' '+lang.minutes+'.</i>',
+                            html: '<i>'+lang.NoMotionEmailText2+' ' + (e.details.detector_notrigger_timeout || 10) + ' '+lang.minutes+'.</i>',
                         }
                         mailOptions.html+='<div><b>'+lang['Monitor Name']+' </b> : '+e.name+'</div>'
                         mailOptions.html+='<div><b>'+lang['Monitor ID']+' </b> : '+e.id+'</div>'
                         s.nodemailer.sendMail(mailOptions, (error, info) => {
                             if (error) {
-                               s.systemLog('detector:notrigger:sendMail',error)
+                                s.systemLog('detector:notrigger:sendMail',error)
                                 s.tx({f:'error',ff:'detector_notrigger_mail',id:e.id,ke:e.ke,error:error},'GRP_'+e.ke);
                                 return ;
                             }

@@ -120,7 +120,7 @@ $(document).ready(function(e){
             })
         })
         $.each(events,function(n,event){
-            var eventReason = event.details.reason.toUpperCase()
+            var eventReason = event.details && event.details.reason ? event.details.reason.toUpperCase() : "UNKNOWN"
             var eventSlotTag = eventReason
             if(eventReason === 'OBJECT' && event.details.matrices[0]){
                 eventSlotTag = []

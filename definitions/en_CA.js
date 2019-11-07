@@ -2702,8 +2702,26 @@ module.exports = function(s,config,lang){
                          },
                          {
                             "name": "detail=detector_notrigger_mail",
-                            "field": `Email on "No Motion"`,
+                            "field": lang['Email'],
                             "description": "If motion has not been detected after the timeout period you will recieve an email.",
+                            "default": "0",
+                            "example": "",
+                            "fieldType": "select",
+                            "possible": [
+                               {
+                                  "name": lang.No,
+                                  "value": "0"
+                               },
+                               {
+                                  "name": lang.Yes,
+                                  "value": "1"
+                               }
+                            ]
+                         },
+                         {
+                            "name": "detail=detector_notrigger_discord",
+                            "field": lang['Discord'],
+                            "description": "If motion has not been detected after the timeout period you will recieve an Discord notification.",
                             "default": "0",
                             "example": "",
                             "fieldType": "select",
@@ -2725,7 +2743,105 @@ module.exports = function(s,config,lang){
                             "default": "10",
                             "example": "",
                             "possible": ""
-                         }
+                        },
+                        {
+                           "name": "detail=detector_notrigger_webhook",
+                           "field": "Webhook",
+                           "description": "Send a GET request to a URL with some values from the event.",
+                           "default": "0",
+                           "example": "",
+                           "selector": "h_det_web_notrig",
+                           "fieldType": "select",
+                           "possible": [
+                              {
+                                 "name": lang.No,
+                                 "value": "0"
+                              },
+                              {
+                                 "name": lang.Yes,
+                                 "value": "1"
+                              }
+                           ]
+                        },
+                        {
+                            hidden: true,
+                           "name": "detail=detector_notrigger_webhook_url",
+                           "field": lang['Webhook URL'],
+                           "description": "",
+                           "default": "",
+                           "example": "http://111.111.111.111?mid={{MONITOR_ID}}&group={{GROUP_KEY}}&confidence={{CONFIDENCE}}",
+                           "form-group-class": "h_det_web_notrig_input h_det_web_notrig_1",
+                           "possible": ""
+                        },
+                        {
+                           "name": "detail=detector_notrigger_webhook_method",
+                           "field": lang['Call Method'],
+                           "description": "",
+                           "default": "GET",
+                           "example": "",
+                           "form-group-class": "h_det_web_notrig_input h_det_web_notrig_1",
+                           "fieldType": "select",
+                           "possible": [
+                               {
+                                  "name": `GET (${lang.Default})`,
+                                  "value": "GET"
+                               },
+                               {
+                                  "name": "PUT",
+                                  "value": "PUT"
+                               },
+                               {
+                                  "name": "POST",
+                                  "value": "POST"
+                               }
+                            ]
+                        },
+                        {
+                           "name": "detail=detector_notrigger_command_timeout",
+                           "field": lang['Allow Next Webhook'],
+                           "description": "This value is a timer to allow the next running of your webhook. This value is in minutes.",
+                           "default": "10",
+                           "example": "",
+                           "form-group-class": "h_det_web_notrig_input h_det_web_notrig_1",
+                           "possible": ""
+                        },
+                        {
+                           "name": "detail=detector_notrigger_command_enable",
+                           "field": lang['Command on Trigger'],
+                           "description": "",
+                           "default": "0",
+                           "example": "",
+                           "selector": "h_det_com_notrig",
+                           "fieldType": "select",
+                           "possible": [
+                              {
+                                 "name": lang.No,
+                                 "value": "0"
+                              },
+                              {
+                                 "name": lang.Yes,
+                                 "value": "1"
+                              }
+                           ]
+                        },
+                        {
+                           "name": "detail=detector_notrigger_command",
+                           "field": lang['Command'],
+                           "description": "The command that will run. This is the equivalent of running a shell command from terminal.",
+                           "default": "",
+                           "form-group-class": "h_det_com_notrig_input h_det_com_notrig_1",
+                           "example": "/home/script.sh {{MONITOR_ID}} {{GROUP_KEY}} {{CONFIDENCE}}",
+                           "possible": ""
+                        },
+                        {
+                           "name": "detail=detector_notrigger_command_timeout",
+                           "field": lang['Allow Next Command'],
+                           "description": "This value is a timer to allow the next running of your script. This value is in minutes.",
+                           "default": "10",
+                           "example": "",
+                           "form-group-class": "h_det_com_notrig_input h_det_com_notrig_1",
+                           "possible": ""
+                        },
                       ]
                    },
                    {

@@ -4,7 +4,7 @@ var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var request = require('request');
 module.exports = function(s,config,lang){
-    var addEventDetailsToString = function(eventData,string,addOps){
+    s.addEventDetailsToString = function(eventData,string,addOps){
         //d = event data
         if(!addOps)addOps = {}
         var newString = string + ''
@@ -257,15 +257,8 @@ module.exports = function(s,config,lang){
             if(forceSave || (filter.save && currentConfig.detector_save === '1')){
                 s.sqlQuery('INSERT INTO Events (ke,mid,details,time) VALUES (?,?,?,?)',[d.ke,d.id,detailString,eventTime])
             }
-            if(currentConfig.detector_notrigger === '1'){
-                var detector_notrigger_timeout
-                if(!currentConfig.detector_notrigger_timeout||currentConfig.detector_notrigger_timeout === ''){
-                    detector_notrigger_timeout = 10
-                }
-                detector_notrigger_timeout = parseFloat(currentConfig.detector_notrigger_timeout)*1000*60;
-                s.group[d.ke].activeMonitors[d.id].detector_notrigger_timeout = detector_notrigger_timeout;
-                clearInterval(s.group[d.ke].activeMonitors[d.id].detector_notrigger_timeout)
-                s.group[d.ke].activeMonitors[d.id].detector_notrigger_timeout = setInterval(s.group[d.ke].activeMonitors[d.id].detector_notrigger_timeout_function,detector_notrigger_timeout)
+            if(currentConfig.detector === '1' && currentConfig.detector_notrigger === '1'){
+                s.setNoEventsDetector(s.group[d.ke].rawMonitorConfigurations[d.id])
             }
             var detector_timeout
             if(!currentConfig.detector_timeout||currentConfig.detector_timeout===''){
@@ -314,7 +307,7 @@ module.exports = function(s,config,lang){
             })
 
             if(filter.webhook && currentConfig.detector_webhook === '1'){
-                var detector_webhook_url = addEventDetailsToString(d,currentConfig.detector_webhook_url)
+                var detector_webhook_url = s.addEventDetailsToString(d,currentConfig.detector_webhook_url)
                 var webhookMethod = currentConfig.detector_webhook_method
                 if(!webhookMethod || webhookMethod === '')webhookMethod = 'GET'
                 request(detector_webhook_url,{method: webhookMethod,encoding:null},function(err,data){
@@ -326,7 +319,7 @@ module.exports = function(s,config,lang){
 
             if(filter.command && currentConfig.detector_command_enable === '1' && !s.group[d.ke].activeMonitors[d.id].detector_command){
                 s.group[d.ke].activeMonitors[d.id].detector_command = s.createTimeout('detector_command',s.group[d.ke].activeMonitors[d.id],currentConfig.detector_command_timeout,10)
-                var detector_command = addEventDetailsToString(d,currentConfig.detector_command)
+                var detector_command = s.addEventDetailsToString(d,currentConfig.detector_command)
                 if(detector_command === '')return
                 exec(detector_command,{detached: true},function(err){
                     if(err)s.debugLog(err)

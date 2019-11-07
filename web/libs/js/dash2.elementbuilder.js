@@ -89,7 +89,7 @@ $.ccio.tm=function(x,d,z,user){
             tmp+='<div class="mdl-card__supporting-text text-center">';
             tmp+='<div class="indifference detector-fade"><div class="progress"><div class="progress-bar progress-bar-danger" role="progressbar"><span></span></div></div></div>';
             tmp+='<div class="monitor_details">';
-            tmp+='<div><span class="monitor_name">'+d.name+'</span><span class="monitor_not_record_copy">, '+lang['Recording FPS']+' : <span class="monitor_fps">'+d.fps+'</span></span></div>';
+            tmp+='<div><span class="monitor_name">'+d.name+'</span></div>';
             tmp+='</div>';
             tmp+='<div class="btn-group btn-group-sm">'//start of btn list
                 var buttons = {
