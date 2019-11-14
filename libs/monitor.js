@@ -14,7 +14,7 @@ module.exports = function(s,config,lang){
         setTimeout(function(){
             action(callback)
         },2000)
-    }, 1)
+    }, 3)
     s.initiateMonitorObject = function(e){
         if(!s.group[e.ke]){s.group[e.ke]={}};
         if(!s.group[e.ke].activeMonitors){s.group[e.ke].activeMonitors={}}
@@ -1176,7 +1176,7 @@ module.exports = function(s,config,lang){
                         s.fatalCameraError(e,'Connection timed out');
                     },1000)
                 break;
-                case checkLog(d,'Immediate exit requested'):
+                // case checkLog(d,'Immediate exit requested'):
                 case checkLog(d,'mjpeg_decode_dc'):
                 case checkLog(d,'bad vlc'):
                 case checkLog(d,'error dc'):
