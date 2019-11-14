@@ -60,7 +60,7 @@ module.exports = function(s,config,lang){
             return s.systemLog(lang['No Monitor Found, Ignoring Request'])
         }
         d.mon=s.group[d.ke].rawMonitorConfigurations[d.id];
-        var currentConfig = s.group[d.ke].activeMonitors[d.id].details
+        var currentConfig = s.group[d.ke].rawMonitorConfigurations[d.id].details
         var hasMatrices = (d.details.matrices && d.details.matrices.length > 0)
         //read filters
         if(
