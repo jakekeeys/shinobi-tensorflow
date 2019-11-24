@@ -1065,7 +1065,8 @@ module.exports = function(s,config,lang,app,io){
                     s.buildVideoLinks(r,{
                         auth : req.params.auth,
                         videoParam : videoParam,
-                        hideRemote : config.hideCloudSaveUrls
+                        hideRemote : config.hideCloudSaveUrls,
+                        videoParam : videoParam
                     })
                     if(req.query.limit.indexOf(',')>-1){
                         req.skip=parseInt(req.query.limit.split(',')[0])
@@ -1786,6 +1787,7 @@ module.exports = function(s,config,lang,app,io){
     })
     /**
     * API : Upload Video File
+    * API : Add "streamIn" query string to Push to "Dashcam (Streamer v2)" FFMPEG Process
      */
     app.post(config.webPaths.apiPrefix+':auth/videos/:ke/:id',fileupload(), async (req,res) => {
         var response = {ok:false}
@@ -1795,16 +1797,18 @@ module.exports = function(s,config,lang,app,io){
                 res.end(user.lang['Not Permitted'])
                 return
             }
+            var groupKey = req.params.ke
+            var monitorId = req.params.id
             var origURL = req.originalUrl.split('/')
             var videoParam = origURL[origURL.indexOf(req.params.auth) + 1]
             var videoSet = 'Videos'
             req.sql='SELECT * FROM `Monitors` WHERE ke=? AND mid=?';
-            req.ar=[req.params.ke,req.params.id];
+            req.ar=[groupKey,monitorId];
             s.sqlQuery(req.sql,req.ar,function(err,r){
                 if(r && r[0]){
                     var monitor = r[0]
                     // req.query.overwrite === '1'
-                    if(s.group[req.params.ke] && s.group[req.params.ke].activeMonitors[req.params.id]){
+                    if(s.group[groupKey] && s.group[groupKey].activeMonitors[monitorId]){
                         try {
                             if(!req.files) {
                                 res.send({
@@ -1813,25 +1817,54 @@ module.exports = function(s,config,lang,app,io){
                                 });
                             } else {
                                 let video = req.files.video;
-                                var time = new Date(parseInt(video.name.split('.')[0]))
-                                var filename = s.formattedTime(time) + '.' + monitor.ext
-                                video.mv(s.getVideoDirectory(monitor) +  filename,function(){
-                                    s.insertCompletedVideo(monitor,{
-                                        file : filename
-                                    },function(){
-                                        response.ok = true
-                                        response.filename = filename
+                                if(req.query.streamIn === '1'){
+                                    var tempLocation = s.getStreamsDirectory(monitor) +  video.name;
+                                    video.mv(tempLocation,function(){
+                                        var fileStream = fs.createReadStream(tempLocation)
+                                        fileStream.on('close',function(){
+
+                                        })
+                                        fileStream.on('data',function(data){
+                                            try{
+                                                console.log(data)
+                                                s.group[groupKey].activeMonitors[monitorId].spawn.stdin.write(data);
+                                            }catch(err){
+                                                console.log(err)
+                                            }
+                                        })
+                                        // s.group[groupKey].activeMonitors[monitorId].spawn.stdin.write(fs.readFileSync(tempLocation,'binary'));
                                         res.end(s.prettyPrint({
                                             ok: true,
-                                            message: 'File is uploaded',
+                                            message: 'File is transcoding',
                                             data: {
                                                 name: video.name,
                                                 mimetype: video.mimetype,
                                                 size: video.size
                                             }
                                         }))
-                                    })
-                                });
+                                    });
+                                }else{
+                                    var time = new Date(parseInt(video.name.split('.')[0]))
+                                    var filename = s.formattedTime(time) + '.' + monitor.ext
+                                    video.mv(s.getVideoDirectory(monitor) +  filename,function(){
+                                        s.insertCompletedVideo(monitor,{
+                                            file : filename,
+                                            endTime: req.body.endTime.indexOf('-') > -1 ? s.nameToTime(req.body.endTime) : parseInt(req.body.endTime) || null,
+                                        },function(){
+                                            response.ok = true
+                                            response.filename = filename
+                                            res.end(s.prettyPrint({
+                                                ok: true,
+                                                message: 'File is uploaded',
+                                                data: {
+                                                    name: video.name,
+                                                    mimetype: video.mimetype,
+                                                    size: video.size
+                                                }
+                                            }))
+                                        })
+                                    });
+                                }
                             }
                         } catch (err) {
                             response.err = err
