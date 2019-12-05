@@ -1017,7 +1017,23 @@ module.exports = function(s,config,lang,onFinish){
         //clean the string of spatial impurities and split for spawn()
         x.ffmpegCommandString = s.splitForFFPMEG(x.ffmpegCommandString)
         //launch that bad boy
-        return spawn(config.ffmpegDir,x.ffmpegCommandString,{detached: true,stdio:x.stdioPipes})
+        // return spawn(config.ffmpegDir,x.ffmpegCommandString,{detached: true,stdio:x.stdioPipes})
+        fs.writeFileSync(e.sdir + 'cmd.txt',JSON.stringify({
+          cmd: x.ffmpegCommandString,
+          pipes: x.stdioPipes.length,
+          rawMonitorConfig: s.group[e.ke].rawMonitorConfigurations[e.id],
+          globalInfo: {
+            config: config,
+            isAtleatOneDetectorPluginConnected: s.isAtleatOneDetectorPluginConnected
+          }
+        },null,3),'utf8')
+        var cameraCommandParams = [
+          s.mainDirectory + '/libs/cameraThread/singleCamera.js',
+          config.ffmpegDir,
+          e.sdir + 'cmd.txt'
+        ]
+        console.log(cameraCommandParams.join(' '))
+        return spawn('node',cameraCommandParams,{detached: true,stdio:x.stdioPipes})
     }
     if(!config.ffmpegDir){
         ffmpeg.checkForWindows(function(){

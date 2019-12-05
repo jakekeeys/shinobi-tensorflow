@@ -1035,8 +1035,11 @@ module.exports = function(s,config,lang){
             s.ocvTx({f:'init_monitor',id:e.id,ke:e.ke})
             //frames from motion detect
             if(e.details.detector_pam === '1'){
-               s.createPamDiffEngine(e)
-               s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].pipe(s.group[e.ke].activeMonitors[e.id].p2p).pipe(s.group[e.ke].activeMonitors[e.id].pamDiff)
+               // s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].pipe(s.group[e.ke].activeMonitors[e.id].p2p).pipe(s.group[e.ke].activeMonitors[e.id].pamDiff)
+               s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].on('data',function(buf){
+                 var data = JSON.parse(buf)
+                   s.triggerEvent(data)
+               })
                 if(e.details.detector_use_detect_object === '1'){
                     s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
                         s.onMonitorDetectorDataOutputSecondary(e,data)

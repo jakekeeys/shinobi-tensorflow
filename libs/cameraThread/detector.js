@@ -1,46 +1,57 @@
 // Matrix In Region Libs >
+var fs = require('fs')
 var SAT = require('sat')
 var V = SAT.Vector;
 var P = SAT.Polygon;
 // Matrix In Region Libs />
 var P2P = require('pipe2pam')
-// pamDiff is based on https://www.npmjs.com/package/pam-diff
 var PamDiff = require('pam-diff')
-module.exports = function(s,config){
-    s.createPamDiffEngine = function(e){
+module.exports = function(jsonData,pamDiffResponder){
+    var s = {};
+    var noiseFilterArray = {};
+    const groupKey = jsonData.rawMonitorConfig.ke
+    const monitorId = jsonData.rawMonitorConfig.mid
+    const triggerTimer = {}
+    var pamDiff
+    var p2p
+    var writeToStderr = function(text){
+      fs.appendFileSync('/home/Shinobi/test.log',text + '\n','utf8')
+    }
+    createPamDiffEngine = function(){
         var width,
             height,
             globalSensitivity,
             globalColorThreshold,
             fullFrame = false
-        if(s.group[e.ke].rawMonitorConfigurations[e.id].details.detector_scale_x===''||s.group[e.ke].rawMonitorConfigurations[e.id].details.detector_scale_y===''){
-            width = s.group[e.ke].rawMonitorConfigurations[e.id].details.detector_scale_x;
-            height = s.group[e.ke].rawMonitorConfigurations[e.id].details.detector_scale_y;
-        }else{
-            width = e.width
-            height = e.height
+        if(jsonData.rawMonitorConfig.details.detector_scale_x===''||jsonData.rawMonitorConfig.details.detector_scale_y===''){
+            width = jsonData.rawMonitorConfig.details.detector_scale_x;
+            height = jsonData.rawMonitorConfig.details.detector_scale_y;
         }
-        if(e.details.detector_sensitivity===''){
+        else{
+            width = jsonData.rawMonitorConfig.width
+            height = jsonData.rawMonitorConfig.height
+        }
+        if(jsonData.rawMonitorConfig.details.detector_sensitivity===''){
             globalSensitivity = 10
         }else{
-            globalSensitivity = parseInt(e.details.detector_sensitivity)
+            globalSensitivity = parseInt(jsonData.rawMonitorConfig.details.detector_sensitivity)
         }
-        if(e.details.detector_color_threshold===''){
+        if(jsonData.rawMonitorConfig.details.detector_color_threshold===''){
             globalColorThreshold = 9
         }else{
-            globalColorThreshold = parseInt(e.details.detector_color_threshold)
+            globalColorThreshold = parseInt(jsonData.rawMonitorConfig.details.detector_color_threshold)
         }
 
-        globalThreshold = parseInt(e.details.detector_threshold) || 0
+        globalThreshold = parseInt(jsonData.rawMonitorConfig.details.detector_threshold) || 0
 
         var regionJson
         try{
-            regionJson = JSON.parse(s.group[e.ke].rawMonitorConfigurations[e.id].details.cords)
+            regionJson = JSON.parse(jsonData.rawMonitorConfig.details.cords)
         }catch(err){
-            regionJson = s.group[e.ke].rawMonitorConfigurations[e.id].details.cords
+            regionJson = jsonData.rawMonitorConfig.details.cords
         }
 
-        if(Object.keys(regionJson).length === 0 || e.details.detector_frame === '1'){
+        if(Object.keys(regionJson).length === 0 || jsonData.rawMonitorConfig.details.detector_frame === '1'){
             fullFrame = {
                 name:'FULL_FRAME',
                 sensitivity:globalSensitivity,
@@ -54,26 +65,27 @@ module.exports = function(s,config){
             }
         }
 
-        e.triggerTimer = {}
 
-        var regions = s.createPamDiffRegionArray(regionJson,globalColorThreshold,globalSensitivity,fullFrame)
+        var regions = createPamDiffRegionArray(regionJson,globalColorThreshold,globalSensitivity,fullFrame)
+        writeToStderr(JSON.stringify(regions,null,3))
         var pamDiffOptions = {
             grayscale: 'luminosity',
             regions : regions.forPam
         }
-        if(e.details.detector_show_matrix==='1'){
+        writeToStderr(JSON.stringify(pamDiffOptions,null,3))
+        if(jsonData.rawMonitorConfig.details.detector_show_matrix==='1'){
             pamDiffOptions.response = 'bounds'
         }
-        s.group[e.ke].activeMonitors[e.id].pamDiff = new PamDiff(pamDiffOptions);
-        s.group[e.ke].activeMonitors[e.id].p2p = new P2P()
+        pamDiff = new PamDiff(pamDiffOptions)
+        p2p = new P2P()
         var regionArray = Object.values(regionJson)
-        if(config.detectorMergePamRegionTriggers === true){
+        if(jsonData.globalInfo.config.detectorMergePamRegionTriggers === true){
             // merge pam triggers for performance boost
             var buildTriggerEvent = function(trigger){
                 var detectorObject = {
                     f:'trigger',
-                    id:e.id,
-                    ke:e.ke,
+                    id:monitorId,
+                    ke:groupKey,
                     name:trigger.name,
                     details:{
                         plug:'built-in',
@@ -82,8 +94,8 @@ module.exports = function(s,config){
                         confidence:trigger.percent
                     },
                     plates:[],
-                    imgHeight:e.details.detector_scale_y,
-                    imgWidth:e.details.detector_scale_x
+                    imgHeight:jsonData.rawMonitorConfig.details.detector_scale_y,
+                    imgWidth:jsonData.rawMonitorConfig.details.detector_scale_x
                 }
                 if(trigger.merged){
                     if(trigger.matrices)detectorObject.details.matrices = trigger.matrices
@@ -91,13 +103,13 @@ module.exports = function(s,config){
                     var filteredCountSuccess = 0
                     trigger.merged.forEach(function(triggerPiece){
                         var region = regionArray.find(x => x.name == triggerPiece.name)
-                        s.checkMaximumSensitivity(e, region, detectorObject, function(err1) {
-                            s.checkTriggerThreshold(e, region, detectorObject, function(err2) {
+                        checkMaximumSensitivity(region, detectorObject, function(err1) {
+                            checkTriggerThreshold(region, detectorObject, function(err2) {
                                 ++filteredCount
                                 if(!err1 && !err2)++filteredCountSuccess
                                 if(filteredCount === trigger.merged.length && filteredCountSuccess > 0){
-                                    detectorObject.doObjectDetection = (s.isAtleatOneDetectorPluginConnected && e.details.detector_use_detect_object === '1')
-                                    s.triggerEvent(detectorObject)
+                                    detectorObject.doObjectDetection = (jsonData.globalInfo.isAtleatOneDetectorPluginConnected && jsonData.rawMonitorConfig.details.detector_use_detect_object === '1')
+                                    pamDiffResponder.write(Buffer.from(JSON.stringify(detectorObject)))
                                 }
                             })
                         })
@@ -105,38 +117,36 @@ module.exports = function(s,config){
                 }else{
                     if(trigger.matrix)detectorObject.details.matrices = [trigger.matrix]
                     var region = regionArray.find(x => x.name == detectorObject.name)
-                    s.checkMaximumSensitivity(e, region, detectorObject, function(err1) {
-                        s.checkTriggerThreshold(e, region, detectorObject, function(err2) {
+                    checkMaximumSensitivity(region, detectorObject, function(err1) {
+                        checkTriggerThreshold(region, detectorObject, function(err2) {
                             if(!err1 && !err2){
-                                detectorObject.doObjectDetection = (s.isAtleatOneDetectorPluginConnected && e.details.detector_use_detect_object === '1')
-                                s.triggerEvent(detectorObject)
+                                detectorObject.doObjectDetection = (jsonData.globalInfo.isAtleatOneDetectorPluginConnected && jsonData.rawMonitorConfig.details.detector_use_detect_object === '1')
+                                pamDiffResponder.write(Buffer.from(JSON.stringify(detectorObject)))
                             }
                         })
                     })
                 }
             }
-            if(e.details.detector_noise_filter==='1'){
-                if(!s.group[e.ke].activeMonitors[e.id].noiseFilterArray)s.group[e.ke].activeMonitors[e.id].noiseFilterArray = {}
-                var noiseFilterArray = s.group[e.ke].activeMonitors[e.id].noiseFilterArray
+            if(jsonData.rawMonitorConfig.details.detector_noise_filter==='1'){
                 Object.keys(regions.notForPam).forEach(function(name){
                     if(!noiseFilterArray[name])noiseFilterArray[name]=[];
                 })
-                s.group[e.ke].activeMonitors[e.id].pamDiff.on('diff', (data) => {
+                pamDiff.on('diff', (data) => {
                     var filteredCount = 0
                     var filteredCountSuccess = 0
                     data.trigger.forEach(function(trigger){
-                        s.filterTheNoise(e,noiseFilterArray,regions,trigger,function(err){
+                        filterTheNoise(noiseFilterArray,regions,trigger,function(err){
                             ++filteredCount
                             if(!err)++filteredCountSuccess
                             if(filteredCount === data.trigger.length && filteredCountSuccess > 0){
-                                buildTriggerEvent(s.mergePamTriggers(data))
+                                buildTriggerEvent(mergePamTriggers(data))
                             }
                         })
                     })
                 })
             }else{
-                s.group[e.ke].activeMonitors[e.id].pamDiff.on('diff', (data) => {
-                    buildTriggerEvent(s.mergePamTriggers(data))
+                pamDiff.on('diff', (data) => {
+                    buildTriggerEvent(mergePamTriggers(data))
                 })
             }
         }else{
@@ -145,8 +155,8 @@ module.exports = function(s,config){
             var buildTriggerEvent = function(trigger){
                 var detectorObject = {
                     f:'trigger',
-                    id:e.id,
-                    ke:e.ke,
+                    id: monitorId,
+                    ke: groupKey,
                     name:trigger.name,
                     details:{
                         plug:'built-in',
@@ -155,38 +165,36 @@ module.exports = function(s,config){
                         confidence:trigger.percent
                     },
                     plates:[],
-                    imgHeight:e.details.detector_scale_y,
-                    imgWidth:e.details.detector_scale_x
+                    imgHeight:jsonData.rawMonitorConfig.details.detector_scale_y,
+                    imgWidth:jsonData.rawMonitorConfig.details.detector_scale_x
                 }
                 if(trigger.matrix)detectorObject.details.matrices = [trigger.matrix]
                 var region = Object.values(regionJson).find(x => x.name == detectorObject.name)
-                s.checkMaximumSensitivity(e, region, detectorObject, function(err1) {
-                    s.checkTriggerThreshold(e, region, detectorObject, function(err2) {
+                checkMaximumSensitivity(region, detectorObject, function(err1) {
+                    checkTriggerThreshold(region, detectorObject, function(err2) {
                         if(!err1 && ! err2){
-                            detectorObject.doObjectDetection = (s.isAtleatOneDetectorPluginConnected && e.details.detector_use_detect_object === '1')
-                            s.triggerEvent(detectorObject)
+                            detectorObject.doObjectDetection = (jsonData.globalInfo.isAtleatOneDetectorPluginConnected && jsonData.rawMonitorConfig.details.detector_use_detect_object === '1')
+
                         }
                     })
                 })
             }
-            if(e.details.detector_noise_filter==='1'){
-                if(!s.group[e.ke].activeMonitors[e.id].noiseFilterArray)s.group[e.ke].activeMonitors[e.id].noiseFilterArray = {}
-                var noiseFilterArray = s.group[e.ke].activeMonitors[e.id].noiseFilterArray
+            if(jsonData.rawMonitorConfig.details.detector_noise_filter==='1'){
                 Object.keys(regions.notForPam).forEach(function(name){
                     if(!noiseFilterArray[name])noiseFilterArray[name]=[];
                 })
-                s.group[e.ke].activeMonitors[e.id].pamDiff.on('diff', (data) => {
+                pamDiff.on('diff', (data) => {
                     data.trigger.forEach(function(trigger){
-                        s.filterTheNoise(e,noiseFilterArray,regions,trigger,function(){
-                            s.createMatrixFromPamTrigger(trigger)
+                        filterTheNoise(noiseFilterArray,regions,trigger,function(){
+                            createMatrixFromPamTrigger(trigger)
                             buildTriggerEvent(trigger)
                         })
                     })
                 })
             }else{
-                s.group[e.ke].activeMonitors[e.id].pamDiff.on('diff', (data) => {
+                pamDiff.on('diff', (data) => {
                     data.trigger.forEach(function(trigger){
-                        s.createMatrixFromPamTrigger(trigger)
+                        createMatrixFromPamTrigger(trigger)
                         buildTriggerEvent(trigger)
                     })
                 })
@@ -194,7 +202,7 @@ module.exports = function(s,config){
         }
     }
 
-    s.createPamDiffRegionArray = function(regions,globalColorThreshold,globalSensitivity,fullFrame){
+    createPamDiffRegionArray = function(regions,globalColorThreshold,globalSensitivity,fullFrame){
         var pamDiffCompliantArray = [],
             arrayForOtherStuff = [],
             json
@@ -236,11 +244,11 @@ module.exports = function(s,config){
         return {forPam:pamDiffCompliantArray,notForPam:arrayForOtherStuff};
     }
 
-    s.filterTheNoise = function(e,noiseFilterArray,regions,trigger,callback){
+    filterTheNoise = function(noiseFilterArray,regions,trigger,callback){
         if(noiseFilterArray[trigger.name].length > 2){
             var thePreviousTriggerPercent = noiseFilterArray[trigger.name][noiseFilterArray[trigger.name].length - 1];
             var triggerDifference = trigger.percent - thePreviousTriggerPercent;
-            var noiseRange = e.details.detector_noise_filter_range
+            var noiseRange = jsonData.rawMonitorConfig.details.detector_noise_filter_range
             if(!noiseRange || noiseRange === ''){
                 noiseRange = 6
             }
@@ -267,48 +275,48 @@ module.exports = function(s,config){
         }
     }
 
-    s.checkMaximumSensitivity = function(monitor, region, detectorObject, callback) {
+    checkMaximumSensitivity = function(region, detectorObject, callback) {
         var logName = detectorObject.id + ':' + detectorObject.name
-        var globalMaxSensitivity = parseInt(monitor.details.detector_max_sensitivity) || undefined
+        var globalMaxSensitivity = parseInt(jsonData.rawMonitorConfig.details.detector_max_sensitivity) || undefined
         var maxSensitivity = parseInt(region.max_sensitivity) || globalMaxSensitivity
         if (maxSensitivity === undefined || detectorObject.details.confidence <= maxSensitivity) {
             callback(null)
         } else {
             callback(true)
-            if (monitor.triggerTimer[detectorObject.name] !== undefined) {
-                clearTimeout(monitor.triggerTimer[detectorObject.name].timeout)
-                monitor.triggerTimer[detectorObject.name] = undefined
+            if (triggerTimer[detectorObject.name] !== undefined) {
+                clearTimeout(triggerTimer[detectorObject.name].timeout)
+                triggerTimer[detectorObject.name] = undefined
             }
         }
     }
 
-    s.checkTriggerThreshold = function(monitor, region, detectorObject, callback){
+    checkTriggerThreshold = function(region, detectorObject, callback){
         var threshold = parseInt(region.threshold) || globalThreshold
         if (threshold <= 1) {
             callback(null)
         } else {
-            if (monitor.triggerTimer[detectorObject.name] === undefined) {
-                monitor.triggerTimer[detectorObject.name] = {
+            if (triggerTimer[detectorObject.name] === undefined) {
+                triggerTimer[detectorObject.name] = {
                     count : threshold,
                     timeout : null
                 }
             }
-            if (--monitor.triggerTimer[detectorObject.name].count == 0) {
+            if (--triggerTimer[detectorObject.name].count == 0) {
                 callback(null)
-                clearTimeout(monitor.triggerTimer[detectorObject.name].timeout)
-                monitor.triggerTimer[detectorObject.name] = undefined
+                clearTimeout(triggerTimer[detectorObject.name].timeout)
+                triggerTimer[detectorObject.name] = undefined
             } else {
                 callback(true)
-                var fps = parseFloat(monitor.details.detector_fps) || 2
-                if (monitor.triggerTimer[detectorObject.name].timeout !== null)
-                    clearTimeout(monitor.triggerTimer[detectorObject.name].timeout)
-                monitor.triggerTimer[detectorObject.name].timeout = setTimeout(function() {
-                    monitor.triggerTimer[detectorObject.name] = undefined
+                var fps = parseFloat(jsonData.rawMonitorConfig.details.detector_fps) || 2
+                if (triggerTimer[detectorObject.name].timeout !== null)
+                    clearTimeout(triggerTimer[detectorObject.name].timeout)
+                triggerTimer[detectorObject.name].timeout = setTimeout(function() {
+                    triggerTimer[detectorObject.name] = undefined
                 }, ((threshold+0.5) * 1000) / fps)
             }
         }
     }
-    s.mergePamTriggers = function(data){
+    mergePamTriggers = function(data){
         if(data.trigger.length > 1){
             var n = 0
             var sum = 0
@@ -318,7 +326,7 @@ module.exports = function(s,config){
                 name.push(trigger.name + ' ('+trigger.percent+'%)')
                 ++n
                 sum += trigger.percent
-                s.createMatrixFromPamTrigger(trigger)
+                createMatrixFromPamTrigger(trigger)
                 if(trigger.matrix)matrices.push(trigger.matrix)
             })
             var average = sum / n
@@ -332,7 +340,7 @@ module.exports = function(s,config){
             }
         }else{
             var trigger = data.trigger[0]
-            s.createMatrixFromPamTrigger(trigger)
+            createMatrixFromPamTrigger(trigger)
             trigger.matrices = [trigger.matrix]
         }
         return trigger
@@ -372,7 +380,7 @@ module.exports = function(s,config){
         if(callback)callback(foundInRegion,collisions)
         return foundInRegion
     }
-    s.createMatrixFromPamTrigger = function(trigger){
+    createMatrixFromPamTrigger = function(trigger){
         if(
             trigger.minX &&
             trigger.maxX &&
@@ -396,4 +404,14 @@ module.exports = function(s,config){
         }
         return trigger
     }
+
+    return function(cameraProcess){
+      if(jsonData.rawMonitorConfig.details.detector === '1' && jsonData.rawMonitorConfig.coProcessor === false){
+          //frames from motion detect
+          if(jsonData.rawMonitorConfig.details.detector_pam === '1'){
+            createPamDiffEngine()
+            cameraProcess.stdio[3].pipe(p2p).pipe(pamDiff)
+          }
+      }
+    };
 }
