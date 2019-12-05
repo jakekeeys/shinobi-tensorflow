@@ -47,3 +47,6 @@ setTimeout(function(){
     writeToStderr(err.stack)
   }
 },3000)
+cameraProcess.on('close',()=>{
+  process.exit();
+})
