@@ -127,42 +127,46 @@ module.exports = function(s,config,lang){
         const noIconChecks = function(){
             const runExtraction = function(){
                 try{
+                    var sendTempImage = function(){
+                      fs.readFile(temporaryImageFile,function(err,buffer){
+                         if(!err){
+                           callback(buffer,false)
+                         }
+                         fs.unlink(temporaryImageFile,function(){})
+                      })
+                    }
                     var snapBuffer = []
                     var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
                     var iconImageFile = streamDir + 'icon.jpg'
-                    var ffmpegCmd = `-loglevel quiet -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -vframes 1 "${temporaryImageFile}"`
-                    var snapProcess = spawn(config.ffmpegDir,s.splitForFFPMEG(ffmpegCmd),{detached: true})
+                    var ffmpegCmd = s.splitForFFPMEG(`-loglevel warning -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -vframes 1 "${temporaryImageFile}"`)
+                    fs.writeFileSync(s.group[monitor.ke].rawMonitorConfigurations[monitor.id].sdir + 'snapCmd.txt',JSON.stringify({
+                      cmd: ffmpegCmd,
+                      temporaryImageFile: temporaryImageFile,
+                      iconImageFile: iconImageFile,
+                      useIcon: options.useIcon,
+                      rawMonitorConfig: s.group[monitor.ke].rawMonitorConfigurations[monitor.mid],
+                    },null,3),'utf8')
+                    var cameraCommandParams = [
+                      s.mainDirectory + '/libs/cameraThread/snapshot.js',
+                      config.ffmpegDir,
+                      s.group[monitor.ke].rawMonitorConfigurations[monitor.id].sdir + 'snapCmd.txt'
+                    ]
+                    var snapProcess = spawn('node',cameraCommandParams,{detached: true})
                     snapProcess.stderr.on('data',function(data){
                         console.log(data.toString())
                     })
                     snapProcess.on('close',function(data){
                         clearTimeout(snapProcessTimeout)
-                        fs.readFile(temporaryImageFile,function(err,buffer){
-                            if(buffer){
-                                if(options.useIcon === true){
-                                    fs.writeFile(iconImageFile,buffer,function(){
-                                        callback(buffer,false)
-                                    })
-                                }else{
-                                    callback(buffer,false)
-                                }
-                            }else{
-                                fs.readFile(config.defaultMjpeg,function(err,buffer){
-                                    callback(buffer,false)
-                                })
-                            }
-                            fs.unlink(temporaryImageFile,function(){})
-                        })
+                        sendTempImage()
                     })
                     var snapProcessTimeout = setTimeout(function(){
-                        snapProcess.stdin.setEncoding('utf8')
-                        snapProcess.stdin.write('q')
-                        snapProcess.kill()
+                        snapProcess.kill('SIGTERM')
                     },30000)
                 }catch(err){
-                    fs.readFile(config.defaultMjpeg,function(err,buffer){
-                        callback(buffer,false)
-                    })
+                  console.log(err)
+                    // fs.readFile(config.defaultMjpeg,function(err,buffer){
+                    //     callback(buffer,false)
+                    // })
                 }
             }
             if(url){
@@ -215,9 +219,8 @@ module.exports = function(s,config,lang){
                 if(success === false){
                     noIconChecks()
                 }else{
-                    s.readFile(streamDir + 'icon.jpg',function(err,snapBuffer){
-                        callback(snapBuffer,true)
-                    })
+                    var snapBuffer = fs.readFileSync(streamDir + 'icon.jpg')
+                    callback(snapBuffer,false)
                 }
             })
         }else{
@@ -658,9 +661,9 @@ module.exports = function(s,config,lang){
         if(!options)options = {}
         s.checkDetails(e)
         if(config.doSnapshot === true){
-            if(e.mon.mode !== 'stop'){
+            if(s.group[e.ke] && s.group[e.ke].rawMonitorConfigurations && s.group[e.ke].rawMonitorConfigurations[e.mid].mode !== 'stop'){
                 var pathDir = s.dir.streams+e.ke+'/'+e.mid+'/'
-                s.getRawSnapshotFromMonitor(e.mon,Object.assign({
+                s.getRawSnapshotFromMonitor(s.group[e.ke].rawMonitorConfigurations[e.mid],Object.assign({
                     flags: '-s 200x200'
                 },options),function(data,isStaticFile){
                     if(data && (data[data.length-2] === 0xFF && data[data.length-1] === 0xD9)){
@@ -672,6 +675,7 @@ module.exports = function(s,config,lang){
                             ke: e.ke
                         },'GRP_'+e.ke)
                     }else{
+                      console.log('not image')
                         s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
                    }
                 })

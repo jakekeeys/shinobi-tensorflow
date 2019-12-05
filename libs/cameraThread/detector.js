@@ -67,12 +67,10 @@ module.exports = function(jsonData,pamDiffResponder){
 
 
         var regions = createPamDiffRegionArray(regionJson,globalColorThreshold,globalSensitivity,fullFrame)
-        writeToStderr(JSON.stringify(regions,null,3))
         var pamDiffOptions = {
             grayscale: 'luminosity',
             regions : regions.forPam
         }
-        writeToStderr(JSON.stringify(pamDiffOptions,null,3))
         if(jsonData.rawMonitorConfig.details.detector_show_matrix==='1'){
             pamDiffOptions.response = 'bounds'
         }
