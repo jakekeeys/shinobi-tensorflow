@@ -1,7 +1,10 @@
 
 const fs = require('fs')
 const spawn = require('child_process').spawn
-
+// fs.unlinkSync('/home/Shinobi/test.log')
+var writeToStderr = function(text){
+  // fs.appendFileSync('/home/Shinobi/test.log',text + '\n','utf8')
+}
 process.send = process.send || function () {};
 process.on('uncaughtException', function (err) {
     writeToStderr('Uncaught Exception occured!');
@@ -21,13 +24,7 @@ const ffmpegCommandString = jsonData.cmd
 const stdioPipes = jsonData.pipes || []
 var newPipes = []
 var stdioWriters = [];
-// var writeToStderr = function(text){
-//   process.stderr.write(Buffer.from(text))
-// }
-// fs.unlinkSync('/home/Shinobi/test.log')
-var writeToStderr = function(text){
-  // fs.appendFileSync('/home/Shinobi/test.log',text + '\n','utf8')
-}
+
 for(var i=0; i < stdioPipes; i++){
     switch(i){
       case 3:
