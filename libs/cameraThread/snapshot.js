@@ -21,7 +21,7 @@ const iconImageFile = jsonData.iconImageFile
 const useIcon = jsonData.useIcon
 const rawMonitorConfig = jsonData.rawMonitorConfig
 var writeToStderr = function(text){
-  fs.appendFileSync(rawMonitorConfig.sdir + '/errors.log',text + '\n','utf8')
+  // fs.appendFileSync(rawMonitorConfig.sdir + 'errors.log',text + '\n','utf8')
 }
 // var writeToStderr = function(text){
 //   process.stderr.write(Buffer.from(text))

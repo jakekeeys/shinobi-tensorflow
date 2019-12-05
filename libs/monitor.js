@@ -144,7 +144,7 @@ module.exports = function(s,config,lang){
                       temporaryImageFile: temporaryImageFile,
                       iconImageFile: iconImageFile,
                       useIcon: options.useIcon,
-                      rawMonitorConfig: s.group[monitor.ke].rawMonitorConfigurations[monitor.mid],
+                      rawMonitorConfig: s.group[monitor.ke].rawMonitorConfigurations[monitor.id],
                     },null,3),'utf8')
                     var cameraCommandParams = [
                       s.mainDirectory + '/libs/cameraThread/snapshot.js',

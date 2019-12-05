@@ -1021,7 +1021,6 @@ module.exports = function(s,config,lang,onFinish){
         fs.writeFileSync(e.sdir + 'cmd.txt',JSON.stringify({
           cmd: x.ffmpegCommandString,
           pipes: x.stdioPipes.length,
-          mainDirectory: s.mainDirectory,
           rawMonitorConfig: s.group[e.ke].rawMonitorConfigurations[e.id],
           globalInfo: {
             config: config,

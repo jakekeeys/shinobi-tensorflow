@@ -18,17 +18,15 @@ if(!process.argv[2] || !process.argv[3]){
 var jsonData = JSON.parse(fs.readFileSync(process.argv[3],'utf8'))
 const ffmpegAbsolutePath = process.argv[2].trim()
 const ffmpegCommandString = jsonData.cmd
-const mainDirectory = jsonData.mainDirectory
-const rawMonitorConfig = jsonData.rawMonitorConfig
 const stdioPipes = jsonData.pipes || []
 var newPipes = []
 var stdioWriters = [];
 // var writeToStderr = function(text){
 //   process.stderr.write(Buffer.from(text))
 // }
-fs.unlinkSync(rawMonitorConfig.sdir + '/errors.log')
+// fs.unlinkSync('/home/Shinobi/test.log')
 var writeToStderr = function(text){
-  fs.appendFileSync(rawMonitorConfig.sdir + '/errors.log',text + '\n','utf8')
+  // fs.appendFileSync('/home/Shinobi/test.log',text + '\n','utf8')
 }
 for(var i=0; i < stdioPipes; i++){
     switch(i){
