@@ -21,6 +21,7 @@ if(!process.argv[2] || !process.argv[3]){
 var jsonData = JSON.parse(fs.readFileSync(process.argv[3],'utf8'))
 const ffmpegAbsolutePath = process.argv[2].trim()
 const ffmpegCommandString = jsonData.cmd
+const rawMonitorConfig = jsonData.rawMonitorConfig
 const stdioPipes = jsonData.pipes || []
 var newPipes = []
 var stdioWriters = [];
@@ -28,8 +29,13 @@ var stdioWriters = [];
 for(var i=0; i < stdioPipes; i++){
     switch(i){
       case 3:
-        newPipes.push('pipe')
-        stdioWriters[i] = fs.createWriteStream(null, {fd: i});
+        if(rawMonitorConfig.details.detector_pam === '1'){
+          newPipes.push('pipe')
+          stdioWriters[i] = fs.createWriteStream(null, {fd: i});
+        }else{
+          stdioWriters[i] = fs.createWriteStream(null, {fd: i});
+          newPipes.push(stdioWriters[i])
+        }
       break;
       default:
         stdioWriters[i] = fs.createWriteStream(null, {fd: i});
