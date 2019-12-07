@@ -29,11 +29,10 @@ var stdioWriters = [];
 for(var i=0; i < stdioPipes; i++){
     switch(i){
       case 3:
+        stdioWriters[i] = fs.createWriteStream(null, {fd: i});
         if(rawMonitorConfig.details.detector_pam === '1'){
           newPipes.push('pipe')
-          stdioWriters[i] = fs.createWriteStream(null, {fd: i});
         }else{
-          stdioWriters[i] = fs.createWriteStream(null, {fd: i});
           newPipes.push(stdioWriters[i])
         }
       break;

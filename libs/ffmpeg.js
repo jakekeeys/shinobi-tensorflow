@@ -951,7 +951,7 @@ module.exports = function(s,config,lang,onFinish){
         x.ffmpegCommandString = x.loglevel+x.input_fps;
         //progress pipe
         x.ffmpegCommandString += ' -progress pipe:5';
-
+        const url = s.buildMonitorUrl(e);
         switch(e.type){
             case'dashcam':
                 x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i -';
@@ -960,17 +960,17 @@ module.exports = function(s,config,lang,onFinish){
                 x.ffmpegCommandString += ' -pattern_type glob -f image2pipe'+x.record_fps+' -vcodec mjpeg'+x.cust_input+x.hwaccel+' -i -';
             break;
             case'mjpeg':
-                x.ffmpegCommandString += ' -reconnect 1 -f mjpeg'+x.cust_input+x.hwaccel+' -i "'+e.url+'"';
+                x.ffmpegCommandString += ' -reconnect 1 -f mjpeg'+x.cust_input+x.hwaccel+' -i "'+url+'"';
             break;
             case'mxpeg':
-                x.ffmpegCommandString += ' -reconnect 1 -f mxg'+x.cust_input+x.hwaccel+' -i "'+e.url+'"';
+                x.ffmpegCommandString += ' -reconnect 1 -f mxg'+x.cust_input+x.hwaccel+' -i "'+url+'"';
             break;
             case'rtmp':
                 if(!e.details.rtmp_key)e.details.rtmp_key = ''
                 x.ffmpegCommandString += x.cust_input+x.hwaccel+` -i "rtmp://127.0.0.1:1935/${e.ke + '_' + e.mid + '_' + e.details.rtmp_key}"`;
             break;
             case'h264':case'hls':case'mp4':
-                x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i "'+e.url+'"';
+                x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i "'+url+'"';
             break;
             case'local':
                 x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i "'+e.path+'"';
