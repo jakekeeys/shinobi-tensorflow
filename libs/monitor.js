@@ -351,7 +351,7 @@ module.exports = function(s,config,lang){
         return items
     }
 
-    s.cameraDestroy = function(x,e,p){
+    cameraDestroy = function(x,e,p){
         if(s.group[e.ke]&&s.group[e.ke].activeMonitors[e.id]&&s.group[e.ke].activeMonitors[e.id].spawn !== undefined){
             if(s.group[e.ke].activeMonitors[e.id].spawn){
                 s.group[e.ke].activeMonitors[e.id].allowStdinWrite = false
@@ -789,7 +789,7 @@ module.exports = function(s,config,lang){
         }
         s.group[e.ke].activeMonitors[e.id].recordingChecker = setTimeout(function(){
             if(s.group[e.ke].activeMonitors[e.id].isStarted === true && s.group[e.ke].rawMonitorConfigurations[e.id].mode === 'record'){
-                launchMonitorProcesses(s.cleanMonitorObject(e))
+              launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
                 s.sendMonitorStatus({id:e.id,ke:e.ke,status:lang.Restarting});
                 s.userLog(e,{type:lang['Camera is not recording'],msg:{msg:lang['Restarting Process']}});
                 s.orphanedVideoCheck(e,2,null,true)
@@ -800,7 +800,7 @@ module.exports = function(s,config,lang){
         clearTimeout(s.group[e.ke].activeMonitors[e.id].streamChecker)
         s.group[e.ke].activeMonitors[e.id].streamChecker = setTimeout(function(){
             if(s.group[e.ke].activeMonitors[e.id] && s.group[e.ke].activeMonitors[e.id].isStarted === true){
-              launchMonitorProcesses(s.cleanMonitorObject(e))
+              launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
               s.userLog(e,{type:lang['Camera is not streaming'],msg:{msg:lang['Restarting Process']}});
               s.orphanedVideoCheck(e,2,null,true)
             }
@@ -890,7 +890,7 @@ module.exports = function(s,config,lang){
                 }
                 if(e.details.fatal_max !== 0 && e.errorCount > e.details.fatal_max){
                     clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingSnapper)
-                    launchMonitorProcesses(s.cleanMonitorObject(e));
+                    launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
                 }
             })
         }
@@ -960,7 +960,7 @@ module.exports = function(s,config,lang){
                         if(response.success){
                             sendProcessCpuUsage()
                         }else{
-                            launchMonitorProcesses(e);
+                          launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
                         }
                     })
                 }else{
@@ -1203,7 +1203,7 @@ module.exports = function(s,config,lang){
                 case checkLog(d,'bad vlc'):
                 case checkLog(d,'error dc'):
                 case checkLog(d,'No route to host'):
-                    launchMonitorProcesses(e);
+                    launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
                 break;
                 case /T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]./.test(d):
                     var filename = d.split('.')[0].split(' [')[0].trim()+'.'+e.ext
@@ -1305,7 +1305,7 @@ module.exports = function(s,config,lang){
                                         if(e.coProcessor === true){
                                             s.coSpawnLauncher(e)
                                         }else{
-                                            launchMonitorProcesses(e)
+                                          launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
                                         }
                                         s.userLog(e,{type:lang['Camera is not streaming'],msg:{msg:lang['Restarting Process']}})
                                         s.orphanedVideoCheck(e,2,null,true)
@@ -1365,7 +1365,7 @@ module.exports = function(s,config,lang){
                 if(s.group[e.ke].activeMonitors[e.id].isStarted === true){
                     e.errorCount = 0;
                     s.group[e.ke].activeMonitors[e.id].errorSocketTimeoutCount = 0;
-                    s.cameraDestroy(s.group[e.ke].activeMonitors[e.id].spawn,e)
+                    cameraDestroy(s.group[e.ke].activeMonitors[e.id].spawn,e)
                     startVideoProcessor = function(err,o){
                         if(o.success === true){
                             s.group[e.ke].activeMonitors[e.id].isRecording = true
@@ -1417,7 +1417,7 @@ module.exports = function(s,config,lang){
                         startVideoProcessor(null,{success:true})
                     }
                 }else{
-                    s.cameraDestroy(s.group[e.ke].activeMonitors[e.id].spawn,e)
+                    cameraDestroy(s.group[e.ke].activeMonitors[e.id].spawn,e)
                 }
                 if(callback)callback()
             })
@@ -1504,11 +1504,11 @@ module.exports = function(s,config,lang){
                 if(e.details.fatal_max !== 0 && e.errorFatalCount > e.details.fatal_max){
                     s.camera('stop',{id:e.id,ke:e.ke})
                 }else{
-                    launchMonitorProcesses(s.cleanMonitorObject(e));
+                    launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
                 };
             },5000);
         }else{
-            s.cameraDestroy(s.group[e.ke].activeMonitors[e.id].spawn,e)
+            cameraDestroy(s.group[e.ke].activeMonitors[e.id].spawn,e)
         }
         s.sendMonitorStatus({id:e.id,ke:e.ke,status:lang.Died})
         s.onMonitorDiedExtensions.forEach(function(extender){
@@ -1689,7 +1689,7 @@ module.exports = function(s,config,lang){
                     if(s.group[e.ke].activeMonitors[e.id].fswatchStream){s.group[e.ke].activeMonitors[e.id].fswatchStream.close();delete(s.group[e.ke].activeMonitors[e.id].fswatchStream)}
                     if(s.group[e.ke].activeMonitors[e.id].last_frame){delete(s.group[e.ke].activeMonitors[e.id].last_frame)}
                     if(s.group[e.ke].activeMonitors[e.id].isStarted !== true){return}
-                    s.cameraDestroy(s.group[e.ke].activeMonitors[e.id].spawn,e)
+                    cameraDestroy(s.group[e.ke].activeMonitors[e.id].spawn,e)
                     if(e.neglectTriggerTimer === 1){
                         delete(e.neglectTriggerTimer);
                     }else{
@@ -1760,7 +1760,7 @@ module.exports = function(s,config,lang){
                 if(isNaN(e.cutoff)===true){e.cutoff=15}
                 //start drawing files
                 delete(s.group[e.ke].activeMonitors[e.id].childNode)
-                launchMonitorProcesses(e);
+                launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
             break;
             default:
                 console.log(x)
