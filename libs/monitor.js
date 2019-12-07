@@ -376,7 +376,9 @@ module.exports = function(s,config,lang){
               s.group[e.ke].activeMonitors[e.id].audioDetector.stop()
               delete(s.group[e.ke].activeMonitors[e.id].audioDetector)
             }
-            delete(s.group[e.ke].activeMonitors[e.mid].mp4frag)
+            Object.keys(s.group[e.ke].activeMonitors[e.mid].mp4frag).forEach(function(key){
+              delete(s.group[e.ke].activeMonitors[e.mid].mp4frag[key])
+            })
             s.group[e.ke].activeMonitors[e.id].firstStreamChunk = {}
             clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingChecker);
             delete(s.group[e.ke].activeMonitors[e.id].recordingChecker);
@@ -787,7 +789,7 @@ module.exports = function(s,config,lang){
         }
         s.group[e.ke].activeMonitors[e.id].recordingChecker = setTimeout(function(){
             if(s.group[e.ke].activeMonitors[e.id].isStarted === true && s.group[e.ke].rawMonitorConfigurations[e.id].mode === 'record'){
-              launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                launchMonitorProcesses(s.cleanMonitorObject(e))
                 s.sendMonitorStatus({id:e.id,ke:e.ke,status:lang.Restarting});
                 s.userLog(e,{type:lang['Camera is not recording'],msg:{msg:lang['Restarting Process']}});
                 s.orphanedVideoCheck(e,2,null,true)
@@ -798,7 +800,7 @@ module.exports = function(s,config,lang){
         clearTimeout(s.group[e.ke].activeMonitors[e.id].streamChecker)
         s.group[e.ke].activeMonitors[e.id].streamChecker = setTimeout(function(){
             if(s.group[e.ke].activeMonitors[e.id] && s.group[e.ke].activeMonitors[e.id].isStarted === true){
-              launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+              launchMonitorProcesses(s.cleanMonitorObject(e))
               s.userLog(e,{type:lang['Camera is not streaming'],msg:{msg:lang['Restarting Process']}});
               s.orphanedVideoCheck(e,2,null,true)
             }
@@ -888,7 +890,7 @@ module.exports = function(s,config,lang){
                 }
                 if(e.details.fatal_max !== 0 && e.errorCount > e.details.fatal_max){
                     clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingSnapper)
-                    launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                    launchMonitorProcesses(s.cleanMonitorObject(e));
                 }
             })
         }
@@ -958,7 +960,7 @@ module.exports = function(s,config,lang){
                         if(response.success){
                             sendProcessCpuUsage()
                         }else{
-                          launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                            launchMonitorProcesses(e);
                         }
                     })
                 }else{
@@ -1201,7 +1203,7 @@ module.exports = function(s,config,lang){
                 case checkLog(d,'bad vlc'):
                 case checkLog(d,'error dc'):
                 case checkLog(d,'No route to host'):
-                    launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                    launchMonitorProcesses(e);
                 break;
                 case /T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]./.test(d):
                     var filename = d.split('.')[0].split(' [')[0].trim()+'.'+e.ext
@@ -1303,7 +1305,7 @@ module.exports = function(s,config,lang){
                                         if(e.coProcessor === true){
                                             s.coSpawnLauncher(e)
                                         }else{
-                                          launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                                            launchMonitorProcesses(e)
                                         }
                                         s.userLog(e,{type:lang['Camera is not streaming'],msg:{msg:lang['Restarting Process']}})
                                         s.orphanedVideoCheck(e,2,null,true)
@@ -1502,7 +1504,7 @@ module.exports = function(s,config,lang){
                 if(e.details.fatal_max !== 0 && e.errorFatalCount > e.details.fatal_max){
                     s.camera('stop',{id:e.id,ke:e.ke})
                 }else{
-                    launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                    launchMonitorProcesses(s.cleanMonitorObject(e));
                 };
             },5000);
         }else{
@@ -1758,7 +1760,7 @@ module.exports = function(s,config,lang){
                 if(isNaN(e.cutoff)===true){e.cutoff=15}
                 //start drawing files
                 delete(s.group[e.ke].activeMonitors[e.id].childNode)
-                launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                launchMonitorProcesses(e);
             break;
             default:
                 console.log(x)
