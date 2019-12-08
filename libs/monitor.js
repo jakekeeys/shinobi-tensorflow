@@ -139,7 +139,8 @@ module.exports = function(s,config,lang){
                     var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
                     var iconImageFile = streamDir + 'icon.jpg'
                     var ffmpegCmd = s.splitForFFPMEG(`-loglevel warning -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -vframes 1 "${temporaryImageFile}"`)
-                    fs.writeFileSync(s.group[monitor.ke].rawMonitorConfigurations[monitor.id].sdir + 'snapCmd.txt',JSON.stringify({
+                    const cmdPath = s.dir.streams + monitor.ke + '/' + monitor.id + '/' + 'snapCmd.txt'
+                    fs.writeFileSync(cmdPath,JSON.stringify({
                       cmd: ffmpegCmd,
                       temporaryImageFile: temporaryImageFile,
                       iconImageFile: iconImageFile,
@@ -149,7 +150,7 @@ module.exports = function(s,config,lang){
                     var cameraCommandParams = [
                       s.mainDirectory + '/libs/cameraThread/snapshot.js',
                       config.ffmpegDir,
-                      s.group[monitor.ke].rawMonitorConfigurations[monitor.id].sdir + 'snapCmd.txt'
+                      cmdPath
                     ]
                     var snapProcess = spawn('node',cameraCommandParams,{detached: true})
                     snapProcess.stderr.on('data',function(data){
@@ -376,9 +377,6 @@ module.exports = function(s,config,lang){
               s.group[e.ke].activeMonitors[e.id].audioDetector.stop()
               delete(s.group[e.ke].activeMonitors[e.id].audioDetector)
             }
-            Object.keys(s.group[e.ke].activeMonitors[e.mid].mp4frag).forEach(function(key){
-              delete(s.group[e.ke].activeMonitors[e.mid].mp4frag[key])
-            })
             s.group[e.ke].activeMonitors[e.id].firstStreamChunk = {}
             clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingChecker);
             delete(s.group[e.ke].activeMonitors[e.id].recordingChecker);
@@ -1053,7 +1051,7 @@ module.exports = function(s,config,lang){
             if(e.details.detector_pam === '1'){
                // s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].pipe(s.group[e.ke].activeMonitors[e.id].p2p).pipe(s.group[e.ke].activeMonitors[e.id].pamDiff)
                s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].on('data',function(buf){
-                 var data = JSON.parse(buf)
+                   var data = JSON.parse(buf)
                    s.triggerEvent(data)
                })
                 if(e.details.detector_use_detect_object === '1'){
@@ -1120,7 +1118,7 @@ module.exports = function(s,config,lang){
             if(e.coProcessor === true && e.details.stream_type === ('b64'||'mjpeg')){
 
             }else{
-                s.group[e.ke].activeMonitors[e.id].spawn.stdout.on('data',frameToStreamPrimary)
+                s.group[e.ke].activeMonitors[e.id].spawn.stdio[1].on('data',frameToStreamPrimary)
             }
         }
         if(e.details.stream_channels && e.details.stream_channels !== ''){

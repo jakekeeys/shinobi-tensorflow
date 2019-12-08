@@ -46,7 +46,7 @@
     "knex": "^0.19.5",
     "ldapauth-fork": "^4.0.2",
     "moment": "^2.17.0",
-    "mp4frag": "^0.2.0",
+    "mp4frag": "^0.0.22",
     "mysql": "^2.16.0",
     "node-onvif": "^0.1.4",
     "node-ssh": "^5.1.2",
