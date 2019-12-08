@@ -357,7 +357,6 @@ module.exports = function(s,config,lang){
                     ke : e.ke,
                     mid : e.id
                 },e.ke)
-                s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].unpipe();
     //            if(s.group[e.ke].activeMonitors[e.id].p2pStream){s.group[e.ke].activeMonitors[e.id].p2pStream.unpipe();}
                 if(s.group[e.ke].activeMonitors[e.id].p2p){s.group[e.ke].activeMonitors[e.id].p2p.unpipe();}
                 delete(s.group[e.ke].activeMonitors[e.id].p2pStream)
@@ -404,15 +403,21 @@ module.exports = function(s,config,lang){
             }else{
                 s.coSpawnClose(e)
                 if(!x||x===1){return};
-                p=x.pid;
+                p = x.pid;
                 if(s.group[e.ke].rawMonitorConfigurations[e.id].type===('dashcam'||'socket'||'jpeg'||'pipe')){
-                    x.stdin.pause();setTimeout(function(){x.kill('SIGTERM');},500)
+                    x.stdin.pause()
+                    setTimeout(function(){
+                      x.kill('SIGTERM')
+                    },500)
                 }else{
                     try{
-                        x.stdin.setEncoding('utf8');x.stdin.write('q');
+                        x.stdin.setEncoding('utf8')
+                        x.stdin.write('q')
                     }catch(er){}
                 }
-                setTimeout(function(){exec('kill -9 '+p,{detached: true})},1000)
+                setTimeout(function(){
+                  exec('kill -9 '+p,{detached: true})
+                },1000)
             }
         }
     }
@@ -662,7 +667,7 @@ module.exports = function(s,config,lang){
         if(!options)options = {}
         s.checkDetails(e)
         if(config.doSnapshot === true){
-            if(s.group[e.ke] && s.group[e.ke].rawMonitorConfigurations && s.group[e.ke].rawMonitorConfigurations[e.mid].mode !== 'stop'){
+            if(s.group[e.ke] && s.group[e.ke].rawMonitorConfigurations && s.group[e.ke].rawMonitorConfigurations[e.mid] && s.group[e.ke].rawMonitorConfigurations[e.mid].mode !== 'stop'){
                 var pathDir = s.dir.streams+e.ke+'/'+e.mid+'/'
                 s.getRawSnapshotFromMonitor(s.group[e.ke].rawMonitorConfigurations[e.mid],Object.assign({
                     flags: '-s 200x200'
@@ -747,6 +752,11 @@ module.exports = function(s,config,lang){
                 }
             })
         })
+    }
+    try{
+      fs.unlinkSync('/home/Shinobi/test.log')
+    }catch(err){
+
     }
     var createCameraFolders = function(e,callback){
         //set the recording directory
@@ -1064,7 +1074,7 @@ module.exports = function(s,config,lang){
        var frameToStreamPrimary
        switch(e.details.stream_type){
            case'mp4':
-               // delete(s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'])
+               delete(s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'])
                if(!s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'])s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'] = new Mp4Frag()
                s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'].on('error',function(error){
                    s.userLog(e,{type:lang['Mp4Frag'],msg:{error:error}})
@@ -1125,6 +1135,7 @@ module.exports = function(s,config,lang){
                var frameToStreamAdded
                switch(channel.stream_type){
                    case'mp4':
+                       delete(s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber])
                        if(!s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber])s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber] = new Mp4Frag();
                        s.group[e.ke].activeMonitors[e.id].spawn.stdio[pipeNumber].pipe(s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber])
                    break;

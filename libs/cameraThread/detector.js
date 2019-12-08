@@ -15,7 +15,12 @@ module.exports = function(jsonData,pamDiffResponder){
     var pamDiff
     var p2p
     var writeToStderr = function(text){
-      fs.appendFileSync('/home/Shinobi/test.log',text + '\n','utf8')
+      try{
+        stdioWriters[2].write(Buffer.from(`${text}`, 'utf8' ))
+          // stdioWriters[2].write(Buffer.from(`${new Error('writeToStderr').stack}`, 'utf8' ))
+      }catch(err){
+        fs.appendFileSync('/home/Shinobi/test.log',text + '\n','utf8')
+      }
     }
     createPamDiffEngine = function(){
         var width,
@@ -172,7 +177,7 @@ module.exports = function(jsonData,pamDiffResponder){
                     checkTriggerThreshold(region, detectorObject, function(err2) {
                         if(!err1 && ! err2){
                             detectorObject.doObjectDetection = (jsonData.globalInfo.isAtleatOneDetectorPluginConnected && jsonData.rawMonitorConfig.details.detector_use_detect_object === '1')
-
+                            pamDiffResponder.write(Buffer.from(JSON.stringify(detectorObject)))
                         }
                     })
                 })
@@ -403,12 +408,19 @@ module.exports = function(jsonData,pamDiffResponder){
         return trigger
     }
 
-    return function(cameraProcess){
+    return function(cameraProcess,fallback){
       if(jsonData.rawMonitorConfig.details.detector === '1' && jsonData.rawMonitorConfig.coProcessor === false){
           //frames from motion detect
           if(jsonData.rawMonitorConfig.details.detector_pam === '1'){
             createPamDiffEngine()
-            cameraProcess.stdio[3].pipe(p2p).pipe(pamDiff)
+            p2p.pipe(pamDiff)
+            cameraProcess.stdio[3].on('data',(data)=>{
+                try{
+                  p2p.write(data)
+                }catch(err){
+                  fallback(err)
+                }
+            })
           }
       }
     };
