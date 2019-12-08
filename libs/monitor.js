@@ -127,47 +127,42 @@ module.exports = function(s,config,lang){
         const noIconChecks = function(){
             const runExtraction = function(){
                 try{
-                    var sendTempImage = function(){
-                      fs.readFile(temporaryImageFile,function(err,buffer){
-                         if(!err){
-                           callback(buffer,false)
-                         }
-                         fs.unlink(temporaryImageFile,function(){})
-                      })
-                    }
                     var snapBuffer = []
                     var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
                     var iconImageFile = streamDir + 'icon.jpg'
-                    var ffmpegCmd = s.splitForFFPMEG(`-loglevel warning -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -vframes 1 "${temporaryImageFile}"`)
-                    const cmdPath = s.dir.streams + monitor.ke + '/' + monitor.id + '/' + 'snapCmd.txt'
-                    fs.writeFileSync(cmdPath,JSON.stringify({
-                      cmd: ffmpegCmd,
-                      temporaryImageFile: temporaryImageFile,
-                      iconImageFile: iconImageFile,
-                      useIcon: options.useIcon,
-                      rawMonitorConfig: s.group[monitor.ke].rawMonitorConfigurations[monitor.id],
-                    },null,3),'utf8')
-                    var cameraCommandParams = [
-                      s.mainDirectory + '/libs/cameraThread/snapshot.js',
-                      config.ffmpegDir,
-                      cmdPath
-                    ]
-                    var snapProcess = spawn('node',cameraCommandParams,{detached: true})
+                    var ffmpegCmd = `-loglevel quiet -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -vframes 1 "${temporaryImageFile}"`
+                    var snapProcess = spawn(config.ffmpegDir,s.splitForFFPMEG(ffmpegCmd),{detached: true})
                     snapProcess.stderr.on('data',function(data){
                         console.log(data.toString())
                     })
                     snapProcess.on('close',function(data){
                         clearTimeout(snapProcessTimeout)
-                        sendTempImage()
+                        fs.readFile(temporaryImageFile,function(err,buffer){
+                            if(buffer){
+                                if(options.useIcon === true){
+                                    fs.writeFile(iconImageFile,buffer,function(){
+                                        callback(buffer,false)
+                                    })
+                                }else{
+                                    callback(buffer,false)
+                                }
+                            }else{
+                                fs.readFile(config.defaultMjpeg,function(err,buffer){
+                                    callback(buffer,false)
+                                })
+                            }
+                            fs.unlink(temporaryImageFile,function(){})
+                        })
                     })
                     var snapProcessTimeout = setTimeout(function(){
-                        snapProcess.kill('SIGTERM')
+                        snapProcess.stdin.setEncoding('utf8')
+                        snapProcess.stdin.write('q')
+                        snapProcess.kill()
                     },30000)
                 }catch(err){
-                  console.log(err)
-                    // fs.readFile(config.defaultMjpeg,function(err,buffer){
-                    //     callback(buffer,false)
-                    // })
+                    fs.readFile(config.defaultMjpeg,function(err,buffer){
+                        callback(buffer,false)
+                    })
                 }
             }
             if(url){
@@ -220,8 +215,9 @@ module.exports = function(s,config,lang){
                 if(success === false){
                     noIconChecks()
                 }else{
-                    var snapBuffer = fs.readFileSync(streamDir + 'icon.jpg')
-                    callback(snapBuffer,false)
+                    s.readFile(streamDir + 'icon.jpg',function(err,snapBuffer){
+                        callback(snapBuffer,true)
+                    })
                 }
             })
         }else{
@@ -680,7 +676,6 @@ module.exports = function(s,config,lang){
                             ke: e.ke
                         },'GRP_'+e.ke)
                     }else{
-                      console.log('not image')
                         s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
                    }
                 })
@@ -787,7 +782,7 @@ module.exports = function(s,config,lang){
         }
         s.group[e.ke].activeMonitors[e.id].recordingChecker = setTimeout(function(){
             if(s.group[e.ke].activeMonitors[e.id].isStarted === true && s.group[e.ke].rawMonitorConfigurations[e.id].mode === 'record'){
-              launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                launchMonitorProcesses(s.cleanMonitorObject(e));
                 s.sendMonitorStatus({id:e.id,ke:e.ke,status:lang.Restarting});
                 s.userLog(e,{type:lang['Camera is not recording'],msg:{msg:lang['Restarting Process']}});
                 s.orphanedVideoCheck(e,2,null,true)
@@ -798,9 +793,9 @@ module.exports = function(s,config,lang){
         clearTimeout(s.group[e.ke].activeMonitors[e.id].streamChecker)
         s.group[e.ke].activeMonitors[e.id].streamChecker = setTimeout(function(){
             if(s.group[e.ke].activeMonitors[e.id] && s.group[e.ke].activeMonitors[e.id].isStarted === true){
-              launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
-              s.userLog(e,{type:lang['Camera is not streaming'],msg:{msg:lang['Restarting Process']}});
-              s.orphanedVideoCheck(e,2,null,true)
+                launchMonitorProcesses(s.cleanMonitorObject(e));
+                s.userLog(e,{type:lang['Camera is not streaming'],msg:{msg:lang['Restarting Process']}});
+                s.orphanedVideoCheck(e,2,null,true)
             }
         },60000*1);
     }
@@ -824,7 +819,7 @@ module.exports = function(s,config,lang){
         }
         e.captureOne = function(f){
             s.group[e.ke].activeMonitors[e.id].recordingSnapRequest = request({
-                url: s.buildMonitorUrl(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id])),
+                url: s.buildMonitorUrl(e),
                 method: 'GET',
                 encoding: null,
                 timeout: 15000
@@ -888,7 +883,7 @@ module.exports = function(s,config,lang){
                 }
                 if(e.details.fatal_max !== 0 && e.errorCount > e.details.fatal_max){
                     clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingSnapper)
-                    launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                    launchMonitorProcesses(s.cleanMonitorObject(e))
                 }
             })
         }
@@ -958,7 +953,7 @@ module.exports = function(s,config,lang){
                         if(response.success){
                             sendProcessCpuUsage()
                         }else{
-                          launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                            launchMonitorProcesses(e)
                         }
                     })
                 }else{
@@ -1051,8 +1046,8 @@ module.exports = function(s,config,lang){
             if(e.details.detector_pam === '1'){
                // s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].pipe(s.group[e.ke].activeMonitors[e.id].p2p).pipe(s.group[e.ke].activeMonitors[e.id].pamDiff)
                s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].on('data',function(buf){
-                   var data = JSON.parse(buf)
-                   s.triggerEvent(data)
+                  var data = JSON.parse(buf)
+                  s.triggerEvent(data)
                })
                 if(e.details.detector_use_detect_object === '1'){
                     s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
@@ -1069,8 +1064,8 @@ module.exports = function(s,config,lang){
        var frameToStreamPrimary
        switch(e.details.stream_type){
            case'mp4':
-               delete(s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'])
-               s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'] = new Mp4Frag()
+               // delete(s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'])
+               if(!s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'])s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'] = new Mp4Frag()
                s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'].on('error',function(error){
                    s.userLog(e,{type:lang['Mp4Frag'],msg:{error:error}})
                })
@@ -1118,7 +1113,7 @@ module.exports = function(s,config,lang){
             if(e.coProcessor === true && e.details.stream_type === ('b64'||'mjpeg')){
 
             }else{
-                s.group[e.ke].activeMonitors[e.id].spawn.stdio[1].on('data',frameToStreamPrimary)
+                s.group[e.ke].activeMonitors[e.id].spawn.stdout.on('data',frameToStreamPrimary)
             }
         }
         if(e.details.stream_channels && e.details.stream_channels !== ''){
@@ -1130,8 +1125,7 @@ module.exports = function(s,config,lang){
                var frameToStreamAdded
                switch(channel.stream_type){
                    case'mp4':
-                       delete(s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber])
-                       s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber] = new Mp4Frag();
+                       if(!s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber])s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber] = new Mp4Frag();
                        s.group[e.ke].activeMonitors[e.id].spawn.stdio[pipeNumber].pipe(s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber])
                    break;
                    case'mjpeg':
@@ -1201,7 +1195,7 @@ module.exports = function(s,config,lang){
                 case checkLog(d,'bad vlc'):
                 case checkLog(d,'error dc'):
                 case checkLog(d,'No route to host'):
-                    launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                    launchMonitorProcesses(e)
                 break;
                 case /T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]./.test(d):
                     var filename = d.split('.')[0].split(' [')[0].trim()+'.'+e.ext
@@ -1266,10 +1260,10 @@ module.exports = function(s,config,lang){
             })
         },detector_notrigger_timeout)
     }
-    //set master based process launcher
     copyObject = function(obj){
       return Object.assign({},obj)
     }
+    //set master based process launcher
     launchMonitorProcesses = function(e){
         // e = monitor object
         //create host string without username and password
@@ -1303,7 +1297,7 @@ module.exports = function(s,config,lang){
                                         if(e.coProcessor === true){
                                             s.coSpawnLauncher(e)
                                         }else{
-                                          launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                                            launchMonitorProcesses(e)
                                         }
                                         s.userLog(e,{type:lang['Camera is not streaming'],msg:{msg:lang['Restarting Process']}})
                                         s.orphanedVideoCheck(e,2,null,true)
@@ -1326,7 +1320,6 @@ module.exports = function(s,config,lang){
                     resetSnapCheck()
                 }
                 if(config.childNodes.mode !== 'child' && s.platform!=='darwin' && (e.functionMode === 'record' || (e.functionMode === 'start'&&e.details.detector_record_method==='sip'))){
-                    //check if ffmpeg is recording
                     if(s.group[e.ke].activeMonitors[e.id].fswatch && s.group[e.ke].activeMonitors[e.id].fswatch.close){
                       s.group[e.ke].activeMonitors[e.id].fswatch.close()
                     }
@@ -1393,11 +1386,11 @@ module.exports = function(s,config,lang){
                                 },6000)
                             }
                             s.onMonitorStartExtensions.forEach(function(extender){
-                                extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}))
+                                extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
                             })
                           }else{
                               s.onMonitorPingFailedExtensions.forEach(function(extender){
-                                  extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}))
+                                  extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
                               })
                               s.userLog(e,{type:lang["Ping Failed"],msg:lang.skipPingText1});
                               s.fatalCameraError(e,"Ping Failed");return;
@@ -1502,7 +1495,7 @@ module.exports = function(s,config,lang){
                 if(e.details.fatal_max !== 0 && e.errorFatalCount > e.details.fatal_max){
                     s.camera('stop',{id:e.id,ke:e.ke})
                 }else{
-                    launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                    launchMonitorProcesses(s.cleanMonitorObject(e))
                 };
             },5000);
         }else{
@@ -1758,7 +1751,7 @@ module.exports = function(s,config,lang){
                 if(isNaN(e.cutoff)===true){e.cutoff=15}
                 //start drawing files
                 delete(s.group[e.ke].activeMonitors[e.id].childNode)
-                launchMonitorProcesses(copyObject(s.group[e.ke].rawMonitorConfigurations[e.id]));
+                launchMonitorProcesses(e)
             break;
             default:
                 console.log(x)

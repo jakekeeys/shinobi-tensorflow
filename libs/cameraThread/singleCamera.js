@@ -56,11 +56,8 @@ var cameraProcess = spawn(ffmpegAbsolutePath,ffmpegCommandString,{detached: true
 cameraProcess.on('close',()=>{
   process.exit();
 })
-writeToStderr('------')
-newPipes.forEach((pipe)=>{
-  writeToStderr(typeof pipe)
-  // writeToStderr(JSON.stringify(pipe,null,3))
-})
+writeToStderr('Thread Opening')
+
 
 setTimeout(()=>{
   if(rawMonitorConfig.details.detector === '1' && rawMonitorConfig.details.detector_pam === '1'){
