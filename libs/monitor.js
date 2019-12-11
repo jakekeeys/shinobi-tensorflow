@@ -748,11 +748,11 @@ module.exports = function(s,config,lang){
             })
         })
     }
-    try{
-      fs.unlinkSync('/home/Shinobi/test.log')
-    }catch(err){
-
-    }
+    // try{
+    //   fs.unlinkSync('/home/Shinobi/test.log')
+    // }catch(err){
+    //
+    // }
     var createCameraFolders = function(e,callback){
         //set the recording directory
         createStreamDirectory(e,function(err,directory){
