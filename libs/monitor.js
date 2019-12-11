@@ -360,10 +360,6 @@ module.exports = function(s,config,lang){
                     mid : e.id
                 },e.ke)
     //            if(activeMonitor.p2pStream){activeMonitor.p2pStream.unpipe();}
-                if(activeMonitor.p2p){activeMonitor.p2p.unpipe();}
-                delete(activeMonitor.p2pStream)
-                delete(activeMonitor.p2p)
-                delete(activeMonitor.pamDiff)
                 try{
                     proc.removeListener('end',activeMonitor.spawn_exit);
                     proc.removeListener('exit',activeMonitor.spawn_exit);
@@ -392,6 +388,13 @@ module.exports = function(s,config,lang){
             if(activeMonitor.onChildNodeExit){
                 activeMonitor.onChildNodeExit()
             }
+            activeMonitor.spawn.stdio.forEach(function(stdio){
+              try{
+                stdio.unpipe()
+              }catch(err){
+                console.log(err)
+              }
+            })
             if(activeMonitor.mp4frag){
                 var mp4FragChannels = Object.keys(activeMonitor.mp4frag)
                 mp4FragChannels.forEach(function(channel){
@@ -407,7 +410,7 @@ module.exports = function(s,config,lang){
             }else{
                 s.coSpawnClose(e)
                 if(proc && proc.kill){
-                    proc.kill('SIGINT')
+                    proc.kill()
                 }
             }
         }
@@ -1616,9 +1619,9 @@ module.exports = function(s,config,lang){
                 if(form.mode === 'stop'){
                     s.camera('stop',form)
                 }else{
-                    s.camera('stop',form)
+                    s.camera('stop',Object.assign(s.group[form.ke].rawMonitorConfigurations[form.mid]))
                     setTimeout(function(){
-                        s.camera(form.mode,form)
+                        s.camera(form.mode,Object.assign(s.group[form.ke].rawMonitorConfigurations[form.mid]))
                     },5000)
                 }
                 s.tx(txData,'STR_'+form.ke)
