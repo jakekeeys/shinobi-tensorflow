@@ -7,7 +7,6 @@ var P = SAT.Polygon;
 var P2P = require('pipe2pam')
 var PamDiff = require('pam-diff')
 module.exports = function(jsonData,pamDiffResponder){
-    var s = {};
     var noiseFilterArray = {};
     const groupKey = jsonData.rawMonitorConfig.ke
     const monitorId = jsonData.rawMonitorConfig.mid
@@ -20,6 +19,15 @@ module.exports = function(jsonData,pamDiffResponder){
           // stdioWriters[2].write(Buffer.from(`${new Error('writeToStderr').stack}`, 'utf8' ))
       }catch(err){
         fs.appendFileSync('/home/Shinobi/test.log',text + '\n','utf8')
+      }
+    }
+    if(typeof pamDiffResponder === 'function'){
+      var sendDetectedData = function(detectorObject){
+        pamDiffResponder(detectorObject)
+      }
+    }else{
+      var sendDetectedData = function(detectorObject){
+        pamDiffResponder.write(Buffer.from(JSON.stringify(detectorObject)))
       }
     }
     createPamDiffEngine = function(){
@@ -112,7 +120,7 @@ module.exports = function(jsonData,pamDiffResponder){
                                 if(!err1 && !err2)++filteredCountSuccess
                                 if(filteredCount === trigger.merged.length && filteredCountSuccess > 0){
                                     detectorObject.doObjectDetection = (jsonData.globalInfo.isAtleatOneDetectorPluginConnected && jsonData.rawMonitorConfig.details.detector_use_detect_object === '1')
-                                    pamDiffResponder.write(Buffer.from(JSON.stringify(detectorObject)))
+                                    sendDetectedData(detectorObject)
                                 }
                             })
                         })
@@ -124,7 +132,7 @@ module.exports = function(jsonData,pamDiffResponder){
                         checkTriggerThreshold(region, detectorObject, function(err2) {
                             if(!err1 && !err2){
                                 detectorObject.doObjectDetection = (jsonData.globalInfo.isAtleatOneDetectorPluginConnected && jsonData.rawMonitorConfig.details.detector_use_detect_object === '1')
-                                pamDiffResponder.write(Buffer.from(JSON.stringify(detectorObject)))
+                                sendDetectedData(detectorObject)
                             }
                         })
                     })
@@ -177,7 +185,7 @@ module.exports = function(jsonData,pamDiffResponder){
                     checkTriggerThreshold(region, detectorObject, function(err2) {
                         if(!err1 && ! err2){
                             detectorObject.doObjectDetection = (jsonData.globalInfo.isAtleatOneDetectorPluginConnected && jsonData.rawMonitorConfig.details.detector_use_detect_object === '1')
-                            pamDiffResponder.write(Buffer.from(JSON.stringify(detectorObject)))
+                            sendDetectedData(detectorObject)
                         }
                     })
                 })
@@ -348,7 +356,7 @@ module.exports = function(jsonData,pamDiffResponder){
         }
         return trigger
     }
-    s.isAtleastOneMatrixInRegion = function(regions,matrices,callback){
+    isAtleastOneMatrixInRegion = function(regions,matrices,callback){
         var regionPolys = []
         var matrixPoints = []
         regions.forEach(function(region,n){
@@ -413,15 +421,9 @@ module.exports = function(jsonData,pamDiffResponder){
           //frames from motion detect
           if(jsonData.rawMonitorConfig.details.detector_pam === '1'){
             createPamDiffEngine()
-            p2p.pipe(pamDiff)
-            cameraProcess.stdio[3].on('data',(data)=>{
-                try{
-                  p2p.write(data)
-                }catch(err){
-                  fallback(err)
-                }
-            })
+
+            cameraProcess.stdio[3].pipe(p2p).pipe(pamDiff)
           }
-      }
+       }
     };
 }

@@ -348,79 +348,71 @@ module.exports = function(s,config,lang){
         return items
     }
 
-    cameraDestroy = function(x,e,p){
+    cameraDestroy = function(e,p){
         if(s.group[e.ke]&&s.group[e.ke].activeMonitors[e.id]&&s.group[e.ke].activeMonitors[e.id].spawn !== undefined){
-            if(s.group[e.ke].activeMonitors[e.id].spawn){
-                s.group[e.ke].activeMonitors[e.id].allowStdinWrite = false
+            const activeMonitor = s.group[e.ke].activeMonitors[e.id];
+            const proc = s.group[e.ke].activeMonitors[e.id].spawn;
+            if(proc){
+                activeMonitor.allowStdinWrite = false
                 s.txToDashcamUsers({
                     f : 'disable_stream',
                     ke : e.ke,
                     mid : e.id
                 },e.ke)
-    //            if(s.group[e.ke].activeMonitors[e.id].p2pStream){s.group[e.ke].activeMonitors[e.id].p2pStream.unpipe();}
-                if(s.group[e.ke].activeMonitors[e.id].p2p){s.group[e.ke].activeMonitors[e.id].p2p.unpipe();}
-                delete(s.group[e.ke].activeMonitors[e.id].p2pStream)
-                delete(s.group[e.ke].activeMonitors[e.id].p2p)
-                delete(s.group[e.ke].activeMonitors[e.id].pamDiff)
+    //            if(activeMonitor.p2pStream){activeMonitor.p2pStream.unpipe();}
+                if(activeMonitor.p2p){activeMonitor.p2p.unpipe();}
+                delete(activeMonitor.p2pStream)
+                delete(activeMonitor.p2p)
+                delete(activeMonitor.pamDiff)
                 try{
-                    s.group[e.ke].activeMonitors[e.id].spawn.removeListener('end',s.group[e.ke].activeMonitors[e.id].spawn_exit);
-                    s.group[e.ke].activeMonitors[e.id].spawn.removeListener('exit',s.group[e.ke].activeMonitors[e.id].spawn_exit);
-                    delete(s.group[e.ke].activeMonitors[e.id].spawn_exit);
-                }catch(er){}
+                    proc.removeListener('end',activeMonitor.spawn_exit);
+                    proc.removeListener('exit',activeMonitor.spawn_exit);
+                    delete(activeMonitor.spawn_exit);
+                }catch(er){
+
+                }
             }
-            if(s.group[e.ke].activeMonitors[e.id].audioDetector){
-              s.group[e.ke].activeMonitors[e.id].audioDetector.stop()
-              delete(s.group[e.ke].activeMonitors[e.id].audioDetector)
+            if(activeMonitor.audioDetector){
+              activeMonitor.audioDetector.stop()
+              delete(activeMonitor.audioDetector)
             }
-            s.group[e.ke].activeMonitors[e.id].firstStreamChunk = {}
-            clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingChecker);
-            delete(s.group[e.ke].activeMonitors[e.id].recordingChecker);
-            clearTimeout(s.group[e.ke].activeMonitors[e.id].streamChecker);
-            delete(s.group[e.ke].activeMonitors[e.id].streamChecker);
-            clearTimeout(s.group[e.ke].activeMonitors[e.id].checkSnap);
-            delete(s.group[e.ke].activeMonitors[e.id].checkSnap);
-            clearTimeout(s.group[e.ke].activeMonitors[e.id].watchdog_stop);
-            delete(s.group[e.ke].activeMonitors[e.id].watchdog_stop);
-            delete(s.group[e.ke].activeMonitors[e.id].lastJpegDetectorFrame);
-            delete(s.group[e.ke].activeMonitors[e.id].detectorFrameSaveBuffer);
-            clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingSnapper);
-            clearInterval(s.group[e.ke].activeMonitors[e.id].getMonitorCpuUsage);
-            if(s.group[e.ke].activeMonitors[e.id].onChildNodeExit){
-                s.group[e.ke].activeMonitors[e.id].onChildNodeExit()
+            activeMonitor.firstStreamChunk = {}
+            clearTimeout(activeMonitor.recordingChecker);
+            delete(activeMonitor.recordingChecker);
+            clearTimeout(activeMonitor.streamChecker);
+            delete(activeMonitor.streamChecker);
+            clearTimeout(activeMonitor.checkSnap);
+            delete(activeMonitor.checkSnap);
+            clearTimeout(activeMonitor.watchdog_stop);
+            delete(activeMonitor.watchdog_stop);
+            delete(activeMonitor.lastJpegDetectorFrame);
+            delete(activeMonitor.detectorFrameSaveBuffer);
+            clearTimeout(activeMonitor.recordingSnapper);
+            clearInterval(activeMonitor.getMonitorCpuUsage);
+            if(activeMonitor.onChildNodeExit){
+                activeMonitor.onChildNodeExit()
             }
-            if(s.group[e.ke].activeMonitors[e.id].mp4frag){
-                var mp4FragChannels = Object.keys(s.group[e.ke].activeMonitors[e.id].mp4frag)
+            if(activeMonitor.mp4frag){
+                var mp4FragChannels = Object.keys(activeMonitor.mp4frag)
                 mp4FragChannels.forEach(function(channel){
-                    s.group[e.ke].activeMonitors[e.id].mp4frag[channel].removeAllListeners()
-                    delete(s.group[e.ke].activeMonitors[e.id].mp4frag[channel])
+                    activeMonitor.mp4frag[channel].removeAllListeners()
+                    delete(activeMonitor.mp4frag[channel])
                 })
             }
             if(config.childNodes.enabled === true && config.childNodes.mode === 'child' && config.childNodes.host){
                 s.cx({f:'clearCameraFromActiveList',ke:e.ke,id:e.id})
             }
-            if(s.group[e.ke].activeMonitors[e.id].childNode){
-                s.cx({f:'kill',d:s.cleanMonitorObject(e)},s.group[e.ke].activeMonitors[e.id].childNodeId)
+            if(activeMonitor.childNode){
+                s.cx({f:'kill',d:s.cleanMonitorObject(e)},activeMonitor.childNodeId)
             }else{
                 s.coSpawnClose(e)
-                if(!x||x===1){return};
-                p = x.pid;
-                if(s.group[e.ke].rawMonitorConfigurations[e.id].type===('dashcam'||'socket'||'jpeg'||'pipe')){
-                    x.stdin.pause()
-                    setTimeout(function(){
-                      x.kill('SIGTERM')
-                    },500)
-                }else{
-                    try{
-                        x.stdin.setEncoding('utf8')
-                        x.stdin.write('q')
-                    }catch(er){}
+                if(proc && proc.kill){
+                    proc.kill('SIGINT')
                 }
-                setTimeout(function(){
-                  exec('kill -9 '+p,{detached: true})
-                },1000)
             }
         }
     }
+
     s.cameraCheckObjectsInDetails = function(e){
         //parse Objects
         (['detector_cascades','cords','detector_filters','input_map_choices']).forEach(function(v){
@@ -1024,7 +1016,7 @@ module.exports = function(s,config,lang){
             })
             s.group[e.ke].activeMonitors[e.id].audioDetector = audioDetector
             audioDetector.start()
-            s.group[e.ke].activeMonitors[e.id].spawn.stdio[6].pipe(audioDetector.streamDecoder)
+            s.group[e.ke].activeMonitors[e.id].spawn.stdio[6].pipe(audioDetector.streamDecoder,{ end: false })
         }
         if(e.details.record_timelapse === '1'){
             s.group[e.ke].activeMonitors[e.id].spawn.stdio[7].on('data',function(data){
@@ -1056,8 +1048,12 @@ module.exports = function(s,config,lang){
             if(e.details.detector_pam === '1'){
                // s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].pipe(s.group[e.ke].activeMonitors[e.id].p2p).pipe(s.group[e.ke].activeMonitors[e.id].pamDiff)
                s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].on('data',function(buf){
-                  var data = JSON.parse(buf)
-                  s.triggerEvent(data)
+                  try{
+                    var data = JSON.parse(buf)
+                    s.triggerEvent(data)
+                  } catch(err){
+                      console.log(buf.toString())
+                  }
                })
                 if(e.details.detector_use_detect_object === '1'){
                     s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
@@ -1079,7 +1075,7 @@ module.exports = function(s,config,lang){
                s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'].on('error',function(error){
                    s.userLog(e,{type:lang['Mp4Frag'],msg:{error:error}})
                })
-               s.group[e.ke].activeMonitors[e.id].spawn.stdio[1].pipe(s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'])
+               s.group[e.ke].activeMonitors[e.id].spawn.stdio[1].pipe(s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'],{ end: false })
            break;
            case'flv':
                frameToStreamPrimary = function(d){
@@ -1137,7 +1133,7 @@ module.exports = function(s,config,lang){
                    case'mp4':
                        delete(s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber])
                        if(!s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber])s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber] = new Mp4Frag();
-                       s.group[e.ke].activeMonitors[e.id].spawn.stdio[pipeNumber].pipe(s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber])
+                       s.group[e.ke].activeMonitors[e.id].spawn.stdio[pipeNumber].pipe(s.group[e.ke].activeMonitors[e.id].mp4frag[pipeNumber],{ end: false })
                    break;
                    case'mjpeg':
                        frameToStreamAdded = function(d){
@@ -1367,7 +1363,7 @@ module.exports = function(s,config,lang){
                 if(s.group[e.ke].activeMonitors[e.id].isStarted === true){
                     e.errorCount = 0;
                     s.group[e.ke].activeMonitors[e.id].errorSocketTimeoutCount = 0;
-                    cameraDestroy(s.group[e.ke].activeMonitors[e.id].spawn,e)
+                    cameraDestroy(e)
                     startVideoProcessor = function(err,o){
                         if(o.success === true){
                             s.group[e.ke].activeMonitors[e.id].isRecording = true
@@ -1419,7 +1415,7 @@ module.exports = function(s,config,lang){
                         startVideoProcessor(null,{success:true})
                     }
                 }else{
-                    cameraDestroy(s.group[e.ke].activeMonitors[e.id].spawn,e)
+                    cameraDestroy(e)
                 }
                 if(callback)callback()
             })
@@ -1510,7 +1506,7 @@ module.exports = function(s,config,lang){
                 };
             },5000);
         }else{
-            cameraDestroy(s.group[e.ke].activeMonitors[e.id].spawn,e)
+            cameraDestroy(e)
         }
         s.sendMonitorStatus({id:e.id,ke:e.ke,status:lang.Died})
         s.onMonitorDiedExtensions.forEach(function(extender){
@@ -1691,13 +1687,9 @@ module.exports = function(s,config,lang){
                     if(s.group[e.ke].activeMonitors[e.id].fswatchStream){s.group[e.ke].activeMonitors[e.id].fswatchStream.close();delete(s.group[e.ke].activeMonitors[e.id].fswatchStream)}
                     if(s.group[e.ke].activeMonitors[e.id].last_frame){delete(s.group[e.ke].activeMonitors[e.id].last_frame)}
                     if(s.group[e.ke].activeMonitors[e.id].isStarted !== true){return}
-                    cameraDestroy(s.group[e.ke].activeMonitors[e.id].spawn,e)
-                    if(e.neglectTriggerTimer === 1){
-                        delete(e.neglectTriggerTimer);
-                    }else{
-                        clearTimeout(s.group[e.ke].activeMonitors[e.id].trigger_timer)
-                        delete(s.group[e.ke].activeMonitors[e.id].trigger_timer)
-                    }
+                    cameraDestroy(e)
+                    clearTimeout(s.group[e.ke].activeMonitors[e.id].trigger_timer)
+                    delete(s.group[e.ke].activeMonitors[e.id].trigger_timer)
                     clearInterval(s.group[e.ke].activeMonitors[e.id].detector_notrigger_timeout)
                     clearTimeout(s.group[e.ke].activeMonitors[e.id].err_fatal_timeout);
                     s.group[e.ke].activeMonitors[e.id].isStarted = false

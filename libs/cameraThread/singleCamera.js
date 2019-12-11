@@ -4,7 +4,7 @@ const spawn = require('child_process').spawn
 process.send = process.send || function () {};
 // [CTRL] + [C] = exit
 process.on('SIGINT', function() {
-  cameraProcess.kill('SIGTERM')
+  cameraProcess.kill(0)
 });
 
 if(!process.argv[2] || !process.argv[3]){
@@ -43,15 +43,19 @@ for(var i=0; i < stdioPipes; i++){
         newPipes[i] = 2
       break;
       case 3:
-        stdioWriters[i] = fs.createWriteStream(null, {fd: i});
+        stdioWriters[i] = fs.createWriteStream(null, {fd: i, end:false});
         if(rawMonitorConfig.details.detector === '1' && rawMonitorConfig.details.detector_pam === '1'){
           newPipes[i] = 'pipe'
         }else{
           newPipes[i] = stdioWriters[i]
         }
       break;
+      case 5:
+        stdioWriters[i] = fs.createWriteStream(null, {fd: i, end:false});
+        newPipes[i] = 'pipe'
+      break;
       default:
-        stdioWriters[i] = fs.createWriteStream(null, {fd: i});
+        stdioWriters[i] = fs.createWriteStream(null, {fd: i, end:false});
         newPipes[i] = stdioWriters[i]
       break;
     }
@@ -61,6 +65,7 @@ stdioWriters.forEach((writer)=>{
       writeToStderr(err.stack);
   });
 })
+writeToStderr(JSON.stringify(ffmpegCommandString))
 var cameraProcess = spawn(ffmpegAbsolutePath,ffmpegCommandString,{detached: true,stdio:newPipes})
 cameraProcess.on('close',()=>{
   writeToStderr('Process Closed')
@@ -69,19 +74,20 @@ cameraProcess.on('close',()=>{
   })
   process.exit();
 })
+cameraProcess.stdio[5].on('data',(data)=>{
+    stdioWriters[5].write(data)
+})
 writeToStderr('Thread Opening')
-writeToStderr(JSON.stringify(rawMonitorConfig))
 
 
-setTimeout(()=>{
-  if(rawMonitorConfig.details.detector === '1' && rawMonitorConfig.details.detector_pam === '1'){
-    try{
-      const attachPamDetector = require(__dirname + '/detector.js')(jsonData,stdioWriters[3])
-      attachPamDetector(cameraProcess,(err)=>{
-        writeToStderr(err)
-      })
-    }catch(err){
-      writeToStderr(err.stack)
-    }
+
+if(rawMonitorConfig.details.detector === '1' && rawMonitorConfig.details.detector_pam === '1'){
+  try{
+    const attachPamDetector = require(__dirname + '/detector.js')(jsonData,stdioWriters[3])
+    attachPamDetector(cameraProcess,(err)=>{
+      writeToStderr(err)
+    })
+  }catch(err){
+    writeToStderr(err.stack)
   }
-},3000)
+}

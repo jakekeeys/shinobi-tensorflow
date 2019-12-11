@@ -1018,6 +1018,11 @@ module.exports = function(s,config,lang,onFinish){
         x.ffmpegCommandString = s.splitForFFPMEG(x.ffmpegCommandString)
         //launch that bad boy
         // return spawn(config.ffmpegDir,x.ffmpegCommandString,{detached: true,stdio:x.stdioPipes})
+        try{
+          fs.unlinkSync(e.sdir + 'cmd.txt')
+        }catch(err){
+
+        }
         fs.writeFileSync(e.sdir + 'cmd.txt',JSON.stringify({
           cmd: x.ffmpegCommandString,
           pipes: x.stdioPipes.length,
@@ -1032,6 +1037,7 @@ module.exports = function(s,config,lang,onFinish){
           config.ffmpegDir,
           e.sdir + 'cmd.txt'
         ]
+        console.log(`node ${cameraCommandParams.join(' ')}`)
         return spawn('node',cameraCommandParams,{detached: true,stdio:x.stdioPipes})
     }
     if(!config.ffmpegDir){
