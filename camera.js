@@ -59,8 +59,6 @@ loadLib('ffmpeg')(s,config,lang,function(ffmpeg){
     loadLib('monitor')(s,config,lang)
     //event functions : motion, object matrix handler
     loadLib('events')(s,config,lang)
-    //built-in detector functions : pam-diff..
-    loadLib('detector')(s,config)
     //recording functions
     loadLib('videos')(s,config,lang)
     //branding functions and config defaults
