@@ -252,7 +252,7 @@ $.ccio.tm=function(x,d,z,user){
             }else{
                 switch(k.d.stream_type){
                     case'hls':case'flv':case'mp4':
-                        tmp+='<video class="stream-element" autoplay></video>';
+                        tmp+=`<video class="stream-element" ${$.ccio.isAppleDevice ? 'muted autoplay playsinline' : ''} ></video>`;
                     break;
                     case'mjpeg':
                         tmp+='<iframe class="stream-element"></iframe>';
