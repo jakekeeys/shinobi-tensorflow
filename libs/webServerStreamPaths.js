@@ -49,18 +49,24 @@ module.exports = function(s,config,lang,app){
                     if(req.params.channel){
                         Channel = parseInt(req.params.channel)+config.pipeAddition
                     }
-                    var mp4frag = s.group[req.params.ke].activeMonitors[req.params.id].mp4frag[Channel];
+                    var mp4fragInfo = s.group[req.params.ke].activeMonitors[req.params.id].mp4fragInfo
+                    var mp4frag
+                    if(!req.params.channel){
+                        mp4frag = s.group[req.params.ke].activeMonitors[req.params.id].emitter
+                    }else{
+                        mp4frag = s.group[req.params.ke].activeMonitors[req.params.id].emitterChannel[parseInt(req.params.channel)+config.pipeAddition]
+                    }
                     var errorMessage = 'MP4 Stream is not enabled'
-                    if(!mp4frag){
+                    if(!mp4fragInfo || !mp4fragInfo.segment){
                         res.status(503);
                         res.end('503 : initialization : '+errorMessage);
                     }else{
-                        var init = mp4frag.initialization;
+                        var init = mp4fragInfo.initialization;
                         if (!init) {
                             res.status(503);
                             res.end('404 : Not Found : '+errorMessage);
                         } else {
-                            res.locals.mp4frag = mp4frag
+                            res.locals.mp4frag = mp4fragInfo
                             res.set('Access-Control-Allow-Origin', '*')
                             res.set('Connection', 'close')
                             res.set('Cache-Control', 'private, no-cache, no-store, must-revalidate')
@@ -69,7 +75,6 @@ module.exports = function(s,config,lang,app){
                             res.set('Content-Type', 'video/mp4')
                             res.status(200);
                             res.write(init);
-                            mp4frag.pipe(res);
                             var ip = s.getClientIp(req)
                             s.camera('watch_on',{
                                 id : req.params.id,
@@ -77,9 +82,13 @@ module.exports = function(s,config,lang,app){
                             },{
                                 id : req.params.auth + ip + req.headers['user-agent']
                             })
-                            res.on('close', () => {
+                            mp4frag.on('data',contentWriter=function(d){
+                                content = d;
+                                res.write(content,'binary');
+                            })
+                            res.on('close', ()=>{
                                 try{
-                                    mp4frag.unpipe(res)
+                                  mp4frag.removeListener('data',contentWriter)
                                 }catch(err){}
                                 s.camera('watch_off',{
                                     id : req.params.id,

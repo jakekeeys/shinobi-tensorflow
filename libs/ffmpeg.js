@@ -995,6 +995,7 @@ module.exports = function(s,config,lang,onFinish){
         for(var i=0; i < times; i++){
             x.stdioPipes.push('pipe')
         }
+        x.stdioPipes.push('pipe')
     }
     s.ffmpeg = function(e){
         //set X for temporary values so we don't break our main monitor object.

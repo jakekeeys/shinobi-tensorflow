@@ -2,7 +2,6 @@ var fs = require('fs');
 var events = require('events');
 var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
-var Mp4Frag = require('mp4frag');
 var onvif = require('node-onvif');
 var request = require('request');
 var connectionTester = require('connection-tester')
@@ -21,7 +20,6 @@ module.exports = function(s,config,lang){
         if(!s.group[e.ke].activeMonitors[e.mid]){s.group[e.ke].activeMonitors[e.mid]={}}
         if(!s.group[e.ke].activeMonitors[e.mid].streamIn){s.group[e.ke].activeMonitors[e.mid].streamIn={}};
         if(!s.group[e.ke].activeMonitors[e.mid].emitterChannel){s.group[e.ke].activeMonitors[e.mid].emitterChannel={}};
-        if(!s.group[e.ke].activeMonitors[e.mid].mp4frag){s.group[e.ke].activeMonitors[e.mid].mp4frag={}};
         if(!s.group[e.ke].activeMonitors[e.mid].firstStreamChunk){s.group[e.ke].activeMonitors[e.mid].firstStreamChunk={}};
         if(!s.group[e.ke].activeMonitors[e.mid].contentWriter){s.group[e.ke].activeMonitors[e.mid].contentWriter={}};
         if(!s.group[e.ke].activeMonitors[e.mid].childNodeStreamWriters){s.group[e.ke].activeMonitors[e.mid].childNodeStreamWriters={}};
@@ -33,6 +31,7 @@ module.exports = function(s,config,lang){
         if(!s.group[e.ke].activeMonitors[e.mid].parsedObjects){s.group[e.ke].activeMonitors[e.mid].parsedObjects={}};
         if(!s.group[e.ke].activeMonitors[e.mid].isStarted){s.group[e.ke].activeMonitors[e.mid].isStarted = false};
         if(s.group[e.ke].activeMonitors[e.mid].delete){clearTimeout(s.group[e.ke].activeMonitors[e.mid].delete)}
+        if(!s.group[e.ke].activeMonitors[e.mid].mp4FragInfo)s.group[e.ke].activeMonitors[e.mid].mp4FragInfo = {segment: []}
         if(!s.group[e.ke].rawMonitorConfigurations){s.group[e.ke].rawMonitorConfigurations={}}
         s.onMonitorInitExtensions.forEach(function(extender){
             extender(e)
@@ -385,6 +384,7 @@ module.exports = function(s,config,lang){
             delete(activeMonitor.detectorFrameSaveBuffer);
             clearTimeout(activeMonitor.recordingSnapper);
             clearInterval(activeMonitor.getMonitorCpuUsage);
+            delete(activeMonitor.mp4FragInfo);
             if(activeMonitor.onChildNodeExit){
                 activeMonitor.onChildNodeExit()
             }
@@ -395,13 +395,6 @@ module.exports = function(s,config,lang){
                 console.log(err)
               }
             })
-            if(activeMonitor.mp4frag){
-                var mp4FragChannels = Object.keys(activeMonitor.mp4frag)
-                mp4FragChannels.forEach(function(channel){
-                    activeMonitor.mp4frag[channel].removeAllListeners()
-                    delete(activeMonitor.mp4frag[channel])
-                })
-            }
             if(config.childNodes.enabled === true && config.childNodes.mode === 'child' && config.childNodes.host){
                 s.cx({f:'clearCameraFromActiveList',ke:e.ke,id:e.id})
             }
@@ -1072,14 +1065,6 @@ module.exports = function(s,config,lang){
         //frames to stream
        var frameToStreamPrimary
        switch(e.details.stream_type){
-           case'mp4':
-               delete(s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'])
-               if(!s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'])s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'] = new Mp4Frag()
-               s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'].on('error',function(error){
-                   s.userLog(e,{type:lang['Mp4Frag'],msg:{error:error}})
-               })
-               s.group[e.ke].activeMonitors[e.id].spawn.stdio[1].pipe(s.group[e.ke].activeMonitors[e.id].mp4frag['MAIN'],{ end: false })
-           break;
            case'flv':
                frameToStreamPrimary = function(d){
                    if(!s.group[e.ke].activeMonitors[e.id].firstStreamChunk['MAIN'])s.group[e.ke].activeMonitors[e.id].firstStreamChunk['MAIN'] = d;
@@ -1088,6 +1073,12 @@ module.exports = function(s,config,lang){
                        s.group[e.ke].activeMonitors[e.id].emitter.emit('data',d)
                    }
                    frameToStreamPrimary(d)
+               }
+           break;
+           case'mp4':
+               frameToStreamPrimary = function(d){
+                   resetStreamCheck(e)
+                   s.group[e.ke].activeMonitors[e.id].emitter.emit('data',d)
                }
            break;
            case'mjpeg':
@@ -1122,7 +1113,7 @@ module.exports = function(s,config,lang){
             if(e.coProcessor === true && e.details.stream_type === ('b64'||'mjpeg')){
 
             }else{
-                s.group[e.ke].activeMonitors[e.id].spawn.stdout.on('data',frameToStreamPrimary)
+                s.group[e.ke].activeMonitors[e.id].spawn.stdio[1].on('data',frameToStreamPrimary)
             }
         }
         if(e.details.stream_channels && e.details.stream_channels !== ''){
@@ -1164,6 +1155,27 @@ module.exports = function(s,config,lang){
             }
             e.details.stream_channels.forEach(createStreamEmitter)
         }
+        //add 'ipc' handler (inter-process controller)
+        var lastPipeNumber = s.group[e.ke].activeMonitors[e.id].spawn.stdio.length - 1
+        s.group[e.ke].activeMonitors[e.id].spawn.stdio[lastPipeNumber].on('data', function(json) {
+            const data = JSON.parse(json)
+            switch(data.f){
+              case'mp4FragInfo':
+                  s.group[e.ke].activeMonitors[e.id].mp4FragInfo.mime = data.mime
+                  s.group[e.ke].activeMonitors[e.id].mp4FragInfo.initialization = data.initialization
+              break;
+            }
+        });
+        var pipeData = []
+        var segmentCompletion
+        s.group[e.ke].activeMonitors[e.id].spawn.stdio[lastPipeNumber + 1].on('data', function(buf) {
+          pipeData.push(buf)
+          clearTimeout(segmentCompletion)
+          segmentCompletion = setTimeout(()=>{
+              s.group[e.ke].activeMonitors[e.id].mp4FragInfo.segment = Buffer.concat(pipeData)
+              pipeData = []
+          },2000)
+        });
     }
     cameraFilterFfmpegLog = function(e){
         var checkLog = function(d,x){return d.indexOf(x)>-1}

@@ -300,10 +300,15 @@ module.exports = function(s,config,lang,io){
                 cn.auth=d.auth;
                 cn.channel=d.channel;
                 cn.socketVideoStream=d.id;
-                var mp4frag = s.group[d.ke].activeMonitors[d.id].mp4frag[d.channel];
+                const mp4FragInfo = s.group[d.ke].activeMonitors[d.id].mp4FragInfo || {}
+                var mp4frag
+                if(!d.channel || !s.group[d.ke].activeMonitors[d.id].emitterChannel[d.channel]){
+                    mp4frag = s.group[d.ke].activeMonitors[d.id].emitter
+                }else{
+                    mp4frag = s.group[d.ke].activeMonitors[d.id].emitterChannel[d.channel]
+                }
                 var onInitialized = () => {
-                    cn.emit('mime', mp4frag.mime);
-                    mp4frag.removeListener('initialized', onInitialized);
+                    cn.emit('mime', mp4FragInfo.mime);
                 };
                 //event listener
                 var onSegment = function(data){
@@ -311,45 +316,49 @@ module.exports = function(s,config,lang,io){
                 };
                 cn.closeSocketVideoStream = function(){
                     if(mp4frag){
-                        mp4frag.removeListener('segment', onSegment)
-                        mp4frag.removeListener('initialized', onInitialized)
+                        mp4frag.removeListener('data', onSegment)
                     }
                 }
+                console.log(mp4FragInfo)
                 cn.on('MP4Command',function(msg){
                     switch (msg) {
                         case 'mime' ://client is requesting mime
-                            var mime = mp4frag.mime;
+                            var mime = mp4FragInfo.mime;
                             if (mime) {
                                 cn.emit('mime', mime);
                             } else {
-                                mp4frag.on('initialized', onInitialized);
+                                console.log('UH OH', new Error(),mp4FragInfo)
+                                //onInitialized
                             }
                         break;
                         case 'initialization' ://client is requesting initialization segment
-                            cn.emit('initialization', mp4frag.initialization);
+                            cn.emit('initialization', mp4FragInfo.initialization);
                         break;
                         case 'segment' ://client is requesting a SINGLE segment
-                            var segment = mp4frag.segment;
+                            var segment = mp4FragInfo.segment;
                             if (segment) {
                                 cn.emit('segment', segment);
                             } else {
-                                mp4frag.once('segment', onSegment);
+                                mp4frag.once('data', (data)=>{
+                                  mp4FragInfo.segment = data
+                                  onSegment(data)
+                                });
                             }
                         break;
                         case 'segments' ://client is requesting ALL segments
                             //send current segment first to start video asap
-                            var segment = mp4frag.segment;
+                            var segment = mp4FragInfo.segment;
                             if (segment) {
                                 cn.emit('segment', segment);
                             }
                             //add listener for segments being dispatched by mp4frag
-                            mp4frag.on('segment', onSegment);
+                            mp4frag.on('data', onSegment);
                         break;
                         case 'pause' :
-                            mp4frag.removeListener('segment', onSegment);
+                            mp4frag.removeListener('data', onSegment);
                         break;
                         case 'resume' :
-                            mp4frag.on('segment', onSegment);
+                            mp4frag.on('data', onSegment);
                         break;
                         case 'stop' ://client requesting to stop receiving segments
                             cn.closeSocketVideoStream()
