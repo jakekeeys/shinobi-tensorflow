@@ -433,11 +433,13 @@ $.ccio.globalWebsocket=function(d,user){
                                     },2000)
                                 }else{
                                     var video = $('#monitor_live_'+d.id+user.auth_token+' .stream-element')[0];
-                                    if (navigator.userAgent.match(/(iPod|iPhone|iPad)/)||(navigator.userAgent.match(/(Safari)/)&&!navigator.userAgent.match('Chrome'))) {
+                                    if ($.ccio.isAppleDevice) {
                                         video.src=d.url;
-                                        if (video.paused) {
+                                        video.addEventListener('loadedmetadata', function() {
+                                          setTimeout(function(){
                                             video.play();
-                                        }
+                                          },3000)
+                                        }, false);
                                     }else{
                                         $.ccio.mon[d.ke+d.id+user.auth_token].hlsGarbageCollector=function(){
                                             if($.ccio.mon[d.ke+d.id+user.auth_token].hls){$.ccio.mon[d.ke+d.id+user.auth_token].hls.destroy();URL.revokeObjectURL(video.src)}
