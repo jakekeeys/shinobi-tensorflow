@@ -1,9 +1,3 @@
-// Matrix In Region Libs >
-var fs = require('fs')
-var SAT = require('sat')
-var V = SAT.Vector;
-var P = SAT.Polygon;
-// Matrix In Region Libs />
 var P2P = require('pipe2pam')
 var PamDiff = require('pam-diff')
 module.exports = function(jsonData,pamDiffResponder){
@@ -355,41 +349,6 @@ module.exports = function(jsonData,pamDiffResponder){
             trigger.matrices = [trigger.matrix]
         }
         return trigger
-    }
-    isAtleastOneMatrixInRegion = function(regions,matrices,callback){
-        var regionPolys = []
-        var matrixPoints = []
-        regions.forEach(function(region,n){
-            var polyPoints = []
-            region.points.forEach(function(point){
-                polyPoints.push(new V(parseInt(point[0]),parseInt(point[1])))
-            })
-            regionPolys[n] = new P(new V(0,0), polyPoints)
-        })
-        var collisions = []
-        var foundInRegion = false
-        matrices.forEach(function(matrix){
-            var matrixPoints = [
-                new V(matrix.x,matrix.y),
-                new V(matrix.width,matrix.y),
-                new V(matrix.width,matrix.height),
-                new V(matrix.x,matrix.height)
-            ]
-            var matrixPoly = new P(new V(0,0), matrixPoints)
-            regionPolys.forEach(function(region,n){
-                var response = new SAT.Response()
-                var collided = SAT.testPolygonPolygon(matrixPoly, region, response)
-                if(collided === true){
-                    collisions.push({
-                        matrix: matrix,
-                        region: regions[n]
-                    })
-                    foundInRegion = true
-                }
-            })
-        })
-        if(callback)callback(foundInRegion,collisions)
-        return foundInRegion
     }
     createMatrixFromPamTrigger = function(trigger){
         if(
