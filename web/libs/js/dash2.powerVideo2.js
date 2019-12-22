@@ -122,7 +122,7 @@ $(document).ready(function(e){
         $.each(events,function(n,event){
             var eventReason = event.details && event.details.reason ? event.details.reason.toUpperCase() : "UNKNOWN"
             var eventSlotTag = eventReason
-            if(eventReason === 'OBJECT' && event.details.matrices[0]){
+            if(eventReason === 'OBJECT' && event.details.matrices && event.details.matrices[0]){
                 eventSlotTag = []
                 event.details.matrices.forEach(function(matrix){
                     eventSlotTag.push(matrix.tag)
