@@ -152,7 +152,6 @@ module.exports = function(s,config,lang){
                       s.group[monitor.ke].rawMonitorConfigurations[monitor.id].sdir + 'snapCmd.txt'
                     ]
                     var snapProcess = spawn('node',cameraCommandParams,{detached: true})
-                    var snapProcess = spawn(config.ffmpegDir,s.splitForFFPMEG(ffmpegCmd),{detached: true})
                     snapProcess.stderr.on('data',function(data){
                         console.log(data.toString())
                     })
