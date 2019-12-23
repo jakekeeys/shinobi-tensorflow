@@ -421,6 +421,8 @@ module.exports = function(s,config,lang,onFinish){
         //
         x.hwaccel = ''
         x.cust_input = ''
+        //wallclock fix for strangely long, single frame videos
+        if(x.cust_input.indexOf('-use_wallclock_as_timestamps 1') === -1){x.cust_input+=' -use_wallclock_as_timestamps 1';}
         //input - frame rate (capture rate)
         if(e.details.sfps && e.details.sfps!==''){x.input_fps=' -r '+e.details.sfps}else{x.input_fps=''}
         //input - analyze duration
@@ -692,7 +694,6 @@ module.exports = function(s,config,lang,onFinish){
         if(e.details.acodec&&e.details.acodec!==''&&e.details.acodec!=='default'){x.acodec=e.details.acodec}
         if(e.details.cust_record.indexOf('-strict -2') === -1){x.cust_record.push(' -strict -2')}
         if(e.details.cust_record.indexOf('-threads')===-1){x.cust_record.push(' -threads 1')}
-    //    if(e.details.cust_input&&(e.details.cust_input.indexOf('-use_wallclock_as_timestamps 1')>-1)===false){e.details.cust_input+=' -use_wallclock_as_timestamps 1';}
         //record - ready or reset codecs
         if(x.acodec!=='no'){
             if(x.acodec.indexOf('none')>-1){x.acodec=''}else{x.acodec=' -acodec '+x.acodec}
