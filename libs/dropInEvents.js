@@ -1,4 +1,5 @@
 var fs = require('fs')
+var exec = require('child_process').exec
 module.exports = function(s,config,lang,app,io){
     if(config.dropInEventServer === true){
         if(config.dropInEventForceSaveEvent === undefined)config.dropInEventForceSaveEvent = true
@@ -145,7 +146,7 @@ module.exports = function(s,config,lang,app,io){
                             if(config.dropInEventDeleteFileAfterTrigger){
                                 clearTimeout(fileQueueForDeletion[filePath])
                                 fileQueueForDeletion[filePath] = setTimeout(function(){
-                                    fs.unlink(filePath,function(err){
+                                    exec('rm -rf ' + filePath,function(err){
                                         delete(fileQueueForDeletion[filePath])
                                     })
                                 },1000 * 60 * 5)
