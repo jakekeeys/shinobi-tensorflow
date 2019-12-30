@@ -3,7 +3,8 @@ $.ccio={
     mon:{},
     useUTC: <%- config.useUTC || false %>,
     definitions: <%-JSON.stringify(define)%>,
-    libURL: '<%-window.libURL%>'
+    libURL: '<%-window.libURL%>',
+    isAppleDevice: navigator.userAgent.match(/(iPod|iPhone|iPad)/)||(navigator.userAgent.match(/(Safari)/)&&!navigator.userAgent.match('Chrome'))
 };
 <% if(config.DropboxAppKey){ %>
     $.ccio.DropboxAppKey = '<%-window.DropboxAppKey%>'

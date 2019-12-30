@@ -342,7 +342,7 @@ module.exports = function(s,config,lang){
                        "name": "detail=fatal_max",
                        "field": lang['Retry Connection'],
                        "description": "The number of times to retry for network connection between the server and camera before setting the monitor to Disabled. No decimals. Set to 0 to retry forever.",
-                       "default": "0",
+                       "default": "10",
                        "example": "",
                        "possible": "",
                        "form-group-class": "h_t_input h_t_h264 h_t_hls h_t_mp4 h_t_jpeg h_t_mjpeg h_t_local",
@@ -2575,25 +2575,25 @@ module.exports = function(s,config,lang){
                                  }
                               ]
                            },
-                           {
-                              "name": "detail=detector_show_matrix",
-                              "field": lang["Show Matrices"],
-                              "description": "Outline which pixels are detected as changed in one matrix.",
-                              "default": "0",
-                              "example": "",
-                              "fieldType": "select",
-                              "form-group-class": "h_det_pam_input h_det_pam_1",
-                              "possible": [
-                                 {
-                                    "name": lang.No,
-                                    "value": "0"
-                                 },
-                                 {
-                                    "name": lang.Yes,
-                                    "value": "1"
-                                 }
-                              ]
-                           },
+                           // {
+                           //    "name": "detail=detector_show_matrix",
+                           //    "field": lang["Show Matrices"],
+                           //    "description": "Outline which pixels are detected as changed in one matrix.",
+                           //    "default": "0",
+                           //    "example": "",
+                           //    "fieldType": "select",
+                           //    "form-group-class": "h_det_pam_input h_det_pam_1",
+                           //    "possible": [
+                           //       {
+                           //          "name": lang.No,
+                           //          "value": "0"
+                           //       },
+                           //       {
+                           //          "name": lang.Yes,
+                           //          "value": "1"
+                           //       }
+                           //    ]
+                           // },
                            {
                               "name": "detail=detector_sensitivity",
                               "field": lang.Indifference,

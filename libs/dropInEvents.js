@@ -1,4 +1,5 @@
 var fs = require('fs')
+var exec = require('child_process').exec
 module.exports = function(s,config,lang,app,io){
     if(config.dropInEventServer === true){
         if(config.dropInEventForceSaveEvent === undefined)config.dropInEventForceSaveEvent = true
@@ -48,12 +49,24 @@ module.exports = function(s,config,lang,app,io){
             createDropInEventDirectory(monitorConfig,function(err,monitorEventDropDir){
                 var monitorEventDropDir = getDropInEventDir(monitorConfig)
                 var fileQueue = {}
+                var fileQueueForDeletion = {}
                 s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventFileQueue = fileQueue
                 var search = function(searchIn,searchFor){
                     return searchIn.indexOf(searchFor) > -1
                 }
-                var processFile = function(filename){
-                    var filePath = monitorEventDropDir + filename
+                var getFileNameFromPath = function(filePath){
+                    fileParts = filePath.split('/')
+                    return filePath[filePath.length - 1]
+                }
+                var clipPathEnding = function(filePath){
+                    var newPath = filePath + ''
+                    if (newPath.substring(newPath.length-1) == "/"){
+                        newPath = newPath.substring(0, newPath.length-1);
+                    }
+                    return newPath;
+                }
+                var processFile = function(filePath){
+                    var filename = getFileNameFromPath(filePath)
                     if(search(filename,'.jpg') || search(filename,'.jpeg')){
                         var snapPath = s.dir.streams + ke + '/' + mid + '/s.jpg'
                         fs.unlink(snapPath,function(err){
@@ -113,38 +126,39 @@ module.exports = function(s,config,lang,app,io){
                         }
 
                     }
-                    if(config.dropInEventDeleteFileAfterTrigger){
-                        setTimeout(function(){
-                            fs.unlink(filePath,function(err){
-
-                            })
-                        },1000 * 60 * 5)
-                    }
                 }
-                var eventTrigger = function(eventType,filename,stats){
-                    if(stats.isDirectory()){
-                        fs.readdir(monitorEventDropDir + filename,function(err,files){
-                            if(files){
-                                files.forEach(function(filename){
-                                    processFile(filename)
+                var onFileOrFolderFound = function(filePath){
+                  fs.stat(filePath,function(err,stats){
+                      if(!err){
+                            if(stats.isDirectory()){
+                                fs.readdir(filePath,function(err,files){
+                                    if(files){
+                                        files.forEach(function(filename){
+                                            onFileOrFolderFound(clipPathEnding(filePath) + '/' + filename)
+                                        })
+                                    }else if(err){
+                                        console.log(err)
+                                    }
                                 })
-                            }else if(err){
-                                console.log(err)
+                            }else{
+                                processFile(filePath)
                             }
-                        })
-                    }else{
-                        processFile(filename)
-                    }
+                            if(config.dropInEventDeleteFileAfterTrigger){
+                                clearTimeout(fileQueueForDeletion[filePath])
+                                fileQueueForDeletion[filePath] = setTimeout(function(){
+                                    exec('rm -rf ' + filePath,function(err){
+                                        delete(fileQueueForDeletion[filePath])
+                                    })
+                                },1000 * 60 * 5)
+                            }
+                       }
+                   })
                 }
                 var directoryWatch = fs.watch(monitorEventDropDir,function(eventType,filename){
-                    fs.stat(monitorEventDropDir + filename,function(err,stats){
-                        if(!err){
-                            clearTimeout(fileQueue[filename])
-                            fileQueue[filename] = setTimeout(function(){
-                                eventTrigger(eventType,filename,stats)
-                            },1750)
-                        }
-                    })
+                    clearTimeout(fileQueue[filename])
+                    fileQueue[filename] = setTimeout(function(){
+                        onFileOrFolderFound(monitorEventDropDir + filename)
+                    },1750)
                 })
                 s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventWatcher = directoryWatch
             })

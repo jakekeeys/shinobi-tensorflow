@@ -421,6 +421,8 @@ module.exports = function(s,config,lang,onFinish){
         //
         x.hwaccel = ''
         x.cust_input = ''
+        //wallclock fix for strangely long, single frame videos
+        if(x.cust_input.indexOf('-use_wallclock_as_timestamps 1') === -1){x.cust_input+=' -use_wallclock_as_timestamps 1';}
         //input - frame rate (capture rate)
         if(e.details.sfps && e.details.sfps!==''){x.input_fps=' -r '+e.details.sfps}else{x.input_fps=''}
         //input - analyze duration
@@ -692,7 +694,6 @@ module.exports = function(s,config,lang,onFinish){
         if(e.details.acodec&&e.details.acodec!==''&&e.details.acodec!=='default'){x.acodec=e.details.acodec}
         if(e.details.cust_record.indexOf('-strict -2') === -1){x.cust_record.push(' -strict -2')}
         if(e.details.cust_record.indexOf('-threads')===-1){x.cust_record.push(' -threads 1')}
-    //    if(e.details.cust_input&&(e.details.cust_input.indexOf('-use_wallclock_as_timestamps 1')>-1)===false){e.details.cust_input+=' -use_wallclock_as_timestamps 1';}
         //record - ready or reset codecs
         if(x.acodec!=='no'){
             if(x.acodec.indexOf('none')>-1){x.acodec=''}else{x.acodec=' -acodec '+x.acodec}
@@ -951,7 +952,7 @@ module.exports = function(s,config,lang,onFinish){
         x.ffmpegCommandString = x.loglevel+x.input_fps;
         //progress pipe
         x.ffmpegCommandString += ' -progress pipe:5';
-
+        const url = s.buildMonitorUrl(e);
         switch(e.type){
             case'dashcam':
                 x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i -';
@@ -960,17 +961,17 @@ module.exports = function(s,config,lang,onFinish){
                 x.ffmpegCommandString += ' -pattern_type glob -f image2pipe'+x.record_fps+' -vcodec mjpeg'+x.cust_input+x.hwaccel+' -i -';
             break;
             case'mjpeg':
-                x.ffmpegCommandString += ' -reconnect 1 -f mjpeg'+x.cust_input+x.hwaccel+' -i "'+e.url+'"';
+                x.ffmpegCommandString += ' -reconnect 1 -f mjpeg'+x.cust_input+x.hwaccel+' -i "'+url+'"';
             break;
             case'mxpeg':
-                x.ffmpegCommandString += ' -reconnect 1 -f mxg'+x.cust_input+x.hwaccel+' -i "'+e.url+'"';
+                x.ffmpegCommandString += ' -reconnect 1 -f mxg'+x.cust_input+x.hwaccel+' -i "'+url+'"';
             break;
             case'rtmp':
                 if(!e.details.rtmp_key)e.details.rtmp_key = ''
                 x.ffmpegCommandString += x.cust_input+x.hwaccel+` -i "rtmp://127.0.0.1:1935/${e.ke + '_' + e.mid + '_' + e.details.rtmp_key}"`;
             break;
             case'h264':case'hls':case'mp4':
-                x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i "'+e.url+'"';
+                x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i "'+url+'"';
             break;
             case'local':
                 x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i "'+e.path+'"';
@@ -1017,7 +1018,28 @@ module.exports = function(s,config,lang,onFinish){
         //clean the string of spatial impurities and split for spawn()
         x.ffmpegCommandString = s.splitForFFPMEG(x.ffmpegCommandString)
         //launch that bad boy
-        return spawn(config.ffmpegDir,x.ffmpegCommandString,{detached: true,stdio:x.stdioPipes})
+        // return spawn(config.ffmpegDir,x.ffmpegCommandString,{detached: true,stdio:x.stdioPipes})
+        try{
+          fs.unlinkSync(e.sdir + 'cmd.txt')
+        }catch(err){
+
+        }
+        fs.writeFileSync(e.sdir + 'cmd.txt',JSON.stringify({
+          cmd: x.ffmpegCommandString,
+          pipes: x.stdioPipes.length,
+          rawMonitorConfig: s.group[e.ke].rawMonitorConfigurations[e.id],
+          globalInfo: {
+            config: config,
+            isAtleatOneDetectorPluginConnected: s.isAtleatOneDetectorPluginConnected
+          }
+        },null,3),'utf8')
+        var cameraCommandParams = [
+          s.mainDirectory + '/libs/cameraThread/singleCamera.js',
+          config.ffmpegDir,
+          e.sdir + 'cmd.txt'
+        ]
+        console.log(`node ${cameraCommandParams.join(' ')}`)
+        return spawn('node',cameraCommandParams,{detached: true,stdio:x.stdioPipes})
     }
     if(!config.ffmpegDir){
         ffmpeg.checkForWindows(function(){

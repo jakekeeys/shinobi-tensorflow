@@ -230,10 +230,10 @@ module.exports = function(__dirname,config){
             })
         });
     }else{
+        //start plugin as client
         var retryConnection = 0
         maxRetryConnection = config.maxRetryConnection || 5
         plugLog('Plugin starting as Client, Host Address : '+'ws://'+config.host+':'+config.port)
-        //start plugin as client
         if(!config.host){config.host='localhost'}
         var io = require('socket.io-client')('ws://'+config.host+':'+config.port,{
             transports: ['websocket']
@@ -254,7 +254,7 @@ module.exports = function(__dirname,config){
         io.on('connect',function(d){
             s.cx({f:'init',plug:config.plug,notice:config.notice,type:config.type,connectionType:config.connectionType});
         })
-        io.on('disconnect',function(d){
+        io.on('disconnect',function(){
             if(retryConnection > maxRetryConnection && maxRetryConnection !== 0){
                 webPageMssage = 'Max Failed Retries Reached'
                 return plugLog('Max Failed Retries Reached!',maxRetryConnection)
@@ -262,6 +262,11 @@ module.exports = function(__dirname,config){
             ++retryConnection
             plugLog('Plugin Disconnected. Attempting Reconnect..')
             io.connect();
+        })
+        io.on('error',function(err){
+            plugLog('Plugin Error. Attempting Reconnect..')
+            plugLog(err.stack)
+            io.disconnect()
         })
         io.on('f',function(d){
             s.MainEventController(d,null,s.cx)

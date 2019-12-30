@@ -3,7 +3,47 @@ var execSync = require('child_process').execSync;
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var request = require('request');
+// Matrix In Region Libs >
+var SAT = require('sat')
+var V = SAT.Vector;
+var P = SAT.Polygon;
+// Matrix In Region Libs />
 module.exports = function(s,config,lang){
+    isAtleastOneMatrixInRegion = function(regions,matrices,callback){
+        var regionPolys = []
+        var matrixPoints = []
+        regions.forEach(function(region,n){
+            var polyPoints = []
+            region.points.forEach(function(point){
+                polyPoints.push(new V(parseInt(point[0]),parseInt(point[1])))
+            })
+            regionPolys[n] = new P(new V(0,0), polyPoints)
+        })
+        var collisions = []
+        var foundInRegion = false
+        matrices.forEach(function(matrix){
+            var matrixPoints = [
+                new V(matrix.x,matrix.y),
+                new V(matrix.width,matrix.y),
+                new V(matrix.width,matrix.height),
+                new V(matrix.x,matrix.height)
+            ]
+            var matrixPoly = new P(new V(0,0), matrixPoints)
+            regionPolys.forEach(function(region,n){
+                var response = new SAT.Response()
+                var collided = SAT.testPolygonPolygon(matrixPoly, region, response)
+                if(collided === true){
+                    collisions.push({
+                        matrix: matrix,
+                        region: regions[n]
+                    })
+                    foundInRegion = true
+                }
+            })
+        })
+        if(callback)callback(foundInRegion,collisions)
+        return foundInRegion
+    }
     s.addEventDetailsToString = function(eventData,string,addOps){
         //d = event data
         if(!addOps)addOps = {}
@@ -60,7 +100,7 @@ module.exports = function(s,config,lang){
             return s.systemLog(lang['No Monitor Found, Ignoring Request'])
         }
         d.mon=s.group[d.ke].rawMonitorConfigurations[d.id];
-        var currentConfig = s.group[d.ke].activeMonitors[d.id].details
+        var currentConfig = s.group[d.ke].rawMonitorConfigurations[d.id].details
         var hasMatrices = (d.details.matrices && d.details.matrices.length > 0)
         //read filters
         if(
@@ -214,7 +254,7 @@ module.exports = function(s,config,lang){
         // check if object should be in region
         if(hasMatrices && currentConfig.detector_obj_region === '1'){
             var regions = s.group[d.ke].activeMonitors[d.id].parsedObjects.cords
-            var isMatrixInRegions = s.isAtleastOneMatrixInRegion(regions,d.details.matrices)
+            var isMatrixInRegions = isAtleastOneMatrixInRegion(regions,d.details.matrices)
             if(isMatrixInRegions){
                 s.debugLog('Matrix in region!')
             }else{
