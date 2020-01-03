@@ -3,11 +3,11 @@ echo "Shinobi - Do you want to Install Node.js?"
 echo "(y)es or (N)o"
 read nodejsinstall
 if [ "$nodejsinstall" = "y" ]; then
-    wget https://deb.nodesource.com/setup_8.x
-    chmod +x setup_8.x
-    ./setup_8.x
+    wget https://deb.nodesource.com/setup_11.x
+    chmod +x setup_11.x
+    ./setup_11.x
     sudo apt install nodejs -y
-    rm setup_8.x
+    rm setup_11.x
 fi
 
 #Detect Ubuntu Version
@@ -45,17 +45,17 @@ if [ "$mysqlagree" = "y" ]; then
     service mysql start
 fi
 
-# Make sure files have correct perms 
+# Make sure files have correct perms
 chmod -R 755 .
 
 # Database Installation
-#Check If Mysql-Server is already installed 
+#Check If Mysql-Server is already installed
 
 echo "============="
 echo "Checking for mysql-server"
 echo "============="
 dpkg -s mysql-server &> /dev/null
-if [ $? -eq 0 ]; then 
+if [ $? -eq 0 ]; then
     echo "+====================================+"
     echo "| Warning MYSQL SERVER IS INSTALLED! |"
     echo "+====================================+"
@@ -78,16 +78,16 @@ if [ $? -eq 0 ]; then
             read sqlpass
             echo "mariadb-server mariadb-server/root_password password $sqlpass" | debconf-set-selections
             echo "mariadb-server mariadb-server/root_password_again password $sqlpass" | debconf-set-selections
-            #Create my.cnf file 
+            #Create my.cnf file
             echo "[client]" >> ~/.my.cnf
             echo "user=root" >> ~/.my.cnf
             echo "password=$sqlpass" >> ~/.my.cnf
-            chmod 755 ~/.my.cnf 
-            apt install mariadb-server 
+            chmod 755 ~/.my.cnf
+            apt install mariadb-server
             service mysql start
         fi
     fi
-else  
+else
     echo "Shinobi - Do you want to Install MariaDB?"
     echo "(y)es or (N)o"
     read mysqlagree
@@ -100,11 +100,11 @@ else
         echo "[client]" >> ~/.my.cnf
         echo "user=root" >> ~/.my.cnf
         echo "password=$sqlpass" >> ~/.my.cnf
-        chmod 755 ~/.my.cnf 
+        chmod 755 ~/.my.cnf
         apt install mariadb-server -y
         service mysql start
     fi
-fi 
+fi
 
 chmod -R 755 .
 echo "Shinobi - Database Installation"
