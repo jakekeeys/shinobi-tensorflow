@@ -1038,7 +1038,6 @@ module.exports = function(s,config,lang,onFinish){
           config.ffmpegDir,
           e.sdir + 'cmd.txt'
         ]
-        console.log(`node ${cameraCommandParams.join(' ')}`)
         return spawn('node',cameraCommandParams,{detached: true,stdio:x.stdioPipes})
     }
     if(!config.ffmpegDir){
