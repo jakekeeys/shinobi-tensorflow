@@ -10,9 +10,9 @@ var processArgv = process.argv.splice(2,process.argv.length)
 var arguments = {};
 processArgv.forEach(function(val) {
     var theSplit = val.split('=');
-    var index = theSplit[0];
+    var index = (theSplit[0] || '').trim();
     var value = theSplit[1];
-    if(index.indexOf('addToConfig') > -1){
+    if(index.indexOf('addToConfig') > -1 || index == 'addToConfig'){
         try{
             value = JSON.parse(value)
             config = Object.assign(config,value)
