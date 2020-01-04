@@ -160,7 +160,17 @@ module.exports = function(s,config,lang){
                         sendTempImage()
                     })
                     var snapProcessTimeout = setTimeout(function(){
+                        var pid = snapProcess.pid
                         snapProcess.kill('SIGTERM')
+                        setTimeout(function(){
+                            if(s.isWin === false){
+                                exec('kill -9 ' + pid,function(){
+
+                                })
+                            }else{
+                                snapProcess.kill()
+                            }
+                        },10000)
                     },30000)
                 }catch(err){
                     console.log(err)
