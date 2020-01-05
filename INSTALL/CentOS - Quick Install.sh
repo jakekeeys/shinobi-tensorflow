@@ -25,6 +25,7 @@ yum install nano $vm dos2unix net-tools curl wget git make zip -y
 
 echo "Updating system"
 sudo yum update -y
+sudo yum install gcc gcc-c++ -y
 
 #Skip if running from the Ninja installer
 if [ "$1" != 1 ]; then
