@@ -79,7 +79,7 @@ $(document).ready(function(e){
         $.ccio.tm(4,d,'#logs,'+id+'.monitor_item .logs:visible,'+id+'#add_monitor:visible .logs',user)
     }
     //open all monitors
-    $('[class_toggle="list-blocks"][data-target="#left_menu"]').dblclick(function(){
+    $('.open-all-monitors').click(function(){
         $('#monitors_list .monitor_block').each(function(n,v){
             var el = $(v)
             var ke = el.attr('ke')
