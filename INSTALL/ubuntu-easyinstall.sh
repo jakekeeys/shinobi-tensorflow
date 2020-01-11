@@ -118,16 +118,16 @@ if [ "$mysqlagreeData" = "y" ]; then
     read mysqlDefaultData
     if [ "$mysqlDefaultData" = "y" ]; then
         escapeReplaceQuote='\\"'
-        groupKey=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 7 | head -n 1)
-        userID=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 6 | head -n 1)
-        userEmail=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 6 | head -n 1)"@"$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 6 | head -n 1)".com"
-        userPasswordPlain=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 6 | head -n 1)
-        userPasswordMD5=$(echo   -n   "$userPasswordPlain" | md5sum | awk '{print $1}')
+        groupKey=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,7)}')
+        userID=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,6)}')
+        userEmail=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,6)}')"@"$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,6)}')".com"
+        userPasswordPlain=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,7)}')
+        userPasswordMD5=$(echo -n "$userPasswordPlain" | md5sum | awk '{print $1}')
         userDetails='{"days":"10"}'
         userDetails=$(echo "$userDetails" | sed -e 's/"/'$escapeReplaceQuote'/g')
         echo $userDetailsNew
         apiIP='0.0.0.0'
-        apiKey=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+        apiKey=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,32)}')
         apiDetails='{"auth_socket":"1","get_monitors":"1","control_monitors":"1","get_logs":"1","watch_stream":"1","watch_snapshot":"1","watch_videos":"1","delete_videos":"1"}'
         apiDetails=$(echo "$apiDetails" | sed -e 's/"/'$escapeReplaceQuote'/g')
         rm sql/default_user.sql || true
