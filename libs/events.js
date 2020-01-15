@@ -21,6 +21,12 @@ module.exports = function(s,config,lang){
             newString = newString
             .replace(/{{CONFIDENCE}}/g,d.details.confidence)
         }
+        if(newString.includes("REASON")) {
+          if(d.details.reason) {
+            newString = newString
+            .replace(/{{REASON}}/g, d.details.reason)
+          }
+        }
         return newString
     }
     s.filterEvents = function(x,d){
