@@ -71,7 +71,7 @@ module.exports = function(s,config,lang,app,io){
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({extended: true}));
     app.use(function (req,res,next){
-        res.header("Access-Control-Allow-Origin",req.headers.origin);
+        res.header("Access-Control-Allow-Origin",'*');
         next()
     })
     app.set('views', s.mainDirectory + '/web');
