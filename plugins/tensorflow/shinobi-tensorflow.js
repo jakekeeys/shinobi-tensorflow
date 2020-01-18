@@ -35,18 +35,17 @@ s.detectObject=function(buffer,d,tx,frameLocation){
               // [xmin ymin xmax ymax]
               // [x y width height]
               // [xmin, ymin, xmax-xmin+1, ymax-ymin+1]
-                var width = v.bbox[2] - v.bbox[0]
-                var height = v.bbox[3] - v.bbox[1]
+                // var width = v.bbox[2] - v.bbox[0]
+                // var height = v.bbox[3] - v.bbox[1]
                 mats.push({
                     x: v.bbox[0],
                     y: v.bbox[1],
-                    width: width,
-                    height: height,
+                    width: v.bbox[2],
+                    height: v.bbox[3],
                     tag: v.class,
                     confidence: v.score,
                 })
             })
-            console.log(mats)
             var isObjectDetectionSeparate = d.mon.detector_pam === '1' && d.mon.detector_use_detect_object === '1'
             var width = parseFloat(isObjectDetectionSeparate  && d.mon.detector_scale_y_object ? d.mon.detector_scale_y_object : d.mon.detector_scale_y)
             var height = parseFloat(isObjectDetectionSeparate  && d.mon.detector_scale_x_object ? d.mon.detector_scale_x_object : d.mon.detector_scale_x)

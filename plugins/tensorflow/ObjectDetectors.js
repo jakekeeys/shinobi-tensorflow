@@ -1,8 +1,9 @@
-const tou8 = require('buffer-to-uint8array')
+// const tou8 = require('buffer-to-uint8array')
 try{
-    const tf = require('@tensorflow/tfjs-node-gpu');
+    var tf = require('@tensorflow/tfjs-node-gpu');
 }catch(err){
-    const tf = require('@tensorflow/tfjs-node');
+    console.log(tf)
+    var tf = require('@tensorflow/tfjs-node');
 }
 
 const cocossd = require('@tensorflow-models/coco-ssd');
@@ -34,7 +35,7 @@ function getTensor3dObject(numOfChannels,imageArray) {
 var loadCocoSsdModel
 
 async function init() {
-  loadCocoSsdModel =  await loadCocoSsdModal();
+    loadCocoSsdModel =  await loadCocoSsdModal();
 }
 init()
 module.exports = class ObjectDetectors {
@@ -45,24 +46,16 @@ module.exports = class ObjectDetectors {
         this.type = type;
     }
 
-
-
     async process() {
-
-        let predictions = null;
-        const tensor3D = getTensor3dObject(3,tou8(this.inputImage));
-        //
-        // if(this.type === "imagenet") {
-        //
-        //     predictions = await mobileNetModel.classify(tensor3D);
-        //
-        // } else {
-
-            predictions = await loadCocoSsdModel.detect(tensor3D);
-        // }
+        const tensor3D = getTensor3dObject(3,(this.inputImage));
+        let predictions = await loadCocoSsdModel.detect(tensor3D);
 
         tensor3D.dispose();
 
-       return {data: predictions, type: this.type, time: new Date() - this.startTime};
+        return {
+            data: predictions,
+            type: this.type,
+            time: new Date() - this.startTime
+        }
     }
 }
