@@ -1757,6 +1757,7 @@ module.exports = function(s,config,lang,app,io){
                     }
                  break;
              }
+             d.doObjectDetection = (!d.details.matrices || d.details.matrices.length === 0) && (s.isAtleatOneDetectorPluginConnected && details.detector_use_detect_object === '1')
              s.triggerEvent(d)
              s.closeJsonResponse(res,{
                  ok: true,

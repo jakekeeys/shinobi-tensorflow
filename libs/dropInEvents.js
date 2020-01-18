@@ -109,7 +109,8 @@ module.exports = function(s,config,lang,app,io){
                                     name: filename,
                                     plug: "dropInEvent",
                                     reason: reason
-                                }
+                                },
+                                doObjectDetection: (s.isAtleatOneDetectorPluginConnected && s.group[ke].rawMonitorConfigurations[mid].details.detector_use_detect_object === '1')
                             },config.dropInEventForceSaveEvent)
                         }
                         if(search(filename,'.txt')){
@@ -229,6 +230,7 @@ module.exports = function(s,config,lang,app,io){
                 if(session.monitorId){
                     var ke = session.user
                     var monitorId = session.monitorId
+                    var details = s.group[ke].rawMonitorConfigurations[monitorId].details
                     var reasonTag = 'smtpServer'
                     var text = ''
                     stream.on('data',function(data){
@@ -266,7 +268,8 @@ module.exports = function(s,config,lang,app,io){
                                 name: 'smtpServer',
                                 plug: "dropInEvent",
                                 reason: reasonTag
-                            }
+                            },
+                            doObjectDetection: (s.isAtleatOneDetectorPluginConnected && details.detector_use_detect_object === '1')
                         },config.dropInEventForceSaveEvent)
                         callback()
                     })
