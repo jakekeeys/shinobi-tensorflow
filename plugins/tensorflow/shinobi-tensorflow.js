@@ -24,7 +24,7 @@ try{
 }
 // Base Init />>
 
-const ObjectDetectors = require('./ObjectDetectors.js');
+const ObjectDetectors = require('./ObjectDetectors.js')(config);
 
 s.detectObject=function(buffer,d,tx,frameLocation){
     new ObjectDetectors(buffer).process().then((resp)=>{

@@ -4,14 +4,19 @@ echo "(y)es or (N)o"
 read nodejsinstall
 echo "Getting Tensorflow Node.js module..."
 if [ "$nodejsinstall" = "y" ] || [ "$nodejsinstall" = "Y" ]; then
+    npm uninstall @tensorflow/tfjs-node-gpu --unsafe-perm
     npm install @tensorflow/tfjs-node-gpu --unsafe-perm
+    sed -i 's/"tfjsBuild":"cpu"/"tfjsBuild":"gpu"/g' conf.json
+    sed -i 's/"tfjsBuild":"gpuORcpu"/"tfjsBuild":"gpu"/g' conf.json
 else
+    npm uninstall @tensorflow/tfjs-node --unsafe-perm
     npm install @tensorflow/tfjs-node --unsafe-perm
+    sed -i 's/"tfjsBuild":"gpu"/"tfjsBuild":"cpu"/g' conf.json
+    sed -i 's/"tfjsBuild":"gpuORcpu"/"tfjsBuild":"cpu"/g' conf.json
 fi
 echo "Getting Coco SSD Model..."
 npm install @tensorflow-models/coco-ssd --unsafe-perm
-echo "Getting other Libraries..."
-npm install buffer-to-uint8array
+
 if [ ! -e "./conf.json" ]; then
     echo "Creating conf.json"
     sudo cp conf.sample.json conf.json
