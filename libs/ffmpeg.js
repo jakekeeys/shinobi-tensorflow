@@ -422,7 +422,7 @@ module.exports = function(s,config,lang,onFinish){
         x.hwaccel = ''
         x.cust_input = ''
         //wallclock fix for strangely long, single frame videos
-        if(x.cust_input.indexOf('-use_wallclock_as_timestamps 1') === -1){x.cust_input+=' -use_wallclock_as_timestamps 1';}
+        if(e.type === 'h264' && x.cust_input.indexOf('-use_wallclock_as_timestamps 1') === -1){x.cust_input+=' -use_wallclock_as_timestamps 1';}
         //input - frame rate (capture rate)
         if(e.details.sfps && e.details.sfps!==''){x.input_fps=' -r '+e.details.sfps}else{x.input_fps=''}
         //input - analyze duration
@@ -1038,7 +1038,6 @@ module.exports = function(s,config,lang,onFinish){
           config.ffmpegDir,
           e.sdir + 'cmd.txt'
         ]
-        console.log(`node ${cameraCommandParams.join(' ')}`)
         return spawn('node',cameraCommandParams,{detached: true,stdio:x.stdioPipes})
     }
     if(!config.ffmpegDir){

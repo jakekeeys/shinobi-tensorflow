@@ -5,8 +5,8 @@ echo "==   Shinobi : The Open Source CCTV and NVR Solution   =="
 echo "========================================================="
 echo "This script will install Shinobi CCTV with minimal user"
 echo "intervention."
-echo 
-echo "You may skip any components you already have or do not" 
+echo
+echo "You may skip any components you already have or do not"
 echo "wish to install."
 echo "========================================================="
 read -p "Press [Enter] to begin..."
@@ -25,6 +25,7 @@ yum install nano $vm dos2unix net-tools curl wget git make zip -y
 
 echo "Updating system"
 sudo yum update -y
+sudo yum install gcc gcc-c++ -y
 
 #Skip if running from the Ninja installer
 if [ "$1" != 1 ]; then
@@ -35,10 +36,10 @@ if [ "$1" != 1 ]; then
 	echo "========================================================="
 	echo "Do you want to use the Master or Development branch of Shinobi?"
 	read -p "[M]aster or [D]ev " gitbranch
-	
+
 	#Changes input to uppercase
 	gitbranch=${gitbranch^}
-	
+
 	if [ "$gitbranch" = "D" ]; then
 		#Change to dev branch
 		sudo git checkout dev
@@ -49,7 +50,7 @@ fi
 if ! [ -x "$(command -v node)" ]; then
     echo "========================================================="
     echo "Node.js not found, installing..."
-    sudo curl --silent --location https://rpm.nodesource.com/setup_10.x | bash -
+    sudo curl --silent --location https://rpm.nodesource.com/setup_11.x | bash -
     sudo yum install nodejs -y
 else
     echo "Node.js is already installed..."
@@ -76,7 +77,7 @@ fi
 
 echo "========================================================="
 echo "Do you want to install MariaDB?"
-echo 
+echo
 echo "Press [ENTER] for default [MariaDB]"
 read -p "[M]ariaDB, or [N]othing " installdbserver
 
@@ -95,10 +96,10 @@ if [ "installdbserver" = "M" ] || [ "$installdbserver" = "" ]; then
     sudo systemctl enable mariadb
     #Run mysql install
     sudo mysql_secure_installation
-	
+
 	echo "========================================================="
     read -p "Install default database? Y/N " mysqlDefaultData
-	
+
 	#Changes input to uppercase
 	mysqlDefaultData=${mysqlDefaultData^}
 
@@ -108,10 +109,10 @@ if [ "installdbserver" = "M" ] || [ "$installdbserver" = "" ]; then
         until [ "$mariadbPasswordConfirmation" = "Y" ]; do
 			echo "Please enter your MariaDB Password"
             read -s sqlpass
-			
+
 			echo "Please confirm your MariaDB Password"
 			read -s sqlpassconfirm
-			
+
 			if [ "$sqlpass" == "$sqlpassconfirm" ]; then
 				mariadbPasswordConfirmation = "Y"
 			else
@@ -119,16 +120,16 @@ if [ "installdbserver" = "M" ] || [ "$installdbserver" = "" ]; then
 				echo "Please try again."
 			fi
 		done
-		
+
         sudo mysql -u $sqluser -p$sqlpass -e "source sql/user.sql" || true
         sudo mysql -u $sqluser -p$sqlpass -e "source sql/framework.sql" || true
     fi
-	
+
 elif [ "$installdbserver" = "N" ]; then
     echo "========================================================="
     echo "Skipping database server installation..."
 fi
-	
+
 echo "========================================================="
 echo "Installing NPM libraries..."
 sudo npm i npm -g
@@ -150,7 +151,7 @@ read -p "Automatically create firewall rules? Y/N " createfirewallrules
 
 #Changes input to uppercase
 createfirewallrules=${createfirewallrules^}
-	
+
 if [ "$createfirewallrules" = "Y" ]; then
     sudo firewall-cmd --permanent --add-port=8080/tcp -q
     sudo firewall-cmd --reload -q
@@ -159,7 +160,7 @@ fi
 #Create default configuration file
 if [ ! -e "./conf.json" ]; then
     cp conf.sample.json conf.json
-	
+
     #Generate a random Cron key for the config file
     cronKey=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c${1:-30})
 	#Insert key into conf.json
@@ -171,15 +172,15 @@ if [ ! -e "./super.json" ]; then
     echo "Enable superuser access?"
     echo "This may be useful for account and password managment"
     read -p "in commercial deployments. Y/N " createSuperJson
-	
+
 	#Changes input to uppercase
 	createSuperJson=${createSuperJson^}
-	
-    if [ "$createSuperJson" = "Y" ]; then        
+
+    if [ "$createSuperJson" = "Y" ]; then
         sudo cp super.sample.json super.json
     fi
 fi
-	
+
 echo "========================================================="
 read -p "Start Shinobi on boot? Y/N " startupShinobi
 
@@ -215,6 +216,6 @@ if [ "$createSuperJson" = "Y" ]; then
     echo "|| Default Superuser : admin@shinobi.video             ||"
     echo "|| Default Password : admin                            ||"
 	echo "|| You can edit these settings in \"super.json\"       ||"
-	echo "|| located in the Shinobi directory.                   ||"        
+	echo "|| located in the Shinobi directory.                   ||"
     echo "========================================================="
 fi

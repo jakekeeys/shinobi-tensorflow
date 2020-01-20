@@ -4,7 +4,10 @@ const spawn = require('child_process').spawn
 process.send = process.send || function () {};
 // [CTRL] + [C] = exit
 process.on('SIGINT', function() {
-  cameraProcess.kill(0)
+    if(cameraProcess && cameraProcess.kill)cameraProcess.kill(0)
+});
+process.on('exit', (code) => {
+    if(cameraProcess && cameraProcess.kill)cameraProcess.kill(0)
 });
 
 if(!process.argv[2] || !process.argv[3]){

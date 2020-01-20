@@ -10,9 +10,9 @@ echo "Shinobi - Do you want to Install Node.js?"
 echo "(y)es or (N)o"
 read nodejsinstall
 if [ "$nodejsinstall" = "y" ]; then
-    curl -o node-v8.9.3.pkg https://nodejs.org/dist/v8.9.3/node-v8.9.3.pkg
-    sudo installer -pkg node-v8.9.3.pkg -target /
-    rm node-v8.9.3.pkg
+    curl -o node-installer.pkg https://nodejs.org/dist/v11.9.0/node-v11.9.0.pkg
+    sudo installer -pkg node-installer.pkg -target /
+    rm node-installer.pkg
     sudo ln -s /usr/local/bin/node /usr/bin/nodejs
 fi
 echo "============="

@@ -19,8 +19,9 @@ if [ "$getubuntuversion" = "18" ] || [ "$getubuntuversion" > "18" ]; then
     sudo add-apt-repository universe -y
 fi
 if [ "$getubuntuversion" = "16" ]; then
-    apt install gnupg-curl -y
+    sudo apt install gnupg-curl -y
 fi
+sudo apt install gcc g++ -y
 #create conf.json
 if [ ! -e "./conf.json" ]; then
     sudo cp conf.sample.json conf.json
@@ -41,10 +42,11 @@ fi
 if ! [ -x "$(command -v node)" ]; then
     echo "============="
     echo "Shinobi - Installing Node.js"
-    wget https://deb.nodesource.com/setup_8.x
-    chmod +x setup_8.x
-    ./setup_8.x
+    wget https://deb.nodesource.com/setup_11.x
+    chmod +x setup_11.x
+    ./setup_11.x
     sudo apt install nodejs -y
+    rm setup_11.x
 else
     echo "Node.js Found..."
     echo "Version : $(node -v)"

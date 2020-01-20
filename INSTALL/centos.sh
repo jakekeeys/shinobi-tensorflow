@@ -27,12 +27,13 @@ if [ ! -e "./super.json" ]; then
 fi
 echo "Shinobi - Run yum update"
 sudo yum update -y
+sudo yum install gcc gcc-c++ -y
 sudo yum install make zip dos2unix -y
 if ! [ -x "$(command -v node)" ]; then
     echo "============="
     echo "Shinobi - Installing Node.js"
 	#Installs Node.js 10
-    sudo curl --silent --location https://rpm.nodesource.com/setup_8.x | bash -
+    sudo curl --silent --location https://rpm.nodesource.com/setup_11.x | bash -
     sudo yum install nodejs -y
 else
     echo "Node.js Found..."

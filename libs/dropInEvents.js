@@ -109,7 +109,8 @@ module.exports = function(s,config,lang,app,io){
                                     name: filename,
                                     plug: "dropInEvent",
                                     reason: reason
-                                }
+                                },
+                                doObjectDetection: (s.isAtleatOneDetectorPluginConnected && s.group[ke].rawMonitorConfigurations[mid].details.detector_use_detect_object === '1')
                             },config.dropInEventForceSaveEvent)
                         }
                         if(search(filename,'.txt')){
@@ -127,14 +128,14 @@ module.exports = function(s,config,lang,app,io){
 
                     }
                 }
-                var onFileOrFolderFound = function(filePath){
+                var onFileOrFolderFound = function(filePath,deletionKey){
                   fs.stat(filePath,function(err,stats){
                       if(!err){
                             if(stats.isDirectory()){
                                 fs.readdir(filePath,function(err,files){
                                     if(files){
                                         files.forEach(function(filename){
-                                            onFileOrFolderFound(clipPathEnding(filePath) + '/' + filename)
+                                            onFileOrFolderFound(clipPathEnding(filePath) + '/' + filename,deletionKey)
                                         })
                                     }else if(err){
                                         console.log(err)
@@ -144,10 +145,10 @@ module.exports = function(s,config,lang,app,io){
                                 processFile(filePath)
                             }
                             if(config.dropInEventDeleteFileAfterTrigger){
-                                clearTimeout(fileQueueForDeletion[filePath])
-                                fileQueueForDeletion[filePath] = setTimeout(function(){
-                                    exec('rm -rf ' + filePath,function(err){
-                                        delete(fileQueueForDeletion[filePath])
+                                clearTimeout(fileQueueForDeletion[deletionKey])
+                                fileQueueForDeletion[deletionKey] = setTimeout(function(){
+                                    exec('rm -rf ' + deletionKey,function(err){
+                                        delete(fileQueueForDeletion[deletionKey])
                                     })
                                 },1000 * 60 * 5)
                             }
@@ -157,7 +158,7 @@ module.exports = function(s,config,lang,app,io){
                 var directoryWatch = fs.watch(monitorEventDropDir,function(eventType,filename){
                     clearTimeout(fileQueue[filename])
                     fileQueue[filename] = setTimeout(function(){
-                        onFileOrFolderFound(monitorEventDropDir + filename)
+                        onFileOrFolderFound(monitorEventDropDir + filename,monitorEventDropDir + filename)
                     },1750)
                 })
                 s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].dropInEventWatcher = directoryWatch
@@ -183,9 +184,6 @@ module.exports = function(s,config,lang,app,io){
                         // reject(new Error('Failed Authorization'))
                     }
                 })
-            })
-            ftpServer.on('client-error', ({connection, context, error}) => {
-                console.log('error')
             })
             ftpServer.listen().then(() => {
                 s.systemLog(`FTP Server running on port ${config.ftpServerPort}...`)
@@ -232,6 +230,7 @@ module.exports = function(s,config,lang,app,io){
                 if(session.monitorId){
                     var ke = session.user
                     var monitorId = session.monitorId
+                    var details = s.group[ke].rawMonitorConfigurations[monitorId].details
                     var reasonTag = 'smtpServer'
                     var text = ''
                     stream.on('data',function(data){
@@ -269,7 +268,8 @@ module.exports = function(s,config,lang,app,io){
                                 name: 'smtpServer',
                                 plug: "dropInEvent",
                                 reason: reasonTag
-                            }
+                            },
+                            doObjectDetection: (s.isAtleatOneDetectorPluginConnected && details.detector_use_detect_object === '1')
                         },config.dropInEventForceSaveEvent)
                         callback()
                     })

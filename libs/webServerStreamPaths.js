@@ -11,12 +11,18 @@ var httpProxy = require('http-proxy');
 var proxy = httpProxy.createProxyServer({})
 var ejs = require('ejs');
 module.exports = function(s,config,lang,app){
+    var noCache = function(res){
+        res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate')
+        res.setHeader('Expires', '-1')
+        res.setHeader('Pragma', 'no-cache')
+    }
     /**
     * Page : Get Embed Stream
      */
     app.get([config.webPaths.apiPrefix+':auth/embed/:ke/:id',config.webPaths.apiPrefix+':auth/embed/:ke/:id/:addon'], function (req,res){
         req.params.protocol=req.protocol;
         s.auth(req.params,function(user){
+            noCache(res)
             if(user.permissions.watch_stream==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
                 res.end(user.lang['Not Permitted'])
                 return
@@ -117,10 +123,10 @@ module.exports = function(s,config,lang,app){
                             Emitter = s.group[req.params.ke].activeMonitors[req.params.id].emitterChannel[parseInt(req.params.channel)+config.pipeAddition]
                         }
                         res.writeHead(200, {
-                        'Content-Type': 'multipart/x-mixed-replace; boundary=shinobi',
-                        'Cache-Control': 'no-cache',
-                        'Connection': 'keep-alive',
-                        'Pragma': 'no-cache'
+                            'Content-Type': 'multipart/x-mixed-replace; boundary=shinobi',
+                            'Cache-Control': 'no-cache',
+                            'Connection': 'keep-alive',
+                            'Pragma': 'no-cache'
                         });
                         var contentWriter
                         fs.readFile(config.defaultMjpeg,'binary',function(err,content){
@@ -164,6 +170,7 @@ module.exports = function(s,config,lang,app){
     app.get([config.webPaths.apiPrefix+':auth/hls/:ke/:id/:file',config.webPaths.apiPrefix+':auth/hls/:ke/:id/:channel/:file'], function (req,res){
         req.fn=function(user){
             s.checkChildProxy(req.params,function(){
+                noCache(res)
                 req.dir=s.dir.streams+req.params.ke+'/'+req.params.id+'/'
                 if(req.params.channel){
                     req.dir+='channel'+(parseInt(req.params.channel)+config.pipeAddition)+'/'+req.params.file;
@@ -186,6 +193,7 @@ module.exports = function(s,config,lang,app){
     app.get(config.webPaths.apiPrefix+':auth/jpeg/:ke/:id/s.jpg', function(req,res){
         s.auth(req.params,function(user){
             s.checkChildProxy(req.params,function(){
+                noCache(res)
                 if(user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors&&user.details.monitors.indexOf(req.params.id)===-1){
                     res.end(user.lang['Not Permitted'])
                     return
@@ -211,6 +219,7 @@ module.exports = function(s,config,lang,app){
     app.get([config.webPaths.apiPrefix+':auth/flv/:ke/:id/s.flv',config.webPaths.apiPrefix+':auth/flv/:ke/:id/:channel/s.flv'], function(req,res) {
         s.auth(req.params,function(user){
             s.checkChildProxy(req.params,function(){
+                noCache(res)
                 var Emitter,chunkChannel
                 if(!req.params.channel){
                     Emitter = s.group[req.params.ke].activeMonitors[req.params.id].emitter
@@ -261,6 +270,7 @@ module.exports = function(s,config,lang,app){
     app.get([config.webPaths.apiPrefix+':auth/h265/:ke/:id/s.hevc',config.webPaths.apiPrefix+':auth/h265/:ke/:id/:channel/s.hevc'], function(req,res) {
         s.auth(req.params,function(user){
             s.checkChildProxy(req.params,function(){
+                noCache(res)
                 var Emitter,chunkChannel
                 if(!req.params.channel){
                     Emitter = s.group[req.params.ke].activeMonitors[req.params.id].emitter
@@ -310,6 +320,7 @@ module.exports = function(s,config,lang,app){
     ], function (req, res) {
         s.auth(req.params,function(user){
             s.checkChildProxy(req.params,function(){
+                noCache(res)
                 if(!req.query.feed){req.query.feed='1'}
                 var Emitter
                 if(!req.params.feed){
