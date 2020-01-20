@@ -139,7 +139,7 @@ module.exports = function(s,config,lang){
                     var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
                     var iconImageFile = streamDir + 'icon.jpg'
                     var ffmpegCmd = s.splitForFFPMEG(`-loglevel warning -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -vframes 1 "${temporaryImageFile}"`)
-                    fs.writeFileSync(s.group[monitor.ke].rawMonitorConfigurations[monitor.id].sdir + 'snapCmd.txt',JSON.stringify({
+                    fs.writeFileSync(s.group[monitor.ke].activeMonitors[monitor.id].sdir + 'snapCmd.txt',JSON.stringify({
                       cmd: ffmpegCmd,
                       temporaryImageFile: temporaryImageFile,
                       iconImageFile: iconImageFile,
@@ -149,7 +149,7 @@ module.exports = function(s,config,lang){
                     var cameraCommandParams = [
                       s.mainDirectory + '/libs/cameraThread/snapshot.js',
                       config.ffmpegDir,
-                      s.group[monitor.ke].rawMonitorConfigurations[monitor.id].sdir + 'snapCmd.txt'
+                      s.group[monitor.ke].activeMonitors[monitor.id].sdir + 'snapCmd.txt'
                     ]
                     var snapProcess = spawn('node',cameraCommandParams,{detached: true})
                     snapProcess.stderr.on('data',function(data){
@@ -766,11 +766,15 @@ module.exports = function(s,config,lang){
     // }
     var createCameraFolders = function(e,callback){
         //set the recording directory
+        var activeMonitor = s.group[e.ke].activeMonitors[e.id]
         createStreamDirectory(e,function(err,directory){
+            activeMonitor.sdir = directory
             e.sdir = directory
             createRecordingDirectory(e,function(err,directory){
+                activeMonitor.dir = directory
                 e.dir = directory
                 createTimelapseDirectory(e,function(err,directory){
+                    activeMonitor.dirTimelapse = directory
                     e.dirTimelapse = directory
                     createFileBinDirectory(e,function(err){
                         if(callback)callback()
@@ -1372,7 +1376,7 @@ module.exports = function(s,config,lang){
                     if(activeMonitor.fswatchStream && activeMonitor.fswatchStream.close){
                         activeMonitor.fswatchStream.close()
                     }
-                    activeMonitor.fswatchStream = fs.watch(e.sdir, {encoding : 'utf8'}, () => {
+                    activeMonitor.fswatchStream = fs.watch(activeMonitor.sdir, {encoding : 'utf8'}, () => {
                         resetStreamCheck(e)
                     })
                 }
