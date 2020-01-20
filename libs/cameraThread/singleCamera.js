@@ -1,14 +1,8 @@
 
 const fs = require('fs')
+const exec = require('child_process').exec
 const spawn = require('child_process').spawn
 process.send = process.send || function () {};
-// [CTRL] + [C] = exit
-process.on('SIGINT', function() {
-    if(cameraProcess && cameraProcess.kill)cameraProcess.kill(0)
-});
-process.on('exit', (code) => {
-    if(cameraProcess && cameraProcess.kill)cameraProcess.kill(0)
-});
 
 if(!process.argv[2] || !process.argv[3]){
     return writeToStderr('Missing FFMPEG Command String or no command operator')
@@ -29,10 +23,18 @@ var writeToStderr = function(text){
     // fs.appendFileSync('/home/Shinobi/test.log',text + '\n','utf8')
   }
 }
+
+// [CTRL] + [C] = exit
 process.on('uncaughtException', function (err) {
     writeToStderr('Uncaught Exception occured!');
     writeToStderr(err.stack);
 });
+const exitAction = function(){
+    process.kill(-cameraProcess.pid)
+}
+process.on('SIGTERM', exitAction);
+process.on('SIGINT', exitAction);
+process.on('exit', exitAction);
 
 for(var i=0; i < stdioPipes; i++){
     switch(i){
