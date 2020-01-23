@@ -18,7 +18,8 @@ if [ "$purgeDesktop" = "Y" ] || [ "$purgeDesktop" = "y" ]; then
         echo "(y)es or (N)o"
         read resetNetworkInterface
         if [ "$resetNetworkInterface" = "Y" ] || [ "$resetNetworkInterface" = "y" ]; then
-            echo "source-directory /etc/network/interfaces.d" > "/etc/network/interfaces"
+            echo "auto lo" > "/etc/network/interfaces"
+            echo "iface lo inet loopback" >> "/etc/network/interfaces"
             echo "auto eth0" >> "/etc/network/interfaces"
             echo "iface eth0 inet dhcp" >> "/etc/network/interfaces"
         fi
