@@ -16,7 +16,7 @@ module.exports = function(s,config,lang,io){
                 k.cmd="ps -A -o %cpu | awk '{s+=$1} END {print s}'";
             break;
             case'linux':
-                k.cmd='LANG=C top -b -n 2 | grep "^'+config.cpuUsageMarker+'" | awk \'{print $2}\' | tail -n1';
+                k.cmd='top -b -n 2 | awk \'{IGNORECASE = 1} /^.?CPU/ {gsub("id,","100",$8); gsub("%","",$8); print 100-$8}\' | tail -n 1';
             break;
             case'freebsd':
                 k.cmd='vmstat 1 2 | awk \'END{print 100-$19}\''
