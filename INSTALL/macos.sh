@@ -8,7 +8,7 @@ echo "Default is no (N). Skip any components you already have or don't need."
 echo "============="
 echo "Shinobi - Do you want to Install Node.js?"
 echo "(y)es or (N)o"
-read nodejsinstall
+read -r nodejsinstall
 if [ "$nodejsinstall" = "y" ]; then
     curl -o node-installer.pkg https://nodejs.org/dist/v11.9.0/node-v11.9.0.pkg
     sudo installer -pkg node-installer.pkg -target /
@@ -18,7 +18,7 @@ fi
 echo "============="
 echo "Shinobi - Do you want to Install FFmpeg?"
 echo "(y)es or (N)o"
-read ffmpeginstall
+read -r ffmpeginstall
 if [ "$ffmpeginstall" = "y" ]; then
     echo "Shinobi - Installing FFmpeg"
     curl -o ffmpeg.zip https://cdn.shinobi.video/installers/ffmpeg-3.4.1-macos.zip
@@ -65,7 +65,7 @@ echo "=====================================" >> INSTALL/installed.txt
 echo "=====================================" >> INSTALL/installed.txt
 echo "Shinobi - Start Shinobi and set to start on boot?"
 echo "(y)es or (N)o"
-read startShinobi
+read -r startShinobi
 if [ "$startShinobi" = "y" ]; then
     pm2 start camera.js
     pm2 startup
