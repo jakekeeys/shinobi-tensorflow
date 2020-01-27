@@ -3,18 +3,22 @@ const spawn = require('child_process').spawn
 var writeToStderr = function(text){
   // fs.appendFileSync(rawMonitorConfig.sdir + 'errors.log',text + '\n','utf8')
 }
+if(!process.argv[2] || !process.argv[3]){
+    return writeToStderr('Missing FFMPEG Command String or no command operator')
+}
 process.send = process.send || function () {};
 process.on('uncaughtException', function (err) {
     writeToStderr('Uncaught Exception occured!');
     writeToStderr(err.stack);
 });
 // [CTRL] + [C] = exit
-process.on('SIGINT', function() {
-  if(snapProcess && snapProcess.kill)snapProcess.kill('SIGTERM')
-});
-if(!process.argv[2] || !process.argv[3]){
-    return writeToStderr('Missing FFMPEG Command String or no command operator')
+const exitAction = function(){
+    process.kill(-snapProcess.pid)
 }
+process.on('SIGTERM', exitAction);
+process.on('SIGINT', exitAction);
+process.on('exit', exitAction);
+
 var jsonData = JSON.parse(fs.readFileSync(process.argv[3],'utf8'))
 // fs.unlink(process.argv[3],()=>{})
 const ffmpegAbsolutePath = process.argv[2].trim()
