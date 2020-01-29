@@ -8,6 +8,18 @@ var anError = function(message,dontShowExample){
         console.log('node tool/modifyConfigurationForPlugin.js tensorflow key=1234asdfg port=8080')
     }
 }
+var testValueForObject = function(jsonString){
+    var newValue = jsonString + ''
+    try{
+        newValue = JSON.parse(jsonString)
+    }catch(err){
+
+    }
+    if(typeof newValue === 'object'){
+        return true
+    }
+    return false
+}
 process.on('uncaughtException', function (err) {
     console.error('Uncaught Exception occured!');
     console.error(err.stack);
@@ -41,16 +53,18 @@ fs.stat(pluginLocation,function(err){
                 if(value==='DELETE'){
                     delete(config[index])
                 }else{
-                    try{
+                    if(testValueForObject(value)){
                         config[index] = JSON.parse(value);
-                    }catch(err){
+                    }else{
                         if(index === 'key'){
                             console.log(`Modifying main conf.json with updated key.`)
-                            execSync(`node ${__dirname}/modifyConfiguration.js addToConfig='{"pluginKeys":{"${config.plug}":"${value}"}}'`,function(err){
+                            execSync(`node ${__dirname}/modifyConfiguration.js addToConfig='{"pluginKeys":{"${config.plug}":"${value + ''}"}}'`,function(err){
                                 console.log(err)
                             })
+                            config[index] = value + ''
+                        }else{
+                            config[index] = value
                         }
-                        config[index] = value;
                     }
                 }
             }
