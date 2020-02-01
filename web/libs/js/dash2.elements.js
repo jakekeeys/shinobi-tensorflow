@@ -505,7 +505,7 @@ $(document).ready(function(e){
                                     if(v.status !== 0){
                                         $.vidview.loadedVideos[v.filename] = Object.assign(v,{})
                                         var n=$.ccio.mon[v.ke+v.mid+user.auth_token];
-                                        if(n){v.title=n.name+' - '+(parseInt(v.size)/1000000).toFixed(2)+'mb';}
+                                        if(n){v.title=n.name+' - '+(parseInt(v.size)/1048576).toFixed(2)+'mb';}
                                         v.start=v.time;
     //                                    v.filename=$.ccio.init('tf',v.time)+'.'+v.ext;
                                         e.ar.push(v);
@@ -618,7 +618,7 @@ $(document).ready(function(e){
                                     tmp+='<td title="'+v.time+'">'+$.ccio.timeObject(v.time).format('h:mm:ss A, MMMM Do YYYY')+'</td>';
                                     tmp+='<td>'+v.mon.name+'</td>';
                                     tmp+='<td>'+v.filename+'</td>';
-                                    tmp+='<td>'+(parseInt(v.size)/1000000).toFixed(2)+'</td>';
+                                    tmp+='<td>'+(parseInt(v.size)/1048576).toFixed(2)+'</td>';
                                     tmp+='<td><a class="btn btn-sm btn-default preview" href="'+href+'">&nbsp;<i class="fa fa-play-circle"></i>&nbsp;</a></td>';
                                     tmp+='<td><a class="btn btn-sm btn-primary" video="launch" href="'+href+'">&nbsp;<i class="fa fa-play-circle"></i>&nbsp;</a></td>';
                                     tmp+='<td><a class="btn btn-sm btn-success" download="'+v.mid+'-'+v.filename+'" href="'+href+'">&nbsp;<i class="fa fa-download"></i>&nbsp;</a></td>';

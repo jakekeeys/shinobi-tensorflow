@@ -32,7 +32,7 @@ module.exports = function(s,config,lang,app,io){
                                     }
                                     var timeNow = new Date(s.nameToTime(filename))
                                     s.sqlQuery('INSERT INTO `Timelapse Frames` (ke,mid,details,filename,size,time) VALUES (?,?,?,?,?,?)',[ke,mid,s.s(details),filename,fileStats.size,timeNow])
-                                    s.setDiskUsedForGroup(monitor,fileStats.size / 1000000)
+                                    s.setDiskUsedForGroup(monitor,fileStats.size / 1048576)
                                 }
                                 // else{
                                 //     s.insertDatabaseRow(
