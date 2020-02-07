@@ -4,7 +4,7 @@ if [ ! -e "/etc/shinobisystems/path.txt" ]; then
 else
     installationDirectory=$(cat /etc/shinobisystems/cctv.txt)
 fi
-cd $installationDirectory
+cd "$installationDirectory" || exit
 currentBuild=$(git show --oneline -s)
 gitOrigin=$(git remote show origin)
 splitBuildString=($currentBuild)
@@ -72,8 +72,8 @@ fi
 if [[ $@ == *'restart'* ]]; then
     proccessAlive=$(pm2 list | grep camera)
     if [ "$proccessAlive" ]; then
-        pm2 restart $installationDirectory/camera.js
-        pm2 restart $installationDirectory/cron.js
+        pm2 restart "$installationDirectory"/camera.js
+        pm2 restart "$installationDirectory"/cron.js
     else
         echo "Shinobi process is not running."
     fi
@@ -85,11 +85,11 @@ else
         else
             if [ -e "$installationDirectory/INSTALL/installed.txt" ]; then
                 echo "Starting Shinobi"
-                pm2 start $installationDirectory/camera.js
-                pm2 start $installationDirectory/cron.js
+                pm2 start "$installationDirectory"/camera.js
+                pm2 start "$installationDirectory"/cron.js
             fi
             if [ ! -e "$installationDirectory/INSTALL/installed.txt" ]; then
-                chmod +x $installationDirectory/INSTALL/now.sh&&INSTALL/now.sh
+                chmod +x "$installationDirectory"/INSTALL/now.sh&&INSTALL/now.sh
             fi
         fi
     fi
@@ -97,8 +97,8 @@ fi
 if [[ $@ == *'stop'* ]] || [[ $@ == *'exit'* ]]; then
     proccessAlive=$(pm2 list | grep camera)
     if [ "$proccessAlive" ]; then
-        pm2 stop $installationDirectory/camera.js
-        pm2 stop $installationDirectory/cron.js
+        pm2 stop "$installationDirectory"/camera.js
+        pm2 stop "$installationDirectory"/cron.js
     else
         echo "Shinobi process is not running."
     fi
@@ -110,7 +110,7 @@ if [[ $@ == *'version'* ]]; then
     else
         echo "Repository : Shinobi CE"
     fi
-    echo $currentBuild
+    echo "$currentBuild"
 fi
 if [[ $@ == *'bootupEnable'* ]] || [[ $@ == *'bootupenable'* ]]; then
     pm2 startup
@@ -140,17 +140,17 @@ if [[ $@ == *'update'* ]]; then
     echo "============="
     echo "Shinobi - Are you sure you want to update? This will restart Shinobi."
     echo "(y)es or (N)o"
-    read updateshinobi
+    read -r updateshinobi
     if [ "$updateshinobi" = "y" ] || [ "$updateshinobi" = "Y" ]; then
         echo "Beginning Update Process..."
-        pm2 stop $installationDirectory/camera.js
-        pm2 stop $installationDirectory/cron.js
+        pm2 stop "$installationDirectory"/camera.js
+        pm2 stop "$installationDirectory"/cron.js
         npm install --unsafe-perm
         npm audit fix --force
         git reset --hard
         git pull
-        pm2 start $installationDirectory/camera.js
-        pm2 start $installationDirectory/cron.js
+        pm2 start "$installationDirectory"/camera.js
+        pm2 start "$installationDirectory"/cron.js
     else
         echo "Cancelled Update Process."
     fi

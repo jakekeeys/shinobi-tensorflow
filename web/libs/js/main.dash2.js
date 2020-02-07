@@ -944,7 +944,7 @@ switch($user.details.lang){
                 d.hr=parseInt(d.startMoment.format('HH')),
                 d.per=parseInt(d.hr/24*100);
                 d.circle='<div title="at '+d.hr+' hours of '+d.startMoment.format('MMMM DD')+'" '+href+' video="launch" class="progress-circle progress-'+d.per+'"><span>'+d.hr+'</span></div>'
-                tmp+='<li class="video-item glM'+d.mid+user.auth_token+'" auth="'+user.auth_token+'" mid="'+d.mid+'" ke="'+d.ke+'" status="'+d.status+'" status="'+d.status+'" file="'+d.filename+'">'+d.circle+'<div><span title="'+d.endMoment.format()+'" class="livestamp"></span></div><div><div class="small"><b>'+lang.Start+'</b> : '+d.startMoment.format('h:mm:ss , MMMM Do YYYY')+'</div><div class="small"><b>'+lang.End+'</b> : '+d.endMoment.format('h:mm:ss , MMMM Do YYYY')+'</div></div><div><span class="pull-right">'+(parseInt(d.size)/1000000).toFixed(2)+'mb</span><div class="controls btn-group"><a class="btn btn-sm btn-primary" video="launch" '+href+'><i class="fa fa-play-circle"></i></a> <a download="'+d.dlname+'" '+href+' class="btn btn-sm btn-default"><i class="fa fa-download"></i></a>'
+                tmp+='<li class="video-item glM'+d.mid+user.auth_token+'" auth="'+user.auth_token+'" mid="'+d.mid+'" ke="'+d.ke+'" status="'+d.status+'" status="'+d.status+'" file="'+d.filename+'">'+d.circle+'<div><span title="'+d.endMoment.format()+'" class="livestamp"></span></div><div><div class="small"><b>'+lang.Start+'</b> : '+d.startMoment.format('h:mm:ss , MMMM Do YYYY')+'</div><div class="small"><b>'+lang.End+'</b> : '+d.endMoment.format('h:mm:ss , MMMM Do YYYY')+'</div></div><div><span class="pull-right">'+(parseInt(d.size)/1048576).toFixed(2)+'mb</span><div class="controls btn-group"><a class="btn btn-sm btn-primary" video="launch" '+href+'><i class="fa fa-play-circle"></i></a> <a download="'+d.dlname+'" '+href+' class="btn btn-sm btn-default"><i class="fa fa-download"></i></a>'
                 <% if(config.DropboxAppKey){ %> tmp+='<a video="download" host="dropbox" download="'+d.dlname+'" '+href+' class="btn btn-sm btn-default"><i class="fa fa-dropbox"></i></a>' <% } %>
                 tmp+='<a title="'+lang['Delete Video']+'" video="delete" href="'+$.ccio.init('videoHrefToDelete',url)+'" class="btn btn-sm btn-danger permission_video_delete"><i class="fa fa-trash"></i></a></div></div></li>';
                 $(z).each(function(n,v){
@@ -1999,7 +1999,7 @@ $.ccio.globalWebsocket=function(d,user){
             $.ccio.pm(3,d.apis,null,user);
             $('.os_platform').html(d.os.platform)
             $('.os_cpuCount').html(d.os.cpuCount)
-            $('.os_totalmem').html((d.os.totalmem/1000000).toFixed(2))
+            $('.os_totalmem').html((d.os.totalmem/1048576).toFixed(2))
             if(d.os.cpuCount>1){
                 $('.os_cpuCount_trailer').html('s')
             }
@@ -5775,7 +5775,7 @@ $('body')
                                 if(v.status !== 0){
                                     $.vidview.loadedVideos[v.filename] = Object.assign(v,{})
                                     var n=$.ccio.mon[v.ke+v.mid+user.auth_token];
-                                    if(n){v.title=n.name+' - '+(parseInt(v.size)/1000000).toFixed(2)+'mb';}
+                                    if(n){v.title=n.name+' - '+(parseInt(v.size)/1048576).toFixed(2)+'mb';}
                                     v.start=v.time;
 //                                    v.filename=$.ccio.init('tf',v.time)+'.'+v.ext;
                                     e.ar.push(v);
@@ -5878,7 +5878,7 @@ $('body')
                                 tmp+='<td title="'+v.time+'">'+$.ccio.timeObject(v.time).format('h:mm:ss A, MMMM Do YYYY')+'</td>';
                                 tmp+='<td>'+v.mon.name+'</td>';
                                 tmp+='<td>'+v.filename+'</td>';
-                                tmp+='<td>'+(parseInt(v.size)/1000000).toFixed(2)+'</td>';
+                                tmp+='<td>'+(parseInt(v.size)/1048576).toFixed(2)+'</td>';
                                 tmp+='<td><a class="btn btn-sm btn-default preview" href="'+href+'">&nbsp;<i class="fa fa-play-circle"></i>&nbsp;</a></td>';
                                 tmp+='<td><a class="btn btn-sm btn-primary" video="launch" href="'+href+'">&nbsp;<i class="fa fa-play-circle"></i>&nbsp;</a></td>';
                                 tmp+='<td><a class="btn btn-sm btn-success" download="'+v.mid+'-'+v.filename+'" href="'+href+'">&nbsp;<i class="fa fa-download"></i>&nbsp;</a></td>';
