@@ -73,11 +73,11 @@ fi
 echo "============="
 echo "Shinobi - Do you want to Install MariaDB? Choose No if you already have it."
 echo "(y)es or (N)o"
-read mysqlagree
+read -r mysqlagree
 if [ "$mysqlagree" = "y" ] || [ "$mysqlagree" = "Y" ]; then
     echo "Shinobi - Installing MariaDB"
     echo "Password for root SQL user, If you are installing SQL now then you may put anything:"
-    read sqlpass
+    read -r sqlpass
     echo "mariadb-server mariadb-server/root_password password $sqlpass" | debconf-set-selections
     echo "mariadb-server mariadb-server/root_password_again password $sqlpass" | debconf-set-selections
     sudo apt install mariadb-server -y
@@ -86,19 +86,19 @@ fi
 echo "============="
 echo "Shinobi - Database Installation"
 echo "(y)es or (N)o"
-read mysqlagreeData
+read -r mysqlagreeData
 if [ "$mysqlagreeData" = "y" ] || [ "$mysqlagreeData" = "Y" ]; then
     if [ "$mysqlagree" = "y" ] || [ "$mysqlagree" = "Y" ]; then
         sqluser="root"
     fi
     if [ ! "$mysqlagree" = "y" ]; then
         echo "What is your SQL Username?"
-        read sqluser
+        read -r sqluser
         echo "What is your SQL Password?"
-        read sqlpass
+        read -r sqlpass
     fi
-    sudo mysql -u $sqluser -p$sqlpass -e "source sql/user.sql" || true
-    sudo mysql -u $sqluser -p$sqlpass -e "source sql/framework.sql" || true
+    sudo mysql -u "$sqluser" -p"$sqlpass" -e "source sql/user.sql" || true
+    sudo mysql -u "$sqluser" -p"$sqlpass" -e "source sql/framework.sql" || true
 fi
 echo "============="
 echo "Shinobi - Install NPM Libraries"
@@ -117,7 +117,7 @@ echo "Shinobi - Randomizing cron key"
 node /home/Shinobi/tools/modifyConfiguration.js addToConfig="{\"cron\":{\"key\":\"$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}')\"}}"
 echo "Shinobi - Start Shinobi and set to start on boot?"
 echo "(y)es or (N)o"
-read startShinobi
+read -r startShinobi
 if [ "$startShinobi" = "y" ] || [ "$startShinobi" = "y" ]; then
     sudo pm2 start camera.js
     sudo pm2 start cron.js
