@@ -75,7 +75,7 @@ module.exports = function(s,config,lang,app,io){
     }
     s.insertTimelapseFrameDatabaseRow = function(e,queryInfo,filePath){
         s.sqlQuery('INSERT INTO `Timelapse Frames` ('+Object.keys(queryInfo).join(',')+') VALUES (?,?,?,?,?,?)',Object.values(queryInfo))
-        s.setDiskUsedForGroup(e,queryInfo.size / 1000000,'timelapeFrames')
+        s.setDiskUsedForGroup(e,queryInfo.size / 1048576,'timelapeFrames')
         s.purgeDiskForGroup(e)
         s.onInsertTimelapseFrameExtensions.forEach(function(extender){
             extender(e,queryInfo,filePath)

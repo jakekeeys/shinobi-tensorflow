@@ -53,11 +53,11 @@ module.exports = function(s,config,lang){
                                 })
                                 if(storageIndex){
                                     s.setDiskUsedForGroupAddStorage(e,{
-                                        size: -(video.size/1000000),
+                                        size: -(video.size/1048576),
                                         storageIndex: storageIndex
                                     })
                                 }else{
-                                    s.setDiskUsedForGroup(e,-(video.size/1000000))
+                                    s.setDiskUsedForGroup(e,-(video.size/1048576))
                                 }
                                 s.tx({
                                     f: 'video_delete',
@@ -106,11 +106,11 @@ module.exports = function(s,config,lang){
                                 })
                                 if(storageIndex){
                                     s.setDiskUsedForGroupAddStorage(e,{
-                                        size: -(frame.size/1000000),
+                                        size: -(frame.size/1048576),
                                         storageIndex: storageIndex
                                     },'timelapeFrames')
                                 }else{
-                                    s.setDiskUsedForGroup(e,-(frame.size/1000000),'timelapeFrames')
+                                    s.setDiskUsedForGroup(e,-(frame.size/1048576),'timelapeFrames')
                                 }
                                 // s.tx({
                                 //     f: 'timelapse_frame_delete',
@@ -158,11 +158,11 @@ module.exports = function(s,config,lang){
                                 })
                                 if(storageIndex){
                                     s.setDiskUsedForGroupAddStorage(e,{
-                                        size: -(file.size/1000000),
+                                        size: -(file.size/1048576),
                                         storageIndex: storageIndex
                                     },'fileBin')
                                 }else{
-                                    s.setDiskUsedForGroup(e,-(file.size/1000000),'fileBin')
+                                    s.setDiskUsedForGroup(e,-(file.size/1048576),'fileBin')
                                 }
                             })
                         }else{
@@ -334,7 +334,7 @@ module.exports = function(s,config,lang){
         s.group[e.ke].sizeLimitTimelapseFramesPercent = parseFloat(s.group[e.ke].init.size_timelapse_percent) || 5
         s.group[e.ke].sizeLimitFileBinPercent = parseFloat(s.group[e.ke].init.size_filebin_percent) || 5
         //save global used space as megabyte value
-        s.group[e.ke].usedSpace = s.group[e.ke].usedSpace || ((e.size || 0) / 1000000)
+        s.group[e.ke].usedSpace = s.group[e.ke].usedSpace || ((e.size || 0) / 1048576)
         //emit the changes to connected users
         s.sendDiskUsedAmountToClients(e)
     }
@@ -401,7 +401,7 @@ module.exports = function(s,config,lang){
                                                 queryValues.push(video.mid)
                                                 queryValues.push(video.time)
                                                 s.setCloudDiskUsedForGroup(e,{
-                                                    amount : -(video.size/1000000),
+                                                    amount : -(video.size/1048576),
                                                     storageType : storageType
                                                 })
                                                 s.deleteVideoFromCloudExtensionsRunner(e,storageType,video)
@@ -435,7 +435,7 @@ module.exports = function(s,config,lang){
                                             queryValues.push(frame.mid)
                                             queryValues.push(frame.time)
                                             s.setCloudDiskUsedForGroup(e,{
-                                                amount : -(frame.size/1000000),
+                                                amount : -(frame.size/1048576),
                                                 storageType : storageType
                                             })
                                             s.deleteVideoFromCloudExtensionsRunner(e,storageType,frame)

@@ -111,7 +111,7 @@ module.exports = function(s,config,lang){
                 k.details = {}
                 k.stat = fs.statSync(k.dir+k.file)
                 k.filesize = k.stat.size
-                k.filesizeMB = parseFloat((k.filesize/1000000).toFixed(2))
+                k.filesizeMB = parseFloat((k.filesize/1048576).toFixed(2))
 
                 k.startTime = new Date(s.nameToTime(k.file))
                 k.endTime = new Date(k.endTime || k.stat.mtime)
@@ -226,11 +226,11 @@ module.exports = function(s,config,lang){
                     var storageIndex = s.getVideoStorageIndex(e)
                     if(storageIndex){
                         s.setDiskUsedForGroupAddStorage(e,{
-                            size: -(r.size / 1000000),
+                            size: -(r.size / 1048576),
                             storageIndex: storageIndex
                         })
                     }else{
-                        s.setDiskUsedForGroup(e,-(r.size / 1000000))
+                        s.setDiskUsedForGroup(e,-(r.size / 1048576))
                     }
                     s.sqlQuery('DELETE FROM Videos WHERE `mid`=? AND `ke`=? AND `time`=?',queryValues,function(err){
                         if(err){
@@ -288,11 +288,11 @@ module.exports = function(s,config,lang){
                     var storageIndex = s.getVideoStorageIndex(video)
                     if(storageIndex){
                         s.setDiskUsedForGroupAddStorage(video,{
-                            size: -(video.size / 1000000),
+                            size: -(video.size / 1048576),
                             storageIndex: storageIndex
                         })
                     }else{
-                        s.setDiskUsedForGroup(video,-(video.size / 1000000))
+                        s.setDiskUsedForGroup(video,-(video.size / 1048576))
                     }
                     fs.unlink(video.dir+filename,function(err){
                         fs.stat(video.dir+filename,function(err){
@@ -487,7 +487,7 @@ module.exports = function(s,config,lang){
                         var fileStats = fs.statSync(finalMp4OutputLocation)
                         var details = {}
                         s.sqlQuery('INSERT INTO `Files` (ke,mid,details,name,size,time) VALUES (?,?,?,?,?,?)',[ke,mid,s.s(details),finalFileName + '.mp4',fileStats.size,timeNow])
-                        s.setDiskUsedForGroup({ke: ke},fileStats.size / 1000000,'fileBin')
+                        s.setDiskUsedForGroup({ke: ke},fileStats.size / 1048576,'fileBin')
                         fs.unlink(commandTempLocation,function(){
 
                         })

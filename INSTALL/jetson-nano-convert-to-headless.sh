@@ -1,14 +1,16 @@
+#!/bin/bash
+
 # Moe was here
 echo "============="
 echo "Do you want to purge Desktop components from your Ubuntu 18.04 installation?"
 echo "You cannot undo this. Choose wisely."
 echo "Do NOT run this as root, instead run it with 'sudo'; if you want a complete wipe."
 echo "(y)es or (N)o"
-read purgeDesktop
+read -r purgeDesktop
 if [ "$purgeDesktop" = "Y" ] || [ "$purgeDesktop" = "y" ]; then
     echo "Really really sure?"
     echo "(y)es or (N)o"
-    read purgeDesktopSecond
+    read -r purgeDesktopSecond
     if [ "$purgeDesktopSecond" = "Y" ] || [ "$purgeDesktopSecond" = "y" ]; then
         echo "!----------------------------!"
         echo "Reset network interface to DHCP? (Automatically assign IP Address from network)"
@@ -16,7 +18,7 @@ if [ "$purgeDesktop" = "Y" ] || [ "$purgeDesktop" = "y" ]; then
         echo "You can edit it after in /etc/network/interfaces"
         echo "!----------------------------!"
         echo "(y)es or (N)o"
-        read resetNetworkInterface
+        read -r resetNetworkInterface
         if [ "$resetNetworkInterface" = "Y" ] || [ "$resetNetworkInterface" = "y" ]; then
             echo "auto lo" > "/etc/network/interfaces"
             echo "iface lo inet loopback" >> "/etc/network/interfaces"

@@ -1,4 +1,3 @@
-
 #!/bin/bash
 echo "========================================================="
 echo "==!! Shinobi : The Open Source CCTV and NVR Solution !!=="
@@ -6,7 +5,7 @@ echo "=================== Mac OS Install Part 2 ==============="
 echo "========================================================="
 echo "Shinobi - Database Installation"
 echo "(y)es or (N)o"
-read mysqlagreeData
+read -r mysqlagreeData
 if [ "$mysqlagreeData" = "y" ]; then
     echo "Shinobi will now use root for database installation..."
     sudo mysql -e "source sql/user.sql" || true
@@ -42,7 +41,7 @@ echo "=====================================" >> INSTALL/installed.txt
 echo "=====================================" >> INSTALL/installed.txt
 echo "Shinobi - Start Shinobi and set to start on boot?"
 echo "(y)es or (N)o"
-read startShinobi
+read -r startShinobi
 if [ "$startShinobi" = "y" ]; then
     sudo pm2 start camera.js
     sudo pm2 startup

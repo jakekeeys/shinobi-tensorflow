@@ -62,7 +62,7 @@ module.exports = function(s,config,lang,io){
         	    k.cmd = "echo \"scale=4; $(vmstat -H | awk 'END{print $5}')*1024*100/$(sysctl -n hw.physmem)\" | bc"
             break;
 	    case'openbsd':
-                    k.cmd = "echo \"scale=4; $(vmstat | awk 'END{ gsub(\"M\",\"\",$4); print $4 }')*1024*1024*100/$(sysctl -n hw.physmem)\" | bc"
+                    k.cmd = "echo \"scale=4; $(vmstat | awk 'END{ gsub(\"M\",\"\",$4); print $4 }')*104857600/$(sysctl -n hw.physmem)\" | bc"
             break;
             default:
                 k.cmd = "LANG=C free | grep Mem | awk '{print $7/$2 * 100.0}'";
