@@ -144,10 +144,10 @@ module.exports = function(s,config,lang,io){
                             }
                         })
                     }
-                    s.group[user.ke].usedSpace = (usedSpaceVideos + usedSpaceTimelapseFrames + usedSpaceFilebin) / 1000000
-                    s.group[user.ke].usedSpaceVideos = usedSpaceVideos / 1000000
-                    s.group[user.ke].usedSpaceFilebin = usedSpaceFilebin / 1000000
-                    s.group[user.ke].usedSpaceTimelapseFrames = usedSpaceTimelapseFrames / 1000000
+                    s.group[user.ke].usedSpace = (usedSpaceVideos + usedSpaceTimelapseFrames + usedSpaceFilebin) / 1048576
+                    s.group[user.ke].usedSpaceVideos = usedSpaceVideos / 1048576
+                    s.group[user.ke].usedSpaceFilebin = usedSpaceFilebin / 1048576
+                    s.group[user.ke].usedSpaceTimelapseFrames = usedSpaceTimelapseFrames / 1048576
                     loadAddStorageDiskUseForUser(user,addStorageData,function(){
                         callback()
                     })
@@ -173,7 +173,7 @@ module.exports = function(s,config,lang,io){
                     videos.forEach(function(video){
                         var storageType = JSON.parse(video.details).type
                         if(!storageType)storageType = 's3'
-                        var videoSize = video.size / 1000000
+                        var videoSize = video.size / 1048576
                         user.cloudDiskUse[storageType].usedSpace += videoSize
                         user.cloudDiskUse[storageType].usedSpaceVideos += videoSize
                         ++user.cloudDiskUse[storageType].firstCount
@@ -193,7 +193,7 @@ module.exports = function(s,config,lang,io){
                     frames.forEach(function(frame){
                         var storageType = JSON.parse(frame.details).type
                         if(!storageType)storageType = 's3'
-                        var frameSize = frame.size / 1000000
+                        var frameSize = frame.size / 1048576
                         user.cloudDiskUse[storageType].usedSpace += frameSize
                         user.cloudDiskUse[storageType].usedSpaceTimelapseFrames += frameSize
                     })
@@ -260,10 +260,10 @@ module.exports = function(s,config,lang,io){
                     }
                 })
             }
-            storageIndex.usedSpace = (usedSpaceVideos + usedSpaceTimelapseFrames + usedSpaceFilebin) / 1000000
-            storageIndex.usedSpaceVideos = usedSpaceVideos / 1000000
-            storageIndex.usedSpaceFilebin = usedSpaceFilebin / 1000000
-            storageIndex.usedSpaceTimelapseFrames = usedSpaceTimelapseFrames / 1000000
+            storageIndex.usedSpace = (usedSpaceVideos + usedSpaceTimelapseFrames + usedSpaceFilebin) / 1048576
+            storageIndex.usedSpaceVideos = usedSpaceVideos / 1048576
+            storageIndex.usedSpaceFilebin = usedSpaceFilebin / 1048576
+            storageIndex.usedSpaceTimelapseFrames = usedSpaceTimelapseFrames / 1048576
             s.systemLog(user.mail+' : '+path+' : '+videos.length,storageIndex.usedSpace)
             ++currentStorageNumber
             readStorageArray()

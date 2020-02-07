@@ -145,7 +145,7 @@ module.exports = function(s,config,lang,app,io){
                                     dir : s.getVideoDirectory(d.d),
                                     file : d.filename,
                                     filename : d.filename,
-                                    filesizeMB : parseFloat((d.filesize/1000000).toFixed(2))
+                                    filesizeMB : parseFloat((d.filesize/1048576).toFixed(2))
                                 }
                                 s.insertDatabaseRow(d.d,insert)
                                 s.insertCompletedVideoExtensions.forEach(function(extender){
