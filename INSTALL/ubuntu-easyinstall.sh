@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "Shinobi - Do you want to Install Node.js?"
 echo "(y)es or (N)o"
-read nodejsinstall
+read -r nodejsinstall
 if [ "$nodejsinstall" = "y" ]; then
     wget https://deb.nodesource.com/setup_11.x
     chmod +x setup_11.x
@@ -34,11 +34,11 @@ fi
 # Install MariaDB
 echo "Shinobi - Do you want to Install MariaDB? Choose No if you have MySQL."
 echo "(y)es or (N)o"
-read mysqlagree
+read -r mysqlagree
 if [ "$mysqlagree" = "y" ]; then
     echo "Shinobi - Installing MariaDB"
     echo "Password for root SQL user, If you are installing SQL now then you may put anything:"
-    read sqlpass
+    read -r sqlpass
     echo "mariadb-server mariadb-server/root_password password $sqlpass" | debconf-set-selections
     echo "mariadb-server mariadb-server/root_password_again password $sqlpass" | debconf-set-selections
     apt install mariadb-server -y
@@ -64,18 +64,18 @@ if [ $? -eq 0 ]; then
     echo "+====================================+"
     echo "Shinobi - Do you want to Install MariaDB?"
     echo "(y)es or (N)o"
-    read installmariadb
+    read -r installmariadb
     if [ "$installmariadb" = "y" ]; then
         echo "+=============================================+"
         echo "| This will DESTORY ALL DATA ON MYSQL SERVER! |"
         echo "+=============================================+"
         echo "Please type the following to continue"
         echo "DESTORY!"
-        read mysqlagree
+        read -r mysqlagree
         if [ "$mysqlagree" = "DESTORY!" ]; then
             echo "Shinobi - Installing MariaDB"
             echo "Password for root SQL user, If you are installing SQL now then you may put anything:"
-            read sqlpass
+            read -r sqlpass
             echo "mariadb-server mariadb-server/root_password password $sqlpass" | debconf-set-selections
             echo "mariadb-server mariadb-server/root_password_again password $sqlpass" | debconf-set-selections
             #Create my.cnf file
@@ -90,11 +90,11 @@ if [ $? -eq 0 ]; then
 else
     echo "Shinobi - Do you want to Install MariaDB?"
     echo "(y)es or (N)o"
-    read mysqlagree
+    read -r mysqlagree
     if [ "$mysqlagree" = "y" ]; then
         echo "Shinobi - Installing MariaDB"
         echo "Password for root SQL user, If you are installing SQL now then you may put anything:"
-        read sqlpass
+        read -r sqlpass
         echo "mariadb-server mariadb-server/root_password password $sqlpass" | debconf-set-selections
         echo "mariadb-server mariadb-server/root_password_again password $sqlpass" | debconf-set-selections
         echo "[client]" >> ~/.my.cnf
@@ -109,13 +109,13 @@ fi
 chmod -R 755 .
 echo "Shinobi - Database Installation"
 echo "(y)es or (N)o"
-read mysqlagreeData
+read -r mysqlagreeData
 if [ "$mysqlagreeData" = "y" ]; then
     mysql -e "source sql/user.sql" || true
     mysql -e "source sql/framework.sql" || true
     echo "Shinobi - Do you want to Install Default Data (default_data.sql)?"
     echo "(y)es or (N)o"
-    read mysqlDefaultData
+    read -r mysqlDefaultData
     if [ "$mysqlDefaultData" = "y" ]; then
         escapeReplaceQuote='\\"'
         groupKey=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,7)}')
@@ -125,14 +125,14 @@ if [ "$mysqlagreeData" = "y" ]; then
         userPasswordMD5=$(echo -n "$userPasswordPlain" | md5sum | awk '{print $1}')
         userDetails='{"days":"10"}'
         userDetails=$(echo "$userDetails" | sed -e 's/"/'$escapeReplaceQuote'/g')
-        echo $userDetailsNew
+        echo "$userDetailsNew"
         apiIP='0.0.0.0'
         apiKey=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,32)}')
         apiDetails='{"auth_socket":"1","get_monitors":"1","control_monitors":"1","get_logs":"1","watch_stream":"1","watch_snapshot":"1","watch_videos":"1","delete_videos":"1"}'
         apiDetails=$(echo "$apiDetails" | sed -e 's/"/'$escapeReplaceQuote'/g')
         rm sql/default_user.sql || true
         echo "USE ccio;INSERT INTO Users (\`ke\`,\`uid\`,\`auth\`,\`mail\`,\`pass\`,\`details\`) VALUES (\"$groupKey\",\"$userID\",\"$apiKey\",\"$userEmail\",\"$userPasswordMD5\",\"$userDetails\");INSERT INTO API (\`code\`,\`ke\`,\`uid\`,\`ip\`,\`details\`) VALUES (\"$apiKey\",\"$groupKey\",\"$userID\",\"$apiIP\",\"$apiDetails\");" > "sql/default_user.sql"
-        mysql -u $sqluser -p$sqlpass --database ccio -e "source sql/default_user.sql" > "INSTALL/log.txt"
+        mysql -u "$sqluser" -p"$sqlpass" --database ccio -e "source sql/default_user.sql" > "INSTALL/log.txt"
         echo "====================================="
         echo "=======!! Login Credentials !!======="
         echo "|| Username : $userEmail"
@@ -169,7 +169,7 @@ echo "Shinobi - Finished"
 touch INSTALL/installed.txt
 echo "Shinobi - Start Shinobi?"
 echo "(y)es or (N)o"
-read startShinobi
+read -r startShinobi
 if [ "$startShinobi" = "y" ]; then
     pm2 start camera.js
     pm2 start cron.js
