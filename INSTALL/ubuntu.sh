@@ -43,11 +43,11 @@ fi
 if ! [ -x "$(command -v node)" ]; then
     echo "============="
     echo "Shinobi - Installing Node.js"
-    wget https://deb.nodesource.com/setup_11.x
-    chmod +x setup_11.x
-    ./setup_11.x
+    wget https://deb.nodesource.com/setup_12.x
+    chmod +x setup_12.x
+    ./setup_12.x
     sudo apt install nodejs -y
-    rm setup_11.x
+    rm setup_12.x
 else
     echo "Node.js Found..."
     echo "Version : $(node -v)"
