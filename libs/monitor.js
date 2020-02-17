@@ -420,7 +420,14 @@ module.exports = function(s,config,lang){
             }else{
                 s.coSpawnClose(e)
                 if(proc && proc.kill){
-                    proc.kill()
+                    proc.kill('SIGTERM')
+                    setTimeout(function(){
+                        try{
+                            proc.kill()
+                        }catch(err){
+                            s.debugLog(err)
+                        }
+                    },1000)
                 }
             }
         }

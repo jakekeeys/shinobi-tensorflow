@@ -1,4 +1,5 @@
 #!/bin/bash
+DIR=`dirname $0`
 echo "----------------------------------------"
 echo "-- Installing Yolo Plugin for Shinobi --"
 echo "----------------------------------------"
@@ -62,6 +63,9 @@ if [ ! -e "./conf.json" ]; then
 else
     echo "conf.json already exists..."
 fi
+echo "-----------------------------------"
+echo "Adding Random Plugin Key to Main Configuration"
+node $DIR/../../tools/modifyConfigurationForPlugin.js yolo key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}')
 echo "-----------------------------------"
 if [ -f /etc/redhat-release ]; then
   yum update

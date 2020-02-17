@@ -50,7 +50,7 @@ fi
 if ! [ -x "$(command -v node)" ]; then
     echo "========================================================="
     echo "Node.js not found, installing..."
-    sudo curl --silent --location https://rpm.nodesource.com/setup_11.x | bash -
+    sudo curl --silent --location https://rpm.nodesource.com/setup_12.x | bash -
     sudo yum install nodejs -y
 else
     echo "Node.js is already installed..."
