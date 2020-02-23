@@ -420,7 +420,11 @@ module.exports = function(s,config,lang){
             }else{
                 s.coSpawnClose(e)
                 if(proc && proc.kill){
-                    proc.kill('SIGTERM')
+                    if(s.isWin){
+                        spawn("taskkill", ["/pid", proc.pid, '/f', '/t'])
+                    }else{
+                        proc.kill('SIGTERM')
+                    }
                     setTimeout(function(){
                         try{
                             proc.kill()
