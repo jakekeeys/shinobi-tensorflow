@@ -2486,6 +2486,56 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
+                      "name": "detail=detector_pushover",
+                      "field": lang["Pushover Alert on Trigger"],
+                      "description": "",
+                      "default": "0",
+                      "example": "",
+                      "selector": "h_det_pushover",
+                      "fieldType": "select",
+                      "form-group-class-pre-layer": "h_det_input h_det_1",
+                      "possible": [
+                         {
+                            "name": lang.No,
+                            "value": "0"
+                         },
+                         {
+                            "name": lang.Yes,
+                            "value": "1"
+                         }
+                      ]
+                   },
+                   {
+                      "name": "detail=detector_pushover_send_video",
+                      "field": lang["Attach Video Clip"],
+                      "description": "",
+                      "default": "0",
+                      "example": "",
+                      "fieldType": "select",
+                      "form-group-class": "h_det_pushover_input h_det_pushover_1",
+                      "form-group-class-pre-layer": "h_det_input h_det_1",
+                      "possible": [
+                         {
+                            "name": lang.No,
+                            "value": "0"
+                         },
+                         {
+                            "name": lang.Yes,
+                            "value": "1"
+                         }
+                      ]
+                   },
+                   {
+                      "name": "detail=detector_pushover_timeout",
+                      "field": lang['Allow Next Pushover Alert'],
+                      "description": "",
+                      "default": "10",
+                      "example": "",
+                      "form-group-class": "h_det_pushover_input h_det_pushover_1",
+                      "form-group-class-pre-layer": "h_det_input h_det_1",
+                      "possible": ""
+                   },
+                   {
                       "name": "detail=use_detector_filters",
                       "field": lang['Detector Filters'],
                       "description": "",
@@ -2598,7 +2648,7 @@ module.exports = function(s,config,lang){
                               "name": "detail=detector_sensitivity",
                               "field": lang.Indifference,
                               "description": "This can mean multiple things depending on the detector used. Built-In Motion Detection defines this as \"Percentage Changed in View or Region\"",
-                              "default": "0.5",
+                              "default": "10",
                               "example": "10",
                               "possible": ""
                            },
@@ -3910,6 +3960,26 @@ module.exports = function(s,config,lang){
                           }
                        ],
                        "form-group-class": "u_discord_bot_input u_discord_bot_1"
+                    },
+                    {
+                       hidden: true,
+                       "name": "detail=factor_pushover",
+                       "field": lang.Pushover,
+                       "description": "Send 2-Factor Authentication codes to Pushover.",
+                       "default": "1",
+                       "example": "",
+                       "fieldType": "select",
+                       "possible": [
+                          {
+                             "name": lang.No,
+                             "value": "0"
+                          },
+                          {
+                             "name": lang.Yes,
+                             "value": "1"
+                          }
+                       ],
+                       "form-group-class": "u_pushover_bot_input u_pushover_bot_1"
                     }
                 ]
              },
@@ -4173,6 +4243,54 @@ module.exports = function(s,config,lang){
                        "example": "",
                        "possible": ""
                     }
+                ]
+             },
+             "Pushover": {
+                "evaluation": "details.use_pushover!=='0'",
+                "name": lang["Pushover"],
+                "color": "forestgreen",
+                "info": [
+                    {
+                       "name": "detail=pushover",
+                       "selector":"u_pushover_bot",
+                       "field": lang.Enabled,
+                       "description": "Pushover is a cross-platform notification service.",
+                       "default": "0",
+                       "example": "",
+                       "fieldType": "select",
+                       "possible": [
+                           {
+                              "name": lang.No,
+                              "value": "0"
+                           },
+                           {
+                              "name": lang.Yes,
+                              "value": "1"
+                           }
+                       ]
+                    },
+                    {
+                       "name": "detail=discordbot_user",
+                       "fieldType": "password",
+                       "placeholder": "xxxxxxxxxxxxxxxxxx",
+                       "field": lang["User Key"],
+                       "form-group-class":"u_pushover_bot_input u_pushover_bot_1",
+                       "description": "",
+                       "default": "",
+                       "example": "",
+                       "possible": ""
+                    },
+                    {
+                       "name": "detail=pushover_token",
+                       "fieldType": "password",
+                       "placeholder": "XXXXXXXXXXXXXXXXXXXXXXXX.XXXXXXXXXXXXXXX_XXXXXXXXXXXXXXXXXX",
+                       "field": lang.Token,
+                       "form-group-class":"u_pushover_bot_input u_pushover_bot_1",
+                       "description": "",
+                       "default": "",
+                       "example": "",
+                       "possible": ""
+                   }
                 ]
              },
              "LDAP": {

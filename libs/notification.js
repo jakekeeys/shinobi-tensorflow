@@ -1,6 +1,17 @@
 var fs = require("fs")
 var Discord = require("discord.js")
 module.exports = function(s,config,lang){
+    s.notificationBlocks = []
+    var loadLib = function(lib){
+        var notificationsFolder = __dirname + '/notifications/'
+        var libraryPath = notificationsFolder + lib + '.js'
+        var loadedLib = require(libraryPath)(s,config,lang)
+        // if(lib !== 'loader'){
+        //     loadedLib.isFormGroupGroup = true
+        //     s.uploaderFields.push(loadedLib)
+        // }
+        return loadedLib
+    }
     //discord bot
     if(config.discordBot === true){
         try{
@@ -366,4 +377,6 @@ module.exports = function(s,config,lang){
     }catch(err){
         console.log(err)
     }
+    // Add Modules
+    loadLib('pushover')
 }
