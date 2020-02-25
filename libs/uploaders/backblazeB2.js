@@ -44,7 +44,7 @@ module.exports = function(s,config,lang){
                 }
                 var backblazeErr = function(err){
                     // console.log(err)
-                    s.userLog({mid:'$USER',ke:e.ke},{type:lang['Backblaze Error'],msg:err.data || err})
+                    s.userLog({mid:'$USER',ke:e.ke},{type:lang['Backblaze Error'],msg:err.stack || err.data || err})
                 }
                 var createB2Connection = function(){
                     var b2 = new B2({
