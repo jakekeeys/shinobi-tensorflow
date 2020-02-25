@@ -2,6 +2,7 @@
 const fs = require('fs')
 const exec = require('child_process').exec
 const spawn = require('child_process').spawn
+const isWindows = (process.platform === 'win32' || process.platform === 'win64')
 process.send = process.send || function () {};
 
 if(!process.argv[2] || !process.argv[3]){
@@ -30,7 +31,11 @@ process.on('uncaughtException', function (err) {
     writeToStderr(err.stack);
 });
 const exitAction = function(){
-    process.kill(-cameraProcess.pid)
+    if(isWindows){
+        spawn("taskkill", ["/pid", cameraProcess.pid, '/f', '/t'])
+    }else{
+        process.kill(-cameraProcess.pid)
+    }
 }
 process.on('SIGTERM', exitAction);
 process.on('SIGINT', exitAction);
