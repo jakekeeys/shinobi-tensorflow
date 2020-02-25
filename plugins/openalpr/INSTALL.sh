@@ -32,6 +32,10 @@ else
     echo "conf.json already exists..."
 fi
 echo "-----------------------------------"
+echo "Adding Random Plugin Key to Main Configuration"
+
+node $DIR/../../tools/modifyConfigurationForPlugin.js openalpr key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}')
+echo "-----------------------------------"
 echo "Installing Modules.."
 apt install node-pre-gyp -y
 npm install nopt npmlog rimraf semver -g
