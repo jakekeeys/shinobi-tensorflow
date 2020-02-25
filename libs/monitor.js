@@ -161,7 +161,11 @@ module.exports = function(s,config,lang){
                     })
                     var snapProcessTimeout = setTimeout(function(){
                         var pid = snapProcess.pid
-                        snapProcess.kill('SIGTERM')
+                        if(s.isWin){
+                            spawn("taskkill", ["/pid", pid, '/t'])
+                        }else{
+                            snapProcess.kill('SIGTERM')
+                        }
                         setTimeout(function(){
                             if(s.isWin === false){
                                 exec('kill -9 ' + pid,function(){
@@ -421,7 +425,7 @@ module.exports = function(s,config,lang){
                 s.coSpawnClose(e)
                 if(proc && proc.kill){
                     if(s.isWin){
-                        spawn("taskkill", ["/pid", proc.pid, '/f', '/t'])
+                        spawn("taskkill", ["/pid", proc.pid, '/t'])
                     }else{
                         proc.kill('SIGTERM')
                     }
