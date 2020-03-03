@@ -235,9 +235,9 @@ module.exports = function(s,config,lang){
         //motion counter
         if(filter.addToMotionCounter && filter.record){
             if(!s.group[d.ke].activeMonitors[d.id].detector_motion_count){
-                s.group[d.ke].activeMonitors[d.id].detector_motion_count=0
+                s.group[d.ke].activeMonitors[d.id].detector_motion_count = []
             }
-            s.group[d.ke].activeMonitors[d.id].detector_motion_count+=1
+            s.group[d.ke].activeMonitors[d.id].detector_motion_count.push(d)
         }
         if(filter.useLock){
             if(s.group[d.ke].activeMonitors[d.id].motion_lock){

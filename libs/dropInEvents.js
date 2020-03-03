@@ -52,7 +52,20 @@ module.exports = function(s,config,lang,app,io){
                         fs.createReadStream(filePath).pipe(writeStream)
                         writeStream.on('finish', () => {
                             s.insertCompletedVideo(s.group[monitorConfig.ke].rawMonitorConfigurations[monitorConfig.mid],{
-                                file : shinobiFilename
+                                file: shinobiFilename,
+                                events: [
+                                    {
+                                      id: mid,
+                                      ke: ke,
+                                      time: new Date(),
+                                      details: {
+                                          confidence: 100,
+                                          name: filename,
+                                          plug: "dropInEvent",
+                                          reason: "ftpServer"
+                                      }
+                                    }
+                                ],
                             },function(){
                             })
                         })

@@ -158,14 +158,15 @@ module.exports = function(s,config,lang){
                     var href = '/videos/'+e.ke+'/'+e.mid+'/'+k.filename
                     if(config.useUTC === true)href += '?isUTC=true';
                     s.txWithSubPermissions({
-                        f:'video_build_success',
-                        hrefNoAuth:href,
-                        filename:k.filename,
-                        mid:e.mid,
-                        ke:e.ke,
-                        time:k.startTime,
-                        size:k.filesize,
-                        end:k.endTime
+                        f: 'video_build_success',
+                        hrefNoAuth: href,
+                        filename: k.filename,
+                        mid: e.mid,
+                        ke: e.ke,
+                        time: k.startTime,
+                        size: k.filesize,
+                        end: k.endTime,
+                        events: k.events && k.events.length > 0 ? k.events : null
                     },'GRP_'+e.ke,'video_view')
                     //purge over max
                     s.purgeDiskForGroup(e)
