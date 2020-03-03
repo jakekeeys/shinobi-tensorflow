@@ -322,7 +322,7 @@ module.exports = function(s,config,lang,io){
             console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             console.log('https://licenses.shinobi.video/subscribe')
         }
-        if(config.subscriptionId){
+        if(config.subscriptionId && config.subscriptionId !== 'sub_XXXXXXXXXXXX'){
             var url = 'https://licenses.shinobi.video/subscribe/check?subscriptionId=' + config.subscriptionId
             request(url,{
                 method: 'GET',

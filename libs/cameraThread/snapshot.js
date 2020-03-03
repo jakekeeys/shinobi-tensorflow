@@ -13,7 +13,11 @@ process.on('uncaughtException', function (err) {
 });
 // [CTRL] + [C] = exit
 const exitAction = function(){
-    process.kill(-snapProcess.pid)
+    if(isWindows){
+        spawn("taskkill", ["/pid", snapProcess.pid, '/f', '/t'])
+    }else{
+        process.kill(-snapProcess.pid)
+    }
 }
 process.on('SIGTERM', exitAction);
 process.on('SIGINT', exitAction);

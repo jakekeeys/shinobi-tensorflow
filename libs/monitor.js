@@ -161,7 +161,11 @@ module.exports = function(s,config,lang){
                     })
                     var snapProcessTimeout = setTimeout(function(){
                         var pid = snapProcess.pid
-                        snapProcess.kill('SIGTERM')
+                        if(s.isWin){
+                            spawn("taskkill", ["/pid", pid, '/t'])
+                        }else{
+                            snapProcess.kill('SIGTERM')
+                        }
                         setTimeout(function(){
                             if(s.isWin === false){
                                 exec('kill -9 ' + pid,function(){
@@ -420,7 +424,11 @@ module.exports = function(s,config,lang){
             }else{
                 s.coSpawnClose(e)
                 if(proc && proc.kill){
-                    proc.kill('SIGTERM')
+                    if(s.isWin){
+                        spawn("taskkill", ["/pid", proc.pid, '/t'])
+                    }else{
+                        proc.kill('SIGTERM')
+                    }
                     setTimeout(function(){
                         try{
                             proc.kill()
@@ -1232,7 +1240,8 @@ module.exports = function(s,config,lang){
                 case /T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]./.test(d):
                     var filename = d.split('.')[0].split(' [')[0].trim()+'.'+e.ext
                     s.insertCompletedVideo(e,{
-                        file : filename
+                        file: filename,
+                        events: s.group[e.ke].activeMonitors[e.id].detector_motion_count
                     },function(err){
                         s.userLog(e,{type:lang['Video Finished'],msg:{filename:d}})
                         if(
@@ -1241,7 +1250,7 @@ module.exports = function(s,config,lang){
                             e.details &&
                             e.details.detector_record_method === 'del'&&
                             e.details.detector_delete_motionless_videos === '1'&&
-                            s.group[e.ke].activeMonitors[e.id].detector_motion_count === 0
+                            s.group[e.ke].activeMonitors[e.id].detector_motion_count.length === 0
                         ){
                             if(e.details.loglevel !== 'quiet'){
                                 s.userLog(e,{type:lang['Delete Motionless Video'],msg:filename})
@@ -1252,7 +1261,7 @@ module.exports = function(s,config,lang){
                                 id : e.id
                             })
                         }
-                        s.group[e.ke].activeMonitors[e.id].detector_motion_count = 0
+                        s.group[e.ke].activeMonitors[e.id].detector_motion_count = []
                     })
                     s.resetRecordingCheck(e)
                     return;
@@ -1308,11 +1317,6 @@ module.exports = function(s,config,lang){
         var doOnThisMachine = function(callback){
             createCameraFolders(e,function(){
                 activeMonitor.allowStdinWrite = false
-                s.txToDashcamUsers({
-                    f : 'disable_stream',
-                    ke : e.ke,
-                    mid : e.id
-                },e.ke)
                 if(e.details.detector_trigger === '1'){
                     clearTimeout(activeMonitor.motion_lock)
                     activeMonitor.motion_lock = setTimeout(function(){

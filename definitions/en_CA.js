@@ -2598,7 +2598,7 @@ module.exports = function(s,config,lang){
                               "name": "detail=detector_sensitivity",
                               "field": lang.Indifference,
                               "description": "This can mean multiple things depending on the detector used. Built-In Motion Detection defines this as \"Percentage Changed in View or Region\"",
-                              "default": "0.5",
+                              "default": "10",
                               "example": "10",
                               "possible": ""
                            },
@@ -3910,7 +3910,7 @@ module.exports = function(s,config,lang){
                           }
                        ],
                        "form-group-class": "u_discord_bot_input u_discord_bot_1"
-                    }
+                    },
                 ]
              },
              "Profile": {
