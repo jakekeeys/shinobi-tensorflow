@@ -55,6 +55,7 @@ module.exports = function(s,config,lang){
             .replace(/{{REGION_NAME}}/g,d.details.name)
             .replace(/{{SNAP_PATH}}/g,s.dir.streams+'/'+d.ke+'/'+d.id+'/s.jpg')
             .replace(/{{MONITOR_ID}}/g,d.id)
+            .replace(/{{MONITOR_NAME}}/g,s.group[d.ke].rawMonitorConfigurations[d.id].name)
             .replace(/{{GROUP_KEY}}/g,d.ke)
             .replace(/{{DETAILS}}/g,detailString)
         if(d.details.confidence){
