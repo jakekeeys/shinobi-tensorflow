@@ -1849,7 +1849,8 @@ module.exports = function(s,config,lang,app,io){
                                     var filename = s.formattedTime(time) + '.' + monitor.ext
                                     video.mv(s.getVideoDirectory(monitor) +  filename,function(){
                                         s.insertCompletedVideo(monitor,{
-                                            file : filename,
+                                            file: filename,
+                                            events: s.group[groupKey].activeMonitors[monitorId].detector_motion_count,
                                             endTime: req.body.endTime.indexOf('-') > -1 ? s.nameToTime(req.body.endTime) : parseInt(req.body.endTime) || null,
                                         },function(){
                                             response.ok = true

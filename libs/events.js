@@ -234,9 +234,6 @@ module.exports = function(s,config,lang){
         var eventTime = new Date()
         //motion counter
         if(filter.addToMotionCounter && filter.record){
-            if(!s.group[d.ke].activeMonitors[d.id].detector_motion_count){
-                s.group[d.ke].activeMonitors[d.id].detector_motion_count = []
-            }
             s.group[d.ke].activeMonitors[d.id].detector_motion_count.push(d)
         }
         if(filter.useLock){
@@ -417,7 +414,8 @@ module.exports = function(s,config,lang){
                         return
                     }
                     s.insertCompletedVideo(d.mon,{
-                        file : filename
+                        file : filename,
+                        events: s.group[d.ke].activeMonitors[d.id].detector_motion_count
                     })
                     s.userLog(d,{type:lang["Traditional Recording"],msg:lang["Detector Recording Complete"]})
                     s.userLog(d,{type:lang["Traditional Recording"],msg:lang["Clear Recorder Process"]})
