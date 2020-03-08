@@ -276,7 +276,11 @@ $.ccio.globalWebsocket=function(d,user){
             if($.ccio.op().jpeg_on===true){
                 $.ccio.init('jpegMode',$.ccio.mon[d.ke+d.id+user.auth_token]);
             }else{
-                var path = tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+                if(location.search === '?assemble=1'){
+                    var path = '/socket.io'
+                }else{
+                    var path = tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+                }
                 switch(d.d.stream_type){
                     case'jpeg':
                         $.ccio.init('jpegMode',$.ccio.mon[d.ke+d.id+user.auth_token]);
@@ -461,7 +465,22 @@ $.ccio.globalWebsocket=function(d,user){
                         d.fn()
                     break;
                     case'mjpeg':
-                        $('#monitor_live_'+d.id+user.auth_token+' .stream-element').attr('src',$.ccio.init('location',user)+user.auth_token+'/mjpeg/'+d.ke+'/'+d.id+'/?full=true')
+                        var liveStreamElement = $('#monitor_live_'+d.id+user.auth_token+' .stream-element')
+                        var setSource = function(){
+                            liveStreamElement.attr('src',$.ccio.init('location',user)+user.auth_token+'/mjpeg/'+d.ke+'/'+d.id)
+                            liveStreamElement.unbind('ready')
+                            liveStreamElement.ready(function(){
+                                setTimeout(function(){
+                                    liveStreamElement.contents().find("body").append('<style>img{width:100%;height:100%}</style>')
+                                },1000)
+                            })
+                        }
+                        setSource()
+                        liveStreamElement.on('error',function(err){
+                            setTimeout(function(){
+                                setSource()
+                            },4000)
+                        })
                     break;
                     case'h265':
                         var player = $.ccio.mon[d.ke+d.id+user.auth_token].h265Player
