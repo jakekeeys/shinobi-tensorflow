@@ -774,13 +774,32 @@ $.ccio.globalWebsocket=function(d,user){
         break;
     }
 }
-$user.ws=io(location.origin,{
-    path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
-});
+if(location.search === '?assemble=1'){
+    $user.ws=io(location.origin,{
+        path : '/socket.io'
+    });
+}else{
+    $user.ws=io(location.origin,{
+        path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+    });
+}
 $user.ws.on('connect',function (d){
     $(document).ready(function(e){
         $.ccio.init('id',$user);
-        $.ccio.cx({f:'init',ke:$user.ke,auth:$user.auth_token,uid:$user.uid})
+        if(location.search === '?assemble=1'){
+            $user.ws.emit('initUser',{
+              subscriptionId: subscriptionId,
+              user: {
+                ke: $user.ke,
+                mail: $user.mail,
+                auth_token: $user.auth_token,
+                details: $user.details,
+                uid: $user.uid,
+            }
+          })
+        }else{
+            $.ccio.cx({f:'init',ke:$user.ke,auth:$user.auth_token,uid:$user.uid})
+        }
         if($user.details&&$user.details.links){
             $.each($user.details.links,function(n,v){
                 if(v.secure==='0'){
