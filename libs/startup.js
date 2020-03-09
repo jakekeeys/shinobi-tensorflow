@@ -330,7 +330,7 @@ module.exports = function(s,config,lang,io){
             }, function(err,resp,body){
                 var json = s.parseJSON(body)
                 if(err)console.log(err,json)
-                var hasSubcribed = !!json.ok
+                var hasSubcribed = json && !!json.ok
                 config.userHasSubscribed = hasSubcribed
                 callback(hasSubcribed)
                 if(config.userHasSubscribed){
