@@ -4,6 +4,7 @@ var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
 var Mp4Frag = require('mp4frag');
 var onvif = require('node-onvif');
+var treekill = require('tree-kill');
 var request = require('request');
 var connectionTester = require('connection-tester')
 var SoundDetection = require('shinobi-sound-detection')
@@ -34,7 +35,6 @@ module.exports = function(s,config,lang){
         if(!s.group[e.ke].activeMonitors[e.mid].isStarted){s.group[e.ke].activeMonitors[e.mid].isStarted = false};
         if(s.group[e.ke].activeMonitors[e.mid].delete){clearTimeout(s.group[e.ke].activeMonitors[e.mid].delete)}
         if(!s.group[e.ke].rawMonitorConfigurations){s.group[e.ke].rawMonitorConfigurations={}}
-        if(!s.group[e.ke].activeMonitors[e.mid].detector_motion_count){s.group[e.ke].activeMonitors[e.mid].detector_motion_count = []}
         s.onMonitorInitExtensions.forEach(function(extender){
             extender(e)
         })
@@ -165,13 +165,11 @@ module.exports = function(s,config,lang){
                         if(s.isWin){
                             spawn("taskkill", ["/pid", pid, '/t'])
                         }else{
-                            snapProcess.kill('SIGTERM')
+                            process.kill(-pid, 'SIGTERM')
                         }
                         setTimeout(function(){
                             if(s.isWin === false){
-                                exec('kill -9 ' + pid,function(){
-
-                                })
+                                treekill(pid)
                             }else{
                                 snapProcess.kill()
                             }
