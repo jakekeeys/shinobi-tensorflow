@@ -32,6 +32,7 @@ module.exports = function(s,config,lang){
         // if(!s.group[e.ke].activeMonitors[e.mid].viewerConnection){s.group[e.ke].activeMonitors[e.mid].viewerConnection={}};
         // if(!s.group[e.ke].activeMonitors[e.mid].viewerConnectionCount){s.group[e.ke].activeMonitors[e.mid].viewerConnectionCount=0};
         if(!s.group[e.ke].activeMonitors[e.mid].parsedObjects){s.group[e.ke].activeMonitors[e.mid].parsedObjects={}};
+        if(!s.group[e.ke].activeMonitors[e.mid].detector_motion_count){s.group[e.ke].activeMonitors[e.mid].detector_motion_count=[]};
         if(!s.group[e.ke].activeMonitors[e.mid].isStarted){s.group[e.ke].activeMonitors[e.mid].isStarted = false};
         if(s.group[e.ke].activeMonitors[e.mid].delete){clearTimeout(s.group[e.ke].activeMonitors[e.mid].delete)}
         if(!s.group[e.ke].rawMonitorConfigurations){s.group[e.ke].rawMonitorConfigurations={}}
@@ -1081,10 +1082,12 @@ module.exports = function(s,config,lang){
                // s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].pipe(s.group[e.ke].activeMonitors[e.id].p2p).pipe(s.group[e.ke].activeMonitors[e.id].pamDiff)
                s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].on('data',function(buf){
                   try{
-                    var data = JSON.parse(buf)
-                    s.triggerEvent(data)
+                      var data = JSON.parse(buf)
+                      s.triggerEvent(data)
                   } catch(err){
-                      console.log(buf.toString())
+                      console.log(err)
+                      console.error('There was an error parsing a detection event')
+                      console.error(buf.toString())
                   }
                })
                 if(e.details.detector_use_detect_object === '1'){
