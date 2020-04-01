@@ -1802,7 +1802,7 @@ module.exports = function(s,config,lang){
                         {
                             "name": `5 ${lang.minutes}`,
                             "value": "300"
-                        }, 
+                        },
                         {
                             "name": `10 ${lang.minutes}`,
                             "value": "600"
