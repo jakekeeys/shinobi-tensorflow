@@ -1788,6 +1788,18 @@ module.exports = function(s,config,lang){
                       "fieldType": "select",
                       "possible": [
                         {
+                            "name": `.1 ${lang.minutes}`,
+                            "value": "6"
+                        },
+                        {
+                            "name": `.25 ${lang.minutes}`,
+                            "value": "15"
+                        },
+                        {
+                            "name": `.5 ${lang.minutes}`,
+                            "value": "30"
+                        },
+                        {
                             "name": `5 ${lang.minutes}`,
                             "value": "300"
                         },
@@ -2961,6 +2973,25 @@ module.exports = function(s,config,lang){
                             "default": "0",
                             "example": "",
                             "selector": "h_det_mot_fir",
+                            "fieldType": "select",
+                            "possible": [
+                               {
+                                  "name": lang.No,
+                                  "value": "0"
+                               },
+                               {
+                                  "name": lang.Yes,
+                                  "value": "1"
+                               }
+                            ]
+                        },
+			{
+                            "name": "detail=detector_always_record",
+                            "field": lang['Start recording on motion'],
+                            "description": "",
+                            "default": "0",
+                            "example": "",
+                            "selector": "h_det_alwy_rec",
                             "fieldType": "select",
                             "possible": [
                                {
