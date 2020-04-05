@@ -362,7 +362,7 @@ module.exports = function(s,config,lang){
         return items
     }
 
-    cameraDestroy = function(e,p){
+    const cameraDestroy = function(e,p){
         if(s.group[e.ke]&&s.group[e.ke].activeMonitors[e.id]&&s.group[e.ke].activeMonitors[e.id].spawn !== undefined){
             const activeMonitor = s.group[e.ke].activeMonitors[e.id];
             const proc = s.group[e.ke].activeMonitors[e.id].spawn;
@@ -712,7 +712,7 @@ module.exports = function(s,config,lang){
             s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
         }
     }
-    var createRecordingDirectory = function(e,callback){
+    const createRecordingDirectory = function(e,callback){
         var directory
         if(e.details && e.details.dir && e.details.dir !== '' && config.childNodes.mode !== 'child'){
             //addStorage choice
@@ -738,14 +738,14 @@ module.exports = function(s,config,lang){
             })
         }
     }
-    var createTimelapseDirectory = function(e,callback){
+    const createTimelapseDirectory = function(e,callback){
         var directory = s.getTimelapseFrameDirectory(e)
         fs.mkdir(directory,function(err){
             s.handleFolderError(err)
             callback(err,directory)
         })
     }
-    var createFileBinDirectory = function(e,callback){
+    const createFileBinDirectory = function(e,callback){
         var directory = s.dir.fileBin + e.ke + '/'
         fs.mkdir(directory,function(err){
             s.handleFolderError(err)
@@ -756,7 +756,7 @@ module.exports = function(s,config,lang){
             })
         })
     }
-    var createStreamDirectory = function(e,callback){
+    const createStreamDirectory = function(e,callback){
         callback = callback || function(){}
         var directory = s.dir.streams + e.ke + '/'
         fs.mkdir(directory,function(err){
@@ -779,7 +779,7 @@ module.exports = function(s,config,lang){
     // }catch(err){
     //
     // }
-    var createCameraFolders = function(e,callback){
+    const createCameraFolders = function(e,callback){
         //set the recording directory
         var activeMonitor = s.group[e.ke].activeMonitors[e.id]
         createStreamDirectory(e,function(err,directory){
@@ -824,7 +824,7 @@ module.exports = function(s,config,lang){
             }
         },60000 * cutoff * 1.3);
     }
-    resetStreamCheck = function(e){
+    const resetStreamCheck = function(e){
         clearTimeout(s.group[e.ke].activeMonitors[e.id].streamChecker)
         s.group[e.ke].activeMonitors[e.id].streamChecker = setTimeout(function(){
             if(s.group[e.ke].activeMonitors[e.id] && s.group[e.ke].activeMonitors[e.id].isStarted === true){
@@ -834,7 +834,7 @@ module.exports = function(s,config,lang){
             }
         },60000*1);
     }
-    cameraPullJpegStream = function(e){
+    const cameraPullJpegStream = function(e){
         if(!e.details.sfps||e.details.sfps===''){
             e.details.sfps = 1
         }
@@ -939,7 +939,7 @@ module.exports = function(s,config,lang){
     }
     s.onMonitorDetectorDataOutputAlone = onDetectorJpegOutputAlone
     s.onMonitorDetectorDataOutputSecondary = onDetectorJpegOutputSecondary
-    createCameraFfmpegProcess = function(e){
+    const createCameraFfmpegProcess = function(e){
         //launch ffmpeg (main)
         s.tx({
             f: 'monitor_starting',
@@ -997,7 +997,7 @@ module.exports = function(s,config,lang){
             },1000 * 60)
         }
     }
-    createCameraStreamHandlers = function(e){
+    const createCameraStreamHandlers = function(e){
         s.group[e.ke].activeMonitors[e.id].spawn.stdio[5].on('data',function(data){
             resetStreamCheck(e)
         })
@@ -1197,7 +1197,41 @@ module.exports = function(s,config,lang){
             e.details.stream_channels.forEach(createStreamEmitter)
         }
     }
-    cameraFilterFfmpegLog = function(e){
+    const catchNewSegmentNames = function(e){
+        var checkLog = function(d,x){return d.indexOf(x)>-1}
+        s.group[e.ke].activeMonitors[e.id].spawn.stdio[8].on('data',function(d){
+            d=d.toString();
+            if(/T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]./.test(d)){
+                var filename = d.split('.')[0].split(' [')[0].trim()+'.'+e.ext
+                s.insertCompletedVideo(e,{
+                    file: filename,
+                    events: s.group[e.ke].activeMonitors[e.id].detector_motion_count
+                },function(err){
+                    s.userLog(e,{type:lang['Video Finished'],msg:{filename:d}})
+                    if(
+                        e.details.detector === '1' &&
+                        s.group[e.ke].activeMonitors[e.id].isStarted === true &&
+                        e.details &&
+                        e.details.detector_record_method === 'del'&&
+                        e.details.detector_delete_motionless_videos === '1'&&
+                        s.group[e.ke].activeMonitors[e.id].detector_motion_count.length === 0
+                    ){
+                        if(e.details.loglevel !== 'quiet'){
+                            s.userLog(e,{type:lang['Delete Motionless Video'],msg:filename})
+                        }
+                        s.deleteVideo({
+                            filename : filename,
+                            ke : e.ke,
+                            id : e.id
+                        })
+                    }
+                    s.group[e.ke].activeMonitors[e.id].detector_motion_count = []
+                })
+                s.resetRecordingCheck(e)
+            }
+        })
+    }
+    const cameraFilterFfmpegLog = function(e){
         var checkLog = function(d,x){return d.indexOf(x)>-1}
         s.group[e.ke].activeMonitors[e.id].spawn.stderr.on('data',function(d){
             d=d.toString();
@@ -1238,35 +1272,6 @@ module.exports = function(s,config,lang){
                 case checkLog(d,'error dc'):
                 case checkLog(d,'No route to host'):
                     launchMonitorProcesses(e)
-                break;
-                case /T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]./.test(d):
-                    var filename = d.split('.')[0].split(' [')[0].trim()+'.'+e.ext
-                    s.insertCompletedVideo(e,{
-                        file: filename,
-                        events: s.group[e.ke].activeMonitors[e.id].detector_motion_count
-                    },function(err){
-                        s.userLog(e,{type:lang['Video Finished'],msg:{filename:d}})
-                        if(
-                            e.details.detector === '1' &&
-                            s.group[e.ke].activeMonitors[e.id].isStarted === true &&
-                            e.details &&
-                            e.details.detector_record_method === 'del'&&
-                            e.details.detector_delete_motionless_videos === '1'&&
-                            s.group[e.ke].activeMonitors[e.id].detector_motion_count.length === 0
-                        ){
-                            if(e.details.loglevel !== 'quiet'){
-                                s.userLog(e,{type:lang['Delete Motionless Video'],msg:filename})
-                            }
-                            s.deleteVideo({
-                                filename : filename,
-                                ke : e.ke,
-                                id : e.id
-                            })
-                        }
-                        s.group[e.ke].activeMonitors[e.id].detector_motion_count = []
-                    })
-                    s.resetRecordingCheck(e)
-                    return;
                 break;
             }
             s.userLog(e,{type:"FFMPEG STDERR",msg:d})
@@ -1421,6 +1426,7 @@ module.exports = function(s,config,lang){
                                 e.type === 'h264' ||
                                 e.type === 'local'
                             ){
+                                catchNewSegmentNames(e)
                                 cameraFilterFfmpegLog(e)
                             }
                             if(e.coProcessor === true){
