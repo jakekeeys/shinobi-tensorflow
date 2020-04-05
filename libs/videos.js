@@ -464,7 +464,7 @@ module.exports = function(s,config,lang){
                 createLocation = fileLocationMid
             }
         })
-        if(concatFiles.length > 30){
+        if(concatFiles.length > framesPerSecond){
             var commandTempLocation = `${s.dir.streams}${ke}/${mid}/mergeJpegs_${finalFileName}.sh`
             var finalMp4OutputLocation = `${s.dir.fileBin}${ke}/${mid}/${finalFileName}.mp4`
             if(!s.group[ke].activeMonitors[mid].buildingTimelapseVideo){
