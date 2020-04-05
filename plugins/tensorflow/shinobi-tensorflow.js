@@ -63,7 +63,25 @@ s.detectObject=function(buffer,d,tx,frameLocation){
                     time: resp.time
                 }
             })
-        }
+        } else if (d.mon.detector_pam === '1' && d.mon.detector_always_record === '1' ) {
+            var width = parseFloat(d.mon.detector_scale_y)
+            var height = parseFloat(d.mon.detector_scale_x)
+            tx({
+                f:'trigger',
+                id:d.id,
+                ke:d.ke,
+                details:{
+                    plug:config.plug,
+                    name:'motion_before_tensorflow',
+                    reason:'motion',
+                    imgHeight:width,
+                    imgWidth:height
+                }
+            })	
+	}
+    })
+    .catch(error => {
+        console.log(error)
     })
     // var detectStuff = function(frame,callback){
     //     detector.detect(frame)
