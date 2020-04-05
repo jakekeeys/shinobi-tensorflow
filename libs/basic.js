@@ -221,15 +221,20 @@ module.exports = function(s,config){
             break;
             case'delete':
                 if(!e){return false;}
-                if(s.isWin){
-                    exec('rd /s /q "' + e + '"',{detached: true},function(err){
-                        if(callback)callback(err)
-                    })
-                }else{
-                    exec('rm -rf '+e,{detached: true},function(err){
-                        if(callback)callback(err)
-                    })
-                }
+                fs.unlink(e,(err)=>{
+                    if(err){
+                        s.debugLog(err)
+                    }
+                    if(s.isWin){
+                        exec('rd /s /q "' + e + '"',{detached: true},function(err){
+                            if(callback)callback(err)
+                        })
+                    }else{
+                        exec('rm -rf '+e,{detached: true},function(err){
+                            if(callback)callback(err)
+                        })
+                    }
+                })
             break;
             case'deleteFolder':
                 if(!e){return false;}
