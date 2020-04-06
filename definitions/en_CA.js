@@ -2985,25 +2985,6 @@ module.exports = function(s,config,lang){
                                }
                             ]
                         },
-			{
-                            "name": "detail=detector_always_record",
-                            "field": lang['Start recording on motion'],
-                            "description": "",
-                            "default": "0",
-                            "example": "",
-                            "selector": "h_det_alwy_rec",
-                            "fieldType": "select",
-                            "possible": [
-                               {
-                                  "name": lang.No,
-                                  "value": "0"
-                               },
-                               {
-                                  "name": lang.Yes,
-                                  "value": "1"
-                               }
-                            ]
-                        },
                         {
                             hidden: true,
                            "name": "detail=detector_fps_object",

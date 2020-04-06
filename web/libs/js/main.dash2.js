@@ -3571,7 +3571,6 @@ $.aM.generateDefaultMonitorSettings=function(){
         "detector_scale_x": "640",
         "detector_scale_y": "480",
         "detector_use_motion": "1",
-	"detector_always_record":"0",
         "detector_use_detect_object": "0",
         "detector_frame": "0",
         "detector_sensitivity": "",
