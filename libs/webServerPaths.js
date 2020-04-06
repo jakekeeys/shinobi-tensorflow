@@ -555,6 +555,11 @@ module.exports = function(s,config,lang,app,io){
                         req.body.function = s.factorAuth[req.body.ke][req.body.id].function
                         req.resp = s.factorAuth[req.body.ke][req.body.id].info
                         checkRoute(s.factorAuth[req.body.ke][req.body.id].user)
+                        clearTimeout(s.factorAuth[req.body.ke][req.body.id].expireAuth)
+                        s.deleteFactorAuth({
+                            ke: req.body.ke,
+                            uid: req.body.id,
+                        })
                     }else{
                         var info = s.factorAuth[req.body.ke][req.body.id].info
                         renderPage(config.renderPaths.factorAuth,{$user:{
