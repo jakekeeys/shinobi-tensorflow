@@ -713,7 +713,7 @@ module.exports = function(s,config,lang,app,io){
             res.setHeader('Content-Type', 'application/json');
         }
 	var streamtype = false;
-	if(req.query.streamtype==='mjpeg'||req.query.streamtype==='hls'||req.query.streamtype==='h264'||req.query.streamtype==='flv'||req.query.streamtype==='mp4'){
+	if(req.query.streamtype){
             //streamtype specified
 	    streamtype = true;            
         }
@@ -728,7 +728,7 @@ module.exports = function(s,config,lang,app,io){
             if(req.query.id&&!req.params.id){
                 req.params.id = req.query.id;
             }
-            req.sql='SELECT * FROM Monitors WHERE mode!=? AND ke=?';req.ar=['stop',req.params.ke];
+            req.sql='SELECT * FROM Monitors WHERE mode!=? AND ke=?';req.ar=['stop',req.params.ke];	    	
             if(!req.params.id){
                 if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
                     try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
