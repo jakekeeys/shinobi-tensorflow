@@ -229,9 +229,15 @@ switch($user.lang){
         })
     break;
 }
-$.ccio.ws=io(location.origin,{
-    path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
-});
+if(location.search === '?assemble=1'){
+    $.ccio.ws=io(location.origin,{
+        path : '/socket.io'
+    });
+}else{
+    $.ccio.ws=io(location.origin,{
+        path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+    });
+}
 $.ccio.cx=function(x){return $.ccio.ws.emit('super',x)}
 $.ccio.ws.on('connect',function(d){
     $.ccio.cx({f:'init',mail:$user.mail,pass:$user.pass})

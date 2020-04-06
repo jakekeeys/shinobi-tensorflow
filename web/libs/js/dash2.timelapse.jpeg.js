@@ -137,19 +137,19 @@ $(document).ready(function(e){
             var selectedMonitor = $.timelapseJpeg.monitors.val()
             var generatorUrl = $.timelapseJpeg.pointer + $user.auth_token + '/timelapse/' + $user.ke + '/' + selectedMonitor
             $.getJSON(generatorUrl + '?' + queryString.join('&'),function(response){
+                _this.text(lang['Download'])
                 if(response.fileExists){
-                    _this.text(lang['Download'])
                     var downloadName = startDate + '_' + endDate + '_' + selectedMonitor + '.mp4'
                     var a = document.createElement('a')
                     a.href = generatorUrl + '?' + queryString.concat(['download="1"']).join('&')
                     a.download = downloadName
                     a.click()
                 }else{
-                    _this.html('&nbsp;<i class="fa fa-spinner fa-pulse"></i>&nbsp;')
-                    clearTimeout($.timelapseJpeg.downloadRecheckTimers[timerId])
-                    $.timelapseJpeg.downloadRecheckTimers[timerId] = setTimeout(function(){
-                        runDownloader()
-                    },5000)
+                    // _this.html('&nbsp;<i class="fa fa-spinner fa-pulse"></i>&nbsp;')
+                    // clearTimeout($.timelapseJpeg.downloadRecheckTimers[timerId])
+                    // $.timelapseJpeg.downloadRecheckTimers[timerId] = setTimeout(function(){
+                    //     runDownloader()
+                    // },5000)
                 }
             })
         }
