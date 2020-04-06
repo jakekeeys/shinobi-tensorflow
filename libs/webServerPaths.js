@@ -760,6 +760,9 @@ module.exports = function(s,config,lang,app,io){
                 r.forEach(function(v,n){
                     var buildStreamURL = function(channelRow,type,channelNumber){
                         var streamURL
+			if(req.query.streamtype && req.query.streamtype != type){
+				return
+			}
                         if(channelNumber){channelNumber = '/'+channelNumber}else{channelNumber=''}
                         switch(type){
                             case'mjpeg':
