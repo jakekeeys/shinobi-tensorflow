@@ -712,11 +712,6 @@ module.exports = function(s,config,lang,app,io){
         }else{
             res.setHeader('Content-Type', 'application/json');
         }
-	var streamtype = false;
-	if(req.query.streamtype){
-            //streamtype specified
-	    streamtype = true;            
-        }
         req.fn=function(user){
             if(user.permissions.get_monitors==="0"){
                 res.end(s.prettyPrint([]))
@@ -751,7 +746,7 @@ module.exports = function(s,config,lang,app,io){
                 r.forEach(function(v,n){
                     var buildStreamURL = function(channelRow,type,channelNumber){
                         var streamURL
-			if(streamtype===true && req.query.streamtype != type){
+			if(req.query.streamtype && req.query.streamtype != type){
 				return
 			}
                         if(channelNumber){channelNumber = '/'+channelNumber}else{channelNumber=''}
