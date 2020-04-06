@@ -712,6 +712,11 @@ module.exports = function(s,config,lang,app,io){
         }else{
             res.setHeader('Content-Type', 'application/json');
         }
+	var streamtype = false;
+	if(req.query.streamtype==='mjpeg'||req.query.streamtype==='hls'||req.query.streamtype==='h264'||req.query.streamtype==='flv'||req.query.streamtype==='mp4'){
+            //streamtype specified
+	    streamtype = true;            
+        }
         req.fn=function(user){
             if(user.permissions.get_monitors==="0"){
                 res.end(s.prettyPrint([]))
@@ -723,7 +728,7 @@ module.exports = function(s,config,lang,app,io){
             if(req.query.id&&!req.params.id){
                 req.params.id = req.query.id;
             }
-            req.sql='SELECT * FROM Monitors WHERE mode!=? AND ke=?';req.ar=['stop',req.params.ke];
+            req.sql='SELECT * FROM Monitors WHERE mode!=? AND ke=?';req.ar=['stop',req.params.ke];	    	
             if(!req.params.id){
                 if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
                     try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
@@ -746,6 +751,9 @@ module.exports = function(s,config,lang,app,io){
                 r.forEach(function(v,n){
                     var buildStreamURL = function(channelRow,type,channelNumber){
                         var streamURL
+			if(streamtype===true && req.query.streamtype != type){
+				return
+			}
                         if(channelNumber){channelNumber = '/'+channelNumber}else{channelNumber=''}
                         switch(type){
                             case'mjpeg':
