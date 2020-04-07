@@ -26,6 +26,10 @@ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 800 --slave /
 #create conf.json
 if [ ! -e "./conf.json" ]; then
     sudo cp conf.sample.json conf.json
+    #Generate a random Cron key for the config file
+    cronKey=$(head -c 1024 < /dev/urandom | sha256sum | awk '{print substr($1,1,29)}')
+    #Insert key into conf.json
+    sudo sed -i -e 's/change_this_to_something_very_random__just_anything_other_than_this/'"$cronKey"'/g' conf.json
 fi
 #create super.json
 if [ ! -e "./super.json" ]; then
