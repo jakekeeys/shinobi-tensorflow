@@ -42,9 +42,11 @@ $(document).ready(function() {
         updateDate()
     },1000 * 60 * 60);
     updateDate()
-    $('#clock').click(function(){
+    document.getElementById("clock").onclick = function(){
         timeHour.classList.toggle('twentyfour')
+        currentHour = null
         setAll()
+        currentHour = newDate.getHours()
         updateDate()
-    })
+    }
 });
