@@ -1,12 +1,4 @@
 #!/bin/bash
-
-readonly DIR=$(dirname $(realpath ${BASH_SOURCE[0]}))
-readonly CWD="$PWD"
-
-# run the whole script from the project directory
-PROJDIR=$(realpath "${DIR}/..")
-cd "${PROJDIR}"
-
 echo "========================================================="
 echo "==!! Shinobi : The Open Source CCTV and NVR Solution !!=="
 echo "========================================================="
@@ -63,9 +55,6 @@ fi
 if ! [ -x "$(command -v npm)" ]; then
     sudo apt install npm -y
 fi
-if ! [ -x "$(command -v dos2unix)" ]; then
-    sudo apt install dos2unix -y
-fi
 sudo apt install make zip -y
 if ! [ -x "$(command -v ffmpeg)" ]; then
     if [ "$getubuntuversion" = "16" ] || [ "$getubuntuversion" < "16" ]; then
@@ -121,12 +110,12 @@ echo "============="
 echo "Shinobi - Install PM2"
 sudo npm install pm2@3.0.0 -g
 echo "Shinobi - Finished"
-sudo chmod -R 755 ${PROJDIR}/INSTALL/shinobi
-touch ${PROJDIR}/INSTALL/installed.txt
-dos2unix ${PROJDIR}/INSTALL/shinobi
-ln -s ${PROJDIR}/INSTALL/shinobi /usr/bin/shinobi
+sudo chmod -R 755 .
+touch INSTALL/installed.txt
+dos2unix /home/Shinobi/INSTALL/shinobi
+ln -s /home/Shinobi/INSTALL/shinobi /usr/bin/shinobi
 echo "Shinobi - Randomizing cron key"
-node ${PROJDIR}/tools/modifyConfiguration.js addToConfig="{\"cron\":{\"key\":\"$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}')\"}}"
+node /home/Shinobi/tools/modifyConfiguration.js addToConfig="{\"cron\":{\"key\":\"$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}')\"}}"
 echo "Shinobi - Start Shinobi and set to start on boot?"
 echo "(y)es or (N)o"
 read -r startShinobi
