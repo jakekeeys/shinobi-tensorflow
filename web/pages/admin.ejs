@@ -11,7 +11,9 @@
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/font-awesome.min.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/fullcalendar.min.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/bootstrap-table.min.css">
-<link rel="stylesheet" href="<%-window.libURL%>libs/css/main.dash2.css">
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.basic.css">
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.modal.css">
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.forms.css">
 <% customAutoLoad.adminLibsCss.forEach(function(lib){ %>
     <link rel="stylesheet" href="<%-window.libURL%>libs/css/<%-lib%>">
 <% }) %>
@@ -102,9 +104,15 @@
 <script><% include ../libs/js/bootstrap-table.min.js %></script>
 <script>
 $.ccio={subs:{}};$.ls=localStorage;
-$.ccio.ws=io(location.origin,{
-    path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
-});
+if(location.search === '?assemble=1'){
+    $.ccio.ws=io(location.origin,{
+        path : '/socket.io'
+    });
+}else{
+    $.ccio.ws=io(location.origin,{
+        path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+    });
+}
 $.ccio.cx=function(x){if(!x.ke){x.ke=$user.ke;};if(!x.uid){x.uid=$user.uid;};return $.ccio.ws.emit('a',x)}
 $.ccio.ws.on('connect',function(d){
     $.ccio.cx({f:'init',auth:$user.auth_token});

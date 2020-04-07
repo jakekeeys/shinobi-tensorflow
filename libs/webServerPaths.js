@@ -354,10 +354,14 @@ module.exports = function(s,config,lang,app,io){
                                         s.factorAuth[r.ke][r.uid].function = req.body.function
                                         s.factorAuth[r.ke][r.uid].info = req.resp
                                         clearTimeout(s.factorAuth[r.ke][r.uid].expireAuth)
-                                        s.factorAuth[r.ke][r.uid].expireAuth=setTimeout(function(){
+                                        s.factorAuth[r.ke][r.uid].expireAuth = setTimeout(function(){
                                             s.deleteFactorAuth(r)
                                         },1000*60*15)
-                                        renderPage(config.renderPaths.factorAuth,{$user:req.resp,lang:r.lang})
+                                        renderPage(config.renderPaths.factorAuth,{$user:{
+                                            ke:r.ke,
+                                            uid:r.uid,
+                                            mail:r.mail
+                                        },lang:r.lang})
                                     }
                                     if(!s.factorAuth[r.ke]){s.factorAuth[r.ke]={}}
                                     if(!s.factorAuth[r.ke][r.uid]){
@@ -551,8 +555,18 @@ module.exports = function(s,config,lang,app,io){
                         req.body.function = s.factorAuth[req.body.ke][req.body.id].function
                         req.resp = s.factorAuth[req.body.ke][req.body.id].info
                         checkRoute(s.factorAuth[req.body.ke][req.body.id].user)
+                        clearTimeout(s.factorAuth[req.body.ke][req.body.id].expireAuth)
+                        s.deleteFactorAuth({
+                            ke: req.body.ke,
+                            uid: req.body.id,
+                        })
                     }else{
-                        renderPage(config.renderPaths.factorAuth,{$user:s.factorAuth[req.body.ke][req.body.id].info,lang:req.lang});
+                        var info = s.factorAuth[req.body.ke][req.body.id].info
+                        renderPage(config.renderPaths.factorAuth,{$user:{
+                            ke: info.ke,
+                            id: info.uid,
+                            mail: info.mail,
+                        },lang:req.lang});
                         res.end();
                     }
                 }else{
@@ -746,6 +760,9 @@ module.exports = function(s,config,lang,app,io){
                 r.forEach(function(v,n){
                     var buildStreamURL = function(channelRow,type,channelNumber){
                         var streamURL
+			if(req.query.streamtype && req.query.streamtype != type){
+				return
+			}
                         if(channelNumber){channelNumber = '/'+channelNumber}else{channelNumber=''}
                         switch(type){
                             case'mjpeg':
@@ -1827,7 +1844,6 @@ module.exports = function(s,config,lang,app,io){
                                         })
                                         fileStream.on('data',function(data){
                                             try{
-                                                console.log(data)
                                                 s.group[groupKey].activeMonitors[monitorId].spawn.stdin.write(data);
                                             }catch(err){
                                                 console.log(err)
@@ -1849,7 +1865,8 @@ module.exports = function(s,config,lang,app,io){
                                     var filename = s.formattedTime(time) + '.' + monitor.ext
                                     video.mv(s.getVideoDirectory(monitor) +  filename,function(){
                                         s.insertCompletedVideo(monitor,{
-                                            file : filename,
+                                            file: filename,
+                                            events: s.group[groupKey].activeMonitors[monitorId].detector_motion_count,
                                             endTime: req.body.endTime.indexOf('-') > -1 ? s.nameToTime(req.body.endTime) : parseInt(req.body.endTime) || null,
                                         },function(){
                                             response.ok = true

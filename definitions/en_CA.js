@@ -1788,6 +1788,18 @@ module.exports = function(s,config,lang){
                       "fieldType": "select",
                       "possible": [
                         {
+                            "name": `.1 ${lang.minutes}`,
+                            "value": "6"
+                        },
+                        {
+                            "name": `.25 ${lang.minutes}`,
+                            "value": "15"
+                        },
+                        {
+                            "name": `.5 ${lang.minutes}`,
+                            "value": "30"
+                        },
+                        {
                             "name": `5 ${lang.minutes}`,
                             "value": "300"
                         },

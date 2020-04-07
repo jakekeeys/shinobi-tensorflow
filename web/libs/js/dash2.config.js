@@ -3,7 +3,7 @@ $.ccio={
     mon:{},
     useUTC: <%- config.useUTC || false %>,
     definitions: <%-JSON.stringify(define)%>,
-    libURL: '<%-window.libURL%>',
+    libURL: location.search === '?assemble=1' ? location.pathname + '/' : '<%-window.libURL%>',
     isAppleDevice: navigator.userAgent.match(/(iPod|iPhone|iPad)/)||(navigator.userAgent.match(/(Safari)/)&&!navigator.userAgent.match('Chrome'))
 };
 <% if(config.DropboxAppKey){ %>

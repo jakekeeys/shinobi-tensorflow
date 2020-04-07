@@ -8,7 +8,15 @@ var onvif = require("node-onvif");
 module.exports = function(s,config,lang,io){
     s.clientSocketConnection = {}
     //send data to socket client function
-    s.tx = function(z,y,x){if(x){return x.broadcast.to(y).emit('f',z)};io.to(y).emit('f',z);}
+    s.tx = function(z,y,x){
+      s.onWebsocketMessageSendExtensions.forEach(function(extender){
+          extender(z,y,x)
+      })
+      if(x){
+        return x.broadcast.to(y).emit('f',z)
+      };
+      io.to(y).emit('f',z);
+    }
     s.txToDashcamUsers = function(data,groupKey){
         if(s.group[groupKey] && s.group[groupKey].dashcamUsers){
             Object.keys(s.group[groupKey].dashcamUsers).forEach(function(auth){

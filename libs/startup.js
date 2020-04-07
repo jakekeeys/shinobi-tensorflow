@@ -6,9 +6,11 @@ var crypto = require('crypto');
 var exec = require('child_process').exec;
 var execSync = require('child_process').execSync;
 module.exports = function(s,config,lang,io){
+    var checkedAdminUsers = {}
     console.log('FFmpeg version : '+s.ffmpegVersion)
     console.log('Node.js version : '+process.version)
     s.processReady = function(){
+        delete(checkedAdminUsers)
         s.systemLog(lang.startUpText5)
         s.onProcessReadyExtensions.forEach(function(extender){
             extender(true)
@@ -45,24 +47,34 @@ module.exports = function(s,config,lang,io){
             foundMonitors = monitors
             if(err){s.systemLog(err)}
             if(monitors && monitors[0]){
+                var didNotLoad = 0
                 var loadCompleted = 0
                 var orphanedVideosForMonitors = {}
                 var loadMonitor = function(monitor){
-                    setTimeout(function(){
-                        if(!orphanedVideosForMonitors[monitor.ke])orphanedVideosForMonitors[monitor.ke] = {}
-                        if(!orphanedVideosForMonitors[monitor.ke][monitor.mid])orphanedVideosForMonitors[monitor.ke][monitor.mid] = 0
-                        s.initiateMonitorObject(monitor)
-                        s.group[monitor.ke].rawMonitorConfigurations[monitor.mid] = monitor
-                        s.sendMonitorStatus({id:monitor.mid,ke:monitor.ke,status:'Stopped'});
-                        var monObj = Object.assign(monitor,{id : monitor.mid})
-                        s.camera(monitor.mode,monObj)
+                    const checkAnother = function(){
                         ++loadCompleted
                         if(monitors[loadCompleted]){
                             loadMonitor(monitors[loadCompleted])
                         }else{
+                            if(didNotLoad > 0)console.log(`${didNotLoad} Monitor${didNotLoad === 1 ? '' : 's'} not loaded because Admin user does not exist for them. It may have been deleted.`);
                             callback()
                         }
-                    },2000)
+                    }
+                    if(checkedAdminUsers[monitor.ke]){
+                        setTimeout(function(){
+                            if(!orphanedVideosForMonitors[monitor.ke])orphanedVideosForMonitors[monitor.ke] = {}
+                            if(!orphanedVideosForMonitors[monitor.ke][monitor.mid])orphanedVideosForMonitors[monitor.ke][monitor.mid] = 0
+                            s.initiateMonitorObject(monitor)
+                            s.group[monitor.ke].rawMonitorConfigurations[monitor.mid] = monitor
+                            s.sendMonitorStatus({id:monitor.mid,ke:monitor.ke,status:'Stopped'});
+                            var monObj = Object.assign(monitor,{id : monitor.mid})
+                            s.camera(monitor.mode,monObj)
+                            checkAnother()
+                        },1000)
+                    }else{
+                        ++didNotLoad
+                        checkAnother()
+                    }
                 }
                 loadMonitor(monitors[loadCompleted])
             }else{
@@ -274,6 +286,9 @@ module.exports = function(s,config,lang,io){
         //get current disk used for each isolated account (admin user) on startup
         s.sqlQuery('SELECT * FROM Users WHERE details NOT LIKE ?',['%"sub"%'],function(err,users){
             if(users && users[0]){
+                users.forEach(function(user){
+                    checkedAdminUsers[user.ke] = user
+                })
                 var loadLocalDiskUse = function(callback){
                     var count = users.length
                     var countFinished = 0
@@ -330,7 +345,7 @@ module.exports = function(s,config,lang,io){
             }, function(err,resp,body){
                 var json = s.parseJSON(body)
                 if(err)console.log(err,json)
-                var hasSubcribed = !!json.ok
+                var hasSubcribed = json && !!json.ok
                 config.userHasSubscribed = hasSubcribed
                 callback(hasSubcribed)
                 if(config.userHasSubscribed){

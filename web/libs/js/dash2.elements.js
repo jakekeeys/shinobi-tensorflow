@@ -221,50 +221,70 @@ $(document).ready(function(e){
         e.value = e.e.val()
         $.ccio.op(e.localStorage,e.value)
     })
-    .on('click','[system]',function(e){
-      var e={};
-        e.e=$(this),
-        e.a=e.e.attr('system');//the function
-        switch(e.a){
-            case'switch':
-                e.switch=e.e.attr('switch');
-                e.o=$.ccio.op().switches
-                if(!e.o){
-                    e.o={}
-                }
-                if(!e.o[e.switch]){
-                    e.o[e.switch]=0
-                }
-                if(e.o[e.switch]===1){
-                    e.o[e.switch]=0
+    .on('click','[system]',function(){
+        var e = {};
+        var el = $(this)
+        switch(el.attr('system')){
+            case'monitorMuteAudioSingle':
+                var monitorId = el.attr('mid')
+                var masterMute = $.ccio.op().switches.monitorMuteAudio
+                var monitorMutes = $.ccio.op().monitorMutes || {}
+                monitorMutes[monitorId] = monitorMutes[monitorId] === 1 ? 0 : 1
+                $.ccio.op('monitorMutes',monitorMutes)
+                var vidEl = $('.monitor_item[mid="' + monitorId + '"] video')[0]
+                if(monitorMutes[monitorId] === 1){
+                    vidEl.muted = true
                 }else{
-                    e.o[e.switch]=1
+                    if(masterMute !== 1){
+                        vidEl.muted = false
+                    }
                 }
-                $.ccio.op('switches',e.o)
-                switch(e.switch){
+                var volumeIcon = monitorMutes[monitorId] !== 1 ? 'volume-up' : 'volume-off'
+                $(this).find('i').removeClass('fa-volume-up fa-volume-off').addClass('fa-' + volumeIcon)
+            break;
+            case'switch':
+                var systemSwitch = el.attr('switch');
+                var theSwitches = $.ccio.op().switches
+                if(!theSwitches){
+                    theSwitches={}
+                }
+                if(!theSwitches[systemSwitch]){
+                    theSwitches[systemSwitch]=0
+                }
+                if(theSwitches[systemSwitch]===1){
+                    theSwitches[systemSwitch]=0
+                }else{
+                    theSwitches[systemSwitch]=1
+                }
+                $.ccio.op('switches',theSwitches)
+                switch(systemSwitch){
                     case'monitorOrder':
-                        if(e.o[e.switch] !== 1){
+                        if(theSwitches[systemSwitch] !== 1){
                             $('.monitor_item').attr('data-gs-auto-position','yes')
                         }else{
                             $('.monitor_item').attr('data-gs-auto-position','no')
                         }
                     break;
                     case'monitorMuteAudio':
-                        $('.monitor_item video').each(function(n,el){
-                            if(e.o[e.switch] === 1){
-                                el.muted = true
+                        var monitorMutes = $.ccio.op().monitorMutes || {}
+                        $('.monitor_item video').each(function(n,vidEl){
+                            var monitorId = $(this).parents('[mid]').attr('mid')
+                            if(theSwitches[systemSwitch] === 1){
+                                vidEl.muted = true
                             }else{
-                                el.muted = false
+                                if(monitorMutes[monitorId] !== 1){
+                                    vidEl.muted = false
+                                }
                             }
                         })
                     break;
                 }
-                switch(e.e.attr('type')){
+                switch(el.attr('type')){
                     case'text':
-                        if(e.o[e.switch]===1){
-                            e.e.addClass('text-success')
+                        if(theSwitches[systemSwitch]===1){
+                            el.addClass('text-success')
                         }else{
-                            e.e.removeClass('text-success')
+                            el.removeClass('text-success')
                         }
                     break;
                 }
@@ -697,7 +717,7 @@ $(document).ready(function(e){
                 if($("#monitor_live_"+e.mid+user.auth_token).length===0||$.ccio.mon[e.ke+e.mid+user.auth_token].watch!==1){
                     $.ccio.cx({f:'monitor',ff:'watch_on',id:e.mid},user)
                 }else{
-                    $("#main_canvas").animate({scrollTop:$("#monitor_live_"+e.mid+user.auth_token).offset().top-($('#main_header').height()+10)},500);
+                    $("#main_canvas").animate({scrollTop:$("#monitor_live_"+e.mid+user.auth_token).position().top},500);
                 }
             break;
             case'watch_off':

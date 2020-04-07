@@ -77,6 +77,7 @@ $.ccio.tm=function(x,d,z,user){
             delete(d.src);
         break;
         case 2://monitor stream
+            var monitorMutes = $.ccio.op().monitorMutes || {}
             try{k.d=JSON.parse(d.details);}catch(er){k.d=d.details;}
             k.mode=$.ccio.init('humanReadMode',d.mode);
             var dataTarget = '.monitor_item[mid=\''+d.mid+'\'][ke=\''+d.ke+'\'][auth=\''+user.auth_token+'\']';
@@ -93,6 +94,12 @@ $.ccio.tm=function(x,d,z,user){
             tmp+='</div>';
             tmp+='<div class="btn-group btn-group-sm">'//start of btn list
                 var buttons = {
+                   "Mute Audio": {
+                      "label": lang['Mute Audio'],
+                      "attr": "system=\"monitorMuteAudioSingle\" mid=\"" + d.mid + "\"",
+                      "class": "primary",
+                      "icon": monitorMutes[d.mid] !== 1 ? 'volume-up' : 'volume-off'
+                   },
                    "Snapshot": {
                       "label": lang['Snapshot'],
                       "attr": "monitor=\"snapshot\"",
@@ -266,9 +273,17 @@ $.ccio.tm=function(x,d,z,user){
                 }
             }
             k.e.append(tmp).find('.stream-element').resize();
+            var monitorMutes = $.ccio.op().monitorMutes || {}
             if($.ccio.op().switches.monitorMuteAudio === 1){
                 k.e.find('video').each(function(n,el){
                     el.muted = "muted"
+                })
+            }else{
+                $.each(monitorMutes,function(monitorId,choice){
+                    if(choice === 1){
+                        var vidEl = $('.monitor_item[mid="' + monitorId + '"] video')[0]
+                        vidEl.muted = true
+                    }
                 })
             }
         break;

@@ -493,7 +493,7 @@
    "Text Box Color": "Text Box Color",
    "Position X": "Position X",
    "Position Y": "Position Y",
-   "Image Location": "Image Location <small>Absolute Path or leave blank to use global</small>",
+   "Image Location": "Image Location",
    "Image Position": "Image Position",
    "Frame Rate": "Frame Rate",
    "Image Width": "Image Width",

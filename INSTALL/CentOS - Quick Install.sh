@@ -162,7 +162,7 @@ if [ ! -e "./conf.json" ]; then
     cp conf.sample.json conf.json
 
     #Generate a random Cron key for the config file
-    cronKey=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c${1:-30})
+    cronKey=$(head -c 1024 < /dev/urandom | sha256sum | awk '{print substr($1,1,29)}')
 	#Insert key into conf.json
     sed -i -e 's/change_this_to_something_very_random__just_anything_other_than_this/'"$cronKey"'/g' conf.json
 fi

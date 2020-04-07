@@ -276,7 +276,11 @@ $.ccio.globalWebsocket=function(d,user){
             if($.ccio.op().jpeg_on===true){
                 $.ccio.init('jpegMode',$.ccio.mon[d.ke+d.id+user.auth_token]);
             }else{
-                var path = tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+                if(location.search === '?assemble=1'){
+                    var path = '/socket.io'
+                }else{
+                    var path = tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+                }
                 switch(d.d.stream_type){
                     case'jpeg':
                         $.ccio.init('jpegMode',$.ccio.mon[d.ke+d.id+user.auth_token]);
@@ -297,6 +301,7 @@ $.ccio.globalWebsocket=function(d,user){
                                 uid: user.uid,
                                 ke: d.ke,
                                 id: d.id,
+                                subscriptionId: subscriptionId,
 //                                channel: channel
                             })
                             if(!$.ccio.mon[d.ke+d.id+user.auth_token].ctx||$.ccio.mon[d.ke+d.id+user.auth_token].ctx.length===0){
@@ -461,7 +466,22 @@ $.ccio.globalWebsocket=function(d,user){
                         d.fn()
                     break;
                     case'mjpeg':
-                        $('#monitor_live_'+d.id+user.auth_token+' .stream-element').attr('src',$.ccio.init('location',user)+user.auth_token+'/mjpeg/'+d.ke+'/'+d.id+'/?full=true')
+                        var liveStreamElement = $('#monitor_live_'+d.id+user.auth_token+' .stream-element')
+                        var setSource = function(){
+                            liveStreamElement.attr('src',$.ccio.init('location',user)+user.auth_token+'/mjpeg/'+d.ke+'/'+d.id)
+                            liveStreamElement.unbind('ready')
+                            liveStreamElement.ready(function(){
+                                setTimeout(function(){
+                                    liveStreamElement.contents().find("body").append('<style>img{width:100%;height:100%}</style>')
+                                },1000)
+                            })
+                        }
+                        setSource()
+                        liveStreamElement.on('error',function(err){
+                            setTimeout(function(){
+                                setSource()
+                            },4000)
+                        })
                     break;
                     case'h265':
                         var player = $.ccio.mon[d.ke+d.id+user.auth_token].h265Player
@@ -774,13 +794,32 @@ $.ccio.globalWebsocket=function(d,user){
         break;
     }
 }
-$user.ws=io(location.origin,{
-    path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
-});
+if(location.search === '?assemble=1'){
+    $user.ws=io(location.origin,{
+        path : '/socket.io'
+    });
+}else{
+    $user.ws=io(location.origin,{
+        path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+    });
+}
 $user.ws.on('connect',function (d){
     $(document).ready(function(e){
         $.ccio.init('id',$user);
-        $.ccio.cx({f:'init',ke:$user.ke,auth:$user.auth_token,uid:$user.uid})
+        if(location.search === '?assemble=1'){
+            $user.ws.emit('initUser',{
+              subscriptionId: subscriptionId,
+              user: {
+                ke: $user.ke,
+                mail: $user.mail,
+                auth_token: $user.auth_token,
+                details: $user.details,
+                uid: $user.uid,
+            }
+          })
+        }else{
+            $.ccio.cx({f:'init',ke:$user.ke,auth:$user.auth_token,uid:$user.uid})
+        }
         if($user.details&&$user.details.links){
             $.each($user.details.links,function(n,v){
                 if(v.secure==='0'){
