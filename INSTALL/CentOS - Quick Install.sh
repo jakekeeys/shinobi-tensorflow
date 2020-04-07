@@ -114,7 +114,7 @@ if [ "installdbserver" = "M" ] || [ "$installdbserver" = "" ]; then
 			read -s sqlpassconfirm
 
 			if [ "$sqlpass" == "$sqlpassconfirm" ]; then
-				mariadbPasswordConfirmation = "Y"
+				mariadbPasswordConfirmation="Y"
 			else
 				echo "Passwords did not match."
 				echo "Please try again."
