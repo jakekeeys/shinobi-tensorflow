@@ -41,8 +41,8 @@ if [ ! -e "./super.json" ]; then
 fi
 if ! [ -x "$(command -v ifconfig)" ]; then
     echo "============="
-    echo "Shinobi - Installing Net-Tools"
-    sudo apt install net-tools -y
+    echo "Shinobi - Installing Net-Tools and Dos2Unix"
+    sudo apt install net-tools dos2unix -y
 fi
 if ! [ -x "$(command -v node)" ]; then
     echo "============="
@@ -116,10 +116,10 @@ sudo npm install pm2@3.0.0 -g
 echo "Shinobi - Finished"
 sudo chmod -R 755 .
 touch INSTALL/installed.txt
-dos2unix /home/Shinobi/INSTALL/shinobi
-ln -s /home/Shinobi/INSTALL/shinobi /usr/bin/shinobi
+dos2unix INSTALL/shinobi
+ln -s `readlink -f INSTALL/shinobi` /usr/bin/shinobi
 echo "Shinobi - Randomizing cron key"
-node /home/Shinobi/tools/modifyConfiguration.js addToConfig="{\"cron\":{\"key\":\"$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}')\"}}"
+node tools/modifyConfiguration.js addToConfig="{\"cron\":{\"key\":\"$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}')\"}}"
 echo "Shinobi - Start Shinobi and set to start on boot?"
 echo "(y)es or (N)o"
 read -r startShinobi
