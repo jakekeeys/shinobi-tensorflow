@@ -1,6 +1,5 @@
 #!/bin/bash
 DIR=`dirname $0`
-THE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 if [ -x "$(command -v apt)" ]; then
     sudo apt update -y
 fi
@@ -17,7 +16,7 @@ if [ -d "/usr/local/cuda" ]; then
     echo "Do this if you installed NVIDIA Drivers, CUDA Toolkit, and CuDNN"
     echo "(y)es or (N)o"
     read usecuda
-    if [ "$usecuda" = "y" ] || [ "$usecuda" = "Y" ]; then
+    if [ "$usecuda" = "y" ] || [ "$usecuda" = "Y" ] || [ "$usecuda" = "YES" ] || [ "$usecuda" = "yes" ] || [ "$usecuda" = "Yes" ]; then
         INSTALL_WITH_GPU="1"
     fi
 fi
@@ -62,14 +61,23 @@ if [ ! -e "./conf.json" ]; then
 else
     echo "conf.json already exists..."
 fi
+if [ "$INSTALL_WITH_GPU" = "1" ]; then
+    echo "TensorFlow.js plugin will use GPU"
+    sed -i 's/"tfjsBuild":"cpu"/"tfjsBuild":"gpu"/g' conf.json
+    sed -i 's/"tfjsBuild":"gpuORcpu"/"tfjsBuild":"gpu"/g' conf.json
+else
+    echo "TensorFlow.js plugin will use CPU"
+    sed -i 's/"tfjsBuild":"gpu"/"tfjsBuild":"cpu"/g' conf.json
+    sed -i 's/"tfjsBuild":"gpuORcpu"/"tfjsBuild":"cpu"/g' conf.json
+fi
+
+echo "-----------------------------------"
+echo "Adding Random Plugin Key to Main Configuration"
+node $DIR/../../tools/modifyConfigurationForPlugin.js face key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}')
 echo "-----------------------------------"
 echo "Updating Node Package Manager"
 sudo npm install npm -g --unsafe-perm
-echo "-----------------------------------"
-echo "Adding Random Plugin Key to Main Configuration"
-node $THE_DIR/../../tools/modifyConfigurationForPlugin.js face key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}')
-echo "-----------------------------------"
-echo "Getting node-gyp to build C++ modules"
+echo "-----------------------------------"echo "Getting node-gyp to build C++ modules"
 if [ ! -x "$(command -v node-gyp)" ]; then
   # Check if Ubuntu
   if [ -x "$(command -v apt)" ]; then
@@ -87,6 +95,7 @@ echo "https://github.com/justadudewhohacks/face-api.js"
 sudo npm install --unsafe-perm --force
 echo "Getting C++ module : @tensorflow/tfjs-node@0.1.21"
 echo "https://github.com/tensorflow/tfjs-node"
+sudo npm install @tensorflow/tfjs-core@0.13.11 --unsafe-perm --force
 sudo npm install @tensorflow/tfjs-layers@0.8.5 --unsafe-perm --force
 sudo npm install @tensorflow/tfjs-converter@0.6.7 --unsafe-perm --force
 if [ "$INSTALL_WITH_GPU" = "1" ]; then
@@ -97,6 +106,7 @@ else
     sudo npm install @tensorflow/tfjs-node@0.1.21 --unsafe-perm --force
 fi
 sudo npm audit fix --force
+npm rebuild --unsafe-perm --force
 echo "-----------------------------------"
 echo "Start the plugin with pm2 like so :"
 echo "pm2 start shinobi-face.js"
