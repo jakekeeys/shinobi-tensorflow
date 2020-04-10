@@ -1,33 +1,25 @@
 #!/bin/bash
+DIR=`dirname $0`
 THE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-sudo apt update -y
+if [ -x "$(command -v apt)" ]; then
+    sudo apt update -y
+fi
+# Check if Cent OS
+if [ -x "$(command -v yum)" ]; then
+    sudo yum update -y
+fi
+INSTALL_WITH_GPU="0"
 echo "----------------------------------------"
 echo "-- Installing Face Plugin for Shinobi --"
 echo "----------------------------------------"
-if ! [ -x "$(command -v nvidia-smi)" ]; then
-    echo "You need to install NVIDIA Drivers to use this."
-    echo "inside the Shinobi directory run the following :"
-    echo "sh INSTALL/cuda.sh"
-    exit 1
-else
-    echo "NVIDIA Drivers found..."
-    echo "$(nvidia-smi |grep 'Driver Version')"
-fi
-echo "-----------------------------------"
-if [ ! -d "/usr/local/cuda-9.0" ]; then
-    echo "Tensorflow requires CUDA Toolkit 9.0"
-    echo "Installing CUDA Toolki 9.0..."
-    wget https://developer.nvidia.com/compute/cuda/9.0/Prod/local_installers/cuda-repo-ubuntu1704-9-0-local_9.0.176-1_amd64-deb -O cuda.deb
-    sudo dpkg -i cuda.deb
-    sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1704/x86_64/7fa2af80.pub
-    sudo apt update -y
-    sudo apt install cuda-toolkit-9-0 -y
-    wget https://cdn.shinobi.video/installers/libcudnn7_7.5.1.10-1+cuda9.0_amd64.deb -O cuda-dnn.deb
-    sudo dpkg -i cuda-dnn.deb
-    wget https://cdn.shinobi.video/installers/libcudnn7-dev_7.5.1.10-1+cuda9.0_amd64.deb -O cuda-dnn-dev.deb
-    sudo dpkg -i cuda-dnn-dev.deb
-else
-    echo "CUDA Toolkit 9.0 found..."
+if [ -d "/usr/local/cuda" ]; then
+    echo "Do you want to install the plugin with CUDA support?"
+    echo "Do this if you installed NVIDIA Drivers, CUDA Toolkit, and CuDNN"
+    echo "(y)es or (N)o"
+    read usecuda
+    if [ "$usecuda" = "y" ] || [ "$usecuda" = "Y" ]; then
+        INSTALL_WITH_GPU="1"
+    fi
 fi
 echo "-----------------------------------"
 if [ ! -d "./faces" ]; then
@@ -35,7 +27,16 @@ if [ ! -d "./faces" ]; then
 fi
 if [ ! -d "./weights" ]; then
     mkdir weights
-    sudo apt install wget -y
+    if [ ! -x "$(command -v wget)" ]; then
+        # Check if Ubuntu
+        if [ -x "$(command -v apt)" ]; then
+            sudo apt install wget -y
+        fi
+        # Check if Cent OS
+        if [ -x "$(command -v yum)" ]; then
+            sudo yum install wget -y
+        fi
+    fi
     cdnUrl="https://cdn.shinobi.video/weights/plugin-face-weights"
     wget -O weights/face_landmark_68_model-shard1 $cdnUrl/face_landmark_68_model-shard1
     wget -O weights/face_landmark_68_model-weights_manifest.json $cdnUrl/face_landmark_68_model-weights_manifest.json
@@ -61,19 +62,41 @@ if [ ! -e "./conf.json" ]; then
 else
     echo "conf.json already exists..."
 fi
-sudo npm i npm -g
+echo "-----------------------------------"
+echo "Updating Node Package Manager"
+sudo npm install npm -g --unsafe-perm
+echo "-----------------------------------"
+echo "Adding Random Plugin Key to Main Configuration"
+node $THE_DIR/../../tools/modifyConfigurationForPlugin.js face key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}')
 echo "-----------------------------------"
 echo "Getting node-gyp to build C++ modules"
-sudo npm install node-gyp -g --unsafe-perm
+if [ ! -x "$(command -v node-gyp)" ]; then
+  # Check if Ubuntu
+  if [ -x "$(command -v apt)" ]; then
+      sudo apt install node-gyp -y
+  fi
+  # Check if Cent OS
+  if [ -x "$(command -v yum)" ]; then
+      sudo yum install node-gyp -y
+  fi
+fi
+sudo npm install node-gyp -g --unsafe-perm --force
 echo "-----------------------------------"
 echo "Getting C++ module : face-api.js"
 echo "https://github.com/justadudewhohacks/face-api.js"
-sudo npm install --unsafe-perm
-echo "Getting C++ module : @tensorflow/tfjs-node-gpu@0.1.21"
+sudo npm install --unsafe-perm --force
+echo "Getting C++ module : @tensorflow/tfjs-node@0.1.21"
 echo "https://github.com/tensorflow/tfjs-node"
-sudo npm install @tensorflow/tfjs-node-gpu@0.1.21 --unsafe-perm
+sudo npm install @tensorflow/tfjs-layers@0.8.5 --unsafe-perm --force
+sudo npm install @tensorflow/tfjs-converter@0.6.7 --unsafe-perm --force
+if [ "$INSTALL_WITH_GPU" = "1" ]; then
+    echo "GPU version of tjfs : https://github.com/tensorflow/tfjs-node-gpu"
+    sudo npm install @tensorflow/tfjs-node-gpu@0.1.21 --unsafe-perm --force
+else
+    echo "CPU version of tjfs : https://github.com/tensorflow/tfjs-node"
+    sudo npm install @tensorflow/tfjs-node@0.1.21 --unsafe-perm --force
+fi
 sudo npm audit fix --force
-cd $THE_DIR
 echo "-----------------------------------"
 echo "Start the plugin with pm2 like so :"
 echo "pm2 start shinobi-face.js"
