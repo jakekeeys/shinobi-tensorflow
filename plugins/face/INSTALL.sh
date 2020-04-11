@@ -8,9 +8,26 @@ if [ -x "$(command -v yum)" ]; then
     sudo yum update -y
 fi
 INSTALL_WITH_GPU="0"
+INSTALL_FOR_ARM64="0"
+INSTALL_FOR_ARM="0"
+TFJS_SUFFIX=""
 echo "----------------------------------------"
 echo "-- Installing Face Plugin for Shinobi --"
 echo "----------------------------------------"
+echo "Are you Installing on an ARM CPU?"
+echo "like Jetson Nano or Raspberry Pi B+. Default is No."
+echo "(y)es or (N)o"
+read useArm
+if [ "$useArm" = "y" ] || [ "$useArm" = "Y" ] || [ "$useArm" = "YES" ] || [ "$useArm" = "yes" ] || [ "$useArm" = "Yes" ]; then
+    INSTALL_FOR_ARM="1"
+    echo "Are you Installing on an ARM64 CPU?"
+    echo "like Jetson Nano. Default is No (64/32-bit)"
+    echo "(y)es or (N)o"
+    read useArm64
+    if [ "$useArm64" = "y" ] || [ "$useArm64" = "Y" ] || [ "$useArm64" = "YES" ] || [ "$useArm64" = "yes" ] || [ "$useArm64" = "Yes" ]; then
+        INSTALL_FOR_ARM64="1"
+    fi
+fi
 if [ -d "/usr/local/cuda" ]; then
     echo "Do you want to install the plugin with CUDA support?"
     echo "Do this if you installed NVIDIA Drivers, CUDA Toolkit, and CuDNN"
@@ -18,6 +35,7 @@ if [ -d "/usr/local/cuda" ]; then
     read usecuda
     if [ "$usecuda" = "y" ] || [ "$usecuda" = "Y" ] || [ "$usecuda" = "YES" ] || [ "$usecuda" = "yes" ] || [ "$usecuda" = "Yes" ]; then
         INSTALL_WITH_GPU="1"
+        TFJS_SUFFIX="-gpu"
     fi
 fi
 echo "-----------------------------------"
@@ -82,14 +100,18 @@ if [ ! -x "$(command -v node-gyp)" ]; then
   # Check if Ubuntu
   if [ -x "$(command -v apt)" ]; then
       sudo apt install node-gyp -y
+      sudo apt-get install gcc g++ build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev -y
   fi
   # Check if Cent OS
   if [ -x "$(command -v yum)" ]; then
       sudo yum install node-gyp -y
+      sudo yum install gcc-c++ cairo-devel libjpeg-turbo-devel pango-devel giflib-devel -y
   fi
 fi
 sudo npm install node-gyp -g --unsafe-perm --force
 echo "-----------------------------------"
+npm uninstall @tensorflow/tfjs-node-gpu --unsafe-perm
+npm uninstall @tensorflow/tfjs-node --unsafe-perm
 echo "Getting C++ module : face-api.js"
 echo "https://github.com/justadudewhohacks/face-api.js"
 sudo npm install --unsafe-perm --force
@@ -100,13 +122,25 @@ sudo npm install @tensorflow/tfjs-layers@0.8.5 --unsafe-perm --force
 sudo npm install @tensorflow/tfjs-converter@0.6.7 --unsafe-perm --force
 if [ "$INSTALL_WITH_GPU" = "1" ]; then
     echo "GPU version of tjfs : https://github.com/tensorflow/tfjs-node-gpu"
-    sudo npm install @tensorflow/tfjs-node-gpu@0.1.21 --unsafe-perm --force
 else
     echo "CPU version of tjfs : https://github.com/tensorflow/tfjs-node"
-    sudo npm install @tensorflow/tfjs-node@0.1.21 --unsafe-perm --force
+fi
+sudo npm install @tensorflow/tfjs-node$TFJS_SUFFIX@0.1.21 --unsafe-perm --force
+if [ "$INSTALL_FOR_ARM" = "1" ]; then
+    cd node_modules/@tensorflow/tfjs-node$TFJS_SUFFIX
+    if [ "$INSTALL_FOR_ARM64" = "1" ]; then
+        echo "{
+  \"tf-lib\": \"https://cdn.shinobi.video/binaries/libtensorflow-gpu-linux-arm64-1.15.0.tar.gz\"
+}" > scripts/custom-binary.json
+    else
+        echo "{
+  \"tf-lib\": \"https://cdn.shinobi.video/binaries/libtensorflow-cpu-linux-arm-1.15.0.tar.gz\"
+}" > scripts/custom-binary.json
+    fi
+    npm install --unsafe-perm
+    cd ../../..
 fi
 sudo npm audit fix --force
-npm rebuild --unsafe-perm --force
 echo "-----------------------------------"
 echo "Start the plugin with pm2 like so :"
 echo "pm2 start shinobi-face.js"
