@@ -24,6 +24,26 @@ pm2 start shinobi-face.js
 
 Doing this will reveal options in the monitor configuration. Shinobi does not need to be restarted when a plugin is initiated or stopped.
 
+###Train Your Own Faces (Facial Recognition)
+
+> Currently this plugin loads faces upon plugin start
+
+1. Within the plugin's folder you will find a folder labelled `faces`. It will be empty.
+    ```
+    ls faces
+    ```
+2. Create a folder with your name and put a JPEG image of your face inside it. The JPEG images must be photos of only you. The file structure may look like this.
+    ```
+    faces/[HUMAN NAME]/[FILENAME]
+    faces/moe/1.jpg
+    faces/moe/2.jpg
+    faces/moe/3.jpg
+    ```
+3. Restart the plugin.
+    ```
+    pm2 restart shinobi-face
+    ```
+
 ## Run the plugin as a Host
 > The main app (Shinobi) will be the client and the plugin will be the host. The purpose of allowing this method is so that you can use one plugin for multiple Shinobi instances. Allowing you to easily manage connections without starting multiple processes.
 
@@ -71,21 +91,3 @@ Add the `plugins` array if you don't already have it. Add the following *object 
       }
   ],
 ```
-
-###Train Your Own Faces (Facial Recognition)
-
-1. Within the plugin's folder you will find a folder labelled `faces`. It will be empty.
-    ```
-    ls faces
-    ```
-2. Create a folder with your name and put a JPEG image of your face inside it. The JPEG images must be photos of only you. The file structure may look like this.
-    ```
-    faces/[HUMAN NAME]/[FILENAME]
-    faces/moe/1.jpg
-    faces/moe/2.jpg
-    faces/moe/3.jpg
-    ```
-3. Restart the plugin.
-    ```
-    pm2 restart shinobi-face
-    ```

@@ -1081,14 +1081,18 @@ module.exports = function(s,config,lang){
             if(e.details.detector_pam === '1'){
                // s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].pipe(s.group[e.ke].activeMonitors[e.id].p2p).pipe(s.group[e.ke].activeMonitors[e.id].pamDiff)
                s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].on('data',function(buf){
-                  try{
-                      var data = JSON.parse(buf)
-                      s.triggerEvent(data)
-                  } catch(err){
-                      console.log(err)
-                      console.error('There was an error parsing a detection event')
-                      console.error(buf.toString())
-                  }
+                   try{
+                       buf.toString().split('}{').forEach((object,n)=>{
+                           var theJson = object
+                           if(object.substr(object.length - 1) !== '}')theJson += '}'
+                           if(object.substr(0,1) !== '{')theJson = '{' + theJson
+                           var data = JSON.parse(theJson)
+                           s.triggerEvent(data)
+                       })
+                   }catch(err){
+                       console.log('There was an error parsing a detector event')
+                       console.log(err)
+                   }
                })
                 if(e.details.detector_use_detect_object === '1'){
                     s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){

@@ -429,32 +429,7 @@ $(document).ready(function(e){
                     return;
                 }
                 e.d=JSON.parse(e.mon.details);
-                e.width=$.aM.e.find('[detail="detector_scale_x"]');
-                e.height=$.aM.e.find('[detail="detector_scale_y"]');
-                e.d.cords=$.aM.e.find('[detail="cords"]').val();
-                if(e.width.val()===''){
-                    e.d.detector_scale_x=320;
-                    e.d.detector_scale_y=240;
-                    $.aM.e.find('[detail="detector_scale_x"]').val(e.d.detector_scale_x);
-                    $.aM.e.find('[detail="detector_scale_y"]').val(e.d.detector_scale_y);
-                }else{
-                    e.d.detector_scale_x=e.width.val();
-                    e.d.detector_scale_y=e.height.val();
-                }
-
-                $.zO.e.modal('show');
-                $.zO.o().attr('width',e.d.detector_scale_x).attr('height',e.d.detector_scale_y);
-                $.zO.c.css({width:e.d.detector_scale_x,height:e.d.detector_scale_y});
-                    if(e.d.cords&&(e.d.cords instanceof Object)===false){
-                    try{e.d.cords=JSON.parse(e.d.cords);}catch(er){}
-                }
-                if(!e.d.cords||e.d.cords===''){
-                    e.d.cords={
-                        red:{ name:"red",sensitivity:0.0005, max_sensitivity:"",color_threshold:"",points:[[0,0],[0,100],[100,0]] },
-                    }
-                }
-                $.zO.regionViewerDetails=e.d;
-                $.zO.initRegionList()
+                $.loadRegionEditor(e.d)
             break;
             case'detector_filters':
                 $.detectorFilters.e.modal('show');

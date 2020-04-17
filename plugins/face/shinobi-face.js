@@ -25,10 +25,24 @@ try{
 // Base Init />>
 // Face - Face Recognition Init >>
 var weightLocation = __dirname + '/weights'
-const tf = require('@tensorflow/tfjs')
-canvas = require('canvas')
+const canvas = require('canvas')
+var tfjsSuffix = ''
+switch(config.tfjsBuild){
+    case'gpu':
+        tfjsSuffix = '-gpu'
+    break;
+    case'cpu':
+    break;
+    default:
+        try{
+            require(`@tensorflow/tfjs-node`)
+        }catch(err){
+            console.log(err)
+        }
+    break;
+}
+var tf = require(`@tensorflow/tfjs-node${tfjsSuffix}`)
 faceapi = require('face-api.js')
-require('@tensorflow/tfjs-node-gpu')
 
 const { createCanvas, Image, ImageData, Canvas } = canvas
 faceapi.env.monkeyPatch({ Canvas, Image, ImageData })
@@ -37,48 +51,21 @@ s.monitorLock = {}
 // SsdMobilenetv1Options
 const minConfidence = 0.5
 
-// TinyFaceDetectorOptions
-const inputSize = 384
-const scoreThreshold = 0.5
-
-// MtcnnOptions
-const minFaceSize = 50
-const scaleFactor = 0.8
-
-function getFaceDetectorOptions(net) {
-  return net === faceapi.nets.ssdMobilenetv1
-    ? new faceapi.SsdMobilenetv1Options({ minConfidence })
-    : (net === faceapi.nets.tinyFaceDetector
-      ? new faceapi.TinyFaceDetectorOptions({ inputSize, scoreThreshold })
-      : new faceapi.MtcnnOptions({ minFaceSize, scaleFactor })
-    )
-}
 var addAwaitStatements = async function(){
     await faceapi.nets.ssdMobilenetv1.loadFromDisk(weightLocation)
-    // faceapi.nets.tinyFaceDetector.loadFromDisk(weightLocation)
     await faceapi.nets.faceLandmark68Net.loadFromDisk(weightLocation)
     await faceapi.nets.faceRecognitionNet.loadFromDisk(weightLocation)
     const faceDetectionNet = faceapi.nets.ssdMobilenetv1
-    // const faceDetectionNet = faceapi.nets.tinyFaceDetector
-    // const faceDetectionNet = faceapi.nets.mtcnn
-    var faceDetectionOptions = getFaceDetectorOptions(faceDetectionNet)
+    var faceDetectionOptions = new faceapi.SsdMobilenetv1Options({ minConfidence });
     if(!fs.existsSync('./faces')){
         fs.mkdirSync('./faces');
     }
     var faces = fs.readdirSync('./faces')
-    const labeledDescriptors = [
-  // new faceapi.LabeledFaceDescriptors(
-  //   'obama',
-  //   [descriptorObama1, descriptorObama2]
-  // ),
-  // new faceapi.LabeledFaceDescriptors(
-  //   'trump',
-  //   [descriptorTrump]
-  // )
-    ]
+    const labeledDescriptors = []
     var faceMatcher
     var facesLoaded = 0
     var startDetecting = function(){
+        console.log('Ready to Detect Faces')
         s.detectObject = function(buffer,d,tx,frameLocation){
             var detectStuff = function(frameBuffer,callback){
                 try{
