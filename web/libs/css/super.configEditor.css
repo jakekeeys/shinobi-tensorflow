@@ -1,6 +1,14 @@
 .better-json-editor h3 {
     font-size: initial;
-    margin: 0 10px 10px 0;
+    margin: 10px 10px 20px 0;
+}
+.better-json-editor h3 > span{
+    color: #bd4147;
+    background-color: #f8f9fa;
+    padding: 7px 10px;
+    border-radius: .25rem;
+    font-family: Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    margin-bottom: 5px;
 }
 .better-json-editor .well .well {
     margin-left:20px;
@@ -24,6 +32,9 @@
 .better-json-editor table {
     width: 100%!important;
     margin-bottom: 10px;
+    overflow: hidden;
+    border-radius: 5px;
+    background: #fbfbfb;
 }
 .better-json-editor .floating-json textarea.form-control {
     padding: 20px;
@@ -40,6 +51,9 @@
     outline: none;
 }
 .better-json-editor .row {
+    margin: 0;
+}
+.better-json-editor .row p:visible:last-child{
     margin: 0;
 }
 .better-json-editor .row > div {
