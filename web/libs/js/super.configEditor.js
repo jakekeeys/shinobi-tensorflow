@@ -280,7 +280,7 @@ $(document).ready(function(){
                     title: lang.Save,
                 },
                 clickCallback: function(){
-                    $.post('<%=originalURL%><%=config.webPaths.superApiPrefix%>'+$user.sessionKey+'/system/configure',{
+                    $.post(superApiPrefix + $user.sessionKey + '/system/configure',{
                         data: newConfiguration
                     },function(data){
                         // console.log(data)
