@@ -226,6 +226,7 @@
 <script src="<%-window.libURL%>libs/js/clock.js"></script>
 <script src="<%-window.libURL%>libs/js/poseidon.js"></script>
 <script src="<%-window.libURL%>libs/js/clusterPoints.js"></script>
+<script src="<%-window.libURL%>libs/js/Chart.js"></script>
 <script src="<%-window.libURL%>libs/js/daterangepicker.js"></script>
 <script src="<%-window.libURL%>libs/js/jquery.canvasAreaDraw.js"></script>
 <script src="<%-window.libURL%>libs/js/jquery-ui.min.js"></script>
@@ -246,4 +247,8 @@
     <script src="<%-window.libURL%>libs/js/<%-lib%>"></script>
 <% }) %>
 <% include blocks/help.ejs %>
-<% include blocks/powerVideo2.ejs %>
+<% if(config.useOldPowerVideo){ %>
+    <% include blocks/powerVideoOld.ejs %>
+<% }else{ %>
+    <% include blocks/powerVideo2.ejs %>
+<% } %>
