@@ -231,6 +231,10 @@ $(document).ready(function(){
           "type": "boolean",
           "default": false
         },
+        "wallClockTimestampAsDefault": {
+          "type": "boolean",
+          "default": true
+        },
         "defaultMjpeg": {
           "type": "string",
         },
