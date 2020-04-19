@@ -550,6 +550,7 @@ module.exports = function(s,config,lang){
                     }
                     if(d.d.edit_size == "0"){
                         d.form.details.size = d.d.size;
+                        d.form.details.addStorage = d.d.addStorage;
                     }
                     if(d.d.sub){
                         d.form.details.sub=d.d.sub;
