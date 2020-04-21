@@ -135,6 +135,9 @@ module.exports = function(__dirname,config){
                     s.group[d.ke][d.id].numberOfTriggers = 0
                     delete(s.group[d.ke][d.id].cords)
                     delete(s.group[d.ke][d.id].buffer)
+                    s.onCameraInitExtensions.forEach(function(extender){
+                        extender(d,cn,tx)
+                    })
                 }
             break;
             case'frameFromRam':
