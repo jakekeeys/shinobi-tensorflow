@@ -105,6 +105,10 @@ module.exports = function(__dirname,config){
     s.detectObject=function(buffer,d,tx,frameLocation){
         console.log('detectObject handler not set')
     }
+    s.onCameraInitExtensions = []
+    s.onCameraInit = function(extender){
+        s.onCameraInitExtensions.push(extender)
+    }
     s.onPluginEvent = []
     s.onPluginEventExtender = function(extender){
         s.onPluginEvent.push(extender)
@@ -148,7 +152,10 @@ module.exports = function(__dirname,config){
                         s.group[d.ke]={}
                     }
                     if(!s.group[d.ke][d.id]){
-                        s.group[d.ke][d.id]={}
+                        s.group[d.ke][d.id] = {}
+                        s.onCameraInitExtensions.forEach(function(extender){
+                            extender(d,cn,tx)
+                        })
                     }
                     if(!s.group[d.ke][d.id].buffer){
                       s.group[d.ke][d.id].buffer=[d.frame];
