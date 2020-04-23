@@ -2,6 +2,9 @@ var fileUpload = require('express-fileupload')
 module.exports = function(s,config,lang,app,io){
     if(!config.facesFolder)config.facesFolder = s.mainDirectory + '/plugins/face/faces/'
     config.facesFolder = s.checkCorrectPathEnding(config.facesFolder)
+    if(!fs.existsSync(config.facesFolder)){
+        fs.mkdirSync(config.facesFolder)
+    }
     const sendDataToConnectedSuperUsers = (data) => {
         return s.tx(data,'$')
     }
@@ -37,6 +40,7 @@ module.exports = function(s,config,lang,app,io){
     app.get(config.webPaths.superApiPrefix+':auth/faceManager/names', function (req,res){
         s.superAuth(req.params,function(resp){
             getFaceFolderNames((faces)=>{
+                res.setHeader('Content-Type', 'application/json')
                 res.end(s.prettyPrint({
                     ok: true,
                     faces: faces
@@ -47,6 +51,7 @@ module.exports = function(s,config,lang,app,io){
     app.get(config.webPaths.superApiPrefix+':auth/faceManager/images', function (req,res){
         s.superAuth(req.params,function(resp){
             getFaceImages((faces)=>{
+                res.setHeader('Content-Type', 'application/json')
                 res.end(s.prettyPrint({
                     ok: true,
                     faces: faces
@@ -71,6 +76,7 @@ module.exports = function(s,config,lang,app,io){
     })
     app.get(config.webPaths.superApiPrefix+':auth/faceManager/image/:name/:image/delete', function (req,res){
         s.superAuth(req.params,function(resp){
+            res.setHeader('Content-Type', 'application/json')
             const imagePath = config.facesFolder + req.params.name + '/' + req.params.image
             if(fs.existsSync(imagePath)){
                 fs.unlink(imagePath,() => {
@@ -79,7 +85,6 @@ module.exports = function(s,config,lang,app,io){
                         f:'faceManagerImageDeleted',
                         faceName: req.params.name,
                         fileName: req.params.image,
-                        url: fileLink
                     })
                 })
             }
