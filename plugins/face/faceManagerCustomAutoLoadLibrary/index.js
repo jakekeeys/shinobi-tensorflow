@@ -101,7 +101,7 @@ module.exports = function(s,config,lang,app,io){
     app.post(config.webPaths.superApiPrefix+':auth/faceManager/image/:name/:image', fileUpload(), function (req,res){
         s.superAuth(req.params,function(resp){
             res.setHeader('Content-Type', 'application/json')
-            var fileKeys = Object.keys(req.files)
+            var fileKeys = Object.keys(req.files || {})
             if(fileKeys.length == 0){
                 return res.status(400).send('No files were uploaded.')
             }
@@ -110,6 +110,9 @@ module.exports = function(s,config,lang,app,io){
                 var file = req.files[key]
                 if(file.name.indexOf('.jpg') > -1 || file.name.indexOf('.jpeg') > -1){
                     filesUploaded.push(file.name)
+                    if(!fs.existsSync(config.facesFolder + req.params.name)){
+                        fs.mkdirSync(config.facesFolder + req.params.name)
+                    }
                     file.mv(config.facesFolder + req.params.name + '/' + file.name, function(err) {
                         var fileLink = config.webPaths.superApiPrefix + req.params.auth + `/faceManager/image/${req.params.name}/${file.name}`
                         sendDataToConnectedSuperUsers({

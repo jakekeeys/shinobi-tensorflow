@@ -2,6 +2,7 @@ $(document).ready(function(){
     var faceManagerModal = $('#faceManager')
     var faceManagerImages = $('#faceManagerImages')
     var faceManagerForm = $('#faceManagerUploadForm')
+    var faceNameField = $('#faceNameField')
     var getFaceImages = function(callback){
         $.get(superApiPrefix + $user.sessionKey + '/faceManager/images',function(response){
             callback(response.faces || [])
@@ -66,7 +67,7 @@ $(document).ready(function(){
     })
     $('#fileinput').change(function(){
         for(var i = 0; i<this.files.length; i++){
-            var name = 'kaizo'
+            var name = faceNameField.val()
             var file =  this.files[i];
             if(!file)return;
             $.ajax({
@@ -87,7 +88,12 @@ $(document).ready(function(){
     $.ccio.ws.on('f',function(d){
         switch(d.f){
             case'faceManagerImageUploaded':
-                faceManagerImages.find(`.row[face="${d.faceName}"]`).prepend(getFaceImageHtml(d.faceName,d.fileName))
+                var row = faceManagerImages.find(`.row[face="${d.faceName}"]`)
+                if(row.length === 0){
+                    faceManagerImages.append(`<div class="row" face="${d.faceName}"></div>`)
+                    row = faceManagerImages.find(`.row[face="${d.faceName}"]`)
+                }
+                row.prepend(getFaceImageHtml(d.faceName,d.fileName))
                 prettySizeFaceImages()
             break;
             case'faceManagerImageDeleted':
