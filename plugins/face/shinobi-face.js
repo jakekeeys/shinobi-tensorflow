@@ -50,7 +50,6 @@ s.monitorLock = {}
 // Face - Face Recognition Init />>
 // SsdMobilenetv1Options
 const minConfidence = 0.5
-
 var addAwaitStatements = async function(){
     await faceapi.nets.ssdMobilenetv1.loadFromDisk(weightLocation)
     await faceapi.nets.faceLandmark68Net.loadFromDisk(weightLocation)
@@ -61,9 +60,66 @@ var addAwaitStatements = async function(){
         fs.mkdirSync('./faces');
     }
     var faces = fs.readdirSync('./faces')
-    const labeledDescriptors = []
+    var labeledDescriptors = []
     var faceMatcher
     var facesLoaded = 0
+    const createAllFaceDescriptors = (faces) => {
+        faceMatcher = null
+        facesLoaded = 0
+        labeledDescriptors = []
+        const checkComplete = () => {
+            ++facesLoaded
+            if(facesLoaded === faces.length){
+                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors)
+                startDetecting()
+            }
+        }
+        faces.forEach(function(personName){
+            var descriptors = []
+            var faceFolder = './faces/' + personName + '/'
+            var imageList = fs.readdirSync(faceFolder)
+            var foundImages = []
+            var faceResults = []
+            imageList.forEach(function(imageFile,number){
+                if(imageFile.indexOf('.jpg') > -1 || imageFile.indexOf('.jpeg') > -1){
+                    foundImages.push(imageFile)
+                }
+            })
+            if(foundImages.length === 0){
+                checkComplete(facesLoaded,faces.length)
+            }else{
+                console.log('Loading : ' + personName)
+                foundImages.forEach(function(imageFile,number){
+                    var image = new Image;
+                    image.onload = function() {
+                        faceapi
+                          .detectSingleFace(image)
+                          .withFaceLandmarks()
+                          .withFaceDescriptor()
+                          .then((singleResult) => {
+                              if (!singleResult) {
+                                  return console.log('no faces',imageFile)
+                              }
+                              descriptors.push(singleResult.descriptor)
+                              faceResults.push(singleResult)
+                              if(number === foundImages.length - 1){
+                                  console.log('Loaded : ' + personName)
+                                  labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(
+                                      personName,
+                                      descriptors
+                                  ))
+                                  checkComplete()
+                              }
+                          })
+                          .catch((error) => {
+                              console.log(error)
+                          })
+                    }
+                    image.src = fs.readFileSync(faceFolder + imageFile)
+                })
+            }
+        })
+    }
     var startDetecting = function(){
         console.log('Ready to Detect Faces')
         s.detectObject = function(buffer,d,tx,frameLocation){
@@ -154,60 +210,33 @@ var addAwaitStatements = async function(){
             }
         }
     }
-    var checkComplete = function(){
-        ++facesLoaded
-        if(facesLoaded === faces.length){
-            faceMatcher = new faceapi.FaceMatcher(labeledDescriptors)
-            startDetecting()
-        }
-    }
     if(faces.length === 0){
         startDetecting()
     }else{
-        faces.forEach(function(personName){
-            var descriptors = []
-            var faceFolder = './faces/' + personName + '/'
-            var imageList = fs.readdirSync(faceFolder)
-            var foundImages = []
-            var faceResults = []
-            imageList.forEach(function(imageFile,number){
-                if(imageFile.indexOf('.jpg') > -1 || imageFile.indexOf('.jpeg') > -1){
-                    foundImages.push(imageFile)
-                }
-            })
-            if(foundImages.length === 0){
-                checkComplete(facesLoaded,faces.length)
-            }else{
-                foundImages.forEach(function(imageFile,number){
-                    var image = new Image;
-                    image.onload = function() {
-                        faceapi
-                          .detectSingleFace(image)
-                          .withFaceLandmarks()
-                          .withFaceDescriptor()
-                          .then((singleResult) => {
-                              if (!singleResult) {
-                                  return console.log('no faces',imageFile)
-                              }
-                              descriptors.push(singleResult.descriptor)
-                              faceResults.push(singleResult)
-                              if(number === foundImages.length - 1){
-                                  console.log('Loaded : ' + personName)
-                                  labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(
-                                      personName,
-                                      descriptors
-                                  ))
-                                  checkComplete()
-                              }
-                          })
-                          .catch((error) => {
-                              console.log(error)
-                          })
-                    }
-                    image.src = fs.readFileSync(faceFolder + imageFile)
-                })
-            }
+        createAllFaceDescriptors(faces)
+    }
+    // add websocket handlers
+    const io = s.getWebsocket()
+    var faceDescriptorRefreshTimeout
+    const onSocketEvent = (d) => {
+        switch(d.f){
+            case'recompileFaceDescriptors':
+                if(faceDescriptorRefreshTimeout)console.log('Cancelling previous recompilation request...')
+                console.log('Recompiling Face Descriptors...')
+                clearTimeout(faceDescriptorRefreshTimeout)
+                faceDescriptorRefreshTimeout = setTimeout(()=>{
+                    delete(faceDescriptorRefreshTimeout)
+                    createAllFaceDescriptors(d.faces)
+                },10000)
+            break;
+        }
+    }
+    if(config.mode === 'host'){
+        io.on('connection', function (cn) {
+            cn.on('f',onSocketEvent)
         })
+    }else{
+        io.on('f',onSocketEvent)
     }
 }
 addAwaitStatements()

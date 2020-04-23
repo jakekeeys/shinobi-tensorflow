@@ -96,6 +96,12 @@ module.exports = function(s,config,lang,app,io){
             res.end(s.prettyPrint({
                 ok: true,
             }))
+            getFaceFolderNames((faces) => {
+                s.sendToAllDetectors({
+                    f: 'recompileFaceDescriptors',
+                    faces: faces
+                })
+            })
         },res,req)
     })
     app.post(config.webPaths.superApiPrefix+':auth/faceManager/image/:name/:image', fileUpload(), function (req,res){
@@ -129,6 +135,12 @@ module.exports = function(s,config,lang,app,io){
                 filesUploaded: filesUploaded
             }
             res.send(s.prettyPrint(response))
+            getFaceFolderNames((faces) => {
+                s.sendToAllDetectors({
+                    f: 'recompileFaceDescriptors',
+                    faces: faces
+                })
+            })
         },res,req)
     })
 }

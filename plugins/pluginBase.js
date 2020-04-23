@@ -290,7 +290,9 @@ module.exports = function(__dirname,config){
         }
         var io = createConnection()
     }
-
+    s.getWebsocket = function(){
+        return io
+    }
     s.createPythonScriptDaemon = function(){
         if(!config.pythonScript){config.pythonScript=__dirname+'/pumpkin.py'}
         if(!config.pythonPort){config.pythonPort=7990}
