@@ -15,7 +15,7 @@ echo "----------------------------------------"
 echo "-- Installing Face Plugin for Shinobi --"
 echo "----------------------------------------"
 echo "Are you Installing on an ARM CPU?"
-echo "like Jetson Nano or Raspberry Pi B+. Default is No."
+echo "like Jetson Nano or Raspberry Pi Model 3 B+. Default is No."
 echo "(y)es or (N)o"
 read useArm
 if [ "$useArm" = "y" ] || [ "$useArm" = "Y" ] || [ "$useArm" = "YES" ] || [ "$useArm" = "yes" ] || [ "$useArm" = "Yes" ]; then
@@ -78,6 +78,12 @@ if [ ! -e "./conf.json" ]; then
     sudo cp conf.sample.json conf.json
 else
     echo "conf.json already exists..."
+fi
+if [ ! -e "$DIR/../../libs/customAutoLoad/faceManagerCustomAutoLoadLibrary" ]; then
+    echo "Installing Face Manager customAutoLoad Module..."
+    sudo cp -r $DIR/faceManagerCustomAutoLoadLibrary $DIR/../../libs/customAutoLoad/faceManagerCustomAutoLoadLibrary
+else
+    echo "Face Manager customAutoLoad Module already installed..."
 fi
 if [ "$INSTALL_WITH_GPU" = "1" ]; then
     echo "TensorFlow.js plugin will use GPU"
