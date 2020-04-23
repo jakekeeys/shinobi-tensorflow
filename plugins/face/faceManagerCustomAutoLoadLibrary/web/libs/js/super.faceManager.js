@@ -13,7 +13,7 @@ $(document).ready(function(){
         })
     }
     var getFaceImageHtml = function(name,image){
-        return `<div class="col-3 face-image" face="${name}" image="${image}" style="background-image:url(${superApiPrefix}${$user.sessionKey}/faceManager/image/${name}/${image})">
+        return `<div class="col-3 face-image" face="${name}" image="${image}" style="background-image:url('${superApiPrefix}${$user.sessionKey}/faceManager/image/${name}/${image}')">
            <div class="controls">
                <a href="#" class="btn btn-sm btn-danger delete"><i class="fa fa-trash-o"></i></a>
            </div>
@@ -41,6 +41,9 @@ $(document).ready(function(){
     faceManagerModal.on('shown.bs.modal',function(){
         drawFaceImages()
     })
+    $(window).resize(function(){
+        prettySizeFaceImages()
+    })
     faceManagerImages.on('click','.delete',function(e){
         e.preventDefault()
         var el = $(this).parents('.face-image')
@@ -65,7 +68,15 @@ $(document).ready(function(){
         for(var i = 0; i<this.files.length; i++){
             var name = 'kaizo'
             var file =  this.files[i];
-            $.post(superApiPrefix + $user.sessionKey + '/faceManager/image/' + name + '/' + file.name,faceManagerForm.serializeObject(),function(data){
+            if(!file)return;
+            $.ajax({
+              url: superApiPrefix + $user.sessionKey + '/faceManager/image/' + name + '/' + file.name,
+              type: 'POST',
+              data: new FormData(faceManagerForm[0]),
+              cache: false,
+              contentType: false,
+              processData: false,
+            },function(data){
                 console.log(data)
             })
         }
@@ -76,7 +87,8 @@ $(document).ready(function(){
     $.ccio.ws.on('f',function(d){
         switch(d.f){
             case'faceManagerImageUploaded':
-                faceManagerImages.append(getFaceImageHtml(d.faceName,d.fileName))
+                faceManagerImages.find(`.row[face="${d.faceName}"]`).prepend(getFaceImageHtml(d.faceName,d.fileName))
+                prettySizeFaceImages()
             break;
             case'faceManagerImageDeleted':
                 $(`.face-image[face="${d.faceName}"][image="${d.fileName}"]`).remove()
