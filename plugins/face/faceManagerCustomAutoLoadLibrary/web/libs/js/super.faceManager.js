@@ -14,9 +14,17 @@ $(document).ready(function(){
         })
     }
     var getFaceImageHtml = function(name,image){
-        return `<div class="col-3 face-image" face="${name}" image="${image}" style="background-image:url('${superApiPrefix}${$user.sessionKey}/faceManager/image/${name}/${image}')">
-           <div class="controls">
-               <a href="#" class="btn btn-sm btn-danger delete"><i class="fa fa-trash-o"></i></a>
+        return `<div class="col-3 p-0 face-image" face="${name}" image="${image}" style="background-image:url('${superApiPrefix}${$user.sessionKey}/faceManager/image/${name}/${image}')">
+           <div class="controls row m-0">
+               <div class="col p-0">
+                    <a href="#" class="btn btn-sm btn-danger m-0 delete"><i class="fa fa-trash-o"></i></a>
+               </div>
+               <div class="col p-0 text-right">
+                    <span class="badge badge-sm bg-dark pull-right">${name}</span>
+               </div>
+           </div>
+           <div class="controls-bottom">
+               <span class="badge badge-sm bg-dark">${image}</span>
            </div>
        </div>`
     }

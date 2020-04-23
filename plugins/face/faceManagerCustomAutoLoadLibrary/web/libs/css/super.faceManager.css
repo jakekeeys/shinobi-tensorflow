@@ -3,10 +3,23 @@
     background-position: center;
     border-radius: 5px;
 }
-#faceManagerImages .face-image .controls {
+#faceManagerImages .face-image .controls,
+#faceManagerImages .face-image .controls-bottom {
     position: absolute;
     width: 100%;
     top: 0;
     left: 0;
     padding: 5px;
+    line-height: 1;
+}
+#faceManagerImages .face-image .controls-bottom {
+    top: initial;
+    bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#faceManagerImages .face-image:hover .controls .badge,
+#faceManagerImages .face-image:hover .controls-bottom .badge{
+    opacity: 0.1
 }
