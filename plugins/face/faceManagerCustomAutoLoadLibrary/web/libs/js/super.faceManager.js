@@ -1,27 +1,27 @@
 $(document).ready(function(){
     var faceManagerModal = $('#faceManager')
     var faceManagerImages = $('#faceManagerImages')
+    var faceManagerForm = $('#faceManagerUploadForm')
     var getFaceImages = function(callback){
-        $.get(superApiPrefix + $user.sessionKey + '/faceManager/images',function(faces){
-            callback(faces)
+        $.get(superApiPrefix + $user.sessionKey + '/faceManager/images',function(response){
+            callback(response.faces || [])
         })
     }
     var deleteFaceImage = function(name,image,callback){
-        $.get(superApiPrefix + $user.sessionKey + '/faceManager/image/' + name + '/' + image,function(response){
+        $.get(superApiPrefix + $user.sessionKey + '/faceManager/image/' + name + '/' + image + '/delete',function(response){
             callback(response)
         })
     }
     var getFaceImageHtml = function(name,image){
-        return `<div class="col-3 face-image" face="${name}" image="${image}">
+        return `<div class="col-3 face-image" face="${name}" image="${image}" style="background-image:url(${superApiPrefix}${$user.sessionKey}/faceManager/image/${name}/${image})">
            <div class="controls">
-               <a class="btn btn-sm btn-default delete"><i class="fa fa-trash-o"></i></a>
+               <a href="#" class="btn btn-sm btn-danger delete"><i class="fa fa-trash-o"></i></a>
            </div>
-           <img src="${superApiPrefix}/faceManager/image/${name}/${image}">
        </div>`
     }
     var drawFaceImages = function(){
-        var html = ''
         getFaceImages(function(faces){
+            var html = ''
             $.each(faces,function(name,images){
                 html += `<div class="row" face="${name}">`
                 $.each(images,function(n,image){
@@ -29,8 +29,9 @@ $(document).ready(function(){
                 })
                 html += `</div>`
             })
+            faceManagerImages.html(html)
+            prettySizeFaceImages()
         })
-        faceManagerImages.html(html)
     }
     var prettySizeFaceImages = function(){
         var faceImagesRendered = faceManagerImages.find('.face-image')
@@ -40,12 +41,13 @@ $(document).ready(function(){
     faceManagerModal.on('shown.bs.modal',function(){
         drawFaceImages()
     })
-    faceManagerImages.on('click','.delete',function(){
+    faceManagerImages.on('click','.delete',function(e){
+        e.preventDefault()
         var el = $(this).parents('.face-image')
         var faceName = el.attr('face')
         var faceImage = el.attr('image')
         $.confirm.create({
-            title: lang['Delete Image'],
+            title: lang.deleteImage,
             body: lang.deleteImageText,
             clickOptions: {
                 class: 'btn-danger',
@@ -57,6 +59,16 @@ $(document).ready(function(){
                 })
             }
         })
+        return false;
+    })
+    $('#fileinput').change(function(){
+        for(var i = 0; i<this.files.length; i++){
+            var name = 'kaizo'
+            var file =  this.files[i];
+            $.post(superApiPrefix + $user.sessionKey + '/faceManager/image/' + name + '/' + file.name,faceManagerForm.serializeObject(),function(data){
+                console.log(data)
+            })
+        }
     })
     $('#tablist').append('<li class="nav-item">\
         <a class="nav-link" data-toggle="modal" data-target="#faceManager">' + lang.faceManager + '</a>\

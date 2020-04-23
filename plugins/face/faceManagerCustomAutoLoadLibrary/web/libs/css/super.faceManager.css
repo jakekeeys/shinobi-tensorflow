@@ -1,4 +1,8 @@
-#faceManagerImages .face-image img {width:100%}
+#faceManagerImages .face-image {
+    background-size: cover;
+    background-position: center;
+    border-radius: 5px;
+}
 #faceManagerImages .face-image .controls {
     position: absolute;
     width: 100%;

@@ -1,3 +1,4 @@
+var fs = require('fs')
 var fileUpload = require('express-fileupload')
 module.exports = function(s,config,lang,app,io){
     if(!config.facesFolder)config.facesFolder = s.mainDirectory + '/plugins/face/faces/'
@@ -27,10 +28,14 @@ module.exports = function(s,config,lang,app,io){
                 var stats = fs.statSync(config.facesFolder + name)
                 if(stats.isDirectory()){
                     faces[name] = []
-                    fs.readdir(config.facesFolder + name,(err,images)=>{
-                        images.forEach((image)=>{
-                            faces[name].push(image)
-                        })
+                    var images
+                    try{
+                        images = fs.readdirSync(config.facesFolder + name)
+                    }catch(err){
+                        images = []
+                    }
+                    images.forEach((image)=>{
+                        faces[name].push(image)
                     })
                 }
             })
@@ -93,7 +98,7 @@ module.exports = function(s,config,lang,app,io){
             }))
         },res,req)
     })
-    app.post(config.webPaths.superApiPrefix+':auth/faceManager/image/:name', fileUpload(), function (req,res){
+    app.post(config.webPaths.superApiPrefix+':auth/faceManager/image/:name/:image', fileUpload(), function (req,res){
         s.superAuth(req.params,function(resp){
             res.setHeader('Content-Type', 'application/json')
             var fileKeys = Object.keys(req.files)
