@@ -36,7 +36,7 @@ $(document).ready(function(){
        </div>`
     }
     var createFaceHeader = function(name){
-        return `<span class="mt-4 mb-2 badge bg-dark badge-lg">${name}</span>`
+        return `<span class="mt-4 mb-2 badge bg-dark badge-lg face-title">${name}</span>`
     }
     var drawFaceImages = function(){
         getFaceImages(function(faces){

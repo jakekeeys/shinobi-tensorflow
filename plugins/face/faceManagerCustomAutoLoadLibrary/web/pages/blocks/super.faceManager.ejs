@@ -10,10 +10,18 @@
       <div class="modal-body overflow-hidden">
           <div class="row">
               <form id="faceManagerUploadForm" class="col-4">
-                  <div class="form-group">
-                      <input value="myFace" placeholder="<%- lang['Face Name'] %>" class="form-control form-control-lg" name="faceName" id="faceNameField">
+                  <div class="form-group mb-3">
+                      <div class="text-left mb-2"><span class="badge badge-default"><%- lang['Face Name'] %></span></div>
+                      <input value="myFace" placeholder="<%- lang['Face Name'] %>" class="form-control form-control-lg" name="faceName" id="faceNameField" style="border-radius: .3rem;">
                   </div>
-                  <input type="file" id="fileinput" name="files" multiple="multiple" />
+                  <div class="form-group file-area">
+                      <div class="text-left mb-2"><span class="badge badge-default"><%- lang['Upload Images'] %></span></div>
+                      <input type="file" id="fileinput" name="files" required multiple="multiple" accept="image/jpeg" />
+                      <div class="file-dummy">
+                        <div class="success"><span class="badge bg-light badge-success"><%- lang['Images Sent'] %></span></div>
+                        <div class="default"><span class="badge bg-light badge-info"><%- lang['Click to Upload Images'] %> (JPG/JPEG)</span></div>
+                      </div>
+                  </div>
               </form>
               <div class="col-8" id="faceManagerImages">
 
