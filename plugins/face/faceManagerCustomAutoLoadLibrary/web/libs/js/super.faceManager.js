@@ -105,6 +105,14 @@ $(document).ready(function(){
             revert: "invalid"
         });
     }
+    var createFaceImageBlock = function(row,faceName,fileName){
+        var existingBlock = row.find(`[face="${faceName}"][image="${fileName}"]`)
+        if(existingBlock.length > 0){
+            existingBlock.draggable('destroy')
+            existingBlock.remove()
+        }
+        row.prepend(getFaceImageHtml(faceName,fileName))
+    }
     faceManagerModal.on('shown.bs.modal',function(){
         drawFaceImages()
     })
@@ -132,21 +140,17 @@ $(document).ready(function(){
         return false;
     })
     $('#fileinput').change(function(){
-        for(var i = 0; i<this.files.length; i++){
-            var name = faceNameField.val()
-            var file =  this.files[i];
-            if(!file)return;
-            $.ajax({
-              url: superApiPrefix + $user.sessionKey + '/faceManager/image/' + name + '/' + file.name,
-              type: 'POST',
-              data: new FormData(faceManagerForm[0]),
-              cache: false,
-              contentType: false,
-              processData: false,
-            },function(data){
-                console.log(data)
-            })
-        }
+        var name = faceNameField.val()
+        $.ajax({
+          url: superApiPrefix + $user.sessionKey + '/faceManager/image/' + name,
+          type: 'POST',
+          data: new FormData(faceManagerForm[0]),
+          cache: false,
+          contentType: false,
+          processData: false,
+        },function(data){
+            console.log(data)
+        })
     })
     $('#tablist').append('<li class="nav-item">\
         <a class="nav-link" data-toggle="modal" data-target="#faceManager">' + lang.faceManager + '</a>\
@@ -160,7 +164,7 @@ $(document).ready(function(){
                     row = faceManagerImages.find(`.row[face="${d.faceName}"]`)
                     activateDroppableContainer(d.faceName)
                 }
-                row.prepend(getFaceImageHtml(d.faceName,d.fileName))
+                createFaceImageBlock(row,d.faceName,d.fileName)
                 activateDraggableImages()
                 prettySizeFaceImages()
             break;

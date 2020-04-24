@@ -144,7 +144,7 @@ module.exports = function(s,config,lang,app,io){
             }))
         },res,req)
     })
-    app.post(config.webPaths.superApiPrefix+':auth/faceManager/image/:name/:image', fileUpload(), function (req,res){
+    app.post(config.webPaths.superApiPrefix+':auth/faceManager/image/:name', fileUpload(), function (req,res){
         s.superAuth(req.params,function(resp){
             res.setHeader('Content-Type', 'application/json')
             var fileKeys = Object.keys(req.files || {})
@@ -152,8 +152,7 @@ module.exports = function(s,config,lang,app,io){
                 return res.status(400).send('No files were uploaded.')
             }
             var filesUploaded = []
-            fileKeys.forEach(function(key){
-                var file = req.files[key]
+            var checkFile = (file) => {
                 if(file.name.indexOf('.jpg') > -1 || file.name.indexOf('.jpeg') > -1){
                     filesUploaded.push(file.name)
                     if(!fs.existsSync(config.facesFolder + req.params.name)){
@@ -168,6 +167,21 @@ module.exports = function(s,config,lang,app,io){
                             url: fileLink
                         })
                     })
+                }
+            }
+            fileKeys.forEach(function(key){
+                var file = req.files[key]
+                try{
+                    if(file instanceof Array){
+                        file.forEach(function(fileOfFile){
+                            checkFile(fileOfFile)
+                        })
+                    }else{
+                        checkFile(file)
+                    }
+                }catch(err){
+                    console.log(file)
+                    console.log(err)
                 }
             })
             var response = {
