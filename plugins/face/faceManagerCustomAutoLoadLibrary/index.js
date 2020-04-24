@@ -42,6 +42,30 @@ module.exports = function(s,config,lang,app,io){
             callback(faces)
         })
     }
+    const getFaceImagesByName = (name,callback) => {
+        var stats = fs.statSync(config.facesFolder + name)
+        if(stats.isDirectory()){
+            var images
+            try{
+                images = fs.readdirSync(config.facesFolder + name)
+            }catch(err){
+                images = []
+            }
+            callback(images)
+        }else{
+            callback([])
+        }
+    }
+    const deletePath = (deletionPath,callback) => {
+        if(fs.existsSync(deletionPath)){
+            fs.unlink(deletionPath,() => {
+                s.file('delete',deletionPath)
+                if(callback)callback()
+            })
+        }else{
+            if(callback)callback(true)
+        }
+    }
     app.get(config.webPaths.superApiPrefix+':auth/faceManager/names', function (req,res){
         s.superAuth(req.params,function(resp){
             getFaceFolderNames((faces)=>{
@@ -83,22 +107,40 @@ module.exports = function(s,config,lang,app,io){
         s.superAuth(req.params,function(resp){
             res.setHeader('Content-Type', 'application/json')
             const imagePath = config.facesFolder + req.params.name + '/' + req.params.image
-            if(fs.existsSync(imagePath)){
-                fs.unlink(imagePath,() => {
-                    s.file('delete',imagePath)
-                    sendDataToConnectedSuperUsers({
-                        f:'faceManagerImageDeleted',
-                        faceName: req.params.name,
-                        fileName: req.params.image,
-                    })
-                    getFaceFolderNames((faces) => {
-                        s.sendToAllDetectors({
-                            f: 'recompileFaceDescriptors',
-                            faces: faces
-                        })
+            deletePath(imagePath,() => {
+                sendDataToConnectedSuperUsers({
+                    f:'faceManagerImageDeleted',
+                    faceName: req.params.name,
+                    fileName: req.params.image,
+                })
+                getFaceFolderNames((faces) => {
+                    s.sendToAllDetectors({
+                        f: 'recompileFaceDescriptors',
+                        faces: faces
                     })
                 })
-            }
+            })
+            res.end(s.prettyPrint({
+                ok: true,
+            }))
+        },res,req)
+    })
+    app.get(config.webPaths.superApiPrefix+':auth/faceManager/delete/:name', function (req,res){
+        s.superAuth(req.params,function(resp){
+            res.setHeader('Content-Type', 'application/json')
+            const facePath = config.facesFolder + req.params.name
+            deletePath(facePath,() => {
+                getFaceFolderNames((faces) => {
+                    s.sendToAllDetectors({
+                        f: 'recompileFaceDescriptors',
+                        faces: faces
+                    })
+                })
+            })
+            sendDataToConnectedSuperUsers({
+                f:'faceManagerFolderDeleted',
+                faceName: req.params.name,
+            })
             res.end(s.prettyPrint({
                 ok: true,
             }))

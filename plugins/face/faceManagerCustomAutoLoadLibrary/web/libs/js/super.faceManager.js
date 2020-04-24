@@ -13,6 +13,11 @@ $(document).ready(function(){
             callback(response)
         })
     }
+    var deleteFaceFolder = function(name,callback){
+        $.get(superApiPrefix + $user.sessionKey + '/faceManager/delete/' + name,function(response){
+            callback(response)
+        })
+    }
     var moveFaceImage = function(name,image,newFaceName,callback){
         $.get(superApiPrefix + $user.sessionKey + '/faceManager/image/' + name + '/' + image + '/move/' + newFaceName + '/' + image + '?websocketResponse=1' ,function(response){
             callback(response)
@@ -36,14 +41,14 @@ $(document).ready(function(){
        </div>`
     }
     var createFaceHeader = function(name){
-        return `<span class="mt-4 mb-2 badge bg-dark badge-lg face-title">${name}</span>`
+        return `<div face="${name}" class="mt-4 mb-2 face-title"><span class="badge bg-dark badge-lg">${name}</span> <a class="badge badge-danger badge-lg deleteFolder" face="${name}"><i class="fa fa-times text-danger"></i></a></div>`
     }
     var drawFaceImages = function(){
         getFaceImages(function(faces){
             var html = ''
             $.each(faces,function(name,images){
                 // if(images.length === 0)return
-                html += `${createFaceHeader(name)}<div class="row" face="${name}">`
+                html += `${createFaceHeader(name)}<div class="row face-container" face="${name}">`
                 $.each(images,function(n,image){
                     html += getFaceImageHtml(name,image)
                 })
@@ -139,6 +144,24 @@ $(document).ready(function(){
         })
         return false;
     })
+    faceManagerImages.on('click','.deleteFolder',function(e){
+        e.preventDefault()
+        var faceName = $(this).attr('face')
+        $.confirm.create({
+            title: lang.deleteFace,
+            body: lang.deleteFaceText,
+            clickOptions: {
+                class: 'btn-danger',
+                title: lang.Delete,
+            },
+            clickCallback: function(){
+                deleteFaceFolder(faceName,function(response){
+                    console.log(response)
+                })
+            }
+        })
+        return false;
+    })
     $('#fileinput').change(function(){
         var name = faceNameField.val()
         $.ajax({
@@ -160,7 +183,7 @@ $(document).ready(function(){
             case'faceManagerImageUploaded':
                 var row = faceManagerImages.find(`.row[face="${d.faceName}"]`)
                 if(row.length === 0){
-                    faceManagerImages.append(`${createFaceHeader(d.faceName)}<div class="row" face="${d.faceName}"></div>`)
+                    faceManagerImages.append(`${createFaceHeader(d.faceName)}<div class="row face-container" face="${d.faceName}"></div>`)
                     row = faceManagerImages.find(`.row[face="${d.faceName}"]`)
                     activateDroppableContainer(d.faceName)
                 }
@@ -170,6 +193,9 @@ $(document).ready(function(){
             break;
             case'faceManagerImageDeleted':
                 $(`.face-image[face="${d.faceName}"][image="${d.fileName}"]`).remove()
+            break;
+            case'faceManagerFolderDeleted':
+                $(`[face="${d.faceName}"]`).remove()
             break;
         }
     })
