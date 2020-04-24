@@ -1,7 +1,29 @@
 #faceManagerImages .face-image {
+    transition: 0s;
+}
+#faceManagerImages h3:first-child {
+    margin-top: 0!important;
+}
+#faceManagerImages > .row {
+    background: #fafafa;
+    border-radius: 5px;
+    padding: 5px;
+    margin: 0;
+}
+#faceManagerImages > .row.ui-droppable-hover {
+    background: #eee;
+}
+#faceManagerImages > .row:empty {
+    height: 200px;
+}
+#faceManagerImages .face-image-bg {
+    position: relative;
     background-size: cover;
     background-position: center;
     border-radius: 5px;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #eee;
 }
 #faceManagerImages .face-image .controls,
 #faceManagerImages .face-image .controls-bottom {

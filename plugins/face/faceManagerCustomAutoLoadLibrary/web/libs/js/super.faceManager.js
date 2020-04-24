@@ -13,32 +13,47 @@ $(document).ready(function(){
             callback(response)
         })
     }
+    var moveFaceImage = function(name,image,newFaceName,callback){
+        $.get(superApiPrefix + $user.sessionKey + '/faceManager/image/' + name + '/' + image + '/move/' + newFaceName + '/' + image + '?websocketResponse=1' ,function(response){
+            callback(response)
+        })
+    }
     var getFaceImageHtml = function(name,image){
-        return `<div class="col-3 p-0 face-image" face="${name}" image="${image}" style="background-image:url('${superApiPrefix}${$user.sessionKey}/faceManager/image/${name}/${image}')">
-           <div class="controls row m-0">
-               <div class="col p-0">
-                    <a href="#" class="btn btn-sm btn-danger m-0 delete"><i class="fa fa-trash-o"></i></a>
+        return `<div class="col-3 p-2 face-image" face="${name}" image="${image}">
+           <div class="face-image-bg" style="background-image:url('${superApiPrefix}${$user.sessionKey}/faceManager/image/${name}/${image}')">
+               <div class="controls row m-0">
+                   <div class="col p-0">
+                        <a href="#" class="btn btn-sm btn-danger m-0 delete"><i class="fa fa-trash-o"></i></a>
+                   </div>
+                   <div class="col p-0 text-right">
+                        <span class="badge badge-sm bg-dark pull-right">${name}</span>
+                   </div>
                </div>
-               <div class="col p-0 text-right">
-                    <span class="badge badge-sm bg-dark pull-right">${name}</span>
+               <div class="controls-bottom">
+                   <span class="badge badge-sm bg-dark">${image}</span>
                </div>
-           </div>
-           <div class="controls-bottom">
-               <span class="badge badge-sm bg-dark">${image}</span>
            </div>
        </div>`
+    }
+    var createFaceHeader = function(name){
+        return `<span class="mt-4 mb-2 badge bg-dark badge-lg">${name}</span>`
     }
     var drawFaceImages = function(){
         getFaceImages(function(faces){
             var html = ''
             $.each(faces,function(name,images){
-                html += `<div class="row" face="${name}">`
+                // if(images.length === 0)return
+                html += `${createFaceHeader(name)}<div class="row" face="${name}">`
                 $.each(images,function(n,image){
                     html += getFaceImageHtml(name,image)
                 })
                 html += `</div>`
             })
             faceManagerImages.html(html)
+            $.each(faces,function(name,images){
+                activateDroppableContainer(name)
+            })
+            activateDraggableImages()
             prettySizeFaceImages()
         })
     }
@@ -46,6 +61,49 @@ $(document).ready(function(){
         var faceImagesRendered = faceManagerImages.find('.face-image')
         var faceHeight = faceImagesRendered.first().width()
         faceImagesRendered.css('height',faceHeight)
+    }
+    var activateDroppableContainer = function(name){
+        var row = faceManagerImages.find(`.row[face="${name}"]`)
+        try{
+            row.droppable("destroy")
+        }catch(err){
+
+        }
+        row.droppable({
+            tolerance: "intersect",
+            accept: ".face-image",
+            activeClass: "ui-state-default",
+            hoverClass: "ui-state-hover",
+            drop: function(event, ui) {
+                var el = $(this)
+                var newFace = el.attr('face')
+                var faceImageElement = $(ui.draggable)
+                var oldFace = faceImageElement.attr('face')
+                var fileName = faceImageElement.attr('image')
+                if(oldFace !== newFace){
+                    moveFaceImage(oldFace,fileName,newFace)
+                }else{
+                    faceImageElement.css({
+                        top: 0,
+                        left: 0,
+                    })
+                }
+            }
+        })
+    }
+    var activateDraggableImages = function(name){
+        var imageEls = faceManagerImages.find(`.face-image`)
+        try{
+            imageEls.draggable("destroy")
+        }catch(err){
+
+        }
+        imageEls.draggable({
+            appendTo: "body",
+            cursor: "move",
+            // helper: 'clone',
+            revert: "invalid"
+        });
     }
     faceManagerModal.on('shown.bs.modal',function(){
         drawFaceImages()
@@ -60,7 +118,7 @@ $(document).ready(function(){
         var faceImage = el.attr('image')
         $.confirm.create({
             title: lang.deleteImage,
-            body: lang.deleteImageText,
+            body: lang.deleteImageText + `<div class="mt-3"><img style="width:100%;border-radius:5px;" src="${superApiPrefix}${$user.sessionKey}/faceManager/image/${faceName}/${faceImage}"></div>`,
             clickOptions: {
                 class: 'btn-danger',
                 title: lang.Delete,
@@ -98,10 +156,12 @@ $(document).ready(function(){
             case'faceManagerImageUploaded':
                 var row = faceManagerImages.find(`.row[face="${d.faceName}"]`)
                 if(row.length === 0){
-                    faceManagerImages.append(`<div class="row" face="${d.faceName}"></div>`)
+                    faceManagerImages.append(`${createFaceHeader(d.faceName)}<div class="row" face="${d.faceName}"></div>`)
                     row = faceManagerImages.find(`.row[face="${d.faceName}"]`)
+                    activateDroppableContainer(d.faceName)
                 }
                 row.prepend(getFaceImageHtml(d.faceName,d.fileName))
+                activateDraggableImages()
                 prettySizeFaceImages()
             break;
             case'faceManagerImageDeleted':

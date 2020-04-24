@@ -91,17 +91,57 @@ module.exports = function(s,config,lang,app,io){
                         faceName: req.params.name,
                         fileName: req.params.image,
                     })
+                    getFaceFolderNames((faces) => {
+                        s.sendToAllDetectors({
+                            f: 'recompileFaceDescriptors',
+                            faces: faces
+                        })
+                    })
                 })
             }
             res.end(s.prettyPrint({
                 ok: true,
             }))
-            getFaceFolderNames((faces) => {
-                s.sendToAllDetectors({
-                    f: 'recompileFaceDescriptors',
-                    faces: faces
+        },res,req)
+    })
+    app.get(config.webPaths.superApiPrefix+':auth/faceManager/image/:name/:image/move/:newName/:newImage', function (req,res){
+        s.superAuth(req.params,function(resp){
+            res.setHeader('Content-Type', 'application/json')
+            const oldImagePath = config.facesFolder + req.params.name + '/' + req.params.image
+            const newImagePath = config.facesFolder + req.params.newName + '/' + req.params.newImage
+            const fileExists = fs.existsSync(oldImagePath)
+            if(fileExists){
+                fs.readFile(oldImagePath,(err,data) => {
+                    fs.writeFile(newImagePath,data,() => {
+                        fs.unlink(oldImagePath,() => {
+                            s.file('delete',oldImagePath)
+                            if(req.query.websocketResponse){
+                                sendDataToConnectedSuperUsers({
+                                    f:'faceManagerImageDeleted',
+                                    faceName: req.params.name,
+                                    fileName: req.params.image,
+                                })
+                                var fileLink = config.webPaths.superApiPrefix + req.params.auth + `/faceManager/image/${req.params.newName}/${req.params.newImage}`
+                                sendDataToConnectedSuperUsers({
+                                    f:'faceManagerImageUploaded',
+                                    faceName: req.params.newName,
+                                    fileName: req.params.newImage,
+                                    url: fileLink
+                                })
+                            }
+                            getFaceFolderNames((faces) => {
+                                s.sendToAllDetectors({
+                                    f: 'recompileFaceDescriptors',
+                                    faces: faces
+                                })
+                            })
+                        })
+                    })
                 })
-            })
+            }
+            res.end(s.prettyPrint({
+                ok: fileExists,
+            }))
         },res,req)
     })
     app.post(config.webPaths.superApiPrefix+':auth/faceManager/image/:name/:image', fileUpload(), function (req,res){
