@@ -64,6 +64,7 @@ var addAwaitStatements = async function(){
     var faceMatcher
     var facesLoaded = 0
     const createAllFaceDescriptors = (faces) => {
+        s.detectObject = function(){}
         faceMatcher = null
         facesLoaded = 0
         labeledDescriptors = []
@@ -136,15 +137,20 @@ var addAwaitStatements = async function(){
                                 if(faceMatcher){
                                     data.forEach(fd => {
                                         var bestMatch = faceMatcher.findBestMatch(fd.descriptor)
-                                        fd._detection.tag = bestMatch.toString()
+                                        fd.detection.tag = bestMatch.toString()
                                     })
                                 }
                                 var endTime = new Date()
                                 var matrices = []
-                                var imgHeight = data[0]._detection._imageDims._height
-                                var imgWidth = data[0]._detection._imageDims._width
+                                try{
+                                    var imgHeight = data[0].detection._imageDims._height
+                                    var imgWidth = data[0].detection._imageDims._width
+                                }catch(err){
+                                    var imgHeight = data[0]._detection._imageDims._height
+                                    var imgWidth = data[0]._detection._imageDims._width
+                                }
                                 data.forEach(function(box){
-                                    var v = box._detection
+                                    var v = box.detection || box._detection
                                     var tag,confidence
                                     if(v.tag){
                                         var split = v.tag.split('(')
