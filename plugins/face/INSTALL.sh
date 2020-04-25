@@ -85,19 +85,14 @@ if [ ! -e "$DIR/../../libs/customAutoLoad/faceManagerCustomAutoLoadLibrary" ]; t
 else
     echo "Face Manager customAutoLoad Module already installed..."
 fi
+tfjsBuildVal="cpu"
 if [ "$INSTALL_WITH_GPU" = "1" ]; then
-    echo "TensorFlow.js plugin will use GPU"
-    sed -i 's/"tfjsBuild":"cpu"/"tfjsBuild":"gpu"/g' conf.json
-    sed -i 's/"tfjsBuild":"gpuORcpu"/"tfjsBuild":"gpu"/g' conf.json
-else
-    echo "TensorFlow.js plugin will use CPU"
-    sed -i 's/"tfjsBuild":"gpu"/"tfjsBuild":"cpu"/g' conf.json
-    sed -i 's/"tfjsBuild":"gpuORcpu"/"tfjsBuild":"cpu"/g' conf.json
+    tfjsBuildVal="gpu"
 fi
 
 echo "-----------------------------------"
 echo "Adding Random Plugin Key to Main Configuration"
-node $DIR/../../tools/modifyConfigurationForPlugin.js face key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}')
+node $DIR/../../tools/modifyConfigurationForPlugin.js face key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}') tfjsBuild=$tfjsBuildVal
 echo "-----------------------------------"
 echo "Updating Node Package Manager"
 sudo npm install npm -g --unsafe-perm
@@ -118,14 +113,14 @@ sudo npm install node-gyp -g --unsafe-perm --force
 echo "-----------------------------------"
 npm uninstall @tensorflow/tfjs-node-gpu --unsafe-perm
 npm uninstall @tensorflow/tfjs-node --unsafe-perm
-echo "Getting C++ module : face-api.js"
-echo "https://github.com/justadudewhohacks/face-api.js"
-sudo npm install --unsafe-perm --force
 echo "Getting C++ module : @tensorflow/tfjs-node@0.1.21"
 echo "https://github.com/tensorflow/tfjs-node"
 sudo npm install @tensorflow/tfjs-core@0.13.11 --unsafe-perm --force
 sudo npm install @tensorflow/tfjs-layers@0.8.5 --unsafe-perm --force
 sudo npm install @tensorflow/tfjs-converter@0.6.7 --unsafe-perm --force
+echo "Getting C++ module : face-api.js"
+echo "https://github.com/justadudewhohacks/face-api.js"
+sudo npm install --unsafe-perm --force
 if [ "$INSTALL_WITH_GPU" = "1" ]; then
     echo "GPU version of tjfs : https://github.com/tensorflow/tfjs-node-gpu"
 else

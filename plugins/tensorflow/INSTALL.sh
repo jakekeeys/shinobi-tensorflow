@@ -22,13 +22,8 @@ else
     echo "conf.json already exists..."
 fi
 echo "Adding Random Plugin Key to Main Configuration"
-node $DIR/../../tools/modifyConfigurationForPlugin.js tensorflow key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}')
-if [ "$nodejsinstall" = "y" ] || [ "$nodejsinstall" = "Y" ]; then
-    echo "TensorFlow.js plugin will use GPU"
-    sed -i 's/"tfjsBuild":"cpu"/"tfjsBuild":"gpu"/g' conf.json
-    sed -i 's/"tfjsBuild":"gpuORcpu"/"tfjsBuild":"gpu"/g' conf.json
-else
-    echo "TensorFlow.js plugin will use CPU"
-    sed -i 's/"tfjsBuild":"gpu"/"tfjsBuild":"cpu"/g' conf.json
-    sed -i 's/"tfjsBuild":"gpuORcpu"/"tfjsBuild":"cpu"/g' conf.json
+tfjsBuildVal="cpu"
+if [ "$nodejsinstall" = "1" ]; then
+    tfjsBuildVal="gpu"
 fi
+node $DIR/../../tools/modifyConfigurationForPlugin.js tensorflow key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}') tfjsBuild=$tfjsBuildVal
