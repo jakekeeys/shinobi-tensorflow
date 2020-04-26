@@ -115,9 +115,9 @@ npm uninstall @tensorflow/tfjs-node-gpu --unsafe-perm
 npm uninstall @tensorflow/tfjs-node --unsafe-perm
 echo "Getting C++ module : @tensorflow/tfjs-node@0.1.21"
 echo "https://github.com/tensorflow/tfjs-node"
-sudo npm install @tensorflow/tfjs-core@0.13.11 --unsafe-perm --force
-sudo npm install @tensorflow/tfjs-layers@0.8.5 --unsafe-perm --force
-sudo npm install @tensorflow/tfjs-converter@0.6.7 --unsafe-perm --force
+npm install @tensorflow/tfjs-core@1.7.3 --unsafe-perm --force
+npm install @tensorflow/tfjs-converter@1.7.3 --unsafe-perm --force
+npm install @tensorflow/tfjs-layers@1.7.3 --unsafe-perm --force
 echo "Getting C++ module : face-api.js"
 echo "https://github.com/justadudewhohacks/face-api.js"
 sudo npm install --unsafe-perm --force
@@ -126,7 +126,7 @@ if [ "$INSTALL_WITH_GPU" = "1" ]; then
 else
     echo "CPU version of tjfs : https://github.com/tensorflow/tfjs-node"
 fi
-sudo npm install @tensorflow/tfjs-node$TFJS_SUFFIX@0.1.21 --unsafe-perm --force
+sudo npm install @tensorflow/tfjs-node$TFJS_SUFFIX@1.7.0 --unsafe-perm --force
 if [ "$INSTALL_FOR_ARM" = "1" ]; then
     cd node_modules/@tensorflow/tfjs-node$TFJS_SUFFIX
     if [ "$INSTALL_FOR_ARM64" = "1" ]; then
