@@ -8,6 +8,30 @@ var jsonfile = require("jsonfile");
 var config = jsonfile.readFileSync(configLocation);
 var processArgv = process.argv.splice(2,process.argv.length)
 var arguments = {};
+
+function mergeDeep(...objects) {
+  const isObject = obj => obj && typeof obj === 'object';
+
+  return objects.reduce((prev, obj) => {
+    Object.keys(obj).forEach(key => {
+      const pVal = prev[key];
+      const oVal = obj[key];
+
+      if (Array.isArray(pVal) && Array.isArray(oVal)) {
+        prev[key] = pVal.concat(...oVal);
+      }
+      else if (isObject(pVal) && isObject(oVal)) {
+        prev[key] = mergeDeep(pVal, oVal);
+      }
+      else {
+        prev[key] = oVal;
+      }
+    });
+
+    return prev;
+  }, {});
+}
+
 processArgv.forEach(function(val) {
     var theSplit = val.split('=');
     var index = (theSplit[0] || '').trim();
@@ -15,7 +39,7 @@ processArgv.forEach(function(val) {
     if(index.indexOf('addToConfig') > -1 || index == 'addToConfig'){
         try{
             value = JSON.parse(value)
-            config = Object.assign(config,value)
+            config = mergeDeep(config,value)
         }catch(err){
             console.log('Not a valid Data set. "addToConfig" value must be a JSON string. You may need to wrap it in singles quotes.')
         }
