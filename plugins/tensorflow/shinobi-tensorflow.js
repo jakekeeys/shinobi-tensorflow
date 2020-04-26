@@ -10,6 +10,7 @@
 // Base Init >>
 var fs = require('fs');
 var config = require('./conf.json')
+var dotenv = require('dotenv').config()
 var s
 try{
     s = require('../pluginBase.js')(__dirname,config)

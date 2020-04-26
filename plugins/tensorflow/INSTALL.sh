@@ -5,6 +5,7 @@ echo "You can run this installer again to change it."
 echo "(y)es or (N)o"
 read nodejsinstall
 echo "Getting Tensorflow Node.js module..."
+npm install dotenv@8.2.0 --unsafe-perm
 npm uninstall @tensorflow/tfjs-node-gpu --unsafe-perm
 npm uninstall @tensorflow/tfjs-node --unsafe-perm
 npm install @tensorflow/tfjs-core@1.7.3 --unsafe-perm --force
@@ -12,7 +13,9 @@ npm install @tensorflow/tfjs-converter@1.7.3 --unsafe-perm --force
 npm install @tensorflow/tfjs-layers@1.7.3 --unsafe-perm --force
 npm install yarn -g --unsafe-perm --force
 npm install @tensorflow/tfjs-node@1.7.3 --unsafe-perm
+GPU_INSTALL="0"
 if [ "$nodejsinstall" = "y" ] || [ "$nodejsinstall" = "Y" ]; then
+    GPU_INSTALL="1"
     npm install @tensorflow/tfjs-node-gpu@1.7.0 --unsafe-perm
 fi
 echo "Getting Coco SSD Model..."
@@ -26,7 +29,7 @@ else
 fi
 echo "Adding Random Plugin Key to Main Configuration"
 tfjsBuildVal="cpu"
-if [ "$nodejsinstall" = "1" ]; then
+if [ "$GPU_INSTALL" = "1" ]; then
     tfjsBuildVal="gpu"
 fi
 node $DIR/../../tools/modifyConfigurationForPlugin.js tensorflow key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}') tfjsBuild=$tfjsBuildVal
