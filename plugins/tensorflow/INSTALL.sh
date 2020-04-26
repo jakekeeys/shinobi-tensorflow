@@ -7,10 +7,13 @@ read nodejsinstall
 echo "Getting Tensorflow Node.js module..."
 npm uninstall @tensorflow/tfjs-node-gpu --unsafe-perm
 npm uninstall @tensorflow/tfjs-node --unsafe-perm
+npm install @tensorflow/tfjs-core@1.7.3 --unsafe-perm --force
+npm install @tensorflow/tfjs-converter@1.7.3 --unsafe-perm --force
+npm install @tensorflow/tfjs-layers@1.7.3 --unsafe-perm --force
+npm install yarn -g --unsafe-perm --force
+npm install @tensorflow/tfjs-node@1.7.3 --unsafe-perm
 if [ "$nodejsinstall" = "y" ] || [ "$nodejsinstall" = "Y" ]; then
-    npm install @tensorflow/tfjs-node-gpu --unsafe-perm
-else
-    npm install @tensorflow/tfjs-node --unsafe-perm
+    npm install @tensorflow/tfjs-node-gpu@1.7.0 --unsafe-perm
 fi
 echo "Getting Coco SSD Model..."
 npm install @tensorflow-models/coco-ssd --unsafe-perm
