@@ -203,9 +203,9 @@ $.ccio.globalWebsocket=function(d,user){
 //            if($('.modal[mid="'+d.mid+'"][auth="'+user.auth_token+'"]').length>0){$('#video_viewer[mid="'+d.mid+'"]').attr('file',null).attr('ke',null).attr('mid',null).attr('auth',null).modal('hide')}
             $('[file="'+d.filename+'"][mid="'+d.mid+'"][ke="'+d.ke+'"][auth="'+user.auth_token+'"]:not(.modal)').remove();
             $('[data-file="'+d.filename+'"][data-mid="'+d.mid+'"][data-ke="'+d.ke+'"][data-auth="'+user.auth_token+'"]:not(.modal)').remove();
-            if($.pwrvid.currentDataObject&&$.pwrvid.currentDataObject[d.filename]){
-                delete($.timelapse.currentVideos[$.pwrvid.currentDataObject[d.filename].position])
-                $.pwrvid.drawTimeline(false)
+            if($.powerVideoWindow.currentDataObject&&$.powerVideoWindow.currentDataObject[d.filename]){
+                delete($.timelapse.currentVideos[$.powerVideoWindow.currentDataObject[d.filename].position])
+                $.powerVideoWindow.drawTimeline(false)
             }
             if($.timelapse.currentVideos&&$.timelapse.currentVideos[d.filename]){
                 delete($.timelapse.currentVideosArray.videos[$.timelapse.currentVideos[d.filename].position])
@@ -655,142 +655,6 @@ $.ccio.globalWebsocket=function(d,user){
             $.ccio.op('jpeg_on',true);
             $.ccio.init('jpegModeAll');
             $('body').addClass('jpegMode')
-        break;
-        case'drawPowerVideoMainTimeLine':
-            var videos = d.videos;
-            var events = d.events;
-//            $.pwrvid.currentlyLoading = false
-            $.pwrvid.currentVideos=videos
-            $.pwrvid.currentEvents=events
-            $.pwrvid.e.find('.loading').hide()
-            $.pwrvid.e.find('.nodata').hide()
-            //$.pwrvid.drawTimeLine
-            if($.pwrvid.t&&$.pwrvid.t.destroy){$.pwrvid.t.destroy()}
-            data={};
-            $.each(videos.videos,function(n,v){
-                if(!v||!v.mid){return}
-                v.mon=$.ccio.mon[v.ke+v.mid+$user.auth_token];
-//                v.filename=$.ccio.init('tf',v.time)+'.'+v.ext;
-                if(v.status>0){
-        //                    data.push({src:v,x:v.time,y:$.ccio.timeObject(v.time).diff($.ccio.timeObject(v.end),'minutes')/-1})
-                    data[v.filename]={
-                        filename:v.filename,
-                        time:v.time,
-                        timeFormatted:$.ccio.timeObject(v.time).format('MM/DD/YYYY HH:mm'),
-                        endTime:v.end,
-                        close:$.ccio.timeObject(v.time).diff($.ccio.timeObject(v.end),'minutes')/-1,
-                        motion:[],
-                        row:v,
-                        position:n
-                    }
-                }
-            });
-
-            var eventsToCheck = Object.assign({},events)
-            $.each(data,function(m,b){
-                startTimeFormatted = $.ccio.timeObject(b.time).format('YYYY-MM-DD HH:mm:ss');
-                startTime = $.ccio.timeObject(b.time).format();
-                endTime = $.ccio.timeObject(b.endTime).format();
-                var newSetOfEventsWithoutChecked = {};
-                var eventTime
-                $.each(eventsToCheck,function(n,v){
-                    if(typeof v.time === 'string' && v.time.indexOf('T') > -1){
-                        eventTime = v.time.split('T')
-                    }else if(typeof v.time === 'number'){
-                        eventTime = moment(v.time).format('YYYY-MM-DD HH:mm:ss').split(' ')
-                    }else{
-                        eventTime = v.time.split(' ')
-                    }
-                    eventTime[1] = eventTime[1].replace(/-/g,':'),eventTime = eventTime.join(' ');
-                    if(eventTime === startTimeFormatted){
-                        data[m].motion.push(v)
-                    }else if ($.ccio.timeObject(v.time).isBetween(startTime,$.ccio.timeObject(b.endTime).format())) {
-                        data[m].motion.push(v)
-                    }else{
-                        newSetOfEventsWithoutChecked[n] = v;
-                    }
-                })
-                eventsToCheck = newSetOfEventsWithoutChecked;
-            });
-            $.pwrvid.currentDataObject=data;
-            if($.pwrvid.chart){
-                $.pwrvid.d.empty()
-                delete($.pwrvid.chart)
-            }
-            $.pwrvid.currentData=Object.values(data);
-            if($.pwrvid.currentData.length>0){
-                var labels=[]
-                var Dataset1=[]
-                var Dataset2=[]
-                $.each(data,function(n,v){
-                    labels.push(v.timeFormatted)
-                    Dataset1.push(v.close)
-                    Dataset2.push(v.motion.length)
-                })
-                $.pwrvid.d.html("<canvas></canvas>")
-                var timeFormat = 'MM/DD/YYYY HH:mm';
-                var color = Chart.helpers.color;
-                Chart.defaults.global.defaultFontColor = '#fff';
-                var config = {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            type: 'line',
-                            label: lang['Video and Time Span (Minutes)'],
-                            backgroundColor: color(window.chartColors.blue).alpha(0.2).rgbString(),
-                            borderColor: window.chartColors.blue,
-                            data: Dataset1,
-                        }, {
-                            type: 'bar',
-                            showTooltip: false,
-                            label: lang['Counts of Motion'],
-                            backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
-                            borderColor: window.chartColors.red,
-                            data:Dataset2,
-                        }, ]
-                    },
-                    options: {
-                         maintainAspectRatio: false,
-                        title: {
-                            fontColor: "white",
-                            text: lang['Video Length (minutes) and Motion Count per video']
-                        },
-                        tooltips: {
-                            callbacks: {
-
-                            },
-                        },
-                        scales: {
-                            xAxes: [{
-                                type: "time",
-                                display: true,
-                                time: {
-                                    // format: timeFormat,
-                                    unit: 'minute',
-                                    displayFormats: {
-                                        minute: 'h:mm a',
-                                    },
-                                },
-                                categoryPercentage: 0.6,
-                                barPercentage: .5,
-                            }],
-                        },
-                    }
-                };
-
-                var ctx = $.pwrvid.d.find('canvas')[0].getContext("2d");
-                $.pwrvid.chart = new Chart(ctx, config);
-                $.pwrvid.d.find('canvas').click(function(e) {
-                    var target = $.pwrvid.chart.getElementsAtEvent(e)[0];
-                    if(!target){return false}
-                    target = $.pwrvid.currentData[target._index];
-                    $.pwrvid.e.find('.temp').html('<li class="glM'+target.row.mid+$user.auth_token+'" mid="'+target.row.mid+'" ke="'+target.row.ke+'" status="'+target.row.status+'" file="'+target.row.filename+'" auth="'+$user.auth_token+'"><a class="btn btn-sm btn-primary" preview="video" href="'+target.row.href+'"><i class="fa fa-play-circle"></i></a></li>').find('a').click()
-                });
-                var colorNames = Object.keys(window.chartColors);
-            }else{
-                $.pwrvid.e.find('.nodata').show()
-            }
         break;
     }
 }

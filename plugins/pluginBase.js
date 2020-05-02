@@ -105,6 +105,10 @@ module.exports = function(__dirname,config){
     s.detectObject=function(buffer,d,tx,frameLocation){
         console.log('detectObject handler not set')
     }
+    s.onCameraInitExtensions = []
+    s.onCameraInit = function(extender){
+        s.onCameraInitExtensions.push(extender)
+    }
     s.onPluginEvent = []
     s.onPluginEventExtender = function(extender){
         s.onPluginEvent.push(extender)
@@ -131,6 +135,9 @@ module.exports = function(__dirname,config){
                     s.group[d.ke][d.id].numberOfTriggers = 0
                     delete(s.group[d.ke][d.id].cords)
                     delete(s.group[d.ke][d.id].buffer)
+                    s.onCameraInitExtensions.forEach(function(extender){
+                        extender(d,cn,tx)
+                    })
                 }
             break;
             case'frameFromRam':
@@ -148,7 +155,10 @@ module.exports = function(__dirname,config){
                         s.group[d.ke]={}
                     }
                     if(!s.group[d.ke][d.id]){
-                        s.group[d.ke][d.id]={}
+                        s.group[d.ke][d.id] = {}
+                        s.onCameraInitExtensions.forEach(function(extender){
+                            extender(d,cn,tx)
+                        })
                     }
                     if(!s.group[d.ke][d.id].buffer){
                       s.group[d.ke][d.id].buffer=[d.frame];
@@ -280,7 +290,9 @@ module.exports = function(__dirname,config){
         }
         var io = createConnection()
     }
-
+    s.getWebsocket = function(){
+        return io
+    }
     s.createPythonScriptDaemon = function(){
         if(!config.pythonScript){config.pythonScript=__dirname+'/pumpkin.py'}
         if(!config.pythonPort){config.pythonPort=7990}

@@ -1,0 +1,11 @@
+{
+    "Upload Images": "Upload Images",
+    "Images Sent": "Images Sent",
+    "Click to Upload Images": "Click to Upload Images",
+    "Face Name": "Face Name",
+    "faceManager": "Face Manager",
+    "deleteFace": "Delete Face",
+    "deleteFaceText": "Are you sure you want to delete ALL the images for this face? they will not be recoverable.",
+    "deleteImage": "Delete Image",
+    "deleteImageText": "Are you sure you want to delete this image? it will not be recoverable."
+}

@@ -138,6 +138,64 @@ $(document).ready(function(e){
         })
         return chartData
     }
+    var getMiniEventsChartConfig = function(video){
+        var monitorId = video.mid
+        var labels = []
+        var chartData = []
+        var events = video.detections
+        $.each(events,function(n,v){
+            if(!v.details.confidence){v.details.confidence=0}
+            var time = $.ccio.timeObject(v.time).format('MM/DD/YYYY HH:mm:ss')
+            labels.push(time)
+            chartData.push(v.details.confidence)
+        })
+        var timeFormat = 'MM/DD/YYYY HH:mm:ss';
+        Chart.defaults.global.defaultFontColor = '#fff';
+        var config = {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    type: 'line',
+                    label: 'Motion Confidence',
+                    backgroundColor: window.chartColors.blue,
+                    borderColor: window.chartColors.red,
+                    data: chartData,
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                title: {
+                    fontColor: "white",
+                    text:"Events in this video"
+                },
+                scales: {
+                    xAxes: [{
+                        type: "time",
+                        display: true,
+                        time: {
+                            format: timeFormat,
+                        }
+                    }],
+                },
+            }
+        };
+        return config
+    }
+    var drawMiniEventsChart = function(video,chartConfig){
+        var videoContainer = powerVideoMonitorViewsElement.find(`.videoPlayer[data-mid=${video.mid}]`)
+        var canvas = videoContainer.find('canvas')
+        var ctx = canvas[0].getContext("2d")
+        var miniChart = new Chart(ctx, chartConfig)
+        canvas.click(function(f) {
+            var target = miniChart.getElementsAtEvent(f)[0];
+            if(!target){return false}
+            var event = video.detections[target._index]
+            var video1 = videoContainer.find('video')[0]
+            video1.currentTime = $.ccio.timeObject(event.time).diff($.ccio.timeObject(video.time),'seconds')
+            video1.play()
+        })
+    }
     var getAllChartDataForLoadedVideos = function(){
         var chartData = []
         Object.keys(powerVideoLoadedVideos).forEach(function(monitorId,n){
@@ -295,7 +353,7 @@ $(document).ready(function(e){
                         detectionInfoContainerObject.html($.ccio.init('jsontoblock',event.details.matrices))
                     }
                     if(event.details.confidence){
-                        motionMeterProgressBar.css('width',event.details.confidence+'px')
+                        motionMeterProgressBar.css('width',event.details.confidence+'%')
                         motionMeterProgressBarTextBox.text(event.details.confidence)
                         var html = `<div>${lang['Region']} : ${event.details.name}</div>
                             <div>${lang['Confidence']} : ${event.details.confidence}</div>
@@ -311,7 +369,7 @@ $(document).ready(function(e){
                     var videoAfter = videoPlayerContainer.find(`video.videoAfter`)[0]
                     videoAfter.setAttribute('preload',true)
                 }
-                if(videoCurrentTimeProgressBar)videoCurrentTimeProgressBar.style.width = `${watchPoint}px`
+                if(videoCurrentTimeProgressBar)videoCurrentTimeProgressBar.style.width = `${watchPoint}%`
                 extenders.onVideoPlayerTimeUpdateExtensions.forEach(function(extender){
                     extender(videoElement,watchPoint)
                 })
@@ -375,11 +433,7 @@ $(document).ready(function(e){
             if(!monitorSlotPlaySpeeds)monitorSlotPlaySpeeds[video.mid] = {}
             powerVideoMonitorViewsElement.append(`<div class="videoPlayer" style="width:${widthOfBlock}%" data-mid="${video.mid}">
                 <div class="videoPlayer-detection-info">
-                    <div class="videoPlayer-detection-info-raw"></div>
-                    <h5 class="epic-text">${lang.Motion}</h5>
-                    <div class="videoPlayer-detection-info-motion"></div>
-                    <h5 class="epic-text">${lang.Matrices}</h5>
-                    <div class="videoPlayer-detection-info-object"></div>
+                    <canvas style="height:400px"></canvas>
                 </div>
                 <div class="videoPlayer-stream-objects"></div>
                 <div class="videoPlayer-buffers"></div>
@@ -458,6 +512,7 @@ $(document).ready(function(e){
         extenders.onVideoPlayerCreateExtensions.forEach(function(extender){
             extender(videoElement,watchPoint)
         })
+        drawMiniEventsChart(video,getMiniEventsChartConfig(video))
     }
     var getSelectedMonitors = function(){
         return powerVideoMonitorsListElement.find('.active')

@@ -40,6 +40,7 @@ module.exports = function(s){
     if(config.insertOrphans === undefined){config.insertOrphans = true}
     if(config.orphanedVideoCheckMax === undefined){config.orphanedVideoCheckMax = 2}
     if(config.detectorMergePamRegionTriggers === undefined){config.detectorMergePamRegionTriggers = false}
+    if(config.wallClockTimestampAsDefault === undefined){config.wallClockTimestampAsDefault = true}
     //Child Nodes
     if(config.childNodes === undefined)config.childNodes = {};
         //enabled

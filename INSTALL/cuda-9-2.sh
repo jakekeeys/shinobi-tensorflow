@@ -13,12 +13,12 @@ echo "============="
 if [ "$getubuntuversion" = "17" ] || [ "$getubuntuversion" > "17" ]; then
     wget https://cdn.shinobi.video/installers/cuda-repo-ubuntu1710_9.2.148-1_amd64.deb -O cuda.deb
     sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1710/x86_64/7fa2af80.pub
-    sudo dpkg -i cuda.deb
+    sudo dpkg -i --force-overwrite cuda.deb
 fi
 if [ "$getubuntuversion" = "16" ]; then
     wget https://cdn.shinobi.video/installers/cuda-repo-ubuntu1604_9.2.148-1_amd64.deb -O cuda.deb
     sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
-    sudo dpkg -i cuda.deb
+    sudo dpkg -i --force-overwrite cuda.deb
 fi
 sudo apt-get update -y
 if [ "$getubuntuversion" = "17" ] || [ "$getubuntuversion" > "17" ]; then
