@@ -479,6 +479,25 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
+                      "name": "detail=wall_clock_timestamp_ignore",
+                      "field": lang['Use Camera Timestamps'],
+                      "description": "Base all incoming camera data in camera time instead of server time.",
+                      "default": "0",
+                      "example": "",
+                      "form-group-class": "h_t_input h_t_h264",
+                      "fieldType": "select",
+                      "possible": [
+                          {
+                             "name": lang.No,
+                             "value": "0"
+                          },
+                          {
+                             "name": lang.Yes,
+                             "value": "1"
+                          }
+                      ]
+                   },
+                   {
                        hidden: true,
                       "name": "height",
                       "field": lang["Height"],
