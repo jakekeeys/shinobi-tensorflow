@@ -223,7 +223,7 @@ $.ccio.globalWebsocket=function(d,user){
                 var snapElement = $('[mid="'+d.mid+'"][ke="'+d.ke+'"][auth="'+user.auth_token+'"] .snapshot')
                 switch(d.snapshot_format){
                     case'plc':
-                        snapElement.attr('src',placeholder.getData(placeholder.plcimg(d.snapshot)))
+                        snapElement.attr('src',placeholder.getData(placeholder.plcimg({text:d.snapshot.toUpperCase().split('').join(' '), fsize: 25, bgcolor:'#1462a5'})))
                     break;
                     case'ab':
                         d.reader = new FileReader();

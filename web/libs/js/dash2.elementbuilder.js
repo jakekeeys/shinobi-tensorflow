@@ -33,7 +33,7 @@ $.ccio.tm=function(x,d,z,user){
             })
         break;
         case 1://monitor icon
-            d.src=placeholder.getData(placeholder.plcimg({bgcolor:'#b57d00',text:'...'}));
+            d.src=placeholder.getData(placeholder.plcimg({bgcolor:'#1d88e2',text:'...'}));
             tmp+='<div auth="'+user.auth_token+'" mid="'+d.mid+'" ke="'+d.ke+'" title="'+d.mid+' : '+d.name+'" class="monitor_block glM'+d.mid+user.auth_token+' col-md-4"><img monitor="watch" class="snapshot" src="'+d.src+'"><div class="box"><div class="title monitor_name truncate">'+d.name+'</div><div class="list-data"><div class="monitor_mid">'+d.mid+'</div><div><b>'+lang['Save as']+' :</b> <span class="monitor_ext">'+d.ext+'</span></div><div><b>Status :</b> <span class="monitor_status">'+d.status+'</span></div></div><div class="icons text-center">'
             tmp+='<div class="btn-group btn-group-xs">'
                 var buttons = {
