@@ -793,12 +793,14 @@ $.ccio.tm=function(x,d,z,user){
         case 1:
             z='#monitors_list .link-monitors-list[auth="'+user.auth_token+'"][ke="'+d.ke+'"]'
             if($('.link-monitors-list[auth="'+user.auth_token+'"][ke="'+d.ke+'"]').length===0){
-                $("#monitors_list").append('<div class="link-monitors-list" auth="'+user.auth_token+'" ke="'+d.ke+'"></div>')
+                $("#monitors_list").append('<div class="link-monitors-list" style="height:100%" auth="'+user.auth_token+'" ke="'+d.ke+'"></div>')
                 var options = {
                     cellHeight: 80,
                     verticalMargin: 10,
                 };
                 $(z).sortable({
+                    handle: '.title',
+                    containment: "parent",
                     stop : function(event,ui){
                         var order = {}
                         $('.link-monitors-list').each(function(n,block){
@@ -817,7 +819,6 @@ $.ccio.tm=function(x,d,z,user){
                         $user.details.monitorListOrder = order
                         $.ccio.cx({f:'monitorListOrder',monitorListOrder:order},user)
                     },
-                    handle: '.title'
                 })
             }
             $(z).prepend(tmp)
