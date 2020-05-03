@@ -226,6 +226,7 @@ module.exports = function(__dirname,config){
         io.attach(server);
         s.connectedClients={};
         io.on('connection', function (cn) {
+            plugLog('Plugin Connected to a Shinobi..')
             s.connectedClients[cn.id]={id:cn.id}
             s.connectedClients[cn.id].tx = function(data){
                 data.pluginKey=config.key;data.plug=config.plug;
@@ -242,6 +243,7 @@ module.exports = function(__dirname,config){
     }else{
         //start plugin as client
         var retryConnection = 0
+        var clearRetryConnectionTimeout
         maxRetryConnection = config.maxRetryConnection || 5
         plugLog('Plugin starting as Client, Host Address : '+'ws://'+config.host+':'+config.port)
         if(!config.host){config.host='localhost'}
@@ -250,6 +252,31 @@ module.exports = function(__dirname,config){
           var io = require('socket.io-client')('ws://'+config.host+':'+config.port,{
               transports: ['websocket']
           });
+          const onDisconnect = (err) => {
+              clearTimeout(clearRetryConnectionTimeout)
+              if(io.connected){
+                  io.disconnect()
+                  return
+              }
+              if(err && err.type){
+                  plugLog('Plugin Error. Attempting Reconnect..')
+                  plugLog(err.type)
+              }
+              if(retryConnection > maxRetryConnection && maxRetryConnection !== 0){
+                  webPageMssage = 'Max Failed Retries Reached'
+                  return plugLog('Max Failed Retries Reached!',maxRetryConnection)
+              }
+              ++retryConnection
+              plugLog('Plugin Disconnected..')
+              if(!allowDisconnect){
+                  setTimeout(()=>{
+                      if(!io.connected){
+                          plugLog('Attempting Reconnect..')
+                          io.connect()
+                      }
+                  },3000)
+              };
+          }
           //connect to master
           s.cx = function(x){
               var sendData = Object.assign(x,{
@@ -258,31 +285,16 @@ module.exports = function(__dirname,config){
               })
               return io.emit('ocv',sendData)
           }
-          io.on('connect_error', function(err){
-              plugLog('ws://'+config.host+':'+config.port)
-              plugLog('Connection Failed')
-              plugLog(err)
-          })
+          io.on('connect_error', onDisconnect)
           io.on('connect',function(d){
+              plugLog('Plugin Connected to Shinobi..')
               s.cx({f:'init',plug:config.plug,notice:config.notice,type:config.type,connectionType:config.connectionType});
+              clearRetryConnectionTimeout = setTimeout(() => {
+                  retryConnection = 0
+              },10000)
           })
-          io.on('disconnect',function(){
-              if(retryConnection > maxRetryConnection && maxRetryConnection !== 0){
-                  webPageMssage = 'Max Failed Retries Reached'
-                  return plugLog('Max Failed Retries Reached!',maxRetryConnection)
-              }
-              ++retryConnection
-              plugLog('Plugin Disconnected. Attempting Reconnect..')
-              if(!allowDisconnect)io.connect();
-          })
-          io.on('error',function(err){
-              allowDisconnect = true;
-              plugLog('Plugin Error. Attempting Reconnect..')
-              plugLog(err.stack)
-              if(io.connected)io.disconnect();
-              delete(io)
-              var io = createConnection()
-          })
+          io.on('disconnect',onDisconnect)
+          io.on('error',onDisconnect)
           io.on('f',function(d){
               s.MainEventController(d,null,s.cx)
           })
