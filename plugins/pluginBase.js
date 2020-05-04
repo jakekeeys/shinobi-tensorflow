@@ -7,20 +7,24 @@
 // If you like what I am doing here and want me to continue please consider donating :)
 // PayPal : paypal@m03.ca
 //
-var fs=require('fs');
+var fs = require('fs');
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var moment = require('moment');
 var express = require('express');
 var http = require('http'),
     app = express();
-module.exports = function(__dirname,config){
-    var plugLog = function(d1){
-        console.log(new Date(),config.plug,d1)
+module.exports = function(__dirname, config){
+    if(!config){
+        return console.log(`Configuration file is missing.`)
     }
-    process.on('uncaughtException', function (err) {
-        console.error('uncaughtException',err);
-    });
+    var plugLog = (d1) => {
+        console.log(new Date(), config.plug, d1)
+    }
+
+    process.on('uncaughtException', (err) => {
+        console.error('uncaughtException', err)
+    })
 
     try{
         if(!config.skipMainConfigCheck){
@@ -31,7 +35,7 @@ module.exports = function(__dirname,config){
                 foundKeyAdded = true
             }
             if(mainConfig.plugins){
-                mainConfig.plugins.forEach(function(plug){
+                mainConfig.plugins.forEach((plug) => {
                     if(plug.id === config.plug){
                         foundKeyAdded = true
                     }
@@ -46,55 +50,60 @@ module.exports = function(__dirname,config){
 
     }
 
-    if(!config.port){config.port=8080}
-    if(!config.hostPort){config.hostPort=8082}
-    if(config.systemLog===undefined){config.systemLog=true}
+    if(!config.dirname){config.dirname = '.'}
+    if(!config.port){config.port = 8080}
+    if(!config.hostPort){config.hostPort = 8082}
+    if(config.systemLog === undefined){config.systemLog = true}
     if(config.connectionType === undefined)config.connectionType = 'websocket'
     s = {
-        group:{},
-        dir:{},
-        isWin:(process.platform==='win32'),
-        s:function(json){return JSON.stringify(json,null,3)}
+        group: {},
+        dir: {},
+        isWin: (process.platform === 'win32'),
+        s: (json) => {
+            return JSON.stringify(json,null,3)
+        }
     }
     //default stream folder check
     if(!config.streamDir){
-        if(s.isWin===false){
-            config.streamDir='/dev/shm'
+        if(s.isWin === false){
+            config.streamDir = '/dev/shm'
         }else{
-            config.streamDir=config.windowsTempDir
+            config.streamDir = config.windowsTempDir
         }
         if(!fs.existsSync(config.streamDir)){
-            config.streamDir=__dirname+'/streams/'
+            config.streamDir = config.dirname+'/streams/'
         }else{
-            config.streamDir+='/streams/'
+            config.streamDir += '/streams/'
         }
     }
-    s.dir.streams=config.streamDir;
+    s.dir.streams = config.streamDir
     //streams dir
     if(!fs.existsSync(s.dir.streams)){
-        fs.mkdirSync(s.dir.streams);
+        fs.mkdirSync(s.dir.streams)
     }
-    s.checkCorrectPathEnding=function(x){
-        var length=x.length
-        if(x.charAt(length-1)!=='/'){
-            x=x+'/'
+    s.checkCorrectPathEnding = (x) => {
+        var length = x.length
+        if(x.charAt(length-1) !== '/'){
+            x = x+'/'
         }
-        return x.replace('__DIR__',__dirname)
+        return x.replace('__DIR__',config.dirname)
     }
-    s.gid = function(x){
-        if(!x){x=10};var t = "";var p = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        for( var i=0; i < x; i++ )
+    s.gid = (x) => {
+        if(!x){x = 10};
+        var t = "";
+        var p = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        for( var i = 0; i < x; i++ )
             t += p.charAt(Math.floor(Math.random() * p.length));
         return t;
     };
-    s.systemLog = function(q,w,e){
+    s.systemLog = (q,w,e) => {
         if(!w){w=''}
         if(!e){e=''}
         if(config.systemLog===true){
            return console.log(moment().format(),q,w,e)
         }
     }
-    s.debugLog = function(){
+    s.debugLog = () => {
         if(config.debugLog === true){
             console.log(new Date(),arguments)
             if(config.debugLogVerbose === true){
@@ -102,18 +111,18 @@ module.exports = function(__dirname,config){
             }
         }
     }
-    s.detectObject=function(buffer,d,tx,frameLocation){
+    s.detectObject = (buffer,d,tx,frameLocation) => {
         console.log('detectObject handler not set')
     }
     s.onCameraInitExtensions = []
-    s.onCameraInit = function(extender){
+    s.onCameraInit = (extender) => {
         s.onCameraInitExtensions.push(extender)
     }
     s.onPluginEvent = []
-    s.onPluginEventExtender = function(extender){
+    s.onPluginEventExtender = (extender) => {
         s.onPluginEvent.push(extender)
     }
-    s.MainEventController = function(d,cn,tx){
+    s.MainEventController = (d,cn,tx) => {
         switch(d.f){
             case'init_plugin_as_host':
                 if(!cn){
@@ -131,21 +140,21 @@ module.exports = function(__dirname,config){
             break;
             case'init_monitor':
                 retryConnection = 0
-                if(s.group[d.ke]&&s.group[d.ke][d.id]){
+                if(s.group[d.ke] && s.group[d.ke][d.id]){
                     s.group[d.ke][d.id].numberOfTriggers = 0
                     delete(s.group[d.ke][d.id].cords)
                     delete(s.group[d.ke][d.id].buffer)
-                    s.onCameraInitExtensions.forEach(function(extender){
+                    s.onCameraInitExtensions.forEach((extender) => {
                         extender(d,cn,tx)
                     })
                 }
             break;
             case'frameFromRam':
                 if(!s.group[d.ke]){
-                    s.group[d.ke]={}
+                    s.group[d.ke] = {}
                 }
                 if(!s.group[d.ke][d.id]){
-                    s.group[d.ke][d.id]={}
+                    s.group[d.ke][d.id] = {}
                 }
                 s.detectObject(buffer,d,tx,d.frameLocation)
             break;
@@ -156,19 +165,19 @@ module.exports = function(__dirname,config){
                     }
                     if(!s.group[d.ke][d.id]){
                         s.group[d.ke][d.id] = {}
-                        s.onCameraInitExtensions.forEach(function(extender){
+                        s.onCameraInitExtensions.forEach((extender) => {
                             extender(d,cn,tx)
                         })
                     }
                     if(!s.group[d.ke][d.id].buffer){
-                      s.group[d.ke][d.id].buffer=[d.frame];
+                      s.group[d.ke][d.id].buffer = [d.frame];
                     }else{
                       s.group[d.ke][d.id].buffer.push(d.frame)
                     }
                     if(d.frame[d.frame.length-2] === 0xFF && d.frame[d.frame.length-1] === 0xD9){
                         var buffer = Buffer.concat(s.group[d.ke][d.id].buffer);
                         s.detectObject(buffer,d,tx)
-                        s.group[d.ke][d.id].buffer=null;
+                        s.group[d.ke][d.id].buffer = null
                     }
                 }catch(err){
                     if(err){
@@ -178,11 +187,11 @@ module.exports = function(__dirname,config){
                 }
             break;
         }
-        s.onPluginEvent.forEach(function(extender){
+        s.onPluginEvent.forEach((extender) => {
             extender(d,cn,tx)
         })
     }
-    server = http.createServer(app).on('error', function(err){
+    server = http.createServer(app).on('error', (err) => {
         if(err.code === 'EADDRINUSE'){
             //try next port
             if(webServerTryCount === 5){
@@ -191,16 +200,16 @@ module.exports = function(__dirname,config){
             ++webServerTryCount
             var port = parseInt(config.hostPort)
             config.hostPort = parseInt(config.hostPort) + 1
-            plugLog('Failed to Start Web Server on '+port+'. Trying next Port '+config.hostPort)
+            plugLog(`Failed to Start Web Server on ${port}. Trying next Port ${config.hostPort}`)
             startWebServer()
         }else{
             console.log(err)
         }
     })
     var webServerTryCount = 0
-    var startWebServer = function(){
+    var startWebServer = () => {
         var port = parseInt(config.hostPort)
-        server.listen(config.hostPort,function(err){
+        server.listen(config.hostPort, (err) => {
             if(port === config.hostPort){
                 plugLog('Plugin started on Port ' + port)
             }
@@ -209,7 +218,7 @@ module.exports = function(__dirname,config){
     startWebServer()
     //web pages and plugin api
     var webPageMssage = '<b>'+config.plug+'</b> for Shinobi is running'
-    app.get('/', function (req, res) {
+    app.get('/', (req, res) => {
       res.end()
     });
     //Conector to Shinobi
@@ -224,18 +233,21 @@ module.exports = function(__dirname,config){
             perMessageDeflate: false
         })
         io.attach(server);
-        s.connectedClients={};
-        io.on('connection', function (cn) {
+        s.connectedClients = {};
+        io.on('connection', (cn) => {
             plugLog('Plugin Connected to a Shinobi..')
-            s.connectedClients[cn.id]={id:cn.id}
-            s.connectedClients[cn.id].tx = function(data){
-                data.pluginKey=config.key;data.plug=config.plug;
-                return io.to(cn.id).emit('ocv',data);
+            s.connectedClients[cn.id] = {
+                id: cn.id
             }
-            cn.on('f',function(d){
+            s.connectedClients[cn.id].tx = (data) => {
+                data.pluginKey = config.key
+                data.plug = config.plug
+                return io.to(cn.id).emit('ocv',data)
+            }
+            cn.on('f',(d) => {
                 s.MainEventController(d,cn,s.connectedClients[cn.id].tx)
-            });
-            cn.on('disconnect',function(d){
+            })
+            cn.on('disconnect',(d) => {
                 plugLog('Plugin Disconnected.',cn.id)
                 delete(s.connectedClients[cn.id])
             })
@@ -247,7 +259,7 @@ module.exports = function(__dirname,config){
         maxRetryConnection = config.maxRetryConnection || 5
         plugLog('Plugin starting as Client, Host Address : '+'ws://'+config.host+':'+config.port)
         if(!config.host){config.host='localhost'}
-        const createConnection = function(){
+        const createConnection = () => {
           var allowDisconnect = false;
           var io = require('socket.io-client')('ws://'+config.host+':'+config.port,{
               transports: ['websocket']
@@ -269,7 +281,7 @@ module.exports = function(__dirname,config){
               ++retryConnection
               plugLog('Plugin Disconnected..')
               if(!allowDisconnect){
-                  setTimeout(()=>{
+                  setTimeout(() => {
                       if(!io.connected){
                           plugLog('Attempting Reconnect..')
                           io.connect()
@@ -278,7 +290,7 @@ module.exports = function(__dirname,config){
               };
           }
           //connect to master
-          s.cx = function(x){
+          s.cx = (x) => {
               var sendData = Object.assign(x,{
                   pluginKey : config.key,
                   plug : config.plug
@@ -286,7 +298,7 @@ module.exports = function(__dirname,config){
               return io.emit('ocv',sendData)
           }
           io.on('connect_error', onDisconnect)
-          io.on('connect',function(d){
+          io.on('connect', (d) => {
               plugLog('Plugin Connected to Shinobi..')
               s.cx({f:'init',plug:config.plug,notice:config.notice,type:config.type,connectionType:config.connectionType});
               clearRetryConnectionTimeout = setTimeout(() => {
@@ -295,75 +307,80 @@ module.exports = function(__dirname,config){
           })
           io.on('disconnect',onDisconnect)
           io.on('error',onDisconnect)
-          io.on('f',function(d){
+          io.on('f', (d) => {
               s.MainEventController(d,null,s.cx)
           })
           return io
         }
         var io = createConnection()
     }
-    s.getWebsocket = function(){
+    s.getWebsocket = () => {
         return io
     }
-    s.createPythonScriptDaemon = function(){
-        if(!config.pythonScript){config.pythonScript=__dirname+'/pumpkin.py'}
-        if(!config.pythonPort){config.pythonPort=7990}
+    s.createPythonScriptDaemon = () => {
+        if(!config.pythonScript){config.pythonScript = config.dirname + '/pumpkin.py'}
+        if(!config.pythonPort){config.pythonPort = 7990}
         //Start Python Controller
         s.callbacks = {}
-        s.createCameraBridgeToPython = function(uniqueId){
-            var pythonIo = require('socket.io-client')('ws://localhost:'+config.pythonPort,{transports : ['websocket']});
-            var sendToPython = function(data,callback){
+        s.createCameraBridgeToPython = (uniqueId) => {
+            var pythonIo = require('socket.io-client')('ws://localhost:' + config.pythonPort,{
+                transports: ['websocket']
+            })
+            var sendToPython = (data,callback) => {
                 s.callbacks[data.id] = callback
                 pythonIo.emit('f',data)
             }
-            var refreshTracker = function(data){
+            var refreshTracker = (data) => {
                 pythonIo.emit('refreshTracker',{trackerId : data})
             }
-            pythonIo.on('connect',function(d){
+            pythonIo.on('connect', (d) => {
                 s.debugLog(uniqueId+' is Connected from Python')
             })
-            pythonIo.on('disconnect',function(d){
+            pythonIo.on('disconnect', (d) => {
                 s.debugLog(uniqueId+' is Disconnected from Python')
-                setTimeout(function(){
+                setTimeout(() => {
                     pythonIo.connect();
                     s.debugLog(uniqueId+' is Attempting to Reconect to Python')
                 },3000)
             })
-            pythonIo.on('f',function(d){
+            pythonIo.on('f', (d) => {
                 if(s.callbacks[d.id]){
                     s.callbacks[d.id](d.data)
                     delete(s.callbacks[d.id])
                 }
             })
-            return {refreshTracker : refreshTracker, sendToPython : sendToPython}
+            return {
+                refreshTracker: refreshTracker,
+                sendToPython: sendToPython
+            }
         }
 
 
         //Start Python Daemon
         process.env.PYTHONUNBUFFERED = 1;
-        var createPythonProcess = function(){
+        var createPythonProcess = () => {
             s.isPythonRunning = false
-            s.pythonScript = spawn('sh',[__dirname+'/bootPy.sh',config.pythonScript,__dirname]);
-            var onStdErr = function(data){
+            s.pythonScript = spawn('sh',[config.dirname + '/bootPy.sh',config.pythonScript,config.dirname]);
+            var onStdErr = (data) => {
                 s.debugLog(data.toString())
             }
-            var onStdOut = function(data){
+            var onStdOut = (data) => {
                 s.debugLog(data.toString())
             }
-            setTimeout(function(){
+            setTimeout(() => {
               s.isPythonRunning = true
             },5000)
             s.pythonScript.stderr.on('data',onStdErr);
 
             s.pythonScript.stdout.on('data',onStdOut);
 
-            s.pythonScript.on('close', function () {
+            s.pythonScript.on('close', () => {
                 s.debugLog('Python CLOSED')
             });
         }
         createPythonProcess()
     }
-    s.getImageDimensions = function(d){
+    s.getImageDimensions = (d) => {
         var height
         var width
         if(
