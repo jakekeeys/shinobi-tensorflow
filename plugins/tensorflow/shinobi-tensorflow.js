@@ -33,11 +33,6 @@ s.detectObject=function(buffer,d,tx,frameLocation){
         if(results[0]){
             var mats = []
             results.forEach(function(v){
-              // [xmin ymin xmax ymax]
-              // [x y width height]
-              // [xmin, ymin, xmax-xmin+1, ymax-ymin+1]
-                // var width = v.bbox[2] - v.bbox[0]
-                // var height = v.bbox[3] - v.bbox[1]
                 mats.push({
                     x: v.bbox[0],
                     y: v.bbox[1],
@@ -66,67 +61,4 @@ s.detectObject=function(buffer,d,tx,frameLocation){
             })
         }
     })
-    // var detectStuff = function(frame,callback){
-    //     detector.detect(frame)
-    //          .then(detections => {
-    //              matrices = []
-    //              detections.forEach(function(v){
-    //                  matrices.push({
-    //                    x:v.box.x,
-    //                    y:v.box.y,
-    //                    width:v.box.w,
-    //                    height:v.box.h,
-    //                    tag:v.className,
-    //                    confidence:v.probability,
-    //                  })
-    //              })
-    //              if(matrices.length > 0){
-    //                  tx({
-    //                      f:'trigger',
-    //                      id:d.id,
-    //                      ke:d.ke,
-    //                      details:{
-    //                          plug:config.plug,
-    //                          name:'yolo',
-    //                          reason:'object',
-    //                          matrices:matrices,
-    //                          imgHeight:parseFloat(d.mon.detector_scale_y),
-    //                          imgWidth:parseFloat(d.mon.detector_scale_x)
-    //                      }
-    //                  })
-    //              }
-    //              fs.unlink(frame,function(){
-    //
-    //              })
-    //          })
-    //          .catch(error => {
-    //              console.log(error)
-    //
-    //            // here you can handle the errors. Ex: Out of memory
-    //        })
-    // }
-    // if(frameLocation){
-    //     detectStuff(frameLocation)
-    // }else{
-    //     d.tmpFile=s.gid(5)+'.jpg'
-    //     if(!fs.existsSync(s.dir.streams)){
-    //         fs.mkdirSync(s.dir.streams);
-    //     }
-    //     d.dir=s.dir.streams+d.ke+'/'
-    //     if(!fs.existsSync(d.dir)){
-    //         fs.mkdirSync(d.dir);
-    //     }
-    //     d.dir=s.dir.streams+d.ke+'/'+d.id+'/'
-    //     if(!fs.existsSync(d.dir)){
-    //         fs.mkdirSync(d.dir);
-    //     }
-    //     fs.writeFile(d.dir+d.tmpFile,buffer,function(err){
-    //         if(err) return s.systemLog(err);
-    //         try{
-    //             detectStuff(d.dir+d.tmpFile)
-    //         }catch(error){
-    //             console.error('Catch: ' + error);
-    //         }
-    //     })
-    // }
 }
