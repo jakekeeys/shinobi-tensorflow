@@ -3,6 +3,10 @@ $(document).ready(function(){
       "title": "Shinobi Configuration",
       "type": "object",
       "properties": {
+          "debugLog": {
+            "type": "boolean",
+            "default": false
+          },
           "subscriptionId": {
             "type": "string",
           },
