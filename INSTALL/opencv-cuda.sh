@@ -34,16 +34,19 @@ echo "*****************"
 echo "Adding Additional Repository"
 echo "http://security.ubuntu.com/ubuntu"
 if [ "$flavor" = *"Artful"* ]; then
-    sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu artful-security main"
+    sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu artful-security main" -y
 fi
 if [ "$flavor" = *"Zesty"* ]; then
-    sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu zesty-security main"
+    sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu zesty-security main" -y
 fi
 if [ "$flavor" = *"Xenial"* ]; then
-    sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main"
+    sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main" -y
 fi
 if [ "$flavor" = *"Trusty"* ]; then
-    sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu trusty-security main"
+    sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu trusty-security main" -y
+fi
+if [ "$flavor" = *"Eoan"* ]; then
+    sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu/ bionic main restricted universe multiverse" -y
 fi
 echo "Downloading Libraries"
 sudo apt-get install libjpeg-dev libpango1.0-dev libgif-dev build-essential gcc-6 g++-6 -y;
