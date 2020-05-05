@@ -9,7 +9,7 @@ if [ ! -e "./opencv" ]; then
     echo "Downloading OpenCV..."
     git clone https://github.com/opencv/opencv.git
     cd opencv
-    git checkout 3.4.0
+    git checkout 3.4.10
     cd ..
 fi
 if [ ! -e "./opencv_contrib" ]; then
