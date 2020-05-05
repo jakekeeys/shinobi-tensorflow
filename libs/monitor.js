@@ -33,6 +33,7 @@ module.exports = function(s,config,lang){
         // if(!s.group[e.ke].activeMonitors[e.mid].viewerConnectionCount){s.group[e.ke].activeMonitors[e.mid].viewerConnectionCount=0};
         if(!s.group[e.ke].activeMonitors[e.mid].parsedObjects){s.group[e.ke].activeMonitors[e.mid].parsedObjects={}};
         if(!s.group[e.ke].activeMonitors[e.mid].detector_motion_count){s.group[e.ke].activeMonitors[e.mid].detector_motion_count=[]};
+        if(!s.group[e.ke].activeMonitors[e.mid].eventsCounted){s.group[e.ke].activeMonitors[e.mid].eventsCounted = {}};
         if(!s.group[e.ke].activeMonitors[e.mid].isStarted){s.group[e.ke].activeMonitors[e.mid].isStarted = false};
         if(s.group[e.ke].activeMonitors[e.mid].delete){clearTimeout(s.group[e.ke].activeMonitors[e.mid].delete)}
         if(!s.group[e.ke].rawMonitorConfigurations){s.group[e.ke].rawMonitorConfigurations={}}
@@ -947,7 +948,14 @@ module.exports = function(s,config,lang){
             mid: e.id,
             time: s.formattedTime()
         },'GRP_'+e.ke)
-        s.group[e.ke].activeMonitors[e.id].spawn = s.ffmpeg(e)
+        try{
+            s.group[e.ke].activeMonitors[e.id].spawn = s.ffmpeg(e)
+        }catch(err){
+            console.log('failed to launch, try again')
+            setTimeout(() => {
+                s.group[e.ke].activeMonitors[e.id].spawn = s.ffmpeg(e)
+            },3000)
+        }
         s.sendMonitorStatus({id:e.id,ke:e.ke,status:e.wantedStatus});
         //on unexpected exit restart
         s.group[e.ke].activeMonitors[e.id].spawn_exit = function(){
@@ -1052,12 +1060,13 @@ module.exports = function(s,config,lang){
             s.group[e.ke].activeMonitors[e.id].spawn.stdio[6].pipe(audioDetector.streamDecoder,{ end: false })
         }
         if(e.details.record_timelapse === '1'){
+            var timelapseRecordingDirectory = s.getTimelapseFrameDirectory(e)
             s.group[e.ke].activeMonitors[e.id].spawn.stdio[7].on('data',function(data){
                 var fileStream = s.group[e.ke].activeMonitors[e.id].recordTimelapseWriter
                 if(!fileStream){
                     var currentDate = s.formattedTime(null,'YYYY-MM-DD')
                     var filename = s.formattedTime() + '.jpg'
-                    var location = s.getTimelapseFrameDirectory(e) + currentDate + '/'
+                    var location = timelapseRecordingDirectory + currentDate + '/'
                     if(!fs.existsSync(location)){
                         fs.mkdirSync(location)
                     }
@@ -1408,39 +1417,48 @@ module.exports = function(s,config,lang){
                 if(activeMonitor.isStarted === true){
                     e.errorCount = 0;
                     activeMonitor.errorSocketTimeoutCount = 0;
-                    cameraDestroy(e)
+                    try{
+                        cameraDestroy(e)
+                    }catch(err){
+
+                    }
                     startVideoProcessor = function(err,o){
                         if(o.success === true){
                             activeMonitor.isRecording = true
-                            createCameraFfmpegProcess(e)
-                            createCameraStreamHandlers(e)
-                            if(e.type === 'dashcam'){
-                                setTimeout(function(){
-                                    activeMonitor.allowStdinWrite = true
-                                    s.txToDashcamUsers({
-                                        f : 'enable_stream',
-                                        ke : e.ke,
-                                        mid : e.id
-                                    },e.ke)
-                                },30000)
+                            try{
+                                createCameraFfmpegProcess(e)
+                                createCameraStreamHandlers(e)
+                                if(e.type === 'dashcam'){
+                                    setTimeout(function(){
+                                        activeMonitor.allowStdinWrite = true
+                                        s.txToDashcamUsers({
+                                            f : 'enable_stream',
+                                            ke : e.ke,
+                                            mid : e.id
+                                        },e.ke)
+                                    },30000)
+                                }
+                                if(
+                                    e.functionMode === 'record' ||
+                                    e.type === 'mjpeg' ||
+                                    e.type === 'h264' ||
+                                    e.type === 'local'
+                                ){
+                                    catchNewSegmentNames(e)
+                                    cameraFilterFfmpegLog(e)
+                                }
+                                if(e.coProcessor === true){
+                                    setTimeout(function(){
+                                        s.coSpawnLauncher(e)
+                                    },6000)
+                                }
+                                s.onMonitorStartExtensions.forEach(function(extender){
+                                    extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
+                                })
+                            }catch(err){
+                                console.log('Failed to Load',e.id,e.ke)
+                                console.log(err)
                             }
-                            if(
-                                e.functionMode === 'record' ||
-                                e.type === 'mjpeg' ||
-                                e.type === 'h264' ||
-                                e.type === 'local'
-                            ){
-                                catchNewSegmentNames(e)
-                                cameraFilterFfmpegLog(e)
-                            }
-                            if(e.coProcessor === true){
-                                setTimeout(function(){
-                                    s.coSpawnLauncher(e)
-                                },6000)
-                            }
-                            s.onMonitorStartExtensions.forEach(function(extender){
-                                extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
-                            })
                           }else{
                               s.onMonitorPingFailedExtensions.forEach(function(extender){
                                   extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)

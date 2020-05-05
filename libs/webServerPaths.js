@@ -1793,6 +1793,40 @@ module.exports = function(s,config,lang,app,io){
         },res,req);
     })
     /**
+    * API : Object Detection Counter Reset
+     */
+    app.get(config.webPaths.apiPrefix+':auth/counterReset/:ke/:id', function (req,res){
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,function(user){
+            if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
+                res.end(user.lang['Not Permitted'])
+                return
+            }
+            s.clearCountedObjectsForMonitor(req.params.ke,req.params.id)
+            res.end(s.prettyPrint({
+                ok: true
+            }))
+        },res,req);
+    })
+    /**
+    * API : Object Detection Counter Status
+     */
+    app.get(config.webPaths.apiPrefix+':auth/counterStatus/:ke/:id', function (req,res){
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,function(user){
+            if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
+                res.end(user.lang['Not Permitted'])
+                return
+            }
+            var selectedObject = s.group[req.params.ke].activeMonitors[req.params.id].eventsCounted
+            res.end(s.prettyPrint({
+                ok: true,
+                counted: Object.keys(selectedObject).length,
+                tags: selectedObject,
+            }))
+        },res,req);
+    })
+    /**
     * API : Camera PTZ Controller
      */
     app.get(config.webPaths.apiPrefix+':auth/control/:ke/:id/:direction', function (req,res){

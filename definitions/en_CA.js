@@ -2968,6 +2968,45 @@ module.exports = function(s,config,lang){
                             ]
                          },
                          {
+                            "name": "detail=detector_obj_count",
+                            "field": lang["Count Objects"],
+                            "description": "Count detected objects.",
+                            "default": "0",
+                            "example": "",
+                            "selector": "h_det_count",
+                            "fieldType": "select",
+                            "possible": [
+                               {
+                                  "name": lang.No,
+                                  "value": "0"
+                               },
+                               {
+                                  "name": lang.Yes,
+                                  "value": "1"
+                               }
+                            ]
+                         },
+                         {
+                             hidden: true,
+                            "name": "detail=detector_obj_count_in_region",
+                            "field": lang["Count Objects only inside Regions"],
+                            "description": "Count Objects only inside Regions.",
+                            "default": "0",
+                            "example": "",
+                            "form-group-class": "h_det_count_input h_det_count_1",
+                            "fieldType": "select",
+                            "possible": [
+                               {
+                                  "name": lang.No,
+                                  "value": "0"
+                               },
+                               {
+                                  "name": lang.Yes,
+                                  "value": "1"
+                               }
+                            ]
+                         },
+                         {
                             "name": "detail=detector_obj_region",
                             "field": lang['Require Object to be in Region'],
                             "description": "",

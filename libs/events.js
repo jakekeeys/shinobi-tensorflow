@@ -8,8 +8,39 @@ var SAT = require('sat')
 var V = SAT.Vector;
 var P = SAT.Polygon;
 // Matrix In Region Libs />
+var objectCountTimeouts = {}
 module.exports = function(s,config,lang){
-    isAtleastOneMatrixInRegion = function(regions,matrices,callback){
+    const clearCountedObjectsForMonitor = async (groupKey,monitorId) => {
+        Object.keys(objectCountTimeouts[groupKey][monitorId]).forEach((objectId) => {
+            clearTimeout(objectCountTimeouts[groupKey][monitorId][objectId])
+        })
+        s.group[groupKey].activeMonitors[monitorId].eventsCounted = {}
+    }
+    const countObjectSetTimeout = async (event,matrixId) => {
+        const eventsCounted = s.group[event.ke].activeMonitors[event.id].eventsCounted || {}
+        if(!objectCountTimeouts[event.ke])objectCountTimeouts[event.ke] = {}
+        if(!objectCountTimeouts[event.ke][event.id])objectCountTimeouts[event.ke][event.id] = {}
+        clearTimeout(objectCountTimeouts[event.ke][event.id][matrixId])
+        objectCountTimeouts[event.ke][event.id][matrixId] = setTimeout(() => {
+            delete(eventsCounted[matrixId])
+        },10000)
+    }
+    const countObjects = async (event) => {
+        const matrices = event.details.matrices
+        const eventsCounted = s.group[event.ke].activeMonitors[event.id].eventsCounted || {}
+        if(matrices){
+            const currentTime = new Date()
+            matrices.forEach((matrix)=>{
+                const id = !isNaN(matrix.id) ? matrix.id : matrix.tag
+                console.log(matrix)
+                if(!eventsCounted[id])eventsCounted[id] = 0
+                ++eventsCounted[id]
+                countObjectSetTimeout(event,id)
+            })
+        }
+        return eventsCounted
+    }
+    const isAtleastOneMatrixInRegion = function(regions,matrices,callback){
         var regionPolys = []
         var matrixPoints = []
         regions.forEach(function(region,n){
@@ -89,6 +120,7 @@ module.exports = function(s,config,lang){
         })
     }
     s.triggerEvent = function(d,forceSave){
+        var didCountingAlready = false
         var filter = {
             halt : false,
             addToMotionCounter : true,
@@ -97,7 +129,8 @@ module.exports = function(s,config,lang){
             webhook : true,
             command : true,
             record : true,
-            indifference : false
+            indifference : false,
+            countObjects : true
         }
         s.onEventTriggerBeforeFilterExtensions.forEach(function(extender){
             extender(d,filter)
@@ -237,6 +270,10 @@ module.exports = function(s,config,lang){
         if(filter.addToMotionCounter && filter.record){
             s.group[d.ke].activeMonitors[d.id].detector_motion_count.push(d)
         }
+        if(filter.countObjects && currentConfig.detector_obj_count === '1' && currentConfig.detector_obj_count_in_region !== '1'){
+            didCountingAlready = true
+            countObjects(d)
+        }
         if(filter.useLock){
             if(s.group[d.ke].activeMonitors[d.id].motion_lock){
                 return
@@ -261,6 +298,9 @@ module.exports = function(s,config,lang){
             var isMatrixInRegions = isAtleastOneMatrixInRegion(regions,d.details.matrices)
             if(isMatrixInRegions){
                 s.debugLog('Matrix in region!')
+                if(filter.countObjects && currentConfig.detector_obj_count === '1' && currentConfig.detector_obj_count_in_region === '1' && !didCountingAlready){
+                    countObjects(d)
+                }
             }else{
                 return
             }
@@ -443,4 +483,5 @@ module.exports = function(s,config,lang){
         //     item.process.kill('SIGTERM');
         // })
     }
+    s.clearCountedObjectsForMonitor = clearCountedObjectsForMonitor
 }
