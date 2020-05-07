@@ -281,8 +281,12 @@ $.ccio.tm=function(x,d,z,user){
             }else{
                 $.each(monitorMutes,function(monitorId,choice){
                     if(choice === 1){
-                        var vidEl = $('.monitor_item[mid="' + monitorId + '"] video')[0]
-                        vidEl.muted = true
+                        try{
+                            var vidEl = $('.monitor_item[mid="' + monitorId + '"] video')[0]
+                            vidEl.muted = true
+                        }catch(err){
+                            
+                        }
                     }
                 })
             }
