@@ -469,7 +469,7 @@ $(document).ready(function(e){
                         videoSet = 'cloudVideos'
                     break;
                 }
-                e.videoURL=$.ccio.init('location',user)+user.auth_token+'/'+videoSet+'/'+e.ke+'/'+e.mid+'?limit='+e.limit+'&start='+$.ccio.init('th',e.dateRange.startDate)+'&end='+$.ccio.init('th',e.dateRange.endDate);
+                e.videoURL=$.ccio.init('location',user)+user.auth_token+'/'+videoSet+'/'+e.ke+'/'+e.mid+'?limit='+e.limit+'&start='+e.dateRange.startDate.utc().format('YYYY-MM-DDTHH:mm:ss')+'&end='+e.dateRange.endDate.utc().format('YYYY-MM-DDTHH:mm:ss');
                 $.getJSON(e.videoURL,function(d){
                     d.pages=d.total/100;
                     $('.video_viewer_total').text(d.total)
@@ -501,9 +501,10 @@ $(document).ready(function(e){
                                         $.vidview.loadedVideos[v.filename] = Object.assign(v,{})
                                         var n=$.ccio.mon[v.ke+v.mid+user.auth_token];
                                         if(n){v.title=n.name+' - '+(parseInt(v.size)/1048576).toFixed(2)+'mb';}
-                                        v.start=v.time;
+                                        v.start = moment.utc(v.time).local()
+                                        v.end = moment.utc(v.end).local()
     //                                    v.filename=$.ccio.init('tf',v.time)+'.'+v.ext;
-                                        e.ar.push(v);
+                                        e.ar.push(v)
                                     }
                                 })
                                 e.b.html('')
