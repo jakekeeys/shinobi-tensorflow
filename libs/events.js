@@ -31,11 +31,11 @@ module.exports = function(s,config,lang){
         if(matrices){
             const currentTime = new Date()
             matrices.forEach((matrix)=>{
-                const id = !isNaN(matrix.id) ? matrix.id : matrix.tag
+                const id = !isNaN(matrix.id) ? matrix.id + '_' + matrix.tag : matrix.tag
                 console.log(matrix)
                 if(!eventsCounted[id])eventsCounted[id] = 0
                 ++eventsCounted[id]
-                countObjectSetTimeout(event,id)
+                // countObjectSetTimeout(event,id)
             })
         }
         return eventsCounted
