@@ -167,12 +167,13 @@ var addAwaitStatements = async function(){
                                         confidence = v._score
                                     }
                                     matrices.push({
-                                      x:v._box.x,
-                                      y:v._box.y,
-                                      width:v._box.width,
-                                      height:v._box.height,
-                                      tag:tag,
-                                      confidence:v._score,
+                                      id: tag,
+                                      x: v._box.x,
+                                      y: v._box.y,
+                                      width: v._box.width,
+                                      height: v._box.height,
+                                      tag: tag,
+                                      confidence: v._score,
                                     })
                                 })
                                 if(matrices.length > 0){
