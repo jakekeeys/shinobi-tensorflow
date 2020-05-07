@@ -350,6 +350,9 @@ module.exports = function(s,config,lang,io){
                 callback(hasSubcribed)
                 if(config.userHasSubscribed){
                     s.systemLog('This Install of Shinobi is Activated')
+                    if(!json.expired){
+                        s.systemLog(`This License expires on ${json.timeExpires}`)
+                    }
                 }else{
                     subscriptionFailed()
                 }
