@@ -72,10 +72,60 @@ module.exports = function(s,config,lang,io){
         s.debugLog(`resetDetectorPluginArray : ${JSON.stringify(pluginArray)}`)
         s.detectorPluginArray = pluginArray
     }
-    s.sendToAllDetectors = function(data){
-        s.detectorPluginArray.forEach(function(name){
-            s.connectedPlugins[name].tx(data)
-        })
+    if(config.detectorPluginsCluster){
+        s.debugLog(`Detector Plugins running in Cluster Mode`)
+        var currentPluginCpuUsage = {}
+        var currentPluginGpuUsage = {}
+        if(config.clusterBasedOnGpu){
+            const getPluginWithLowestUtilization = () => {
+                var selectedPluginServer = null
+                var lowestUsed = 1000
+                s.detectorPluginArray.forEach((pluginName) => {
+                    var overAllPercent = 0
+                    var gpus = currentPluginGpuUsage[pluginName]
+                    gpus.forEach((gpu) => {
+                        console.log(gpu)
+                        const percent = gpu.utilization
+                        overAllPercent += percent
+                    })
+                    if((overAllPercent / gpus.length) < lowestUsed){
+                        selectedPluginServer = pluginName
+                        lowestUsed = overAllPercent
+                    }
+                })
+                if(selectedPluginServer){
+                    return s.connectedPlugins[selectedPluginServer]
+                }else{
+                    return {tx: () => {}}
+                }
+            }
+        }else{
+            const getPluginWithLowestUtilization = () => {
+                var selectedPluginServer = null
+                var lowestUsed = 1000
+                s.detectorPluginArray.forEach((pluginName) => {
+                    const percent = currentPluginCpuUsage[pluginName]
+                    if(percent < lowestUsed){
+                        selectedPluginServer = pluginName
+                        lowestUsed = percent
+                    }
+                })
+                if(selectedPluginServer){
+                    return s.connectedPlugins[selectedPluginServer]
+                }else{
+                    return {tx: () => {}}
+                }
+            }
+        }
+        s.sendToAllDetectors = function(data){
+            getPluginWithLowestUtilization().tx(data)
+        }
+    }else{
+        s.sendToAllDetectors = function(data){
+            s.detectorPluginArray.forEach(function(name){
+                s.connectedPlugins[name].tx(data)
+            })
+        }
     }
     s.sendDetectorInfoToClient = function(data,txFunction){
         s.detectorPluginArray.forEach(function(name){
@@ -224,16 +274,28 @@ module.exports = function(s,config,lang,io){
         }
     }
     var onWebSocketConnection = function(cn){
+        if(config.detectorPluginsCluster){
+            const addCpuUsageHandler = (pluginName) => {
+                cn.on('cpuUsage',function(percent){
+                    currentPluginCpuUsage[pluginName] = percent
+                })
+                cn.on('gpuUsage',function(gpus){
+                    currentPluginGpuUsage[pluginName] = gpus
+                })
+            }
+        }
         cn.on('ocv',function(d){
             if(!cn.pluginEngine && d.f === 'init'){
                 if(config.pluginKeys[d.plug] === d.pluginKey){
                     s.pluginInitiatorSuccess("client",d,cn)
+                    if(config.detectorPluginsCluster)addCpuUsageHandler(d.plug)
                 }else{
                     s.pluginInitiatorFail("client",d,cn)
                 }
             }else{
                 if(config.pluginKeys[d.plug] === d.pluginKey){
                     s.pluginEventController(d)
+                    if(config.detectorPluginsCluster)addCpuUsageHandler(d.plug)
                 }else{
                     cn.disconnect()
                 }

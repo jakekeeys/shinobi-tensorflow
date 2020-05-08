@@ -114,6 +114,75 @@ module.exports = function(__dirname, config){
     s.detectObject = (buffer,d,tx,frameLocation) => {
         console.log('detectObject handler not set')
     }
+    const getCpuUsage = (callback) => {
+        var k = {}
+        switch(s.platform){
+            case'win32':
+                k.cmd = "@for /f \"skip=1\" %p in ('wmic cpu get loadpercentage') do @echo %p%"
+            break;
+            case'darwin':
+                k.cmd = "ps -A -o %cpu | awk '{s+=$1} END {print s}'";
+            break;
+            case'linux':
+                k.cmd = 'top -b -n 2 | awk \'toupper($0) ~ /^.?CPU/ {gsub("id,","100",$8); gsub("%","",$8); print 100-$8}\' | tail -n 1';
+            break;
+            case'freebsd':
+                k.cmd = 'vmstat 1 2 | awk \'END{print 100-$19}\''
+            break;
+	    case'openbsd':
+                k.cmd = 'vmstat 1 2 | awk \'END{print 100-$18}\''
+            break;
+        }
+        if(config.customCpuCommand){
+          exec(config.customCpuCommand,{encoding:'utf8',detached: true},function(err,d){
+              if(s.isWin===true) {
+                  d = d.replace(/(\r\n|\n|\r)/gm, "").replace(/%/g, "")
+              }
+              callback(d)
+              s.onGetCpuUsageExtensions.forEach(function(extender){
+                  extender(d)
+              })
+          })
+        } else if(k.cmd){
+             exec(k.cmd,{encoding:'utf8',detached: true},function(err,d){
+                 if(s.isWin===true){
+                     d=d.replace(/(\r\n|\n|\r)/gm,"").replace(/%/g,"")
+                 }
+                 callback(d)
+                 s.onGetCpuUsageExtensions.forEach(function(extender){
+                     extender(d)
+                 })
+             })
+        } else {
+            callback(0)
+        }
+    }
+    const parseNvidiaSmi = function(callback){
+        var response = {
+            ok: true,
+        }
+        exec('nvidia-smi -x -q',function(err,data){
+            var response = xmlParser.toJson(data)
+            var newArray = []
+            try{
+                JSON.parse(response).nvidia_smi_log.gpu.forEach((gpu)=>{
+                    newArray.push({
+                        id: gpu.minor_number,
+                        name: gpu.product_name,
+                        brand: gpu.product_brand,
+                        fan_speed: gpu.fan_speed,
+                        temperature: gpu.temperature,
+                        power: gpu.power_readings,
+                        utilization: gpu.utilization,
+                        maxClocks: gpu.max_clocks,
+                    })
+                })
+            }catch(err){
+
+            }
+            if(callback)callback(newArray)
+        })
+    }
     s.onCameraInitExtensions = []
     s.onCameraInit = (extender) => {
         s.onCameraInitExtensions.push(extender)
@@ -316,6 +385,22 @@ module.exports = function(__dirname, config){
     }
     s.getWebsocket = () => {
         return io
+    }
+    if(config.clusterMode){
+        plugLog('Plugin enabling Cluster Mode...')
+        if(config.clusterBasedOnGpu){
+            setTimeout(() => {
+                parseNvidiaSmi((gpus)=>{
+                    io.emit('gpuUsage',gpus)
+                })
+            },1000 * 10)
+        }else{
+            setTimeout(() => {
+                getCpuUsage((percent) => {
+                    io.emit('cpuUsage',percent)
+                })
+            },1000 * 10)
+        }
     }
     s.createPythonScriptDaemon = () => {
         if(!config.pythonScript){config.pythonScript = config.dirname + '/pumpkin.py'}
