@@ -13,6 +13,9 @@ getubuntuversion=$(lsb_release -r | awk '{print $2}' | cut -d . -f1)
 echo "============="
 echo " Ubuntu Version: $getubuntuversion"
 echo "============="
+sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
 if [ "$getubuntuversion" = "18" ] || [ "$getubuntuversion" > "18" ]; then
     apt install sudo wget -y
     sudo apt install -y software-properties-common
