@@ -1,21 +1,18 @@
 module.exports = function(s,config,lang){
     s.uploaderFields = []
-    var loadLib = function(lib){
-        var uploadersFolder = __dirname + '/uploaders/'
-        var libraryPath = uploadersFolder + lib + '.js'
-        var loadedLib = require(libraryPath)(s,config,lang)
-        if(lib !== 'loader'){
-            loadedLib.isFormGroupGroup = true
-            s.uploaderFields.push(loadedLib)
-        }
-        return loadedLib
+    require('./uploaders/loader.js')(s,config,lang)
+    const loadedLibraries = {
+        //cloud storage
+        s3based: require('./uploaders/s3based.js'),
+        backblazeB2: require('./uploaders/backblazeB2.js'),
+        amazonS3: require('./uploaders/amazonS3.js'),
+        webdav: require('./uploaders/webdav.js'),
+        //simple storage
+        sftp: require('./uploaders/sftp.js'),
     }
-    loadLib('loader')
-    //cloud storage
-    loadLib('s3based')
-    loadLib('backblazeB2')
-    loadLib('amazonS3')
-    loadLib('webdav')
-    //simple storage
-    loadLib('sftp')
+    Object.keys(loadedLibraries).forEach((key) => {
+        var loadedLib = loadedLibraries[key](s,config,lang)
+        loadedLib.isFormGroupGroup = true
+        s.uploaderFields.push(loadedLib)
+    })
 }

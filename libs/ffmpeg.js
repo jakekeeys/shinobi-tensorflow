@@ -1034,7 +1034,7 @@ module.exports = function(s,config,lang,onFinish){
           }
         },null,3),'utf8')
         var cameraCommandParams = [
-          s.mainDirectory + '/libs/cameraThread/singleCamera.js',
+          './libs/cameraThread/singleCamera.js',
           config.ffmpegDir,
           e.sdir + 'cmd.txt'
         ]

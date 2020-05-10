@@ -9,82 +9,78 @@
 // PayPal : paypal@m03.ca
 //
 var io = new (require('socket.io'))()
-//library loader
-var loadLib = function(lib){
-    return require(__dirname+'/libs/'+lib+'.js')
-}
 //process handlers
-var s = loadLib('process')(process,__dirname)
+var s = require('./libs/process.js')(process,__dirname)
 //load extender functions
-loadLib('extenders')(s)
+require('./libs/extenders.js')(s)
 //configuration loader
-var config = loadLib('config')(s)
+var config = require('./libs/config.js')(s)
 //basic functions
-loadLib('basic')(s,config)
+require('./libs/basic.js')(s,config)
 //language loader
-var lang = loadLib('language')(s,config)
+var lang = require('./libs/language.js')(s,config)
 //working directories : videos, streams, fileBin..
-loadLib('folders')(s,config,lang)
+require('./libs/folders.js')(s,config,lang)
 //code test module
-loadLib('codeTester')(s,config,lang)
+require('./libs/codeTester.js')(s,config,lang)
 //get version
-loadLib('version')(s,config,lang)
+require('./libs/version.js')(s,config,lang)
 //video processing engine
-loadLib('ffmpeg')(s,config,lang,function(ffmpeg){
+require('./libs/ffmpeg.js')(s,config,lang,function(ffmpeg){
     //ffmpeg coProcessor
-    loadLib('ffmpegCoProcessor')(s,config,lang,ffmpeg)
+    require('./libs/ffmpegCoProcessor.js')(s,config,lang,ffmpeg)
     //database connection : mysql, sqlite3..
-    loadLib('sql')(s,config)
+    require('./libs/sql.js')(s,config)
     //authenticator functions : API, dashboard login..
-    loadLib('auth')(s,config,lang)
+    require('./libs/auth.js')(s,config,lang)
     //express web server with ejs
-    var app = loadLib('webServer')(s,config,lang,io)
+    var app = require('./libs/webServer.js')(s,config,lang,io)
     //web server routes : page handling..
-    loadLib('webServerPaths')(s,config,lang,app,io)
+    require('./libs/webServerPaths.js')(s,config,lang,app,io)
     //web server routes for streams : streams..
-    loadLib('webServerStreamPaths')(s,config,lang,app,io)
+    require('./libs/webServerStreamPaths.js')(s,config,lang,app,io)
     //web server admin routes : create sub accounts, share monitors, share videos
-    loadLib('webServerAdminPaths')(s,config,lang,app,io)
+    require('./libs/webServerAdminPaths.js')(s,config,lang,app,io)
     //web server superuser routes : create admin accounts and manage system functions
-    loadLib('webServerSuperPaths')(s,config,lang,app,io)
+    require('./libs/webServerSuperPaths.js')(s,config,lang,app,io)
     //websocket connection handlers : login and streams..
-    loadLib('socketio')(s,config,lang,io)
+    require('./libs/socketio.js')(s,config,lang,io)
     //user and group functions
-    loadLib('user')(s,config,lang)
+    require('./libs/user.js')(s,config,lang)
     //timelapse functions
-    loadLib('timelapse')(s,config,lang,app,io)
+    require('./libs/timelapse.js')(s,config,lang,app,io)
     //fileBin functions
-    loadLib('fileBin')(s,config,lang,app,io)
+    require('./libs/fileBin.js')(s,config,lang,app,io)
     //monitor/camera handlers
-    loadLib('monitor')(s,config,lang)
+    require('./libs/monitor.js')(s,config,lang)
     //event functions : motion, object matrix handler
-    loadLib('events')(s,config,lang)
+    require('./libs/events.js')(s,config,lang)
     //recording functions
-    loadLib('videos')(s,config,lang)
+    require('./libs/videos.js')(s,config,lang)
     //branding functions and config defaults
-    loadLib('videoDropInServer')(s,config,lang,app,io)
+    require('./libs/videoDropInServer.js')(s,config,lang,app,io)
     //plugins : websocket connected services..
-    loadLib('plugins')(s,config,lang,io)
+    require('./libs/plugins.js')(s,config,lang,io)
     //health : cpu and ram trackers..
-    loadLib('health')(s,config,lang,io)
+    require('./libs/health.js')(s,config,lang,io)
     //cluster module
-    loadLib('childNode')(s,config,lang,app,io)
+    require('./libs/childNode.js')(s,config,lang,app,io)
     //cloud uploaders : amazon s3, webdav, backblaze b2..
-    loadLib('uploaders')(s,config,lang)
+    require('./libs/uploaders.js')(s,config,lang)
     //notifiers : discord..
-    loadLib('notification')(s,config,lang)
+    require('./libs/notification.js')(s,config,lang)
     //notifiers : discord..
-    loadLib('rtmpserver')(s,config,lang)
+    require('./libs/rtmpserver.js')(s,config,lang)
     //dropInEvents server (file manipulation to create event trigger)
-    loadLib('dropInEvents')(s,config,lang,app,io)
+    require('./libs/dropInEvents.js')(s,config,lang,app,io)
     //form fields to drive the internals
-    loadLib('definitions')(s,config,lang,app,io)
+    require('./libs/definitions.js')(s,config,lang,app,io)
     //branding functions and config defaults
-    loadLib('branding')(s,config,lang,app,io)
+    require('./libs/branding.js')(s,config,lang,app,io)
     //custom module loader
-    loadLib('customAutoLoad')(s,config,lang,app,io)
+    require('./libs/customAutoLoad.js')(s,config,lang,app,io)
     //scheduling engine
-    loadLib('scheduler')(s,config,lang,app,io)
+    require('./libs/scheduler.js')(s,config,lang,app,io)
     //on-start actions, daemon(s) starter
-    loadLib('startup')(s,config,lang)
+    require('./libs/startup.js')(s,config,lang)
 })

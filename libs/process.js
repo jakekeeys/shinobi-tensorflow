@@ -31,7 +31,7 @@ module.exports = function(process,__dirname){
         //UTC Offset
         utcOffset : require('moment')().utcOffset(),
         //directory path for this file
-        mainDirectory : __dirname
+        mainDirectory : process.cwd()
     }
     s.packageJson = packageJson
     if(packageJson.mainDirectory){
