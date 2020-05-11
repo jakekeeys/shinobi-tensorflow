@@ -1112,6 +1112,10 @@ module.exports = function(s,config,lang){
                 s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].on('data',function(data){
                     s.onMonitorDetectorDataOutputAlone(e,data)
                 })
+            }else{
+                s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].on('data',function(data){
+                    // s.onMonitorDetectorDataOutputAlone(e,data)
+                })
             }
         }
         //frames to stream
