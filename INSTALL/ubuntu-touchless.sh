@@ -24,7 +24,7 @@ fi
 if [ "$getubuntuversion" = "16" ]; then
     sudo apt install gnupg-curl -y
 fi
-sudo apt install gcc-8 g++-8 -y
+sudo apt install gcc g++ -y
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 800 --slave /usr/bin/g++ g++ /usr/bin/g++-8
 #create conf.json
 if [ ! -e "./conf.json" ]; then
@@ -54,6 +54,7 @@ if ! [ -x "$(command -v node)" ]; then
     chmod +x setup_12.x
     ./setup_12.x
     sudo apt install nodejs -y
+    sudo apt install node-pre-gyp -y
     rm setup_12.x
 else
     echo "Node.js Found..."
