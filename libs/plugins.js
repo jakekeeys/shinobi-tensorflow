@@ -72,25 +72,22 @@ module.exports = function(s,config,lang,io){
         s.debugLog(`resetDetectorPluginArray : ${JSON.stringify(pluginArray)}`)
         s.detectorPluginArray = pluginArray
     }
+    var currentPluginCpuUsage = {}
+    var currentPluginGpuUsage = {}
+    var currentPluginFrameProcessingCount = {}
+    var pluginHandlersSet = {}
     if(config.detectorPluginsCluster){
-        s.debugLog(`Detector Plugins running in Cluster Mode`)
-        var currentPluginCpuUsage = {}
-        var currentPluginGpuUsage = {}
-        if(config.clusterBasedOnGpu){
-            const getPluginWithLowestUtilization = () => {
+        if(config.clusterUseBasicFrameCount === undefined)config.clusterUseBasicFrameCount = true;
+        if(config.clusterUseBasicFrameCount){
+            // overAllProcessingCount
+            var getPluginWithLowestUtilization = () => {
                 var selectedPluginServer = null
                 var lowestUsed = 1000
                 s.detectorPluginArray.forEach((pluginName) => {
-                    var overAllPercent = 0
-                    var gpus = currentPluginGpuUsage[pluginName]
-                    gpus.forEach((gpu) => {
-                        console.log(gpu)
-                        const percent = gpu.utilization
-                        overAllPercent += percent
-                    })
-                    if((overAllPercent / gpus.length) < lowestUsed){
+                    const processCount = currentPluginFrameProcessingCount[pluginName] || 0
+                    if(processCount < lowestUsed){
                         selectedPluginServer = pluginName
-                        lowestUsed = overAllPercent
+                        lowestUsed = processCount
                     }
                 })
                 if(selectedPluginServer){
@@ -100,23 +97,50 @@ module.exports = function(s,config,lang,io){
                 }
             }
         }else{
-            const getPluginWithLowestUtilization = () => {
-                var selectedPluginServer = null
-                var lowestUsed = 1000
-                s.detectorPluginArray.forEach((pluginName) => {
-                    const percent = currentPluginCpuUsage[pluginName]
-                    if(percent < lowestUsed){
-                        selectedPluginServer = pluginName
-                        lowestUsed = percent
+
+            if(config.clusterBasedOnGpu){
+                var getPluginWithLowestUtilization = () => {
+                    var selectedPluginServer = null
+                    var lowestUsed = 1000
+                    s.detectorPluginArray.forEach((pluginName) => {
+                        var overAllPercent = 0
+                        var gpus = currentPluginGpuUsage[pluginName]
+                        gpus.forEach((gpu) => {
+                            console.log(gpu)
+                            const percent = gpu.utilization
+                            overAllPercent += percent
+                        })
+                        if((overAllPercent / gpus.length) < lowestUsed){
+                            selectedPluginServer = pluginName
+                            lowestUsed = overAllPercent
+                        }
+                    })
+                    if(selectedPluginServer){
+                        return s.connectedPlugins[selectedPluginServer]
+                    }else{
+                        return {tx: () => {}}
                     }
-                })
-                if(selectedPluginServer){
-                    return s.connectedPlugins[selectedPluginServer]
-                }else{
-                    return {tx: () => {}}
+                }
+            }else{
+                var getPluginWithLowestUtilization = () => {
+                    var selectedPluginServer = null
+                    var lowestUsed = 1000
+                    s.detectorPluginArray.forEach((pluginName) => {
+                        const percent = currentPluginCpuUsage[pluginName]
+                        if(percent < lowestUsed){
+                            selectedPluginServer = pluginName
+                            lowestUsed = percent
+                        }
+                    })
+                    if(selectedPluginServer){
+                        return s.connectedPlugins[selectedPluginServer]
+                    }else{
+                        return {tx: () => {}}
+                    }
                 }
             }
         }
+        s.debugLog(`Detector Plugins running in Cluster Mode`)
         s.sendToAllDetectors = function(data){
             getPluginWithLowestUtilization().tx(data)
         }
@@ -262,6 +286,7 @@ module.exports = function(s,config,lang,io){
         if(cn.ocv && s.ocv){
             s.tx({f:'detector_unplugged',plug:s.ocv.plug},'CPU')
             delete(s.ocv);
+            delete(pluginHandlersSet[pluginName])
         }
     }
     var onSocketAuthentication = function(r,cn,d,tx){
@@ -273,29 +298,32 @@ module.exports = function(s,config,lang,io){
             tx({f:'detector_plugged',plug:s.ocv.plug,notice:s.ocv.notice})
         }
     }
+    var addCpuUsageHandler = (cn,pluginName) => {
+        if(pluginHandlersSet[pluginName])return;
+        pluginHandlersSet[pluginName] = true
+        cn.on('cpuUsage',function(percent){
+            currentPluginCpuUsage[pluginName] = percent
+        })
+        cn.on('gpuUsage',function(gpus){
+            currentPluginGpuUsage[pluginName] = gpus
+        })
+        cn.on('processCount',function(count){
+            currentPluginFrameProcessingCount[pluginName] = count
+        })
+    }
     var onWebSocketConnection = function(cn){
-        if(config.detectorPluginsCluster){
-            const addCpuUsageHandler = (pluginName) => {
-                cn.on('cpuUsage',function(percent){
-                    currentPluginCpuUsage[pluginName] = percent
-                })
-                cn.on('gpuUsage',function(gpus){
-                    currentPluginGpuUsage[pluginName] = gpus
-                })
-            }
-        }
         cn.on('ocv',function(d){
             if(!cn.pluginEngine && d.f === 'init'){
                 if(config.pluginKeys[d.plug] === d.pluginKey){
                     s.pluginInitiatorSuccess("client",d,cn)
-                    if(config.detectorPluginsCluster)addCpuUsageHandler(d.plug)
+                    if(config.detectorPluginsCluster)addCpuUsageHandler(cn,d.plug)
                 }else{
                     s.pluginInitiatorFail("client",d,cn)
                 }
             }else{
                 if(config.pluginKeys[d.plug] === d.pluginKey){
                     s.pluginEventController(d)
-                    if(config.detectorPluginsCluster)addCpuUsageHandler(d.plug)
+                    if(config.detectorPluginsCluster)addCpuUsageHandler(cn,d.plug)
                 }else{
                     cn.disconnect()
                 }

@@ -27,7 +27,7 @@ try{
 
 const ObjectDetectors = require('./ObjectDetectors.js')(config);
 
-s.detectObject=function(buffer,d,tx,frameLocation){
+s.detectObject = function(buffer,d,tx,frameLocation,callback){
     new ObjectDetectors(buffer).process().then((resp)=>{
         var results = resp.data
         if(results[0]){
@@ -60,5 +60,6 @@ s.detectObject=function(buffer,d,tx,frameLocation){
                 }
             })
         }
+        callback()
     })
 }

@@ -14,6 +14,7 @@ var moment = require('moment');
 var express = require('express');
 var http = require('http'),
     app = express();
+var overAllProcessingCount = 0
 module.exports = function(__dirname, config){
     if(!config){
         return console.log(`Configuration file is missing.`)
@@ -113,6 +114,15 @@ module.exports = function(__dirname, config){
     }
     s.detectObject = (buffer,d,tx,frameLocation) => {
         console.log('detectObject handler not set')
+    }
+    const processImage = async (buffer,d,tx,frameLocation) => {
+        const theSocket = s.getWebsocket()
+        ++overAllProcessingCount
+        theSocket.emit('processCount',overAllProcessingCount)
+        s.detectObject(buffer,d,tx,frameLocation,() => {
+            --overAllProcessingCount
+            theSocket.emit('processCount',overAllProcessingCount)
+        })
     }
     const getCpuUsage = (callback) => {
         var k = {}
@@ -225,9 +235,9 @@ module.exports = function(__dirname, config){
                 if(!s.group[d.ke][d.id]){
                     s.group[d.ke][d.id] = {}
                 }
-                s.detectObject(buffer,d,tx,d.frameLocation)
+                processImage(buffer,d,tx,d.frameLocation)
             break;
-            case'frame':
+            case'frame':''
                 try{
                     if(!s.group[d.ke]){
                         s.group[d.ke]={}
@@ -245,7 +255,7 @@ module.exports = function(__dirname, config){
                     }
                     if(d.frame[d.frame.length-2] === 0xFF && d.frame[d.frame.length-1] === 0xD9){
                         var buffer = Buffer.concat(s.group[d.ke][d.id].buffer);
-                        s.detectObject(buffer,d,tx)
+                        processImage(buffer,d,tx)
                         s.group[d.ke][d.id].buffer = null
                     }
                 }catch(err){
