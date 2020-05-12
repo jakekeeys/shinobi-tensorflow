@@ -1,3 +1,4 @@
 conf.json
 dist
 models
+.env

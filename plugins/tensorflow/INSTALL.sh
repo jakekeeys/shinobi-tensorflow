@@ -28,3 +28,5 @@ if [ "$GPU_INSTALL" = "1" ]; then
     tfjsBuildVal="gpu"
 fi
 node $DIR/../../tools/modifyConfigurationForPlugin.js tensorflow key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}') tfjsBuild=$tfjsBuildVal
+echo "TF_FORCE_GPU_ALLOW_GROWTH=true" > "$DIR/.env"
+echo "#CUDA_VISIBLE_DEVICES=0,2" >> "$DIR/.env"
