@@ -2109,6 +2109,36 @@ module.exports = function(s,config,lang){
                    },
                    {
                        hidden: true,
+                       "form-group-class": "h_det_input h_det_1",
+                      "name": "detail=detector_fps",
+                      "field": lang["Detector Rate"],
+                      "description": "How many frames a second to send to the motion detector; 2 is the default.",
+                      "default": "2",
+                      "example": "",
+                      "possible": ""
+                   },
+                   {
+                       hidden: true,
+                       "form-group-class": "h_det_input h_det_1",
+                      "name": "detail=detector_scale_x",
+                      "field": lang["Feed-in Image Width"],
+                      "description": "Width of the image being detected. Smaller sizes take less CPU.",
+                      "default": "",
+                      "example": "640",
+                      "possible": ""
+                   },
+                   {
+                       hidden: true,
+                       "form-group-class": "h_det_input h_det_1",
+                      "name": "detail=detector_scale_y",
+                      "field": lang["Feed-in Image Height"],
+                      "description": "Height of the image being detected. Smaller sizes take less CPU.",
+                      "default": "",
+                      "example": "480",
+                      "possible": ""
+                   },
+                   {
+                       hidden: true,
                       "name": "detail=detector_lock_timeout",
                       "field": lang['Allow Next Trigger'],
                       "description": "Lockout for when the next trigger is allowed, to avoid overloading the database and receiving clients. Measured in milliseconds.",
@@ -2136,36 +2166,6 @@ module.exports = function(s,config,lang){
                             "value": "1"
                          }
                       ]
-                   },
-                   {
-                       hidden: true,
-                      "name": "detail=detector_fps",
-                      "field": lang["Detector Rate"],
-                      "description": "How many frames a second to send to the motion detector; 2 is the default.",
-                      "default": "2",
-                      "example": "",
-                      "form-group-class": "h_det_input h_det_1",
-                      "possible": ""
-                   },
-                   {
-                       hidden: true,
-                      "name": "detail=detector_scale_x",
-                      "field": lang["Feed-in Image Width"],
-                      "description": "Width of the image being detected. Smaller sizes take less CPU.",
-                      "default": "",
-                      "example": "640",
-                      "form-group-class": "h_det_input h_det_1",
-                      "possible": ""
-                   },
-                   {
-                       hidden: true,
-                      "name": "detail=detector_scale_y",
-                      "field": lang["Feed-in Image Height"],
-                      "description": "Height of the image being detected. Smaller sizes take less CPU.",
-                      "default": "",
-                      "example": "480",
-                      "form-group-class": "h_det_input h_det_1",
-                      "possible": ""
                    },
                    {
                        hidden: true,
@@ -2434,6 +2434,7 @@ module.exports = function(s,config,lang){
                       "name": "detail=snap_seconds_inward",
                       "field": lang['Delay for Snapshot'],
                       "description": lang['in seconds'],
+                      "form-group-class": "h_det_input h_det_1",
                       "default": "0",
                    },
                    {
@@ -3048,10 +3049,9 @@ module.exports = function(s,config,lang){
                            "name": "detail=detector_fps_object",
                            "field": lang['Frame Rate'],
                            "description": "",
-                           "default": "1",
+                           "default": "2",
                            "example": "",
-                           "form-group-class": "h_det_mot_fir_input h_det_mot_fir_1",
-                           "form-group-class-pre-layer": "h_det_pam_input h_det_pam_1",
+                           "form-group-class": "h_casc_input h_casc_1",
                            "fieldType": "number",
                            "numberMin": "1",
                            "possible": ""
@@ -3063,8 +3063,7 @@ module.exports = function(s,config,lang){
                            "description": "",
                            "default": "",
                            "example": "",
-                           "form-group-class": "h_det_mot_fir_input h_det_mot_fir_1",
-                           "form-group-class-pre-layer": "h_det_pam_input h_det_pam_1",
+                           "form-group-class": "h_casc_input h_casc_1",
                            "fieldType": "number",
                            "numberMin": "1",
                            "possible": ""
@@ -3076,8 +3075,7 @@ module.exports = function(s,config,lang){
                            "description": "",
                            "default": "",
                            "example": "",
-                           "form-group-class": "h_det_mot_fir_input h_det_mot_fir_1",
-                           "form-group-class-pre-layer": "h_det_pam_input h_det_pam_1",
+                           "form-group-class": "h_casc_input h_casc_1",
                            "fieldType": "number",
                            "numberMin": "1",
                            "possible": ""
