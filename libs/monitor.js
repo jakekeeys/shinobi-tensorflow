@@ -35,6 +35,7 @@ module.exports = function(s,config,lang){
         if(!s.group[e.ke].activeMonitors[e.mid].detector_motion_count){s.group[e.ke].activeMonitors[e.mid].detector_motion_count=[]};
         if(!s.group[e.ke].activeMonitors[e.mid].eventsCounted){s.group[e.ke].activeMonitors[e.mid].eventsCounted = {}};
         if(!s.group[e.ke].activeMonitors[e.mid].isStarted){s.group[e.ke].activeMonitors[e.mid].isStarted = false};
+        if(!s.group[e.ke].activeMonitors[e.mid].pipe4BufferPieces){s.group[e.ke].activeMonitors[e.mid].pipe4BufferPieces = []};
         if(s.group[e.ke].activeMonitors[e.mid].delete){clearTimeout(s.group[e.ke].activeMonitors[e.mid].delete)}
         if(!s.group[e.ke].rawMonitorConfigurations){s.group[e.ke].rawMonitorConfigurations={}}
         s.onMonitorInitExtensions.forEach(function(extender){
@@ -935,8 +936,13 @@ module.exports = function(s,config,lang){
             frame: d
         })
     }
-    const onDetectorJpegOutputSecondary = (e,d) => {
-        s.group[e.ke].activeMonitors[e.id].lastJpegDetectorFrame = d
+    const onDetectorJpegOutputSecondary = (e,buffer) => {
+        const theArray = s.group[e.ke].activeMonitors[e.id].pipe4BufferPieces
+        theArray.push(buffer)
+        if(buffer[buffer.length-2] === 0xFF && buffer[buffer.length-1] === 0xD9){
+            s.group[e.ke].activeMonitors[e.id].lastJpegDetectorFrame = Buffer.concat(theArray)
+            s.group[e.ke].activeMonitors[e.id].pipe4BufferPieces = []
+        }
     }
     const createCameraFfmpegProcess = (e) => {
         //launch ffmpeg (main)
