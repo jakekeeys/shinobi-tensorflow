@@ -806,29 +806,35 @@ module.exports = function(s,config,lang,onFinish){
             if(sendFramesGlobally && x.detector_vf.length > 0)x.pipe += ' -vf "'+x.detector_vf.join(',')+'"'
 
             var h264Output = ' -q:v 1 -an -c:v libx264 -f hls -tune zerolatency -g 1 -hls_time 2 -hls_list_size 3 -start_number 0 -live_start_index 3 -hls_allow_cache 0 -hls_flags +delete_segments+omit_endlist "'+e.sdir+'detectorStreamX.m3u8"'
+            var setObjectDetectValues = () => {
+                //for object detection
+                x.detector_fps_object = '2'
+                x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
+                if(e.details.detector_scale_x_object&&e.details.detector_scale_x_object!==''&&e.details.detector_scale_y_object&&e.details.detector_scale_y_object!==''){x.dobjratio=' -s '+e.details.detector_scale_x_object+'x'+e.details.detector_scale_y_object}else{x.dobjratio=x.dratio}
+                if(e.details.detector_fps_object){x.detector_fps_object = e.details.detector_fps_object}
+                x.pipe += ' -r ' + x.detector_fps_object + x.dobjratio + x.cust_detect
+            }
             if(e.details.detector_pam === '1'){
                 if(sendFramesGlobally && e.cudaEnabled){
                     x.pipe += ' -vf "hwdownload,format=nv12"'
                 }
                 if(sendFramesGlobally)x.pipe += ' -an -c:v pam -pix_fmt gray -f image2pipe pipe:3'
                 if(e.details.detector_use_detect_object === '1'){
-                    //for object detection
-                    x.detector_fps_object = '2'
-                    x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
-                    if(e.details.detector_scale_x_object&&e.details.detector_scale_x_object!==''&&e.details.detector_scale_y_object&&e.details.detector_scale_y_object!==''){x.dobjratio=' -s '+e.details.detector_scale_x_object+'x'+e.details.detector_scale_y_object}else{x.dobjratio=x.dratio}
-                    if(e.details.detector_fps_object){x.detector_fps_object = e.details.detector_fps_object}
-                    x.pipe += ' -r ' + x.detector_fps_object + x.dobjratio + x.cust_detect
+                    setObjectDetectValues()
                     if(e.details.detector_h264 === '1'){
                         x.pipe += h264Output
                     }else{
                         x.pipe += ' -an -f singlejpeg pipe:4'
                     }
                 }
-            }else if(sendFramesGlobally){
+            }else if(sendFramesGlobally || sendFramesToObjectDetector){
+                if(sendFramesToObjectDetector){
+                    setObjectDetectValues()
+                }
                 if(e.details.detector_h264 === '1'){
                     x.pipe += h264Output
                 }else{
-                    x.pipe += ' -an -f singlejpeg pipe:3'
+                    x.pipe += ' -an -f singlejpeg pipe:4'
                 }
             }
         }

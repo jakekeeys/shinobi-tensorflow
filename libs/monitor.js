@@ -925,7 +925,7 @@ module.exports = function(s,config,lang){
         }
         e.captureOne()
     }
-    var onDetectorJpegOutputAlone = function(e,d){
+    const onDetectorJpegOutputAlone = (e,d) => {
         s.ocvTx({
             f: 'frame',
             mon: s.group[e.ke].rawMonitorConfigurations[e.id].details,
@@ -935,12 +935,10 @@ module.exports = function(s,config,lang){
             frame: d
         })
     }
-    var onDetectorJpegOutputSecondary = function(e,d){
+    const onDetectorJpegOutputSecondary = (e,d) => {
         s.group[e.ke].activeMonitors[e.id].lastJpegDetectorFrame = d
     }
-    s.onMonitorDetectorDataOutputAlone = onDetectorJpegOutputAlone
-    s.onMonitorDetectorDataOutputSecondary = onDetectorJpegOutputSecondary
-    const createCameraFfmpegProcess = function(e){
+    const createCameraFfmpegProcess = (e) => {
         //launch ffmpeg (main)
         s.tx({
             f: 'monitor_starting',
@@ -1105,16 +1103,22 @@ module.exports = function(s,config,lang){
                })
                 if(e.details.detector_use_detect_object === '1'){
                     s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
-                        s.onMonitorDetectorDataOutputSecondary(e,data)
+                        onDetectorJpegOutputSecondary(e,data)
                     })
                 }
             }else if(s.isAtleatOneDetectorPluginConnected){
-                s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].on('data',function(data){
-                    s.onMonitorDetectorDataOutputAlone(e,data)
-                })
+                if(e.details.detector_use_detect_object === '1' && e.details.detector_send_frames !== '1'){
+                    s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
+                        onDetectorJpegOutputSecondary(e,data)
+                    })
+                }else{
+                    s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
+                        onDetectorJpegOutputAlone(e,data)
+                    })
+                }
             }else{
-                s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].on('data',function(data){
-                    // s.onMonitorDetectorDataOutputAlone(e,data)
+                s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
+                    // set so ffmpeg doesnt hang
                 })
             }
         }
