@@ -1878,7 +1878,7 @@ module.exports = function(s,config,lang){
              },
              "Timelapse Watermark": {
                 "id": "monSectionRecordingWatermark",
-                "name": lang['Recording Watermark'],
+                "name": lang['Timelapse Watermark'],
 
                 "color": "red",
                 isAdvanced: true,
