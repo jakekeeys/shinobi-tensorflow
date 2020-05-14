@@ -136,7 +136,7 @@ module.exports = function(s,config,lang,app,io){
                }
            })
         }
-        var beforeMonitorsLoadedOnStartup = function(){
+        var createDropInEventsDirectory = function(){
             if(!config.dropInEventsDir){
                 config.dropInEventsDir = s.dir.streams + 'dropInEvents/'
             }
@@ -183,6 +183,7 @@ module.exports = function(s,config,lang,app,io){
         }
         // FTP Server
         if(config.ftpServer === true){
+            createDropInEventsDirectory()
             if(!config.ftpServerPort)config.ftpServerPort = 21
             if(!config.ftpServerUrl)config.ftpServerUrl = `ftp://0.0.0.0:${config.ftpServerPort}`
             config.ftpServerUrl = config.ftpServerUrl.replace('{{PORT}}',config.ftpServerPort)
@@ -224,7 +225,6 @@ module.exports = function(s,config,lang,app,io){
             })
         }
         //add extensions
-        s.beforeMonitorsLoadedOnStartup(beforeMonitorsLoadedOnStartup)
         s.onMonitorInit(onMonitorInit)
         s.onMonitorStop(onMonitorStop)
     }
