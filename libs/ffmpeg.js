@@ -158,8 +158,10 @@ module.exports = function(s,config,lang,onFinish){
                 })
             }else{
                 var primaryMap = '0:0'
-                if(e.details.primary_input && e.details.primary_input !== '')primaryMap = e.details.primary_input
-                string += ' -map ' + primaryMap
+                if(e.details.primary_input && e.details.primary_input !== ''){
+                    var primaryMap = e.details.primary_input || '0:0'
+                    string += ' -map ' + primaryMap
+                }
             }
         }
         return string;
@@ -804,7 +806,6 @@ module.exports = function(s,config,lang,onFinish){
             var h264Output = ' -q:v 1 -an -c:v libx264 -f hls -tune zerolatency -g 1 -hls_time 2 -hls_list_size 3 -start_number 0 -live_start_index 3 -hls_allow_cache 0 -hls_flags +delete_segments+omit_endlist "'+e.sdir+'detectorStreamX.m3u8"'
             var setObjectDetectValues = () => {
                 //for object detection
-                x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
                 if(
                     e.details.detector_scale_x_object &&
                     e.details.detector_scale_x_object !=='' &&
@@ -822,8 +823,12 @@ module.exports = function(s,config,lang,onFinish){
                 if(sendFramesGlobally && e.cudaEnabled){
                     x.pipe += ' -vf "hwdownload,format=nv12"'
                 }
-                if(sendFramesGlobally)x.pipe += ' -an -c:v pam -pix_fmt gray -f image2pipe pipe:3'
+                if(sendFramesGlobally){
+                    x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
+                    x.pipe += ' -an -c:v pam -pix_fmt gray -f image2pipe pipe:3'
+                }
                 if(e.details.detector_use_detect_object === '1'){
+                    x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
                     setObjectDetectValues()
                     if(e.details.detector_h264 === '1'){
                         x.pipe += h264Output
@@ -833,6 +838,7 @@ module.exports = function(s,config,lang,onFinish){
                 }
             }else if(sendFramesGlobally || sendFramesToObjectDetector){
                 if(sendFramesToObjectDetector){
+                    x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
                     setObjectDetectValues()
                 }
                 if(e.details.detector_h264 === '1'){
