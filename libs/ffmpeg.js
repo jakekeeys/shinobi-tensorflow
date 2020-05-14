@@ -793,14 +793,14 @@ module.exports = function(s,config,lang,onFinish){
                 //add input feed map
                 x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
             }
-            if(!e.details.detector_fps || e.details.detector_fps === ''){x.detector_fps = 2}else{x.detector_fps = parseInt(e.details.detector_fps)}
-            if(e.details.detector_scale_x && e.details.detector_scale_x !== '' && e.details.detector_scale_y && e.details.detector_scale_y !== ''){x.dratio=' -s '+e.details.detector_scale_x+'x'+e.details.detector_scale_y}else{x.dratio=' -s 320x240'}
+            x.dratio = ` -s ${e.details.detector_scale_x ? e.details.detector_scale_x : '640'}x${e.details.detector_scale_y ? e.details.detector_scale_y : '480'}`
             if(e.details.cust_detect&&e.details.cust_detect!==''){x.cust_detect+=e.details.cust_detect;}
-            if(sendFramesGlobally)x.pipe += ' -r ' + x.detector_fps + x.dratio + x.cust_detect
+            if(sendFramesGlobally)x.pipe += x.dratio + x.cust_detect
             x.detector_vf = []
             if(e.cudaEnabled){
                 x.detector_vf.push('hwdownload,format=nv12')
             }
+            x.detector_vf.push('fps=' + (e.details.detector_fps ? e.details.detector_fps : '2'))
             if(sendFramesGlobally && x.detector_vf.length > 0)x.pipe += ' -vf "'+x.detector_vf.join(',')+'"'
 
             var h264Output = ' -q:v 1 -an -c:v libx264 -f hls -tune zerolatency -g 1 -hls_time 2 -hls_list_size 3 -start_number 0 -live_start_index 3 -hls_allow_cache 0 -hls_flags +delete_segments+omit_endlist "'+e.sdir+'detectorStreamX.m3u8"'
