@@ -524,6 +524,7 @@
    "Record Video Filter": "Record Video Filter",
    "Input Flags": "Input Flags",
    "Snapshot Flags": "Snapshot Flags",
+   "Object Detector Flags": "Object Detector Flags",
    "Detector Flags": "Detector Flags",
    "Stream Flags": "Stream Flags",
    "Stream to YouTube": "Stream to YouTube",

@@ -2010,6 +2010,16 @@ module.exports = function(s,config,lang){
                    },
                    {
                        hidden: true,
+                      "name": "detail=cust_detect_object",
+                      "field": lang["Object Detector Flags"],
+                      "description": "Custom Flags that bind to the stream Detector uses for analyzation.",
+                      "default": "",
+                      "example": "",
+                      "form-group-class": "shinobi-detector",
+                      "possible": ""
+                   },
+                   {
+                       hidden: true,
                       "name": "detail=cust_sip_record",
                       "field": lang['Traditional Recording Flags'],
                       "description": "Custom Flags that bind to the output that the Event-Based Recordings siphon from.",
@@ -3052,8 +3062,6 @@ module.exports = function(s,config,lang){
                            "default": "2",
                            "example": "",
                            "form-group-class": "h_casc_input h_casc_1",
-                           "fieldType": "number",
-                           "numberMin": "1",
                            "possible": ""
                         },
                         {
