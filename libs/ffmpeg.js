@@ -637,21 +637,17 @@ module.exports = function(s,config,lang,onFinish){
                 //add input feed map
                 x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.snap)
             }
-            if(!e.details.snap_fps || e.details.snap_fps === ''){e.details.snap_fps = 1}
-            if(e.details.snap_vf && e.details.snap_vf !== '' || e.cudaEnabled){
-                var snapVf = e.details.snap_vf.split(',')
-                if(e.details.snap_vf === '')snapVf.shift()
-                if(e.cudaEnabled){
-                    snapVf.push('hwdownload,format=nv12')
-                }
-                //-vf "thumbnail_cuda=2,hwdownload,format=nv12"
-                x.snap_vf=' -vf "'+snapVf.join(',')+'"'
-            }else{
-                x.snap_vf=''
+            var snapVf = e.details.snap_vf ? e.details.snap_vf.split(',') : []
+            if(e.details.snap_vf === '')snapVf.shift()
+            if(e.cudaEnabled){
+                snapVf.push('hwdownload,format=nv12')
             }
-            if(e.details.snap_scale_x && e.details.snap_scale_x !== '' && e.details.snap_scale_y && e.details.snap_scale_y !== ''){x.snap_ratio = ' -s '+e.details.snap_scale_x+'x'+e.details.snap_scale_y}else{x.snap_ratio=''}
-            if(e.details.cust_snap && e.details.cust_snap !== ''){x.cust_snap = ' '+e.details.cust_snap}else{x.cust_snap=''}
-            x.pipe+=' -update 1 -r '+e.details.snap_fps+x.cust_snap+x.snap_ratio+x.snap_vf+' "'+e.sdir+'s.jpg" -y';
+            snapVf.push(`fps=${e.details.snap_fps || '1'}`)
+            //-vf "thumbnail_cuda=2,hwdownload,format=nv12"
+            x.pipe += ` -vf "${snapVf.join(',')}"`
+            if(e.details.snap_scale_x && e.details.snap_scale_x !== '' && e.details.snap_scale_y && e.details.snap_scale_y !== '')x.pipe += ' -s '+e.details.snap_scale_x+'x'+e.details.snap_scale_y
+            if(e.details.cust_snap)x.pipe += ' ' + e.details.cust_snap
+            x.pipe += ` -update 1 "${e.sdir}s.jpg" -y`
         }
         //custom - output
         if(e.details.custom_output&&e.details.custom_output!==''){x.pipe+=' '+e.details.custom_output;}
@@ -819,8 +815,8 @@ module.exports = function(s,config,lang,onFinish){
                 }else{
                     x.dobjratio = x.dratio
                 }
-                x.detector_fps_object = e.details.detector_fps_object || '2'
-                x.pipe += ' -r ' + x.detector_fps_object + x.dobjratio + x.cust_detect
+                if(e.details.cust_detect_object)x.pipe += e.details.cust_detect_object
+                x.pipe += x.dobjratio + ' -vf fps=' + (e.details.detector_fps_object || '2')
             }
             if(e.details.detector_pam === '1'){
                 if(sendFramesGlobally && e.cudaEnabled){
@@ -923,39 +919,38 @@ module.exports = function(s,config,lang,onFinish){
     }
     ffmpeg.buildTimelapseOutput = function(e,x){
         if(e.details.record_timelapse === '1'){
-            x.record_timelapse_video_filters = []
+            var recordTimelapseVideoFilters = []
+            var flags = []
             if(e.details.input_map_choices&&e.details.input_map_choices.record_timelapse){
                 //add input feed map
                 x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.record_timelapse)
             }
-            var flags = []
-            if(e.details.record_timelapse_fps && e.details.record_timelapse_fps !== ''){
-                flags.push('-r 1/' + e.details.record_timelapse_fps)
-            }else{
-                flags.push('-r 1/900') // 15 minutes
-            }
+            recordTimelapseVideoFilters.push('fps=1/' + (e.details.record_timelapse_fps ? e.details.record_timelapse_fps : '900'))
             if(e.details.record_timelapse_vf && e.details.record_timelapse_vf !== '')flags.push('-vf ' + e.details.record_timelapse_vf)
             if(e.details.record_timelapse_scale_x && e.details.record_timelapse_scale_x !== '' && e.details.record_timelapse_scale_y && e.details.record_timelapse_scale_y !== '')flags.push(`-s ${e.details.record_timelapse_scale_x}x${e.details.record_timelapse_scale_y}`)
             //record - watermark for -vf
             if(e.details.record_timelapse_watermark&&e.details.record_timelapse_watermark=="1"&&e.details.record_timelapse_watermark_location&&e.details.record_timelapse_watermark_location!==''){
                 switch(e.details.record_timelapse_watermark_position){
                     case'tl'://top left
-                        x.record_timelapse_watermark_position='10:10'
+                        x.record_timelapse_watermark_position = '10:10'
                     break;
                     case'tr'://top right
-                        x.record_timelapse_watermark_position='main_w-overlay_w-10:10'
+                        x.record_timelapse_watermark_position = 'main_w-overlay_w-10:10'
                     break;
                     case'bl'://bottom left
-                        x.record_timelapse_watermark_position='10:main_h-overlay_h-10'
+                        x.record_timelapse_watermark_position = '10:main_h-overlay_h-10'
                     break;
                     default://bottom right
-                        x.record_timelapse_watermark_position='(main_w-overlay_w-10)/2:(main_h-overlay_h-10)/2'
+                        x.record_timelapse_watermark_position = '(main_w-overlay_w-10)/2:(main_h-overlay_h-10)/2'
                     break;
                 }
-                x.record_timelapse_video_filters.push('movie='+e.details.record_timelapse_watermark_location+'[watermark],[in][watermark]overlay='+x.record_timelapse_watermark_position+'[out]');
+                recordTimelapseVideoFilters.push(
+                    'movie=' + e.details.record_timelapse_watermark_location,
+                    `[watermark],[in][watermark]overlay=${x.record_timelapse_watermark_position}[out]`
+                )
             }
-            if(x.record_timelapse_video_filters.length > 0){
-                var videoFilter = `-vf "${x.record_timelapse_video_filters.join(',').trim()}"`
+            if(recordTimelapseVideoFilters.length > 0){
+                var videoFilter = `-vf "${recordTimelapseVideoFilters.join(',').trim()}"`
                 flags.push(videoFilter)
             }
             x.pipe += ` -f singlejpeg ${flags.join(' ')} -an -q:v 1 pipe:7`
