@@ -430,8 +430,12 @@ module.exports = function(s,config,lang){
             clearTimeout(s.group[d.ke].activeMonitors[d.id].eventBasedRecording.timeout)
             s.group[d.ke].activeMonitors[d.id].eventBasedRecording.timeout = setTimeout(function(){
                 s.group[d.ke].activeMonitors[d.id].eventBasedRecording.allowEnd = true
-                s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stdin.setEncoding('utf8')
-                s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stdin.write('q')
+                if(s.isWin === false){
+		    s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.kill('SIGINT')
+		}else{
+		    s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stdin.setEncoding('utf8')
+		    s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stdin.write('q')
+		}
                 delete(s.group[d.ke].activeMonitors[d.id].eventBasedRecording.timeout)
             },detector_timeout * 1000 * 60)
         }
