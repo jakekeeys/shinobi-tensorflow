@@ -1,6 +1,7 @@
 $(document).ready(function(e){
     //Timelapse JPEG Window
     var timelapseWindow = $('#timelapsejpeg')
+    var gridContainer = timelapseWindow.find('.modal-body > .row')
     var dateSelector = $('#timelapsejpeg_date')
     var fpsSelector = $('#timelapseJpegFps')
     var framesContainer = timelapseWindow.find('.frames')
@@ -85,19 +86,20 @@ $(document).ready(function(e){
                 frameIcons.html(frameIconsHtml)
                 frameIcons.find(`.frame:first`).click()
                 getLiveStream()
-                resetFilmStripPositions()
+                // resetFilmStripPositions()
             }else{
                 frameIconsHtml = lang['No Data']
                 frameIcons.html(frameIconsHtml)
             }
         })
     }
-    var resetFilmStripPositions = function(){
-        var numberOfFrames = Object.keys(currentPlaylist).length
-        var fieldHolderHeight = fieldHolder.height() + fieldHolderCssHeightModifier
-        console.log("calc(100% - " + fieldHolderHeight + "px)")
-        frameIcons.css({height:"calc(100% - " + fieldHolderHeight + "px)"})
-    }
+    // var resetFilmStripPositions = function(){
+    //     var numberOfFrames = Object.keys(currentPlaylist).length
+    //     console.log(fieldHolder.height())
+    //     var fieldHolderHeight = fieldHolder.height() + fieldHolderCssHeightModifier
+    //     console.log("calc(100% - " + fieldHolderHeight + "px)")
+    //     frameIcons.css({height:"calc(100% - " + fieldHolderHeight + "px)"})
+    // }
     var setPlayBackFrame = function(href){
         playBackViewImage[0].src = href
     }
@@ -132,6 +134,33 @@ $(document).ready(function(e){
         }else{
             playTimelapse()
         }
+    }
+    var createCard = function(html,options){
+        return `<div class="card grid-stack-item">${html}</div>`
+    }
+    var createOptionsCard = function(){
+        return `<div class="fieldHolder text-left">
+            <div class="form-group">
+              <label><div><span><%-lang['Monitor']%></span></div>
+                  <div><select class="form-control dark monitors_list"></select></div>
+              </label>
+            </div>
+            <div class="form-group">
+                <label><div><span><%-lang['Date']%></span></div>
+                    <div><input type="text" id="timelapsejpeg_date" class="form-control" value="" /></div>
+                </label>
+            </div>
+            <div class="form-group">
+                <input id="timelapseJpegFps" data-slider-id='timelapseJpegFps' type="text"
+                 data-slider-min="1" data-slider-max="30" data-slider-step="1" data-slider-value="30" value="30"/>
+            </div>
+            <div class="form-group">
+                <a class="btn btn-danger btn-block download_mp4"><%-lang['Download']%></a>
+            </div>
+        </div>`
+    }
+    var createFrameIcons = function(){
+        return `<div class="frameIcons row scroll-style-6"></div>`
     }
     timelapseWindow.on('click','.frame',function(){
         pauseTimelapse()
@@ -191,6 +220,16 @@ $(document).ready(function(e){
         		return 'FPS : ' + value;
         	}
         });
+    // grid
+    var getGrid = function(){
+        return gridContainer.data('gridstack')
+    }
+    gridContainer.gridstack({
+        cellHeight: 80,
+        verticalMargin: 0,
+    })
+    getGrid().addWidget($(createCard(createOptionsCard())),0,0,4,4,true);
+    getGrid().addWidget($(createCard(createFrameIcons())),0,0,4,4,true);
     $.timelapseJpeg = {
         openWindow: openTimelapseWindow,
         monitorsList: monitorsList
