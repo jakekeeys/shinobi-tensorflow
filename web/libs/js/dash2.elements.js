@@ -10,6 +10,25 @@ $(document).ready(function(e){
         }
     })
 
+    var createMonitorsList = function(selectElement,selectedMonitor){
+        var selectedOption
+        var loadedMonitors = $.ccio.mon
+        selectElement.find('.monitor').remove()
+        $.each(loadedMonitors,function(n,monitor){
+            selectElement.append(`<option class="monitor" value="${monitor.mid}">${monitor.name}</option>`)
+        })
+        var optionElements = selectElement.find('.monitor')
+        optionElements.prop('selected',false)
+        if(selectedMonitor !== ''){
+            selectedOption = selectElement.find(`.monitor[value="${selectedMonitor}"]`)
+        }else{
+            selectedOption = optionElements.first()
+        }
+        selectedOption.prop('selected',true)
+        var monitorId = selectedOption.attr('value')
+        return monitorId
+    }
+
     //Group Selector
     $.gR={e:$('#group_list'),b:$('#group_list_button')};
     $.gR.drawList=function(){
@@ -412,16 +431,8 @@ $(document).ready(function(e){
                 }
             break;
             case'timelapseJpeg':
-                $.timelapseJpeg.e.modal('show')
-                $.timelapseJpeg.monitors.find('.monitor').remove()
-                $.each($.ccio.mon,function(n,v){
-                    $.timelapseJpeg.monitors.append('<option class="monitor" value="'+v.mid+'">'+v.name+'</option>')
-                })
-                e.e=$.timelapseJpeg.monitors.find('.monitor').prop('selected',false)
-                if(e.mid!==''){
-                    e.e=$.timelapseJpeg.monitors.find('.monitor[value="'+e.mid+'"]')
-                }
-                e.e.first().prop('selected',true)
+                var monitorId = createMonitorsList($.timelapseJpeg.monitorsList)
+                $.timelapseJpeg.openWindow(monitorId)
             break;
             case'region':
                 if(!e.mon){
