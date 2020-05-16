@@ -432,6 +432,7 @@ module.exports = function(s,config,lang){
                 s.group[d.ke].activeMonitors[d.id].eventBasedRecording.allowEnd = true
                 s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stdin.setEncoding('utf8')
                 s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stdin.write('q')
+                s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.kill('SIGINT')
                 delete(s.group[d.ke].activeMonitors[d.id].eventBasedRecording.timeout)
             },detector_timeout * 1000 * 60)
         }
