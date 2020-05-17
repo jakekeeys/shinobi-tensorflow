@@ -84,7 +84,7 @@ $(document).ready(function(e){
                 currentPlaylistArray = data
                 frameIcons.html(frameIconsHtml)
                 frameIcons.find(`.frame:first`).click()
-                getLiveStream()
+                // getLiveStream()
                 resetFilmStripPositions()
             }else{
                 frameIconsHtml = lang['No Data']
@@ -98,25 +98,35 @@ $(document).ready(function(e){
         console.log("calc(100% - " + fieldHolderHeight + "px)")
         frameIcons.css({height:"calc(100% - " + fieldHolderHeight + "px)"})
     }
-    var setPlayBackFrame = function(href){
+    var setPlayBackFrame = function(href,callback){
+        playBackViewImage
+        .off('load').on('load',function(){
+            playBackViewImage.off('error')
+            if(callback)callback()
+        })
+        .off('error').on('error',function(){
+            if(callback)callback()
+        })
         playBackViewImage[0].src = href
     }
     var playTimelapse = function(){
         var selectedFrame = currentPlaylist[frameSelected]
         var selectedFrameNumber = currentPlaylist[frameSelected].number
-        setPlayBackFrame(selectedFrame.href)
-        frameIcons.find(`.frame.selected`).removeClass('selected')
-        frameIcons.find(`.frame[data-filename="${selectedFrame.filename}"]`).addClass('selected')
-        clearTimeout(playIntervalTimer)
-        playIntervalTimer = setTimeout(function(){
-            ++selectedFrameNumber
-            var newSelectedFrame = currentPlaylistArray[selectedFrameNumber]
-            if(!newSelectedFrame)return
-            frameSelected = newSelectedFrame.filename
-            playTimelapse()
-        },playInterval)
+        setPlayBackFrame(selectedFrame.href,function(){
+            frameIcons.find(`.frame.selected`).removeClass('selected')
+            frameIcons.find(`.frame[data-filename="${selectedFrame.filename}"]`).addClass('selected')
+            clearTimeout(playIntervalTimer)
+            playIntervalTimer = setTimeout(function(){
+                ++selectedFrameNumber
+                var newSelectedFrame = currentPlaylistArray[selectedFrameNumber]
+                if(!newSelectedFrame)return
+                frameSelected = newSelectedFrame.filename
+                playTimelapse()
+            },playInterval)
+        })
     }
     var destroyTimelapse = function(){
+        playBackViewImage.off('load')
         frameSelected = null
         pauseTimelapse()
         frameIcons.empty()
@@ -143,7 +153,7 @@ $(document).ready(function(e){
         frameIcons.find(`.frame.selected`).removeClass('selected')
         frameIcons.find(`.frame[data-filename="${selectedFrame}"]`).addClass('selected')
         var href = currentPlaylist[selectedFrame].href
-        setPlayBackFrame(href)
+        setPlayBackFrame(href,function(){})
     })
     timelapseWindow.on('click','.download_mp4',function(){
         var _this = $(this)
@@ -174,11 +184,9 @@ $(document).ready(function(e){
         }
         runDownloader()
     })
-    // timelapseWindow.on('shown.bs.modal', function (e) {
-    //     // dateSelector.val($.timelapseJpeg.baseDate)
-    //     // drawTimelapseWindowElements($.timelapseJpeg.baseDate)
-    //     drawTimelapseWindowElements()
-    // })
+    timelapseWindow.on('shown.bs.modal', function (e) {
+        resetFilmStripPositions()
+    })
     timelapseWindow.on('hidden.bs.modal', function (e) {
         destroyTimelapse()
     })
