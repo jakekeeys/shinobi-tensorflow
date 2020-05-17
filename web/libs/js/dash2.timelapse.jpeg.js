@@ -19,6 +19,7 @@ $(document).ready(function(e){
     var playIntervalTimer = null
     var playInterval = 1000 / 30
     var fieldHolderCssHeightModifier = 0
+    var canPlay = false;
 
     var openTimelapseWindow = function(monitorId,startDate,endDate){
         timelapseWindow.modal('show')
@@ -68,7 +69,6 @@ $(document).ready(function(e){
         var queryString = ['start=' + startDate,'end=' + endDate]
         var frameIconsHtml = ''
         var apiURL = apiBaseUrl + '/timelapse/' + $user.ke + '/' + selectedMonitor
-        console.log(apiURL + '?' + queryString.join('&'))
         $.getJSON(apiURL + '?' + queryString.join('&'),function(data){
             if(data && data[0]){
                 var firstFilename = data[0].filename
@@ -95,8 +95,7 @@ $(document).ready(function(e){
     var resetFilmStripPositions = function(){
         var numberOfFrames = Object.keys(currentPlaylist).length
         var fieldHolderHeight = fieldHolder.height() + fieldHolderCssHeightModifier
-        console.log("calc(100% - " + fieldHolderHeight + "px)")
-        frameIcons.css({height:"calc(100% - " + fieldHolderHeight + "px)"})
+        frameIcons.css({height:"calc(100% - 15px - " + fieldHolderHeight + "px)"})
     }
     var setPlayBackFrame = function(href,callback){
         playBackViewImage
@@ -109,7 +108,7 @@ $(document).ready(function(e){
         })
         playBackViewImage[0].src = href
     }
-    var playTimelapse = function(){
+    var startPlayLoop = function(){
         var selectedFrame = currentPlaylist[frameSelected]
         var selectedFrameNumber = currentPlaylist[frameSelected].number
         setPlayBackFrame(selectedFrame.href,function(){
@@ -117,13 +116,18 @@ $(document).ready(function(e){
             frameIcons.find(`.frame[data-filename="${selectedFrame.filename}"]`).addClass('selected')
             clearTimeout(playIntervalTimer)
             playIntervalTimer = setTimeout(function(){
+                if(!canPlay)return
                 ++selectedFrameNumber
                 var newSelectedFrame = currentPlaylistArray[selectedFrameNumber]
                 if(!newSelectedFrame)return
                 frameSelected = newSelectedFrame.filename
-                playTimelapse()
+                startPlayLoop()
             },playInterval)
         })
+    }
+    var playTimelapse = function(){
+        canPlay = true
+        startPlayLoop()
     }
     var destroyTimelapse = function(){
         playBackViewImage.off('load')
@@ -133,14 +137,20 @@ $(document).ready(function(e){
         setPlayBackFrame(null)
     }
     var pauseTimelapse = function(){
+        canPlay = false
         clearTimeout(playIntervalTimer)
         playIntervalTimer = null
     }
     var togglePlayPause = function(){
-        if(playIntervalTimer){
+        var playPauseText = timelapseWindow.find('.playPauseText')
+        if(canPlay){
+            canPlay = false
             pauseTimelapse()
+            playPauseText.text(lang.Play)
         }else{
+            canPlay = true
             playTimelapse()
+            playPauseText.text(lang.Pause)
         }
     }
     timelapseWindow.on('click','.frame',function(){
@@ -153,7 +163,10 @@ $(document).ready(function(e){
         frameIcons.find(`.frame.selected`).removeClass('selected')
         frameIcons.find(`.frame[data-filename="${selectedFrame}"]`).addClass('selected')
         var href = currentPlaylist[selectedFrame].href
-        setPlayBackFrame(href,function(){})
+        setPlayBackFrame(href)
+    })
+    timelapseWindow.on('click','.playPause',function(){
+        togglePlayPause()
     })
     timelapseWindow.on('click','.download_mp4',function(){
         var _this = $(this)
@@ -174,11 +187,11 @@ $(document).ready(function(e){
                     a.download = downloadName
                     a.click()
                 }else{
-                    // _this.html('&nbsp;<i class="fa fa-spinner fa-pulse"></i>&nbsp;')
-                    // clearTimeout(downloadRecheckTimers[timerId])
-                    // downloadRecheckTimers[timerId] = setTimeout(function(){
-                    //     runDownloader()
-                    // },5000)
+                    _this.html(lang['Please Wait...'])
+                    clearTimeout(downloadRecheckTimers[timerId])
+                    downloadRecheckTimers[timerId] = setTimeout(function(){
+                        _this.html(lang['Download'])
+                    },5000)
                 }
             })
         }
