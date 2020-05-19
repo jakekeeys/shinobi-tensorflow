@@ -80,6 +80,8 @@ require('./libs/ffmpeg.js')(s,config,lang,function(ffmpeg){
     //custom module loader
     require('./libs/customAutoLoad.js')(s,config,lang,app,io)
     //scheduling engine
+    require('./libs/shinobiHub.js')(s,config,lang,app,io)
+    //scheduling engine
     require('./libs/scheduler.js')(s,config,lang,app,io)
     //on-start actions, daemon(s) starter
     require('./libs/startup.js')(s,config,lang)

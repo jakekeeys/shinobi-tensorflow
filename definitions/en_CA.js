@@ -3927,6 +3927,43 @@ module.exports = function(s,config,lang){
        "Account Settings": {
           "section": "Account Settings",
           "blocks": {
+             "ShinobiHub": {
+                 "evaluation": "!details.sub && details.use_shinobihub !== '0'",
+                 "name": lang["ShinobiHub"],
+                 "color": "purple",
+                 "info": [
+                     {
+                        "name": "detail=shinobihub",
+                        "selector":"autosave_shinobihub",
+                        "field": lang.Autosave,
+                        "description": "",
+                        "default": "0",
+                        "example": "",
+                        "fieldType": "select",
+                        "possible": [
+                            {
+                               "name": lang.No,
+                               "value": "0"
+                            },
+                            {
+                               "name": lang.Yes,
+                               "value": "1"
+                            }
+                        ]
+                     },
+                     {
+                        "hidden": true,
+                        "field": lang['API Key'],
+                        "name": "detail=shinobihub_key",
+                        "placeholder": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+                        "form-group-class": "autosave_shinobihub_input autosave_shinobihub_1",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                 ]
+             },
              "2-Factor Authentication": {
                  "name": lang['2-Factor Authentication'],
                  "color": "grey",

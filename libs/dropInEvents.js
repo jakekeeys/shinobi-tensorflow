@@ -251,7 +251,7 @@ module.exports = function(s,config,lang,app,io){
                 var split = address.address.split('@')
                 var monitorId = split[0]
                 var ke = session.user
-                if(s.group[ke].rawMonitorConfigurations[monitorId] && s.group[ke].activeMonitors[monitorId].isStarted === true){
+                if(s.group[ke] && s.group[ke].rawMonitorConfigurations[monitorId] && s.group[ke].activeMonitors[monitorId].isStarted === true){
                     session.monitorId = monitorId
                 }else{
                     return callback(new Error(lang['No Monitor Exists with this ID.']))
