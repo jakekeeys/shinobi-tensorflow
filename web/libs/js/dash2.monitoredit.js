@@ -58,7 +58,7 @@ $.aM.drawList = function(){
 $.aM.e.on('shown.bs.modal', function () {
     $.aM.drawList()
 })
-$.aM.import=function(e){
+$.aM.import = function(e){
     $.get($.ccio.init('location',$user)+$user.auth_token+'/hls/'+e.values.ke+'/'+e.values.mid+'/detectorStream.m3u8',function(data){
         $('#monEditBufferPreview').html(data)
     })
@@ -67,13 +67,13 @@ $.aM.import=function(e){
     $.each(e.values,function(n,v){
         $.aM.e.find('[name="'+n+'"]').val(v).change()
     })
-    e.ss=JSON.parse(e.values.details);
+    e.ss = $.parseJSON(e.values.details);
     //get maps
     $.aM.maps.empty()
     if(e.ss.input_maps&&e.ss.input_maps!==''){
         var input_maps
         try{
-            input_maps = JSON.parse(e.ss.input_maps)
+            input_maps = $.parseJSON(e.ss.input_maps)
         }catch(er){
             input_maps = e.ss.input_maps;
         }
@@ -95,7 +95,7 @@ $.aM.import=function(e){
     if(e.ss.stream_channels&&e.ss.stream_channels!==''){
         var stream_channels
         try{
-            stream_channels = JSON.parse(e.ss.stream_channels)
+            stream_channels = $.parseJSON(e.ss.stream_channels)
         }catch(er){
             stream_channels = e.ss.stream_channels;
         }
@@ -112,7 +112,7 @@ $.aM.import=function(e){
     if(e.ss.input_map_choices&&e.ss.input_map_choices!==''){
         var input_map_choices
         try{
-            input_map_choices = JSON.parse(e.ss.input_map_choices)
+            input_map_choices = $.parseJSON(e.ss.input_map_choices)
         }catch(er){
             input_map_choices = e.ss.input_map_choices;
         }
@@ -135,7 +135,7 @@ $.aM.import=function(e){
     });
     $.each(e.ss,function(n,v){
         try{
-            var variable=JSON.parse(v)
+            var variable=$.parseJSON(v)
         }catch(err){
             var variable=v
         }
@@ -296,7 +296,7 @@ $.aM.f.submit(function(ee){
     })
     //
     if($('#copy_settings').val() === '1'){
-        e.s.details = JSON.parse(e.s.details);
+        e.s.details = $.parseJSON(e.s.details);
         var copyMonitors = $.aM.monitorsForCopy.val();
         var chosenSections = [];
         var chosenMonitors = {};
@@ -313,7 +313,7 @@ $.aM.f.submit(function(ee){
             }
         })
         var alterSettings = function(settingsToAlter,monitor){
-            monitor.details = JSON.parse(monitor.details);
+            monitor.details = $.parseJSON(monitor.details);
             var searchElements = []
             if(settingsToAlter.indexOf('field=') > -1){
                 var splitSettingsToAlter = settingsToAlter.split('=')
@@ -544,7 +544,7 @@ $.aM.e.on('change','.detector_cascade_selection',function(){
 //  var e={};
 //    e.details=$.aM.e.find('[name="details"]')
 //    try{
-//        e.detailsVal=JSON.parse(e.details.val())
+//        e.detailsVal=$.parseJSON(e.details.val())
 //    }catch(err){
 //        e.detailsVal={}
 //    }
@@ -577,7 +577,7 @@ $.aM.e.find('.import_config').click(function(e){
     });
     $.confirm.click({title:'Import',class:'btn-primary'},function(){
         try{
-            e.values=JSON.parse($.confirm.e.find('textarea').val());
+            e.values=$.parseJSON($.confirm.e.find('textarea').val());
             $.aM.import(e)
             $.aM.e.modal('show')
         }catch(err){
