@@ -58,7 +58,7 @@ module.exports = function(s,config,lang,app,io){
                 form: {
                     "type": type,
                     "brand": monitorConfig.ke,
-                    "name": monitorConfig.mid,
+                    "name": monitorConfig.name,
                     "description": "Backup at " + (new Date()),
                     "json": validated.json,
                     "details": JSON.stringify({
