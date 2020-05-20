@@ -14,6 +14,7 @@ $(document).ready(function(){
         return `<tr drawn-id="${row.id}">
             <td>${row.name}</td>
             <td>${row.brand}</td>
+            <td>${row.description}</td>
             <td><i class="fa fa-${row.private == 1 ? 'check text-success' : 'cross text-danger'}"></i></td>
             <td><a class="copy btn btn-sm btn-primary"><i class="fa fa-copy"></i></a></td>
         </tr>`
@@ -57,9 +58,9 @@ $(document).ready(function(){
     })
     shinobiHubWindow.on('click','.copy',function(){
         var configId = $(this).parents(`[drawn-id]`).attr('drawn-id')
-        var json = loadedConfigs[configId]
+        var json = loadedConfigs[configId].json
         $.aM.import({
-            values: json
+            values: mergeDeep($.aM.generateDefaultMonitorSettings(),json)
         })
         $.aM.e.find('[name="mode"]').val('start').change()
         shinobiHubWindow.modal('hide')
