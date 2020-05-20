@@ -84,5 +84,30 @@ module.exports = function(s,config,lang,app,io){
             })
         }
     }
+    app.get([
+        config.webPaths.apiPrefix + ':auth/getShinobiHubConfigurations/:ke/:type',
+        config.webPaths.apiPrefix + ':auth/getShinobiHubConfigurations/:ke/:type/:id'
+    ],function (req,res){
+        s.auth(req.params,function(user){
+            //query defaults : rowLimit=5, skipOver=0, explore=0
+            res.setHeader('Content-Type', 'application/json');
+            var shinobiHubApiKey = s.group[req.params.ke].init.shinobihub_key
+            if(shinobiHubApiKey){
+                var queryString = []
+                if(req.query){
+                    Object.keys(req.query).forEach((key) => {
+                        var value = req.query[key]
+                        queryString.push(key + '=' + value)
+                    })
+                }
+                request(`${config.shinobiHubEndpoint}api/${shinobiHubApiKey}/getConfiguration/${req.params.type}${req.params.id ? '/' + req.params.id : ''}${queryString.length > 0 ? '?' + queryString.join('&') : ''}`).pipe(res)
+            }else{
+                s.closeJsonResponse(res,{
+                    ok: false,
+                    msg: user.lang['No API Key']
+                })
+            }
+        },res,req)
+    })
     s.onMonitorSave(onMonitorSave)
 }
