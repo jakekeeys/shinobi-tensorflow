@@ -48,6 +48,9 @@ switch($user.details.lang){
         })
     break;
 }
+window.getApiPrefix = function(){
+    return $.ccio.init('location',$user) + $user.auth_token
+}
 window.chartColors = {
     red: 'rgb(255, 99, 132)',
     orange: 'rgb(255, 159, 64)',

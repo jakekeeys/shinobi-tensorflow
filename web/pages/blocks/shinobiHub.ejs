@@ -1,0 +1,35 @@
+<div class="modal full fade dark" id="shinobihub_viewer" role="dialog" aria-labelledby="shinobihub_viewerLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title" id="shinobihub_viewerLabel"><i class="fa fa-home"></i> &nbsp; <%- lang['ShinobiHub'] %></h4>
+      </div>
+      <div class="modal-body text-center" style="padding:0">
+          <table  style="width:100%;table-layout: fixed;overflow-wrap: break-word;" class="mb-0 text-center table table-striped align-items-center">
+            <tbody class="list">
+            </tbody>
+          </table>
+      </div>
+      <div class="modal-footer">
+          <a class="btn btn-success get pull-left"><%-lang.ShinobiHub%></a>
+          <div style="display:inline-block">
+              <!-- <select id="shinobihub-sort-by" class="form-control form-control-sm mr-2" style="width:150px;float:right">
+                  <option value="dateUpdated">Date Updated</option>
+                  <option value="dateAdded">Date Added</option>
+                  <option value="heading">Title</option>
+                  <option value="opening">Subtitle</option>
+              </select>
+              <select id="shinobihub-sort-direction" class="form-control form-control-sm mr-2" style="width:150px;float:right">
+                  <option value="DESC">Newest</option>
+                  <option value="ASC">Oldest</option>
+              </select> -->
+              <div id="shinobihub-pages" style="display:inline-block"></div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="<%-window.libURL%>libs/js/dash2.shinobiHub.js"></script>
