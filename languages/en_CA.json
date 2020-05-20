@@ -25,6 +25,7 @@
    "RAM": "RAM",
    "CPU": "CPU",
    "on": "on",
+   "Already Processing": "Already Processing",
    "No API Key": "No API Key",
    "Use Camera Timestamps": "Use Camera Timestamps",
    "Power Viewer": "Power Viewer",

@@ -109,5 +109,46 @@ module.exports = function(s,config,lang,app,io){
             }
         },res,req)
     })
+    app.get([
+        config.webPaths.apiPrefix + ':auth/backupMonitorsAllToShinobHub/:ke'
+    ],function (req,res){
+        s.auth(req.params,function(user){
+            //query defaults : rowLimit=5, skipOver=0, explore=0
+            res.setHeader('Content-Type', 'application/json');
+            var shinobiHubApiKey = s.group[req.params.ke].init.shinobihub_key
+            if(shinobiHubApiKey){
+                if(!s.group[req.params.ke].uploadingAllMonitorsToShinobiHub){
+                    s.group[req.params.ke].uploadingAllMonitorsToShinobiHub = true
+                    var current = 0;
+                    var monitorConfigs = s.group[req.params.ke].rawMonitorConfigurations
+                    var monitorIds = Object.keys(monitorConfigs)
+                    var doOneUpload = () => {
+                        if(!monitorIds[current]){
+                            s.group[req.params.ke].uploadingAllMonitorsToShinobiHub = false
+                            s.closeJsonResponse(res,{
+                                ok: true,
+                            })
+                            return;
+                        };
+                        uploadConfiguration(s.group[req.params.ke].init.shinobihub_key,'cam',Object.assign(monitorConfigs[monitorIds[current]],{}),() => {
+                            ++current
+                            doOneUpload()
+                        })
+                    }
+                    doOneUpload()
+                }else{
+                    s.closeJsonResponse(res,{
+                        ok: false,
+                        msg: lang['Already Processing']
+                    })
+                }
+            }else{
+                s.closeJsonResponse(res,{
+                    ok: false,
+                    msg: user.lang['No API Key']
+                })
+            }
+        },res,req)
+    })
     s.onMonitorSave(onMonitorSave)
 }
