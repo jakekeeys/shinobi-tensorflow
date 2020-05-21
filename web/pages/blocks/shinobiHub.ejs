@@ -29,20 +29,20 @@
       <div class="modal-footer">
           <div style="display:inline-block;vertical-align:top">
               <select id="shinobihub-explore" class="form-control form-control-sm mr-2" style="vertical-align:top;display:inline-block;width:150px;margin-right:2rem">
-                  <option value="0" selected>Uploaded Only</option>
-                  <option value="1">Public on ShinobiHub</option>
+                  <option value="0" selected><%- lang['Uploaded Only'] %></option>
+                  <option value="1"><%- lang['Public on ShinobiHub'] %></option>
               </select>
               <select id="shinobihub-sort-by" class="form-control form-control-sm mr-2" style="vertical-align:top;display:inline-block;width:150px;margin-right:2rem">
-                  <option value="dateUpdated" selected>Date Updated</option>
-                  <option value="dateAdded">Date Added</option>
-                  <option value="heading">Title</option>
-                  <option value="opening">Subtitle</option>
+                  <option value="dateUpdated" selected><%- lang['Date Updated'] %></option>
+                  <option value="dateAdded"><%- lang['Date Added'] %></option>
+                  <option value="heading"><%- lang['Title'] %></option>
+                  <option value="opening"><%- lang['Subtitle'] %></option>
               </select>
               <select id="shinobihub-sort-direction" class="form-control form-control-sm mr-2" style="vertical-align:top;display:inline-block;width:150px;margin-right:2rem">
-                  <option value="DESC" selected>Newest</option>
-                  <option value="ASC">Oldest</option>
+                  <option value="DESC" selected><%- lang['Newest'] %></option>
+                  <option value="ASC"><%- lang['Oldest'] %></option>
               </select>
-              <input id="shinobihub-search" type="text" class="form-control" placeholder="Search" style="display:inline-block;margin-right:2rem;width:150px;">
+              <input id="shinobihub-search" type="text" class="form-control" placeholder="<%- lang['Search'] %>" style="display:inline-block;margin-right:2rem;width:150px;">
               <div id="shinobihub-pages" style="display:inline-block;vertical-align:top"></div>
           </div>
       </div>
