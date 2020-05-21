@@ -5,28 +5,45 @@
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
-        <h4 class="modal-title" id="shinobihub_viewerLabel"><i class="fa fa-home"></i> &nbsp; <%- lang['ShinobiHub'] %></h4>
+        <h4 class="modal-title" id="shinobihub_viewerLabel">
+            <i class="fa fa-home"></i> &nbsp; <%- lang['ShinobiHub'] %>
+        </h4>
       </div>
       <div class="modal-body text-center" style="padding:0">
           <table  style="width:100%;table-layout: fixed;overflow-wrap: break-word;" class="mb-0 text-center table table-striped align-items-center">
-            <tbody class="list">
+            <thead class="bg-secondary">
+                <tr>
+                    <th scope="col" class="sort" data-sort="name">Name / Model</th>
+                    <th scope="col" class="sort" data-sort="brand">Brand</th>
+                    <th scope="col" class="sort" data-sort="description">Description</th>
+                    <th scope="col" class="sort" data-sort="dateAdded">Date Added</th>
+                    <th scope="col" class="sort" data-sort="dateUpdated">Date Updated</th>
+                    <th scope="col" class="sort" data-sort="">Private</th>
+                    <th scope="col" class="sort" data-sort="">&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody class="list text-left">
             </tbody>
           </table>
       </div>
       <div class="modal-footer">
-          <a class="btn btn-success get pull-left"><%-lang.ShinobiHub%></a>
-          <div style="display:inline-block">
-              <!-- <select id="shinobihub-sort-by" class="form-control form-control-sm mr-2" style="width:150px;float:right">
-                  <option value="dateUpdated">Date Updated</option>
+          <div style="display:inline-block;vertical-align:top">
+              <select id="shinobihub-explore" class="form-control form-control-sm mr-2" style="vertical-align:top;display:inline-block;width:150px;margin-right:2rem">
+                  <option value="0" selected>Uploaded Only</option>
+                  <option value="1">All on ShinobiHub</option>
+              </select>
+              <select id="shinobihub-sort-by" class="form-control form-control-sm mr-2" style="vertical-align:top;display:inline-block;width:150px;margin-right:2rem">
+                  <option value="dateUpdated" selected>Date Updated</option>
                   <option value="dateAdded">Date Added</option>
                   <option value="heading">Title</option>
                   <option value="opening">Subtitle</option>
               </select>
-              <select id="shinobihub-sort-direction" class="form-control form-control-sm mr-2" style="width:150px;float:right">
-                  <option value="DESC">Newest</option>
+              <select id="shinobihub-sort-direction" class="form-control form-control-sm mr-2" style="vertical-align:top;display:inline-block;width:150px;margin-right:2rem">
+                  <option value="DESC" selected>Newest</option>
                   <option value="ASC">Oldest</option>
-              </select> -->
-              <div id="shinobihub-pages" style="display:inline-block"></div>
+              </select>
+              <input id="shinobihub-search" type="text" class="form-control" placeholder="Search" style="display:inline-block;margin-right:2rem;width:150px;">
+              <div id="shinobihub-pages" style="display:inline-block;vertical-align:top"></div>
           </div>
       </div>
     </div>

@@ -2,30 +2,35 @@ $(document).ready(function(){
     var loadedConfigs = {}
     var shinobiHubWindow = $('#shinobihub_viewer')
     var shinobiHubWindowTableBody = shinobiHubWindow.find('tbody')
-    // var shinobiHubWindowSearch = $('#shinobihub-search')
+    var shinobiHubWindowSearch = $('#shinobihub-search')
     var shinobiHubWindowSortBy = $('#shinobihub-sort-by')
+    var shinobiHubWindowExplore = $('#shinobihub-explore')
     var shinobiHubWindowSortDirection = $('#shinobihub-sort-direction')
     var shinobiHubWindowPages = $('#shinobihub-pages')
 
-    var getConfigurationsFromHub = function(rowLimit,skipOver,explore,callback){
-        $.get(getApiPrefix() + `/getShinobiHubConfigurations/${$user.ke}/cam?rowLimit=${rowLimit}&skipOver=${skipOver}&explore=${explore ? explore : "0"}`,callback)
+    var getConfigurationsFromHub = function(rowLimit,skipOver,explore,searchQuery,sortBy,sortDirection,callback){
+        $.get(getApiPrefix() + `/getShinobiHubConfigurations/${$user.ke}/cam?rowLimit=${rowLimit}&skipOver=${skipOver}&explore=${explore ? explore : "0"}&search=${searchQuery}&sortDirection=${sortDirection}&sortBy=${sortBy}`,callback)
     }
     var buildConfigRow = function(row){
         return `<tr drawn-id="${row.id}">
-            <td>${row.name}</td>
+            <td><span class="badge badge-primary">${row.name}</span></td>
             <td>${row.brand}</td>
             <td>${row.description}</td>
-            <td><i class="fa fa-${row.private == 1 ? 'check text-success' : 'cross text-danger'}"></i></td>
-            <td><a class="copy btn btn-sm btn-primary"><i class="fa fa-copy"></i></a></td>
+            <td><span class="badge badge-primary">${moment(row.dateAdded).format('DD-MM-YYYY hh:mm:ss A')}</span></td>
+            <td><span class="badge badge-primary">${moment(row.dateUpdated).format('DD-MM-YYYY hh:mm:ss A')}</span></td>
+            <td class="text-center"><i class="fa fa-${row.private == 1 ? 'check text-success' : 'cross text-danger'}"></i></td>
+            <td class="text-center"><a class="copy btn btn-sm btn-primary"><i class="fa fa-copy"></i></a></td>
         </tr>`
     }
     var loadRows = function(skipOver,rowLimit,explore){
         shinobiHubWindowTableBody.empty()
         if(!skipOver)skipOver = 0
         if(!rowLimit)rowLimit = 10
-        if(!explore)explore = '0'
-        // var searchQuery = shinobiHubWindowSearch.val()
-        getConfigurationsFromHub(rowLimit,skipOver,explore,function(data){
+        var searchQuery = shinobiHubWindowSearch.val()
+        var sortBy = shinobiHubWindowSortBy.val()
+        var sortDirection = shinobiHubWindowSortDirection.val()
+        var explore = shinobiHubWindowExplore.val() || '0'
+        getConfigurationsFromHub(rowLimit,skipOver,explore,searchQuery,sortBy,sortDirection,function(data){
             var html = ''
             $.each(data.configs,function(n,row){
                 loadedConfigs[row.id] = row
@@ -75,5 +80,33 @@ $(document).ready(function(){
         var pageSelect = parseInt($(this).val()) - 1
         var pageLimit = 10
         loadRows(pageSelect * pageLimit, pageLimit,'0')
+    })
+    shinobiHubWindowSearch.change(function(){
+        loadRows(0, 10, '0')
+    })
+    shinobiHubWindowSortBy.change(function(){
+        var descText
+        var ascText
+        switch($(this).val()){
+            case'dateUpdated':
+            case'dateAdded':
+                descText = 'Newest'
+                ascText = 'Oldest'
+            break;
+            case'heading':
+            case'opening':
+                descText = 'Z - #'
+                ascText = '# - Z'
+            break;
+        }
+        shinobiHubWindowSortDirection.find('[value="DESC"]').html(descText)
+        shinobiHubWindowSortDirection.find('[value="ASC"]').html(ascText)
+        loadRows(0, 10, '0')
+    })
+    shinobiHubWindowSortDirection.change(function(){
+        loadRows(0, 10, '0')
+    })
+    shinobiHubWindowExplore.change(function(){
+        loadRows(0, 10, '0')
     })
 })
