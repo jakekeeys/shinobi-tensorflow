@@ -1029,7 +1029,13 @@ module.exports = function(s,config,lang,onFinish){
         ffmpeg.assembleMainPieces(e,x)
         ffmpeg.createPipeArray(e,x)
         //hold ffmpeg command for log stream
-        s.group[e.ke].activeMonitors[e.mid].ffmpeg = x.ffmpegCommandString
+        var sanitizedCmd = x.ffmpegCommandString
+        if(e.details.muser && e.details.mpass){
+            sanitizedCmd = sanitizedCmd.replace(`//${e.details.muser}:${e.details.mpass}@`,'//')
+        }else if(e.details.muser){
+            sanitizedCmd = sanitizedCmd.replace(`//${e.details.muser}:@`,'//')
+        }
+        s.group[e.ke].activeMonitors[e.mid].ffmpeg = sanitizedCmd
         //clean the string of spatial impurities and split for spawn()
         x.ffmpegCommandString = s.splitForFFPMEG(x.ffmpegCommandString)
         //launch that bad boy
