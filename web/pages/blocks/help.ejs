@@ -1,7 +1,7 @@
 <% if(!config.userHasSubscribed){ %>
     <style>
         @media (min-width: 768px){
-            .modal-dialog {
+            #help_window .modal-dialog {
                 width: 800px;
                 margin: 30px auto;
             }
@@ -151,7 +151,7 @@
                               {
                                   icon: 'comments-o',
                                   color: 'primary',
-                                  text: '<b>#dashcam</b> Chat',
+                                  text: '<b>#byaku</b> Chat',
                                   href: 'https://discord.gg/3XA9RNP',
                                   class: ''
                               },
@@ -165,7 +165,7 @@
                       },
                       {
                           title: "Support the Development",
-                          info: `Subscribe to any of the following to boost development! Once subscribed your subscription key in the configuration file (conf.json), then restart Shinobi and this promotion window won't appear anymore, thanks! <i class="fa fa-smile-o"></i> <br><br> <code>"subscriptionId":"sub_XXXXXXXXXXXX",</code>`,
+                          info: `Subscribe to any of the following to boost development! Once subscribed put your Subscription ID in the configuration file (conf.json), then restart Shinobi and this promotion window won't appear anymore, thanks! <i class="fa fa-smile-o"></i> <br><br> <code>"subscriptionId":"sub_XXXXXXXXXXXX",</code>`,
                           buttons: [
                               {
                                   icon: 'share-square-o',
@@ -177,35 +177,50 @@
                               {
                                   icon: 'share-square-o',
                                   color: 'default',
-                                  text: 'Shinobi Pro License ($75/m)',
-                                  href: 'https://licenses.shinobi.video/subscribe?planSubscribe=plan_G3LGdNwA8lSmQy',
+                                  text: 'Tiny Support Subscription ($10/m)',
+                                  href: 'https://licenses.shinobi.video/subscribe?planSubscribe=plan_G42jNgIqXaWmIC',
                                   class: ''
                               },
                               {
                                   icon: 'share-square-o',
                                   color: 'default',
-                                  text: 'Tiny Support Subscription ($10/m)',
-                                  href: 'https://licenses.shinobi.video/subscribe?planSubscribe=plan_G42jNgIqXaWmIC',
+                                  text: 'Shinobi Pro License ($75/m)',
+                                  href: 'https://licenses.shinobi.video/subscribe?planSubscribe=plan_G3LGdNwA8lSmQy',
+                                  class: ''
+                              },
+                          ]
+                      },
+                      {
+                          width: '12',
+                          title: "Donations, One-Time Payment Support",
+                          info: `Sometimes a subscription isn't practical for people. In which case you may show support through a PayPal donation. And as a thank you for doing so your <b>PayPal Transaction ID</b> can be used as a <code>subscriptionId</code> in your Shinobi configuration file. <br><br>Each 5 USD/EUR or 7 CAD will provide one month of activated usage. <i>Meaning, a $20 USD donation today makes this popup go away for 4 months.</i>`,
+                          buttons: [
+                              {
+                                  icon: 'paypal',
+                                  color: 'default',
+                                  text: 'Donate by PayPal',
+                                  href: 'https://licenses.shinobi.video/subscribe?planSubscribe=plan_G31AZ9mknNCa6z',
                                   class: ''
                               },
                           ]
                       },
                   ].forEach((promo) => { %>
-                      <div class="col-md-6">
+                      <div class="col-md-<%- promo.width || '6' %>">
                       <div class="helpquote" style="margin-bottom:5px;font-size:10pt;padding: 10px 20px;border-left: 5px solid #eee;">
-                          <h4><%- promo.title %></h4>
+                          <%- promo.title ? `<h4>${promo.title}</h4>` : '' %>
                           <p><%- promo.info %></p>
-                          <div style="margin-top:5px;">
-                              <% promo.buttons.forEach((button) => { %>
-                                  <a style="margin-bottom:4px" <%- button.href ? `href="${button.href}"` : '' %> target="_blank" class="btn btn-sm btn-block btn-<%- button.color %> <%- button.class %>"><i class="fa fa-<%- button.icon %>" aria-hidden="true"></i> <%- button.text %></a>
-                              <% }) %>
-                          </div>
+                          <% if(promo.buttons) { %>
+                              <div style="margin-top:5px;">
+                                  <% promo.buttons.forEach((button) => { %>
+                                      <a style="margin-bottom:4px" <%- button.href ? `href="${button.href}"` : '' %> target="_blank" class="btn btn-sm btn-block btn-<%- button.color %> <%- button.class %>"><i class="fa fa-<%- button.icon %>" aria-hidden="true"></i> <%- button.text %></a>
+                                  <% }) %>
+                              </div>
+                          <% } %>
                       </div>
                       </div>
                   <% }) %>
               </div>
               <blockquote class="blockquoteInHelp" style="margin-bottom:10px">
-
                   <p>If you already are supporting the development in a different way, please contact us and we can get this popup to go away for you <i class="fa fa-smile-o"></i> Cheers!</p>
               </blockquote>
               <div>

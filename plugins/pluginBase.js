@@ -201,7 +201,7 @@ module.exports = function(__dirname, config){
     s.onPluginEventExtender = (extender) => {
         s.onPluginEvent.push(extender)
     }
-    s.MainEventController = (d,cn,tx) => {
+    s.MainEventController = async (d,cn,tx) => {
         switch(d.f){
             case'init_plugin_as_host':
                 if(!cn){
