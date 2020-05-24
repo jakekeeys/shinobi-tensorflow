@@ -180,15 +180,15 @@ module.exports = function(s,config){
         const monitorId = options.monitorId
         const limit = options.limit
         const archived = options.archived
-        const endTime = options.endTime
-        const startTimeOperator = options.startTimeOperator
-        const endTimeOperator = options.endTimeOperator
-        const startTime = options.startTime
         const theTableSelected = options.table
         const endIsStartTo = options.endIsStartTo
         const userDetails = user.details
         const rowName = options.rowName || 'rows'
         const preliminaryValidationFailed = options.preliminaryValidationFailed || false
+        var endTime = options.endTime
+        var startTimeOperator = options.startTimeOperator
+        var endTimeOperator = options.endTimeOperator
+        var  startTime = options.startTime
         if(preliminaryValidationFailed){
             callback([]);
             return
@@ -244,7 +244,7 @@ module.exports = function(s,config){
                 startTimeOperator = startTimeOperator || '>='
             }
             if(!endTimeOperator || endTimeOperator==''){
-                endTimeOperator = endTimeOperator || '>='
+                endTimeOperator = endTimeOperator || '<='
             }
             var theEndParameter = '`end`'
             if(endIsStartTo){
