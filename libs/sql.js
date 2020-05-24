@@ -188,7 +188,7 @@ module.exports = function(s,config){
         var endTime = options.endTime
         var startTimeOperator = options.startTimeOperator
         var endTimeOperator = options.endTimeOperator
-        var  startTime = options.startTime
+        var startTime = options.startTime
         if(preliminaryValidationFailed){
             callback([]);
             return
@@ -293,22 +293,34 @@ module.exports = function(s,config){
                     row.details = JSON.parse(row.details)
                 })
             }
-            s.sqlQuery(queryStringCount,queryCountValues,function(err,count){
-                var skipOver = 0
-                if(rowLimit.indexOf(',') > -1){
-                    skipOver = parseInt(rowLimit.split(',')[0])
-                    rowLimit = parseInt(rowLimit.split(',')[1])
+            if(options.noCount){
+                if(options.noFormat){
+                    callback(r)
                 }else{
-                    rowLimit = parseInt(rowLimit)
+                    callback({
+                        ok: true,
+                        [rowName]: r,
+                        endIsStartTo: endIsStartTo
+                    })
                 }
-                callback({
-                    total: count[0]['COUNT(*)'],
-                    limit: rowLimit,
-                    skip: skipOver,
-                    [rowName]: r,
-                    endIsStartTo: endIsStartTo
+            }else{
+                s.sqlQuery(queryStringCount,queryCountValues,function(err,count){
+                    var skipOver = 0
+                    if(rowLimit.indexOf(',') > -1){
+                        skipOver = parseInt(rowLimit.split(',')[0])
+                        rowLimit = parseInt(rowLimit.split(',')[1])
+                    }else{
+                        rowLimit = parseInt(rowLimit)
+                    }
+                    callback({
+                        total: count[0]['COUNT(*)'],
+                        limit: rowLimit,
+                        skip: skipOver,
+                        [rowName]: r,
+                        endIsStartTo: endIsStartTo
+                    })
                 })
-            })
+            }
         })
     }
 }

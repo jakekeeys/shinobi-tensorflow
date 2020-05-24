@@ -986,7 +986,7 @@ module.exports = function(s,config,lang,app,io){
             const userDetails = user.details
             const monitorId = req.params.id
             const groupKey = req.params.ke
-            const hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1'
+            const hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1';
             var origURL = req.originalUrl.split('/')
             var videoParam = origURL[origURL.indexOf(req.params.auth) + 1]
             var videoSet = 'Videos'
@@ -1007,7 +1007,7 @@ module.exports = function(s,config,lang,app,io){
                 limit: req.query.limit,
                 archived: req.query.archived,
                 endIsStartTo: !!req.query.endIsStartTo,
-                parseRowDetails: true,
+                parseRowDetails: false,
                 rowName: 'videos',
                 preliminaryValidationFailed: (
                     user.permissions.watch_videos === "0" ||
@@ -1034,78 +1034,35 @@ module.exports = function(s,config,lang,app,io){
         req.ret={ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.video_view.indexOf(req.params.id)===-1){
-                res.end(s.prettyPrint([]))
-                return
-            }
-            req.sql='SELECT * FROM Events WHERE ke=?';req.ar=[req.params.ke];
-            if(!req.params.id){
-                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                    req.or=[];
-                    user.details.monitors.forEach(function(v,n){
-                        req.or.push('mid=?');req.ar.push(v)
-                    })
-                    req.sql+=' AND ('+req.or.join(' OR ')+')'
-                }
-            }else{
-                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                }else{
-                    res.end('[]');
-                    return;
-                }
-            }
-            if(req.query.start||req.query.end){
-                if(req.query.start && req.query.start !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                }
-                if(req.query.end && req.query.end !== ''){
-                    req.query.end = s.stringToSqlTime(req.query.end)
-                }
-                if(!req.query.startOperator||req.query.startOperator==''){
-                    req.query.startOperator='>='
-                }
-                if(!req.query.endOperator||req.query.endOperator==''){
-                    req.query.endOperator='<='
-                }
-                switch(true){
-                    case(req.query.start&&req.query.start!==''&&req.query.end&&req.query.end!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ? AND `time` '+req.query.endOperator+' ?';
-                        req.ar.push(req.query.start)
-                        req.ar.push(req.query.end)
-                    break;
-                    case(req.query.start&&req.query.start!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ?';
-                        req.ar.push(req.query.start)
-                    break;
-                    case(req.query.end&&req.query.end!==''):
-                        req.sql+=' AND `time` '+req.query.endOperator+' ?';
-                        req.ar.push(req.query.end)
-                    break;
-                }
-            }
-            req.sql+=' ORDER BY `time` DESC';
-            if(!req.query.limit||req.query.limit==''){
-                req.query.limit='100'
-            }
-            if(req.query.limit!=='0'){
-                req.sql+=' LIMIT '+req.query.limit
-            }
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(err){
-                    err.sql=req.sql;
-                    res.end(s.prettyPrint(err));
-                    return
-                }
-                if(!r){r=[]}
-                r.forEach(function(v,n){
-                    r[n].details=JSON.parse(v.details);
-                })
-                res.end(s.prettyPrint(r));
+            const userDetails = user.details
+            const monitorId = req.params.id
+            const groupKey = req.params.ke
+            const hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1';
+            s.sqlQueryBetweenTimesWithPermissions({
+                table: 'Events',
+                user: user,
+                groupKey: req.params.ke,
+                monitorId: req.params.id,
+                startTime: req.query.start,
+                endTime: req.query.end,
+                startTimeOperator: req.query.startOperator,
+                endTimeOperator: req.query.endOperator,
+                limit: req.query.limit,
+                endIsStartTo: true,
+                parseRowDetails: true,
+                noFormat: true,
+                noCount: true,
+                rowName: 'events',
+                preliminaryValidationFailed: (
+                    user.permissions.watch_videos === "0" ||
+                    hasRestrictions &&
+                    (!userDetails.video_view || userDetails.video_view.indexOf(monitorId)===-1)
+                )
+            },(response) => {
+                res.end(s.prettyPrint(response))
             })
-        },res,req);
-    });
+        })
+    })
     /**
     * API : Get Logs
      */
@@ -1749,7 +1706,7 @@ module.exports = function(s,config,lang,app,io){
             const userDetails = user.details
             const monitorId = req.params.id
             const groupKey = req.params.ke
-            var hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1'
+            var hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1';
             s.sqlQueryBetweenTimesWithPermissions({
                 table: 'Events Counts',
                 user: user,
