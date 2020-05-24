@@ -188,11 +188,8 @@ module.exports = function(s,config){
         const endIsStartTo = options.endIsStartTo
         const userDetails = user.details
         const rowName = options.rowName || 'rows'
-        var hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1'
-        if(
-            user.permissions.watch_videos === "0" ||
-            hasRestrictions && (!userDetails.video_view || userDetails.video_view.indexOf(monitorId)===-1)
-        ){
+        const preliminaryValidationFailed = options.preliminaryValidationFailed || false
+        if(preliminaryValidationFailed){
             callback([]);
             return
         }
