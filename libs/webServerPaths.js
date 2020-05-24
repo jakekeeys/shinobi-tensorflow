@@ -1066,66 +1066,41 @@ module.exports = function(s,config,lang,app,io){
     /**
     * API : Get Logs
      */
-    app.get([config.webPaths.apiPrefix+':auth/logs/:ke',config.webPaths.apiPrefix+':auth/logs/:ke/:id'], function (req,res){
+    app.get([
+        config.webPaths.apiPrefix+':auth/logs/:ke',
+        config.webPaths.apiPrefix+':auth/logs/:ke/:id'
+    ], function (req,res){
         req.ret={ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            if(user.permissions.get_logs==="0" || user.details.sub && user.details.view_logs !== '1'){
-                res.end(s.prettyPrint([]))
-                return
-            }
-            req.sql='SELECT * FROM Logs WHERE ke=?';req.ar=[req.params.ke];
-            if(!req.params.id){
-                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                    req.or=[];
-                    user.details.monitors.forEach(function(v,n){
-                        req.or.push('mid=?');req.ar.push(v)
-                    })
-                    req.sql+=' AND ('+req.or.join(' OR ')+')'
-                }
-            }else{
-                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1||req.params.id.indexOf('$')>-1){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                }else{
-                    res.end('[]');
-                    return;
-                }
-            }
-            if(req.query.start||req.query.end){
-                if(!req.query.startOperator||req.query.startOperator==''){
-                    req.query.startOperator='>='
-                }
-                if(!req.query.endOperator||req.query.endOperator==''){
-                    req.query.endOperator='<='
-                }
-                if(req.query.start && req.query.start !== '' && req.query.end && req.query.end !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                    req.query.end = s.stringToSqlTime(req.query.end)
-                    req.sql+=' AND `time` '+req.query.startOperator+' ? AND `time` '+req.query.endOperator+' ?';
-                    req.ar.push(req.query.start)
-                    req.ar.push(req.query.end)
-                }else if(req.query.start && req.query.start !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                    req.sql+=' AND `time` '+req.query.startOperator+' ?';
-                    req.ar.push(req.query.start)
-                }
-            }
-            if(!req.query.limit||req.query.limit==''){req.query.limit=50}
-            req.sql+=' ORDER BY `time` DESC LIMIT '+req.query.limit+'';
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(err){
-                    err.sql=req.sql;
-                    res.end(s.prettyPrint(err));
-                    return
-                }
-                if(!r){r=[]}
-                r.forEach(function(v,n){
-                    r[n].info=JSON.parse(v.info)
+            const userDetails = user.details
+            const monitorId = req.params.id
+            const groupKey = req.params.ke
+            const hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1';
+            s.sqlQueryBetweenTimesWithPermissions({
+                table: 'Logs',
+                user: user,
+                groupKey: req.params.ke,
+                monitorId: req.params.id,
+                startTime: req.query.start,
+                endTime: req.query.end,
+                startTimeOperator: req.query.startOperator,
+                endTimeOperator: req.query.endOperator,
+                limit: req.query.limit || 50,
+                endIsStartTo: true,
+                noFormat: true,
+                noCount: true,
+                rowName: 'logs',
+                preliminaryValidationFailed: (
+                    user.permissions.get_logs === "0" || userDetails.sub && userDetails.view_logs !== '1'
+                )
+            },(response) => {
+                response.forEach(function(v,n){
+                    v.info = JSON.parse(v.info)
                 })
-                res.end(s.prettyPrint(r));
+                res.end(s.prettyPrint(response))
             })
-        },res,req);
+        },res,req)
     })
     /**
     * API : Get Monitors Online
