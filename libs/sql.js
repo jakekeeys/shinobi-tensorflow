@@ -160,4 +160,158 @@ module.exports = function(s,config){
         },true)
         delete(s.preQueries)
     }
+    s.sqlQueryBetweenTimesWithPermissions = (options,callback) => {
+        // options = {
+        //     table: 'Events Counts',
+        //     user: user,
+        //     monitorId: req.params.id,
+        //     startTime: req.query.start,
+        //     endTime: req.query.end,
+        //     startTimeOperator: req.query.startOperator,
+        //     endTimeOperator: req.query.endOperator,
+        //     limit: req.query.limit,
+        //     archived: req.query.archived,
+        //     endIsStartTo: !!req.query.endIsStartTo,
+        //     parseRowDetails: true,
+        //     rowName: 'counts'
+        // }
+        const user = options.user
+        const groupKey = options.groupKey
+        const monitorId = options.monitorId
+        const limit = options.limit
+        const archived = options.archived
+        const endTime = options.endTime
+        const startTimeOperator = options.startTimeOperator
+        const endTimeOperator = options.endTimeOperator
+        const startTime = options.startTime
+        const theTableSelected = options.table
+        const endIsStartTo = options.endIsStartTo
+        const userDetails = user.details
+        const rowName = options.rowName || 'rows'
+        var hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1'
+        if(
+            user.permissions.watch_videos === "0" ||
+            hasRestrictions && (!userDetails.video_view || userDetails.video_view.indexOf(monitorId)===-1)
+        ){
+            callback([]);
+            return
+        }
+        var queryString = 'SELECT * FROM `' + theTableSelected + '` WHERE ke=?'
+        var queryValues = [groupKey]
+        var queryStringCount = 'SELECT COUNT(*) FROM `' + theTableSelected + '` WHERE ke=?'
+        var queryCountValues = [groupKey]
+        if(archived === '1'){
+            queryString += ` AND details LIKE '%"archived":"1"'`
+            queryStringCount += ` AND details LIKE '%"archived":"1"'`
+        }
+        if(!monitorId){
+            if(
+                userDetails.sub &&
+                userDetails.monitors &&
+                userDetails.allmonitors !== '1'
+            ){
+                try{
+                    userDetails.monitors = JSON.parse(userDetails.monitors)
+                }catch(er){}
+                var queryWheres = []
+                userDetails.monitors.forEach(function(v,n){
+                    queryWheres.push('mid=?')
+                    queryValues.push(v)
+                })
+                queryString += ' AND ('+queryWheres.join(' OR ')+')'
+                queryStringCount += ' AND ('+queryWheres.join(' OR ')+')'
+            }
+        }else{
+            if(
+                !userDetails.sub ||
+                userDetails.allmonitors !== '0' ||
+                userDetails.monitors.indexOf(monitorId) >- 1
+            ){
+                queryString += ' and mid=?'
+                queryValues.push(monitorId)
+                queryStringCount += ' and mid=?'
+                queryCountValues.push(monitorId)
+            }else{
+                res.end('[]');
+                return;
+            }
+        }
+        if(startTime || endTime){
+            if(startTime && startTime !== ''){
+                startTime = s.stringToSqlTime(startTime)
+            }
+            if(endTime && endTime !== ''){
+                endTime = s.stringToSqlTime(endTime)
+            }
+            if(!startTimeOperator || startTimeOperator==''){
+                startTimeOperator = startTimeOperator || '>='
+            }
+            if(!endTimeOperator || endTimeOperator==''){
+                endTimeOperator = endTimeOperator || '>='
+            }
+            var theEndParameter = '`end`'
+            if(endIsStartTo){
+                theEndParameter = '`time`'
+            }
+            switch(true){
+                case(startTime && startTime !== '' && endTime && endTime !== ''):
+                    queryString += ' AND `time` '+startTimeOperator+' ? AND '+theEndParameter+' '+endTimeOperator+' ?';
+                    queryStringCount += ' AND `time` '+startTimeOperator+' ? AND '+theEndParameter+' '+endTimeOperator+' ?';
+                    queryValues.push(startTime)
+                    queryValues.push(endTime)
+                    queryCountValues.push(startTime)
+                    queryCountValues.push(endTime)
+                break;
+                case(startTime && startTime !== ''):
+                    queryString += ' AND `time` '+startTimeOperator+' ?';
+                    queryStringCount += ' AND `time` '+startTimeOperator+' ?';
+                    queryValues.push(startTime)
+                    queryCountValues.push(startTime)
+                break;
+                case(endTime && endTime !== ''):
+                    queryString += ' AND '+theEndParameter+' '+endTimeOperator+' ?';
+                    queryStringCount += ' AND '+theEndParameter+' '+endTimeOperator+' ?';
+                    queryValues.push(endTime)
+                    queryCountValues.push(endTime)
+                break;
+            }
+        }
+        queryString += ' ORDER BY `time` DESC';
+        var rowLimit = limit || '100'
+        if(rowLimit !== '0'){
+            queryString += ' LIMIT ' + rowLimit
+        }
+        s.sqlQuery(queryString,queryValues,function(err,r){
+            if(!r){
+                callback({
+                    total: 0,
+                    limit: rowLimit,
+                    skip: 0,
+                    [rowName]: []
+                });
+                return
+            }
+            if(options.parseRowDetails){
+                r.forEach((row) => {
+                    row.details = JSON.parse(row.details)
+                })
+            }
+            s.sqlQuery(queryStringCount,queryCountValues,function(err,count){
+                var skipOver = 0
+                if(rowLimit.indexOf(',') > -1){
+                    skipOver = parseInt(rowLimit.split(',')[0])
+                    rowLimit = parseInt(rowLimit.split(',')[1])
+                }else{
+                    rowLimit = parseInt(rowLimit)
+                }
+                callback({
+                    total: count[0]['COUNT(*)'],
+                    limit: rowLimit,
+                    skip: skipOver,
+                    [rowName]: r,
+                    endIsStartTo: endIsStartTo
+                })
+            })
+        })
+    }
 }

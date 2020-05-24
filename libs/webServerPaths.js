@@ -1819,135 +1819,22 @@ module.exports = function(s,config,lang,app,io){
     ], function (req,res){
         res.setHeader('Content-Type', 'application/json')
         s.auth(req.params,function(user){
-            const groupKey = req.params.ke
-            const monitorId = req.params.id
-            var hasRestrictions = user.details.sub && user.details.allmonitors !== '1'
-            if(
-                user.permissions.watch_videos==="0" ||
-                hasRestrictions && (!user.details.video_view || user.details.video_view.indexOf(monitorId)===-1)
-            ){
-                res.end(s.prettyPrint([]))
-                return
-            }
-            var origURL = req.originalUrl.split('/')
-            var videoParam = origURL[origURL.indexOf(req.params.auth) + 1]
-            var queryString = 'SELECT * FROM `Events Counts` WHERE ke=?'
-            var queryValues = [groupKey]
-            var queryStringCount = 'SELECT COUNT(*) FROM `Events Counts` WHERE ke=?'
-            var queryCountValues = [groupKey]
-            if(req.query.archived === '1'){
-                queryString += ` AND details LIKE '%"archived":"1"'`
-                queryStringCount += ` AND details LIKE '%"archived":"1"'`
-            }
-            if(!monitorId){
-                if(
-                    user.details.sub &&
-                    user.details.monitors &&
-                    user.details.allmonitors !== '1'
-                ){
-                    try{
-                        user.details.monitors = JSON.parse(user.details.monitors)
-                    }catch(er){}
-                    var queryWheres = []
-                    user.details.monitors.forEach(function(v,n){
-                        queryWheres.push('mid=?')
-                        queryValues.push(v)
-                    })
-                    queryString += ' AND ('+queryWheres.join(' OR ')+')'
-                    queryStringCount += ' AND ('+queryWheres.join(' OR ')+')'
-                }
-            }else{
-                if(
-                    !user.details.sub ||
-                    user.details.allmonitors !== '0' ||
-                    user.details.monitors.indexOf(monitorId) >- 1
-                ){
-                    queryString += ' and mid=?'
-                    queryValues.push(monitorId)
-                    queryStringCount += ' and mid=?'
-                    queryCountValues.push(monitorId)
-                }else{
-                    res.end('[]');
-                    return;
-                }
-            }
-            if(req.query.start || req.query.end){
-                if(req.query.start && req.query.start !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                }
-                if(req.query.end && req.query.end !== ''){
-                    req.query.end = s.stringToSqlTime(req.query.end)
-                }
-                if(!req.query.startOperator || req.query.startOperator==''){
-                    const startOperator = req.query.startOperator || '>='
-                }
-                if(!req.query.endOperator || req.query.endOperator==''){
-                    const endOperator = req.query.endOperator || '>='
-                }
-                var endIsStartTo
-                var theEndParameter = '`end`'
-                if(req.query.endIsStartTo){
-                    endIsStartTo = true
-                    theEndParameter = '`time`'
-                }
-                switch(true){
-                    case(req.query.start && req.query.start !== '' && req.query.end && req.query.end !== ''):
-                        queryString += ' AND `time` '+startOperator+' ? AND '+theEndParameter+' '+endOperator+' ?';
-                        queryStringCount += ' AND `time` '+startOperator+' ? AND '+theEndParameter+' '+endOperator+' ?';
-                        queryValues.push(req.query.start)
-                        queryValues.push(req.query.end)
-                        queryCountValues.push(req.query.start)
-                        queryCountValues.push(req.query.end)
-                    break;
-                    case(req.query.start && req.query.start !== ''):
-                        queryString += ' AND `time` '+startOperator+' ?';
-                        queryStringCount += ' AND `time` '+startOperator+' ?';
-                        queryValues.push(req.query.start)
-                        queryCountValues.push(req.query.start)
-                    break;
-                    case(req.query.end && req.query.end !== ''):
-                        queryString += ' AND '+theEndParameter+' '+endOperator+' ?';
-                        queryStringCount += ' AND '+theEndParameter+' '+endOperator+' ?';
-                        queryValues.push(req.query.end)
-                        queryCountValues.push(req.query.end)
-                    break;
-                }
-            }
-            queryString += ' ORDER BY `time` DESC';
-            var rowLimit = req.query.limit || '100'
-            if(rowLimit !== '0'){
-                queryString += ' LIMIT ' + rowLimit
-            }
-            s.sqlQuery(queryString,queryValues,function(err,r){
-                if(!r){
-                    res.end(s.prettyPrint({
-                        total: 0,
-                        limit: rowLimit,
-                        skip: 0,
-                        counts: []
-                    }));
-                    return
-                }
-                r.forEach((row) => {
-                    row.details = JSON.parse(row.details)
-                })
-                s.sqlQuery(queryStringCount,queryCountValues,function(err,count){
-                    var skipOver = 0
-                    if(rowLimit.indexOf(',') > -1){
-                        skipOver = parseInt(rowLimit.split(',')[0])
-                        rowLimit = parseInt(rowLimit.split(',')[1])
-                    }else{
-                        rowLimit = parseInt(rowLimit)
-                    }
-                    res.end(s.prettyPrint({
-                        isUTC: config.useUTC,
-                        total: count[0]['COUNT(*)'],
-                        limit: rowLimit,
-                        skip: skipOver,
-                        counts: r,
-                        endIsStartTo: endIsStartTo
-                    }))
-                })
+            s.sqlQueryBetweenTimesWithPermissions({
+                table: 'Events Counts',
+                user: user,
+                groupKey: req.params.ke,
+                monitorId: req.params.id,
+                startTime: req.query.start,
+                endTime: req.query.end,
+                startTimeOperator: req.query.startOperator,
+                endTimeOperator: req.query.endOperator,
+                limit: req.query.limit,
+                archived: req.query.archived,
+                endIsStartTo: !!req.query.endIsStartTo,
+                parseRowDetails: true,
+                rowName: 'counts'
+            },(response) => {
+                res.end(s.prettyPrint(response))
             })
         },res,req);
     })
