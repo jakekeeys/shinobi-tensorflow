@@ -1793,25 +1793,9 @@ module.exports = function(s,config,lang,app,io){
         },res,req);
     })
     /**
-    * API : Object Detection Counter Reset
-     */
-    app.get(config.webPaths.apiPrefix+':auth/counterReset/:ke/:id', function (req,res){
-        res.setHeader('Content-Type', 'application/json');
-        s.auth(req.params,function(user){
-            if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
-                res.end(user.lang['Not Permitted'])
-                return
-            }
-            s.clearCountedObjectsForMonitor(req.params.ke,req.params.id)
-            res.end(s.prettyPrint({
-                ok: true
-            }))
-        },res,req);
-    })
-    /**
     * API : Object Detection Counter Status
      */
-    app.get(config.webPaths.apiPrefix+':auth/counterStatus/:ke/:id', function (req,res){
+    app.get(config.webPaths.apiPrefix+':auth/eventCountStatus/:ke/:id', function (req,res){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
             if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
@@ -1824,6 +1808,120 @@ module.exports = function(s,config,lang,app,io){
                 counted: Object.keys(selectedObject).length,
                 tags: selectedObject,
             }))
+        },res,req);
+    })
+    /**
+    * API : Object Detection Counter Status
+     */
+    app.get([
+        config.webPaths.apiPrefix+':auth/eventCounts/:ke',
+        config.webPaths.apiPrefix+':auth/eventCounts/:ke/:id'
+    ], function (req,res){
+        res.setHeader('Content-Type', 'application/json')
+        s.auth(req.params,function(user){
+            var hasRestrictions = user.details.sub && user.details.allmonitors !== '1'
+            if(
+                user.permissions.watch_videos==="0" ||
+                hasRestrictions && (!user.details.video_view || user.details.video_view.indexOf(req.params.id)===-1)
+            ){
+                res.end(s.prettyPrint([]))
+                return
+            }
+            var origURL = req.originalUrl.split('/')
+            var videoParam = origURL[origURL.indexOf(req.params.auth) + 1]
+            req.sql = 'SELECT * FROM `Events Counts` WHERE ke=?';req.ar=[req.params.ke];
+            req.count_sql='SELECT COUNT(*) FROM `Events Counts` WHERE ke=?';req.count_ar=[req.params.ke];
+            if(req.query.archived=='1'){
+                req.sql+=' AND details LIKE \'%"archived":"1"\''
+                req.count_sql+=' AND details LIKE \'%"archived":"1"\''
+            }
+            if(!req.params.id){
+                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
+                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
+                    req.or=[];
+                    user.details.monitors.forEach(function(v,n){
+                        req.or.push('mid=?');req.ar.push(v)
+                    })
+                    req.sql+=' AND ('+req.or.join(' OR ')+')'
+                    req.count_sql+=' AND ('+req.or.join(' OR ')+')'
+                }
+            }else{
+                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1){
+                    req.sql+=' and mid=?';req.ar.push(req.params.id)
+                    req.count_sql+=' and mid=?';req.count_ar.push(req.params.id)
+                }else{
+                    res.end('[]');
+                    return;
+                }
+            }
+            if(req.query.start||req.query.end){
+                if(req.query.start && req.query.start !== ''){
+                    req.query.start = s.stringToSqlTime(req.query.start)
+                }
+                if(req.query.end && req.query.end !== ''){
+                    req.query.end = s.stringToSqlTime(req.query.end)
+                }
+                if(!req.query.startOperator||req.query.startOperator==''){
+                    req.query.startOperator='>='
+                }
+                if(!req.query.endOperator||req.query.endOperator==''){
+                    req.query.endOperator='<='
+                }
+                var endIsStartTo
+                var theEndParameter = '`end`'
+                if(req.query.endIsStartTo){
+                    endIsStartTo = true
+                    theEndParameter = '`time`'
+                }
+                switch(true){
+                    case(req.query.start&&req.query.start!==''&&req.query.end&&req.query.end!==''):
+                        req.sql+=' AND `time` '+req.query.startOperator+' ? AND '+theEndParameter+' '+req.query.endOperator+' ?';
+                        req.count_sql+=' AND `time` '+req.query.startOperator+' ? AND '+theEndParameter+' '+req.query.endOperator+' ?';
+                        req.ar.push(req.query.start)
+                        req.ar.push(req.query.end)
+                        req.count_ar.push(req.query.start)
+                        req.count_ar.push(req.query.end)
+                    break;
+                    case(req.query.start&&req.query.start!==''):
+                        req.sql+=' AND `time` '+req.query.startOperator+' ?';
+                        req.count_sql+=' AND `time` '+req.query.startOperator+' ?';
+                        req.ar.push(req.query.start)
+                        req.count_ar.push(req.query.start)
+                    break;
+                    case(req.query.end&&req.query.end!==''):
+                        req.sql+=' AND '+theEndParameter+' '+req.query.endOperator+' ?';
+                        req.count_sql+=' AND '+theEndParameter+' '+req.query.endOperator+' ?';
+                        req.ar.push(req.query.end)
+                        req.count_ar.push(req.query.end)
+                    break;
+                }
+            }
+            req.sql+=' ORDER BY `time` DESC';
+            if(!req.query.limit||req.query.limit==''){
+                req.query.limit='100'
+            }
+            if(req.query.limit!=='0'){
+                req.sql+=' LIMIT '+req.query.limit
+            }
+            s.sqlQuery(req.sql,req.ar,function(err,r){
+                if(!r){
+                    res.end(s.prettyPrint({total:0,limit:req.query.limit,skip:0,counts:[]}));
+                    return
+                }
+                r.forEach((row) => {
+                    row.details = JSON.parse(row.details)
+                })
+                s.sqlQuery(req.count_sql,req.count_ar,function(err,count){
+                    if(req.query.limit.indexOf(',')>-1){
+                        req.skip=parseInt(req.query.limit.split(',')[0])
+                        req.query.limit=parseInt(req.query.limit.split(',')[1])
+                    }else{
+                        req.skip=0
+                        req.query.limit=parseInt(req.query.limit)
+                    }
+                    res.end(s.prettyPrint({isUTC:config.useUTC,total:count[0]['COUNT(*)'],limit:req.query.limit,skip:req.skip,counts:r,endIsStartTo:endIsStartTo}));
+                })
+            })
         },res,req);
     })
     /**

@@ -8,33 +8,16 @@ var SAT = require('sat')
 var V = SAT.Vector;
 var P = SAT.Polygon;
 // Matrix In Region Libs />
-var objectCountTimeouts = {}
 module.exports = function(s,config,lang){
-    const clearCountedObjectsForMonitor = async (groupKey,monitorId) => {
-        Object.keys(objectCountTimeouts[groupKey][monitorId]).forEach((objectId) => {
-            clearTimeout(objectCountTimeouts[groupKey][monitorId][objectId])
-        })
-        s.group[groupKey].activeMonitors[monitorId].eventsCounted = {}
-    }
-    const countObjectSetTimeout = async (event,matrixId) => {
-        const eventsCounted = s.group[event.ke].activeMonitors[event.id].eventsCounted || {}
-        if(!objectCountTimeouts[event.ke])objectCountTimeouts[event.ke] = {}
-        if(!objectCountTimeouts[event.ke][event.id])objectCountTimeouts[event.ke][event.id] = {}
-        clearTimeout(objectCountTimeouts[event.ke][event.id][matrixId])
-        objectCountTimeouts[event.ke][event.id][matrixId] = setTimeout(() => {
-            delete(eventsCounted[matrixId])
-        },10000)
-    }
     const countObjects = async (event) => {
         const matrices = event.details.matrices
         const eventsCounted = s.group[event.ke].activeMonitors[event.id].eventsCounted || {}
         if(matrices){
-            const currentTime = new Date()
             matrices.forEach((matrix)=>{
                 const id = !isNaN(matrix.id) ? matrix.id + '_' + matrix.tag : matrix.tag
-                if(!eventsCounted[id])eventsCounted[id] = 0
-                ++eventsCounted[id]
-                // countObjectSetTimeout(event,id)
+                if(!eventsCounted[id])eventsCounted[id] = {times: [], count: 0}
+                ++eventsCounted[id].count
+                eventsCounted[id].times.push(new Date().getTime())
             })
         }
         return eventsCounted
@@ -483,5 +466,4 @@ module.exports = function(s,config,lang){
         //     item.process.kill('SIGTERM');
         // })
     }
-    s.clearCountedObjectsForMonitor = clearCountedObjectsForMonitor
 }

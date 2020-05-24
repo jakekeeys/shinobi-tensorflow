@@ -11,6 +11,7 @@ var SoundDetection = require('shinobi-sound-detection')
 var async = require("async");
 var URL = require('url')
 module.exports = function(s,config,lang){
+    var objectCountIntervals = {}
     const startMonitorInQueue = async.queue(function(action, callback) {
         setTimeout(function(){
             action(callback)
@@ -401,6 +402,7 @@ module.exports = function(s,config,lang){
             delete(activeMonitor.detectorFrameSaveBuffer);
             clearTimeout(activeMonitor.recordingSnapper);
             clearInterval(activeMonitor.getMonitorCpuUsage);
+            clearInterval(objectCountIntervals[e.ke][e.id]);
             if(activeMonitor.onChildNodeExit){
                 activeMonitor.onChildNodeExit()
             }
@@ -1009,6 +1011,42 @@ module.exports = function(s,config,lang){
             },1000 * 60)
         }
     }
+    const createEventCounter = function(monitor){
+        if(monitor.details.detector_obj_count === '1'){
+            const activeMonitor = s.group[monitor.ke].activeMonitors[monitor.id]
+            activeMonitor.eventsCountStartTime = new Date()
+            const eventsCounted = activeMonitor.eventsCounted || {}
+            if(!objectCountIntervals[monitor.ke])objectCountIntervals[monitor.ke] = {}
+            if(!objectCountIntervals[monitor.ke][monitor.id])objectCountIntervals[monitor.ke][monitor.id] = {}
+            clearInterval(objectCountIntervals[monitor.ke][monitor.id])
+            objectCountIntervals[monitor.ke][monitor.id] = setInterval(() => {
+                const countsToSave = Object.assign(eventsCounted,{})
+                activeMonitor.eventsCounted = {}
+                const groupKey = monitor.ke
+                const monitorId = monitor.id
+                const startTime = new Date(activeMonitor.eventsCountStartTime + 0)
+                const endTime = new Date()
+                const countedKeys = Object.keys(countsToSave)
+                activeMonitor.eventsCountStartTime = new Date()
+                if(countedKeys.length > 0)countedKeys.forEach((tag) => {
+                    const tagInfo = countsToSave[tag]
+                    const count = tagInfo.count
+                    const times = tagInfo.times
+                    s.sqlQuery('INSERT INTO `Events Counts` (ke,mid,details,time,end,count,tag) VALUES (?,?,?,?,?,?,?)',[
+                        groupKey,
+                        monitorId,
+                        JSON.stringify({
+                            times: times
+                        }),
+                        startTime,
+                        endTime,
+                        count,
+                        tag
+                    ])
+                })
+            },60000) //every minute
+        }
+    }
     const createCameraStreamHandlers = function(e){
         s.group[e.ke].activeMonitors[e.id].spawn.stdio[5].on('data',function(data){
             resetStreamCheck(e)
@@ -1442,6 +1480,7 @@ module.exports = function(s,config,lang){
                             try{
                                 createCameraFfmpegProcess(e)
                                 createCameraStreamHandlers(e)
+                                createEventCounter(e)
                                 if(e.type === 'dashcam'){
                                     setTimeout(function(){
                                         activeMonitor.allowStdinWrite = true

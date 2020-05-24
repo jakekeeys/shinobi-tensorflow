@@ -158,6 +158,17 @@ CREATE TABLE IF NOT EXISTS `Timelapse Frames` (
   `size` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Dumping structure for table ccio.Events Counts
+CREATE TABLE `Events Counts` (
+  `ke` varchar(50) NOT NULL,
+  `mid` varchar(50) NOT NULL,
+  `details` longtext NOT NULL,
+  `time` timestamp NOT NULL DEFAULT current_timestamp(),
+  `end` timestamp NOT NULL DEFAULT current_timestamp(),
+  `count` int(10) NOT NULL DEFAULT 1,
+  `tag` varchar(30) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Data exporting was unselected.
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;
