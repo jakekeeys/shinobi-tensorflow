@@ -1031,9 +1031,12 @@ module.exports = function(s,config,lang,onFinish){
         //hold ffmpeg command for log stream
         var sanitizedCmd = x.ffmpegCommandString
         if(e.details.muser && e.details.mpass){
-            sanitizedCmd = sanitizedCmd.replace(`//${e.details.muser}:${e.details.mpass}@`,'//')
+            sanitizedCmd = sanitizedCmd
+                .replace(`//${e.details.muser}:${e.details.mpass}@`,'//')
+                .replace(`=${e.details.muser}`,'=USERNAME')
+                .replace(`=${e.details.mpass}`,'=PASSWORD')
         }else if(e.details.muser){
-            sanitizedCmd = sanitizedCmd.replace(`//${e.details.muser}:@`,'//')
+            sanitizedCmd = sanitizedCmd.replace(`//${e.details.muser}:@`,'//').replace(`=${e.details.muser}`,'=USERNAME')
         }
         s.group[e.ke].activeMonitors[e.mid].ffmpeg = sanitizedCmd
         //clean the string of spatial impurities and split for spawn()
