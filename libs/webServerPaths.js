@@ -1819,53 +1819,70 @@ module.exports = function(s,config,lang,app,io){
     ], function (req,res){
         res.setHeader('Content-Type', 'application/json')
         s.auth(req.params,function(user){
+            const groupKey = req.params.ke
+            const monitorId = req.params.id
             var hasRestrictions = user.details.sub && user.details.allmonitors !== '1'
             if(
                 user.permissions.watch_videos==="0" ||
-                hasRestrictions && (!user.details.video_view || user.details.video_view.indexOf(req.params.id)===-1)
+                hasRestrictions && (!user.details.video_view || user.details.video_view.indexOf(monitorId)===-1)
             ){
                 res.end(s.prettyPrint([]))
                 return
             }
             var origURL = req.originalUrl.split('/')
             var videoParam = origURL[origURL.indexOf(req.params.auth) + 1]
-            req.sql = 'SELECT * FROM `Events Counts` WHERE ke=?';req.ar=[req.params.ke];
-            req.count_sql='SELECT COUNT(*) FROM `Events Counts` WHERE ke=?';req.count_ar=[req.params.ke];
-            if(req.query.archived=='1'){
-                req.sql+=' AND details LIKE \'%"archived":"1"\''
-                req.count_sql+=' AND details LIKE \'%"archived":"1"\''
+            var queryString = 'SELECT * FROM `Events Counts` WHERE ke=?'
+            var queryValues = [groupKey]
+            var queryStringCount = 'SELECT COUNT(*) FROM `Events Counts` WHERE ke=?'
+            var queryCountValues = [groupKey]
+            if(req.query.archived === '1'){
+                queryString += ` AND details LIKE '%"archived":"1"'`
+                queryStringCount += ` AND details LIKE '%"archived":"1"'`
             }
-            if(!req.params.id){
-                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                    req.or=[];
+            if(!monitorId){
+                if(
+                    user.details.sub &&
+                    user.details.monitors &&
+                    user.details.allmonitors !== '1'
+                ){
+                    try{
+                        user.details.monitors = JSON.parse(user.details.monitors)
+                    }catch(er){}
+                    var queryWheres = []
                     user.details.monitors.forEach(function(v,n){
-                        req.or.push('mid=?');req.ar.push(v)
+                        queryWheres.push('mid=?')
+                        queryValues.push(v)
                     })
-                    req.sql+=' AND ('+req.or.join(' OR ')+')'
-                    req.count_sql+=' AND ('+req.or.join(' OR ')+')'
+                    queryString += ' AND ('+queryWheres.join(' OR ')+')'
+                    queryStringCount += ' AND ('+queryWheres.join(' OR ')+')'
                 }
             }else{
-                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                    req.count_sql+=' and mid=?';req.count_ar.push(req.params.id)
+                if(
+                    !user.details.sub ||
+                    user.details.allmonitors !== '0' ||
+                    user.details.monitors.indexOf(monitorId) >- 1
+                ){
+                    queryString += ' and mid=?'
+                    queryValues.push(monitorId)
+                    queryStringCount += ' and mid=?'
+                    queryCountValues.push(monitorId)
                 }else{
                     res.end('[]');
                     return;
                 }
             }
-            if(req.query.start||req.query.end){
+            if(req.query.start || req.query.end){
                 if(req.query.start && req.query.start !== ''){
                     req.query.start = s.stringToSqlTime(req.query.start)
                 }
                 if(req.query.end && req.query.end !== ''){
                     req.query.end = s.stringToSqlTime(req.query.end)
                 }
-                if(!req.query.startOperator||req.query.startOperator==''){
-                    req.query.startOperator='>='
+                if(!req.query.startOperator || req.query.startOperator==''){
+                    const startOperator = req.query.startOperator || '>='
                 }
-                if(!req.query.endOperator||req.query.endOperator==''){
-                    req.query.endOperator='<='
+                if(!req.query.endOperator || req.query.endOperator==''){
+                    const endOperator = req.query.endOperator || '>='
                 }
                 var endIsStartTo
                 var theEndParameter = '`end`'
@@ -1874,52 +1891,62 @@ module.exports = function(s,config,lang,app,io){
                     theEndParameter = '`time`'
                 }
                 switch(true){
-                    case(req.query.start&&req.query.start!==''&&req.query.end&&req.query.end!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ? AND '+theEndParameter+' '+req.query.endOperator+' ?';
-                        req.count_sql+=' AND `time` '+req.query.startOperator+' ? AND '+theEndParameter+' '+req.query.endOperator+' ?';
-                        req.ar.push(req.query.start)
-                        req.ar.push(req.query.end)
-                        req.count_ar.push(req.query.start)
-                        req.count_ar.push(req.query.end)
+                    case(req.query.start && req.query.start !== '' && req.query.end && req.query.end !== ''):
+                        queryString += ' AND `time` '+startOperator+' ? AND '+theEndParameter+' '+endOperator+' ?';
+                        queryStringCount += ' AND `time` '+startOperator+' ? AND '+theEndParameter+' '+endOperator+' ?';
+                        queryValues.push(req.query.start)
+                        queryValues.push(req.query.end)
+                        queryCountValues.push(req.query.start)
+                        queryCountValues.push(req.query.end)
                     break;
-                    case(req.query.start&&req.query.start!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ?';
-                        req.count_sql+=' AND `time` '+req.query.startOperator+' ?';
-                        req.ar.push(req.query.start)
-                        req.count_ar.push(req.query.start)
+                    case(req.query.start && req.query.start !== ''):
+                        queryString += ' AND `time` '+startOperator+' ?';
+                        queryStringCount += ' AND `time` '+startOperator+' ?';
+                        queryValues.push(req.query.start)
+                        queryCountValues.push(req.query.start)
                     break;
-                    case(req.query.end&&req.query.end!==''):
-                        req.sql+=' AND '+theEndParameter+' '+req.query.endOperator+' ?';
-                        req.count_sql+=' AND '+theEndParameter+' '+req.query.endOperator+' ?';
-                        req.ar.push(req.query.end)
-                        req.count_ar.push(req.query.end)
+                    case(req.query.end && req.query.end !== ''):
+                        queryString += ' AND '+theEndParameter+' '+endOperator+' ?';
+                        queryStringCount += ' AND '+theEndParameter+' '+endOperator+' ?';
+                        queryValues.push(req.query.end)
+                        queryCountValues.push(req.query.end)
                     break;
                 }
             }
-            req.sql+=' ORDER BY `time` DESC';
-            if(!req.query.limit||req.query.limit==''){
-                req.query.limit='100'
+            queryString += ' ORDER BY `time` DESC';
+            var rowLimit = req.query.limit || '100'
+            if(rowLimit !== '0'){
+                queryString += ' LIMIT ' + rowLimit
             }
-            if(req.query.limit!=='0'){
-                req.sql+=' LIMIT '+req.query.limit
-            }
-            s.sqlQuery(req.sql,req.ar,function(err,r){
+            s.sqlQuery(queryString,queryValues,function(err,r){
                 if(!r){
-                    res.end(s.prettyPrint({total:0,limit:req.query.limit,skip:0,counts:[]}));
+                    res.end(s.prettyPrint({
+                        total: 0,
+                        limit: rowLimit,
+                        skip: 0,
+                        counts: []
+                    }));
                     return
                 }
                 r.forEach((row) => {
                     row.details = JSON.parse(row.details)
                 })
-                s.sqlQuery(req.count_sql,req.count_ar,function(err,count){
-                    if(req.query.limit.indexOf(',')>-1){
-                        req.skip=parseInt(req.query.limit.split(',')[0])
-                        req.query.limit=parseInt(req.query.limit.split(',')[1])
+                s.sqlQuery(queryStringCount,queryCountValues,function(err,count){
+                    var skipOver = 0
+                    if(rowLimit.indexOf(',') > -1){
+                        skipOver = parseInt(rowLimit.split(',')[0])
+                        rowLimit = parseInt(rowLimit.split(',')[1])
                     }else{
-                        req.skip=0
-                        req.query.limit=parseInt(req.query.limit)
+                        rowLimit = parseInt(rowLimit)
                     }
-                    res.end(s.prettyPrint({isUTC:config.useUTC,total:count[0]['COUNT(*)'],limit:req.query.limit,skip:req.skip,counts:r,endIsStartTo:endIsStartTo}));
+                    res.end(s.prettyPrint({
+                        isUTC: config.useUTC,
+                        total: count[0]['COUNT(*)'],
+                        limit: rowLimit,
+                        skip: skipOver,
+                        counts: r,
+                        endIsStartTo: endIsStartTo
+                    }))
                 })
             })
         },res,req);
