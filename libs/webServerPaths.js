@@ -1031,7 +1031,6 @@ module.exports = function(s,config,lang,app,io){
 		config.webPaths.apiPrefix+':auth/events/:ke',
 		config.webPaths.apiPrefix+':auth/events/:ke/:id'
 	], function (req,res){
-        req.ret={ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
             const userDetails = user.details
@@ -1070,7 +1069,6 @@ module.exports = function(s,config,lang,app,io){
         config.webPaths.apiPrefix+':auth/logs/:ke',
         config.webPaths.apiPrefix+':auth/logs/:ke/:id'
     ], function (req,res){
-        req.ret={ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
             const userDetails = user.details
@@ -1667,7 +1665,7 @@ module.exports = function(s,config,lang,app,io){
                 counted: Object.keys(selectedObject).length,
                 tags: selectedObject,
             }))
-        },res,req);
+        },res,req)
     })
     /**
     * API : Object Detection Counter Status
@@ -1704,7 +1702,7 @@ module.exports = function(s,config,lang,app,io){
             },(response) => {
                 res.end(s.prettyPrint(response))
             })
-        },res,req);
+        },res,req)
     })
     /**
     * API : Camera PTZ Controller
