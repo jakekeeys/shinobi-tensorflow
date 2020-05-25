@@ -371,7 +371,22 @@ const deleteOldEvents = function(v,callback){
         s.sqlQuery("DELETE FROM Events WHERE ke=? AND `time` < ?",[v.ke,s.sqlDate(v.d.event_days+' DAY')],function(err,rrr){
             callback()
             if(err)return console.error(err);
-            if(rrr.affectedRows && rrr.affectedRows.length>0 || config.debugLog === true){
+            if(rrr.affectedRows && rrr.affectedRows.length > 0 || config.debugLog === true){
+                s.cx({f:'deleteEvents',msg:(rrr.affectedRows || 0)+' SQL rows older than '+v.d.event_days+' days deleted',ke:v.ke,time:moment()})
+            }
+        })
+    }else{
+        callback()
+    }
+}
+//event counts
+const deleteOldEventCounts = function(v,callback){
+    if(!v.d.event_days||v.d.event_days==''){v.d.event_days=10}else{v.d.event_days=parseFloat(v.d.event_days)};
+    if(config.cron.deleteEvents===true&&v.d.event_days!==0){
+        s.sqlQuery("DELETE FROM `Events Counts` WHERE ke=? AND `time` < ?",[v.ke,s.sqlDate(v.d.event_days+' DAY')],function(err,rrr){
+            callback()
+            if(err)return console.error(err);
+            if(rrr.affectedRows && rrr.affectedRows.length > 0 || config.debugLog === true){
                 s.cx({f:'deleteEvents',msg:(rrr.affectedRows || 0)+' SQL rows older than '+v.d.event_days+' days deleted',ke:v.ke,time:moment()})
             }
         })
@@ -474,14 +489,17 @@ const processUser = function(number,rows){
                     s.debugLog('--- deleteOldFileBins Complete')
                     deleteOldEvents(v,function(){
                         s.debugLog('--- deleteOldEvents Complete')
-                        checkFilterRules(v,function(){
-                            s.debugLog('--- checkFilterRules Complete')
-                            deleteRowsWithNoVideo(v,function(){
-                                s.debugLog('--- deleteRowsWithNoVideo Complete')
-                                checkForOrphanedFiles(v,function(){
-                                    //done user, unlock current, and do next
-                                    overlapLocks[v.ke]=false;
-                                    processUser(number+1,rows)
+                        deleteOldEventCounts(v,function(){
+                            s.debugLog('--- deleteOldEventCounts Complete')
+                            checkFilterRules(v,function(){
+                                s.debugLog('--- checkFilterRules Complete')
+                                deleteRowsWithNoVideo(v,function(){
+                                    s.debugLog('--- deleteRowsWithNoVideo Complete')
+                                    checkForOrphanedFiles(v,function(){
+                                        //done user, unlock current, and do next
+                                        overlapLocks[v.ke]=false;
+                                        processUser(number+1,rows)
+                                    })
                                 })
                             })
                         })
