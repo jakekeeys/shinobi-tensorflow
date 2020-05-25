@@ -1512,7 +1512,7 @@ module.exports = function(s,config,lang){
                    },
                    {
                       "name": "fps",
-                      "field": lang["Video Record Rate (FPS)"],
+                      "field": lang["Video Record Rate"],
                       "description": "The speed in which frames are recorded to files, Frames Per Second. Be aware there is no default. This can lead to large files. Best to set this camera-side.",
                       "default": "",
                       "example": "2",
@@ -2335,7 +2335,7 @@ module.exports = function(s,config,lang){
                               "class": "mdl-list"
                           },
                           {
-                              hidden: true,
+                             hidden: true,
                              "name": "detail=group_detector_multi",
                              "field": "",
                              "description": "",
@@ -3565,7 +3565,6 @@ module.exports = function(s,config,lang){
              "Copy Settings": {
                 id: "monSectionCopying",
                "name": lang['Copy Settings'],
-
                "color": "orange",
                 isSection: true,
                "info": [

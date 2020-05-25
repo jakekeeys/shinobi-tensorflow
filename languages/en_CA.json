@@ -530,7 +530,7 @@
    "sizePurgeLockedText": "The Size Purge Lock (deleteOverMax) appears to have failed to unlock. Unlocking now...",
    "Use coProcessor": "Use coProcessor",
    "Audio Codec": "Audio Codec",
-   "Video Record Rate": "Video Record Rate <small>(FPS)</small>",
+   "Video Record Rate": "Video Record Rate",
    "Record Width": "Record Width",
    "Record Height": "Record Height",
    "Double Quote Directory": "Double Quote Directory <small>Some directories have spaces. Using this may crash some cameras.</small>",
