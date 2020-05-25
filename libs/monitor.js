@@ -11,7 +11,6 @@ var SoundDetection = require('shinobi-sound-detection')
 var async = require("async");
 var URL = require('url')
 module.exports = function(s,config,lang){
-    var objectCountIntervals = {}
     const startMonitorInQueue = async.queue(function(action, callback) {
         setTimeout(function(){
             action(callback)
@@ -402,7 +401,7 @@ module.exports = function(s,config,lang){
             delete(activeMonitor.detectorFrameSaveBuffer);
             clearTimeout(activeMonitor.recordingSnapper);
             clearInterval(activeMonitor.getMonitorCpuUsage);
-            clearInterval(objectCountIntervals[e.ke][e.id]);
+            clearInterval(activeMonitor.objectCountIntervals);
             if(activeMonitor.onChildNodeExit){
                 activeMonitor.onChildNodeExit()
             }
@@ -1016,10 +1015,8 @@ module.exports = function(s,config,lang){
             const activeMonitor = s.group[monitor.ke].activeMonitors[monitor.id]
             activeMonitor.eventsCountStartTime = new Date()
             const eventsCounted = activeMonitor.eventsCounted || {}
-            if(!objectCountIntervals[monitor.ke])objectCountIntervals[monitor.ke] = {}
-            if(!objectCountIntervals[monitor.ke][monitor.id])objectCountIntervals[monitor.ke][monitor.id] = {}
-            clearInterval(objectCountIntervals[monitor.ke][monitor.id])
-            objectCountIntervals[monitor.ke][monitor.id] = setInterval(() => {
+            clearInterval(activeMonitor.objectCountIntervals)
+            activeMonitor.objectCountIntervals = setInterval(() => {
                 const countsToSave = Object.assign(eventsCounted,{})
                 activeMonitor.eventsCounted = {}
                 const groupKey = monitor.ke
