@@ -14,9 +14,9 @@ module.exports = function(s,config,lang){
         const eventsCounted = s.group[event.ke].activeMonitors[event.id].eventsCounted || {}
         if(matrices){
             matrices.forEach((matrix)=>{
-                const id = !isNaN(matrix.id) ? matrix.id + '_' + matrix.tag : matrix.tag
-                if(!eventsCounted[id])eventsCounted[id] = {times: [], count: 0}
-                ++eventsCounted[id].count
+                const id = matrix.tag
+                if(!eventsCounted[id])eventsCounted[id] = {times: [], count: {}, tag: matrix.tag}
+                if(!isNaN(matrix.id))eventsCounted[id].count[matrix.id] = 1
                 eventsCounted[id].times.push(new Date().getTime())
             })
         }

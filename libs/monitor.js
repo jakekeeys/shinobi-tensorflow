@@ -1014,9 +1014,9 @@ module.exports = function(s,config,lang){
         if(monitor.details.detector_obj_count === '1'){
             const activeMonitor = s.group[monitor.ke].activeMonitors[monitor.id]
             activeMonitor.eventsCountStartTime = new Date()
-            const eventsCounted = activeMonitor.eventsCounted || {}
             clearInterval(activeMonitor.objectCountIntervals)
             activeMonitor.objectCountIntervals = setInterval(() => {
+                const eventsCounted = activeMonitor.eventsCounted || {}
                 const countsToSave = Object.assign(eventsCounted,{})
                 activeMonitor.eventsCounted = {}
                 const groupKey = monitor.ke
@@ -1027,18 +1027,20 @@ module.exports = function(s,config,lang){
                 activeMonitor.eventsCountStartTime = new Date()
                 if(countedKeys.length > 0)countedKeys.forEach((tag) => {
                     const tagInfo = countsToSave[tag]
-                    const count = tagInfo.count
+                    const count = Object.keys(tagInfo.count)
                     const times = tagInfo.times
+                    const realTag = tagInfo.tag
                     s.sqlQuery('INSERT INTO `Events Counts` (ke,mid,details,time,end,count,tag) VALUES (?,?,?,?,?,?,?)',[
                         groupKey,
                         monitorId,
                         JSON.stringify({
-                            times: times
+                            times: times,
+                            count: count,
                         }),
                         startTime,
                         endTime,
-                        count,
-                        tag
+                        count.length,
+                        realTag
                     ])
                 })
             },60000) //every minute
