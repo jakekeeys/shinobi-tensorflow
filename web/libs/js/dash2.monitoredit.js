@@ -1,11 +1,15 @@
 $(document).ready(function(e){
 
 //Monitor Editor
-$.aM={e:$('#add_monitor'),monitorsForCopy:$('#copy_settings_monitors')};
-$.aM.f=$.aM.e.find('form')
-$.aM.channels=$('#monSectionStreamChannels')
-$.aM.maps=$('#monSectionInputMaps')
-$.aM.e.find('.follow-list ul').affix();
+$.aM = {}
+var monitorEditorWindow = $('#add_monitor')
+var monitorsForCopy = $('#copy_settings_monitors')
+var monitorSectionInputMaps = $('#monSectionInputMaps')
+var monitorStreamChannels = $('#monSectionStreamChannels')
+var copySettingsSelector = $('#copy_settings')
+var editorForm = monitorEditorWindow.find('form')
+var sections = {}
+monitorEditorWindow.find('.follow-list ul').affix();
 $.aM.generateDefaultMonitorSettings = function(){
     return {
        "mode": "start",
@@ -210,9 +214,98 @@ $.aM.generateDefaultMonitorSettings = function(){
        "shfr": "[]"
     }
 }
-$.aM.sections = {}
+var copyMonitorSettingsToSelected = function(monitorConfig){
+    var monitorDetails = $.parseJSON(monitorConfig.details);
+    var copyMonitors = monitorsForCopy.val();
+    var chosenSections = [];
+    var chosenMonitors = {};
+
+    if(!copyMonitors||copyMonitors.length===0){
+        $.ccio.init('note',{title:lang['No Monitors Selected'],text:lang.monSavedButNotCopied})
+        return
+    }
+
+    monitorEditorWindow.find('[copy]').each(function(n,v){
+        var el = $(v)
+        if(el.val() === '1'){
+            chosenSections.push(el.attr('copy'))
+        }
+    })
+    var alterSettings = function(settingsToAlter,monitor){
+        monitor.details = $.parseJSON(monitor.details);
+        var searchElements = []
+        if(settingsToAlter.indexOf('field=') > -1){
+            var splitSettingsToAlter = settingsToAlter.split('=')
+            if(splitSettingsToAlter[1] === 'detail' && splitSettingsToAlter[2]){
+                searchElements = monitorEditorWindow.find(`[detail="${splitSettingsToAlter[2]}"]`)
+            }else{
+                searchElements = monitorEditorWindow.find(`[name="${splitSettingsToAlter[1]}"]`)
+            }
+        }else{
+            searchElements = monitorEditorWindow.find(settingsToAlter).find('input,select,textarea')
+        }
+        searchElements.each(function(n,v){
+            var el = $(v);
+            var name = el.attr('name')
+            var detail = el.attr('detail')
+            var value
+            switch(true){
+                case !!name:
+                    var value = monitorConfig[name]
+                    monitor[name] = value;
+                break;
+                case !!detail:
+                    detail = detail.replace('"','')
+                    var value = monitorDetails[detail]
+                    monitor.details[detail] = value;
+                break;
+            }
+        })
+        monitor.details = JSON.stringify(monitor.details);
+        return monitor;
+    }
+    $.each(copyMonitors,function(n,id){
+        var monitor
+        if(monitorConfig.id === id)return;
+        if(id === '$New'){
+            monitor = $.aM.generateDefaultMonitorSettings();
+            //connection
+            monitor.name = monitorConfig.name+' - '+monitor.mid
+            monitor.type = monitorConfig.type
+            monitor.protocol = monitorConfig.protocol
+            monitor.host = monitorConfig.host
+            monitor.port = monitorConfig.port
+            monitor.path = monitorConfig.path
+            monitor.details.fatal_max = monitorDetails.fatal_max
+            monitor.details.port_force = monitorDetails.port_force
+            monitor.details.muser = monitorDetails.muser
+            monitor.details.password = monitorDetails.password
+            monitor.details.rtsp_transport = monitorDetails.rtsp_transport
+            monitor.details.auto_host = monitorDetails.auto_host
+            monitor.details.auto_host_enable = monitorDetails.auto_host_enable
+            //input
+            monitor.details.aduration = monitorDetails.aduration
+            monitor.details.probesize = monitorDetails.probesize
+            monitor.details.stream_loop = monitorDetails.stream_loop
+            monitor.details.sfps = monitorDetails.sfps
+            monitor.details.accelerator = monitorDetails.accelerator
+            monitor.details.hwaccel = monitorDetails.hwaccel
+            monitor.details.hwaccel_vcodec = monitorDetails.hwaccel_vcodec
+            monitor.details.hwaccel_device = monitorDetails.hwaccel_device
+        }else{
+            monitor = Object.assign({},$.ccio.init('cleanMon',$.ccio.mon[$user.ke+id+$user.auth_token]));
+        }
+        $.each(chosenSections,function(n,section){
+            monitor = alterSettings(section,monitor)
+        })
+        $.post(getApiPrefix()+'/configureMonitor/'+$user.ke+'/'+monitor.mid,{data:JSON.stringify(monitor)},function(d){
+            $.ccio.log(d)
+        })
+        chosenMonitors[monitor.mid] = monitor;
+    })
+}
 var addSection = function(section){
-    $.aM.sections[section.name] = section.id
+    sections[section.name] = section.id
     if(section.info){
         $.each(section.info,function(m,block){
             if(block.isFormGroupGroup === true){
@@ -229,10 +322,10 @@ var addSection = function(section){
 $.each($.ccio.definitions['Monitor Settings'].blocks,function(n,section){
     addSection(section)
 })
-$.aM.drawList = function(){
-    var list = $.aM.e.find('.follow-list ul')
+var drawList = function(){
+    var list = monitorEditorWindow.find('.follow-list ul')
     var html = ''
-    $.each($.aM.sections,function(sectionName,sectionId){
+    $.each(sections,function(sectionName,sectionId){
         var el = $('#' + sectionId + ':visible')
         if(el.length > 0){
             html += '<li><a class="scrollTo" href="#' + sectionId + '" scrollToParent="#add_monitor .modal-body">' + sectionName + '</a></li>'
@@ -240,30 +333,31 @@ $.aM.drawList = function(){
     })
     list.html(html)
 }
-$.aM.e.on('shown.bs.modal', function () {
-    $.aM.drawList()
+monitorEditorWindow.on('shown.bs.modal', function () {
+    drawList()
 })
-$.aM.import = function(e){
-    $.get($.ccio.init('location',$user)+$user.auth_token+'/hls/'+e.values.ke+'/'+e.values.mid+'/detectorStream.m3u8',function(data){
+$.aM.import = function(options){
+    var monitorConfig = options.values || options
+    $.get(getApiPrefix()+'/hls/'+monitorConfig.ke+'/'+monitorConfig.mid+'/detectorStream.m3u8',function(data){
         $('#monEditBufferPreview').html(data)
     })
-    $.aM.e.find('.edit_id').text(e.values.mid);
-    $.aM.e.attr('mid',e.values.mid).attr('ke',e.values.ke).attr('auth',e.auth)
-    $.each(e.values,function(n,v){
-        $.aM.e.find('[name="'+n+'"]').val(v).change()
+    monitorEditorWindow.find('.edit_id').text(monitorConfig.mid);
+    monitorEditorWindow.attr('mid',monitorConfig.mid).attr('ke',monitorConfig.ke).attr('auth',monitorConfig.auth || $user.auth_token)
+    $.each(monitorConfig,function(n,v){
+        monitorEditorWindow.find('[name="'+n+'"]').val(v).change()
     })
-    e.ss = $.parseJSON(e.values.details);
+    var monitorDetails = $.parseJSON(monitorConfig.details);
     //get maps
-    $.aM.maps.empty()
-    if(e.ss.input_maps&&e.ss.input_maps!==''){
+    monitorSectionInputMaps.empty()
+    if(monitorDetails.input_maps&&monitorDetails.input_maps!==''){
         var input_maps
         try{
-            input_maps = $.parseJSON(e.ss.input_maps)
+            input_maps = $.parseJSON(monitorDetails.input_maps)
         }catch(er){
-            input_maps = e.ss.input_maps;
+            input_maps = monitorDetails.input_maps;
         }
         if(input_maps.length>0){
-            $.aM.showInputMappingFields()
+            showInputMappingFields()
             $.each(input_maps,function(n,v){
                 var tempID = $.ccio.tm('input-map')
                 var parent = $('#monSectionMap'+tempID)
@@ -272,17 +366,17 @@ $.aM.import = function(e){
                 })
             })
         }else{
-            $.aM.showInputMappingFields(false)
+            showInputMappingFields(false)
         }
     }
     //get channels
-    $.aM.channels.empty()
-    if(e.ss.stream_channels&&e.ss.stream_channels!==''){
+    monitorStreamChannels.empty()
+    if(monitorDetails.stream_channels&&monitorDetails.stream_channels!==''){
         var stream_channels
         try{
-            stream_channels = $.parseJSON(e.ss.stream_channels)
+            stream_channels = $.parseJSON(monitorDetails.stream_channels)
         }catch(er){
-            stream_channels = e.ss.stream_channels;
+            stream_channels = monitorDetails.stream_channels;
         }
         $.each(stream_channels,function(n,v){
             var tempID = $.ccio.tm('stream-channel')
@@ -293,13 +387,13 @@ $.aM.import = function(e){
         })
     }
     //get map choices for outputs
-    $('[input-mapping] .choices').empty()
-    if(e.ss.input_map_choices&&e.ss.input_map_choices!==''){
+    monitorEditorWindow.find('[input-mapping] .choices').empty()
+    if(monitorDetails.input_map_choices&&monitorDetails.input_map_choices!==''){
         var input_map_choices
         try{
-            input_map_choices = $.parseJSON(e.ss.input_map_choices)
+            input_map_choices = $.parseJSON(monitorDetails.input_map_choices)
         }catch(er){
-            input_map_choices = e.ss.input_map_choices;
+            input_map_choices = monitorDetails.input_map_choices;
         }
         $.each(input_map_choices,function(n,v){
             $.each(v,function(m,b){
@@ -308,17 +402,17 @@ $.aM.import = function(e){
             })
         })
     }
-    $.aM.e.find('[detail]').each(function(n,v){
-        v=$(v).attr('detail');if(!e.ss[v]){e.ss[v]=''}
+    monitorEditorWindow.find('[detail]').each(function(n,v){
+        v=$(v).attr('detail');if(!monitorDetails[v]){monitorDetails[v]=''}
     })
-    $.each(e.ss,function(n,v){
+    $.each(monitorDetails,function(n,v){
         var theVal = v;
         if(v instanceof Object){
             theVal = JSON.stringify(v);
         }
-        $.aM.e.find('[detail="'+n+'"]').val(theVal).change();
+        monitorEditorWindow.find('[detail="'+n+'"]').val(theVal).change();
     });
-    $.each(e.ss,function(n,v){
+    $.each(monitorDetails,function(n,v){
         try{
             var variable=$.parseJSON(v)
         }catch(err){
@@ -357,10 +451,10 @@ $.aM.import = function(e){
                 tmp+='<span class="mdl-list__item-secondary-action">';
                 tmp+='<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">';
                 tmp+='<input type="checkbox" '+b+' value="'+v.id+'" class="mdl-switch__input"';
-                if(!e.ss[b]){
-                    e.ss[b]=[]
+                if(!monitorDetails[b]){
+                    monitorDetails[b]=[]
                 }
-                if(e.ss[b].indexOf(v.id)>-1){tmp+=' checked';}
+                if(monitorDetails[b].indexOf(v.id)>-1){tmp+=' checked';}
                 tmp+=' />';
                 tmp+='</label>';
                 tmp+='</span>';
@@ -373,34 +467,34 @@ $.aM.import = function(e){
         console.log(er)
         //no group, this 'try' will be removed in future.
     };
-    $('#copy_settings').val('0').change()
+    copySettingsSelector.val('0').change()
     var tmp = '';
     $.each($.ccio.mon,function(n,v){
         if(v.ke === $user.ke){
             tmp += $.ccio.tm('option',{auth_token:$user.auth_token,id:v.mid,name:v.name},null,$user);
         }
     })
-    $.aM.monitorsForCopy.find('optgroup').html(tmp)
-    $.aM.drawList()
+    monitorsForCopy.find('optgroup').html(tmp)
+    drawList()
 }
 //parse "Automatic" field in "Input" Section
-$.aM.e.on('change','.auto_host_fill input,.auto_host_fill select',function(e){
-    var theSwitch = $.aM.e.find('[detail="auto_host_enable"]').val()
+monitorEditorWindow.on('change','.auto_host_fill input,.auto_host_fill select',function(e){
+    var theSwitch = monitorEditorWindow.find('[detail="auto_host_enable"]').val()
     if(!theSwitch||theSwitch===''){
         theSwitch='1'
     }
     if(theSwitch==='1'){
         return
     }
-    if($.aM.e.find('[name="host"]').val() !== ''){
-        $.aM.e.find('[detail="auto_host"]').val($.aM.buildMonitorURL())
+    if(monitorEditorWindow.find('[name="host"]').val() !== ''){
+        monitorEditorWindow.find('[detail="auto_host"]').val(buildMonitorURL())
     }
 })
-$.aM.e.on('change','[detail="auto_host"]',function(e){
+monitorEditorWindow.on('change','[detail="auto_host"]',function(e){
     var isRTSP = false
-    var inputType = $.aM.e.find('[name="type"]').val()
+    var inputType = monitorEditorWindow.find('[name="type"]').val()
     var url = $(this).val()
-    var theSwitch = $.aM.e.find('[detail="auto_host_enable"]')
+    var theSwitch = monitorEditorWindow.find('[detail="auto_host_enable"]')
     var disabled = theSwitch.val()
     if(!disabled||disabled===''){
         //if no value, then probably old version of monitor config. Set to Manual to avoid confusion.
@@ -411,7 +505,7 @@ $.aM.e.on('change','[detail="auto_host"]',function(e){
         return
     }
     if(inputType === 'local'){
-        $.aM.e.find('[name="path"]').val(url).change()
+        monitorEditorWindow.find('[name="path"]').val(url).change()
     }else{
         var urlSplitByDots = url.split('.')
         var has = function(query,searchIn){if(!searchIn){searchIn=url;};return url.indexOf(query)>-1}
@@ -437,156 +531,66 @@ $.aM.e.on('change','[detail="auto_host"]',function(e){
         if(url.indexOf('?') > -1){
             pathname += '?'+url.split('?')[1]
         }
-        $.aM.e.find('[name="protocol"]').val(protocol).change()
+        monitorEditorWindow.find('[name="protocol"]').val(protocol).change()
         if(isRTSP){
-            $.aM.e.find('[detail="rtsp_transport"]').val('tcp').change()
-            $.aM.e.find('[detail="aduration"]').val(1000000).change()
-            $.aM.e.find('[detail="probesize"]').val(1000000).change()
+            monitorEditorWindow.find('[detail="rtsp_transport"]').val('tcp').change()
+            monitorEditorWindow.find('[detail="aduration"]').val(1000000).change()
+            monitorEditorWindow.find('[detail="probesize"]').val(1000000).change()
         }
-        $.aM.e.find('[detail="muser"]').val(parsedURL.username).change()
-        $.aM.e.find('[detail="mpass"]').val(parsedURL.password).change()
-        $.aM.e.find('[name="host"]').val(parsedURL.hostname).change()
-        $.aM.e.find('[name="port"]').val(parsedURL.port).change()
-        $.aM.e.find('[name="path"]').val(pathname).change()
+        monitorEditorWindow.find('[detail="muser"]').val(parsedURL.username).change()
+        monitorEditorWindow.find('[detail="mpass"]').val(parsedURL.password).change()
+        monitorEditorWindow.find('[name="host"]').val(parsedURL.hostname).change()
+        monitorEditorWindow.find('[name="port"]').val(parsedURL.port).change()
+        monitorEditorWindow.find('[name="path"]').val(pathname).change()
         delete(parsedURL)
     }
 })
-$.aM.e.find('.refresh_cascades').click(function(e){
+monitorEditorWindow.find('.refresh_cascades').click(function(e){
     $.ccio.cx({f:'ocv_in',data:{f:'refreshPlugins',ke:$user.ke}})
 })
-$.aM.f.submit(function(ee){
-    ee.preventDefault();
-    e={e:$(this)};
-    e.s=e.e.serializeObject();
-    e.er=[];
-    $.each(e.s,function(n,v){e.s[n]=v.trim()});
-    e.s.mid=e.s.mid.replace(/[^\w\s]/gi,'').replace(/ /g,'')
-    if(e.s.mid.length<3){e.er.push('Monitor ID too short')}
-    if(e.s.port==''){
-        if(e.s.protocol === 'https'){
-            e.s.port = 443
+editorForm.submit(function(e){
+    e.preventDefault();
+    var el = $(this)
+    var monitorConfig = el.serializeObject()
+    var errorsFound = []
+    $.each(monitorConfig,function(n,v){monitorConfig[n]=v.trim()});
+    monitorConfig.mid = monitorConfig.mid.replace(/[^\w\s]/gi,'').replace(/ /g,'')
+    if(monitorConfig.mid.length < 3){errorsFound.push('Monitor ID too short')}
+    if(monitorConfig.port == ''){
+        if(monitorConfig.protocol === 'https'){
+            monitorConfig.port = 443
         }else{
-            e.s.port = 80
+            monitorConfig.port = 80
         }
     }
-    if(e.s.name==''){e.er.push('Monitor Name cannot be blank')}
-//    if(e.s.protocol=='rtsp'){e.s.ext='mp4',e.s.type='rtsp'}
-    if(e.er.length>0){
-        $.sM.e.find('.msg').html(e.er.join('<br>'));
-        $.ccio.init('note',{title:'Configuration Invalid',text:e.er.join('<br>'),type:'error'});
+    if(monitorConfig.name == ''){errorsFound.push('Monitor Name cannot be blank')}
+//    if(monitorConfig.protocol=='rtsp'){monitorConfig.ext='mp4',monitorConfig.type='rtsp'}
+    if(errorsFound.length > 0){
+        $.sM.e.find('.msg').html(errorsFound.join('<br>'));
+        $.ccio.init('note',{title:'Configuration Invalid',text:errorsFound.join('<br>'),type:'error'});
         return;
     }
-    $.post($.ccio.init('location',$user)+$user.auth_token+'/configureMonitor/'+$user.ke+'/'+e.s.mid,{data:JSON.stringify(e.s)},function(d){
+    $.post(getApiPrefix()+'/configureMonitor/'+$user.ke+'/'+monitorConfig.mid,{data:JSON.stringify(monitorConfig)},function(d){
         $.ccio.log(d)
     })
     //
-    if($('#copy_settings').val() === '1'){
-        e.s.details = $.parseJSON(e.s.details);
-        var copyMonitors = $.aM.monitorsForCopy.val();
-        var chosenSections = [];
-        var chosenMonitors = {};
-
-        if(!copyMonitors||copyMonitors.length===0){
-            $.ccio.init('note',{title:lang['No Monitors Selected'],text:lang.monSavedButNotCopied})
-            return
-        }
-
-        $.aM.e.find('[copy]').each(function(n,v){
-            var el = $(v)
-            if(el.val() === '1'){
-                chosenSections.push(el.attr('copy'))
-            }
-        })
-        var alterSettings = function(settingsToAlter,monitor){
-            monitor.details = $.parseJSON(monitor.details);
-            var searchElements = []
-            if(settingsToAlter.indexOf('field=') > -1){
-                var splitSettingsToAlter = settingsToAlter.split('=')
-                if(splitSettingsToAlter[1] === 'detail' && splitSettingsToAlter[2]){
-                    searchElements = $.aM.e.find(`[detail="${splitSettingsToAlter[2]}"]`)
-                }else{
-                    searchElements = $.aM.e.find(`[name="${splitSettingsToAlter[1]}"]`)
-                }
-            }else{
-                searchElements = $.aM.e.find(settingsToAlter).find('input,select,textarea')
-            }
-            searchElements.each(function(n,v){
-                var el = $(v);
-                var name = el.attr('name')
-                var detail = el.attr('detail')
-                var value
-                switch(true){
-                    case !!name:
-                        var value = e.s[name]
-                        monitor[name] = value;
-                    break;
-                    case !!detail:
-                        detail = detail.replace('"','')
-                        var value = e.s.details[detail]
-                        monitor.details[detail] = value;
-                    break;
-                }
-            })
-            monitor.details = JSON.stringify(monitor.details);
-            return monitor;
-        }
-        $.each(copyMonitors,function(n,id){
-            var monitor
-            if(id === '$New'){
-                monitor = $.aM.generateDefaultMonitorSettings();
-                //connection
-                monitor.name = e.s.name+' - '+monitor.mid
-                monitor.type = e.s.type
-                monitor.protocol = e.s.protocol
-                monitor.host = e.s.host
-                monitor.port = e.s.port
-                monitor.path = e.s.path
-                monitor.details.fatal_max = e.s.details.fatal_max
-                monitor.details.port_force = e.s.details.port_force
-                monitor.details.muser = e.s.details.muser
-                monitor.details.password = e.s.details.password
-                monitor.details.rtsp_transport = e.s.details.rtsp_transport
-                monitor.details.auto_host = e.s.details.auto_host
-                monitor.details.auto_host_enable = e.s.details.auto_host_enable
-                //input
-                monitor.details.aduration = e.s.details.aduration
-                monitor.details.probesize = e.s.details.probesize
-                monitor.details.stream_loop = e.s.details.stream_loop
-                monitor.details.sfps = e.s.details.sfps
-                monitor.details.accelerator = e.s.details.accelerator
-                monitor.details.hwaccel = e.s.details.hwaccel
-                monitor.details.hwaccel_vcodec = e.s.details.hwaccel_vcodec
-                monitor.details.hwaccel_device = e.s.details.hwaccel_device
-            }else{
-                monitor = Object.assign({},$.ccio.init('cleanMon',$.ccio.mon[$user.ke+id+$user.auth_token]));
-            }
-            $.each(chosenSections,function(n,section){
-                monitor = alterSettings(section,monitor)
-            })
-            console.log(monitor)
-            $.post($.ccio.init('location',$user)+$user.auth_token+'/configureMonitor/'+$user.ke+'/'+monitor.mid,{data:JSON.stringify(monitor)},function(d){
-                $.ccio.log(d)
-            })
-             chosenMonitors[monitor.mid] = monitor;
-        })
-        console.log(chosenMonitors)
+    if(copySettingsSelector.val() === '1'){
+        copyMonitorSettingsToSelected(monitorConfig)
     }
-
-    $.aM.e.modal('hide')
+    monitorEditorWindow.modal('hide')
     return false;
 });
 //////////////////
 //Input Map (Feed)
-$.aM.mapPlacementInit = function(){
+var mapPlacementInit = function(){
     $('.input-map').each(function(n,v){
         var _this = $(this)
         _this.find('.place').text(n+1)
     })
 }
-$.aM.mapSave = function(){
-    var e={};
+var monitorSectionInputMapsave = function(){
     var mapContainers = $('[input-mapping]');
-    var stringForSave={}
+    var stringForSave = {}
     mapContainers.each(function(q,t){
         var mapRowElement = $(t).find('.map-row');
         var mapRow = []
@@ -599,87 +603,93 @@ $.aM.mapSave = function(){
         });
         stringForSave[$(t).attr('input-mapping')] = mapRow;
     });
-    $.aM.e.find('[detail="input_map_choices"]').val(JSON.stringify(stringForSave)).change();
+    monitorEditorWindow.find('[detail="input_map_choices"]').val(JSON.stringify(stringForSave)).change();
 }
-$.aM.maps.on('click','.delete',function(){
+monitorSectionInputMaps.on('click','.delete',function(){
     $(this).parents('.input-map').remove()
     var inputs = $('[map-detail]')
     if(inputs.length===0){
-        $.aM.e.find('[detail="input_maps"]').val('[]').change()
-        $.aM.showInputMappingFields(false)
+        monitorEditorWindow.find('[detail="input_maps"]').val('[]').change()
+        showInputMappingFields(false)
     }else{
         inputs.first().change()
-        $.aM.showInputMappingFields()
+        showInputMappingFields()
     }
-    $.aM.mapPlacementInit()
+    mapPlacementInit()
 })
-$.aM.e.on('change','[map-detail]',function(){
-  var e={};
-    e.e=$.aM.maps.find('.input-map')
-    e.s=[]
-    e.e.each(function(n,v){
+monitorEditorWindow.on('change','[map-detail]',function(){
+    var el = monitorSectionInputMaps.find('.input-map')
+    var selectedMaps = []
+    el.each(function(n,v){
         var map={}
         $.each($(v).find('[map-detail]'),function(m,b){
             map[$(b).attr('map-detail')]=$(b).val()
         });
-        e.s.push(map)
+        selectedMaps.push(map)
     });
-    $.aM.e.find('[detail="input_maps"]').val(JSON.stringify(e.s)).change()
+    monitorEditorWindow.find('[detail="input_maps"]').val(JSON.stringify(selectedMaps)).change()
 })
-$.aM.e.on('click','[input-mapping] .add_map_row',function(){
+monitorEditorWindow.on('click','[input-mapping] .add_map_row',function(){
     $.ccio.tm('input-map-selector',{},$(this).parents('[input-mapping]').find('.choices'))
-    $.aM.mapSave()
+    monitorSectionInputMapsave()
 })
-$.aM.e.on('click','[input-mapping] .delete_map_row',function(){
+monitorEditorWindow.on('click','[input-mapping] .delete_map_row',function(){
     $(this).parents('.map-row').remove()
-    $.aM.mapSave()
+    monitorSectionInputMapsave()
 })
-$.aM.e.on('change','[map-input]',function(){
-    $.aM.mapSave()
+monitorEditorWindow.on('change','[map-input]',function(){
+    monitorSectionInputMapsave()
 })
 //////////////////
 //Stream Channels
-$.aM.channelSave = function(){
-  var e={};
-    e.e=$.aM.channels.find('.stream-channel')
-    e.s=[]
-    e.e.each(function(n,v){
+var monitorStreamChannelsave = function(){
+    var el = monitorStreamChannels.find('.stream-channel')
+    var selectedChannels = []
+    el.each(function(n,v){
         var channel={}
         $.each($(v).find('[channel-detail]'),function(m,b){
             channel[$(b).attr('channel-detail')]=$(b).val()
         });
-        e.s.push(channel)
+        selectedChannels.push(channel)
     });
-    $.aM.e.find('[detail="stream_channels"]').val(JSON.stringify(e.s)).change()
+    monitorEditorWindow.find('[detail="stream_channels"]').val(JSON.stringify(selectedChannels)).change()
 }
-$.aM.channelPlacementInit = function(){
+var channelPlacementInit = function(){
     $('.stream-channel').each(function(n,v){
         var _this = $(this)
         _this.attr('stream-channel',n)
         _this.find('.place').text(n)
         _this.find('[input-mapping]').attr('input-mapping','stream_channel-'+n)
-        $.aM.mapSave()
+        monitorSectionInputMapsave()
     })
 }
-$.aM.buildMonitorURL = function(){
-    var e={};
-    e.user=$.aM.e.find('[detail="muser"]').val();
-    e.pass=$.aM.e.find('[detail="mpass"]').val();
-    e.host=$.aM.e.find('[name="host"]').val();
-    e.protocol=$.aM.e.find('[name="protocol"]').val();
-    e.port=$.aM.e.find('[name="port"]').val();
-    e.path=$.aM.e.find('[name="path"]').val();
-    if($.aM.e.find('[name="type"]').val()==='local'){
-        e.url=e.path;
+var buildMonitorURL = function(){
+    var user = monitorEditorWindow.find('[detail="muser"]').val();
+    var pass = monitorEditorWindow.find('[detail="mpass"]').val();
+    var host = monitorEditorWindow.find('[name="host"]').val();
+    var protocol = monitorEditorWindow.find('[name="protocol"]').val();
+    var port = monitorEditorWindow.find('[name="port"]').val();
+    var path = monitorEditorWindow.find('[name="path"]').val();
+    var type = monitorEditorWindow.find('[name="type"]').val();
+    if(type === 'local'){
+        url = path;
     }else{
-        if(e.host.indexOf('@')===-1&&e.user!==''){
-            e.host=e.user+':'+e.pass+'@'+e.host;
+        if(host.indexOf('@') === -1 && user !== ''){
+            host = user + ':' + pass + '@' + host;
         }
-        e.url=$.ccio.init('url',e)+e.path;
+        url = $.ccio.init('url',{
+            user: user,
+            pass: pass,
+            host: host,
+            protocol: protocol,
+            port: port,
+            path: path,
+            type: type,
+        }) + path;
     }
-    return e.url
+    return url
 }
-$.aM.showInputMappingFields = function(showMaps){
+var showInputMappingFields = function(showMaps){
     var el = $('[input-mapping],.input-mapping')
     if(showMaps === undefined)showMaps = true
     if(showMaps){
@@ -687,70 +697,83 @@ $.aM.showInputMappingFields = function(showMaps){
     }else{
         el.hide()
     }
-    $.aM.drawList()
+    drawList()
 }
-$.aM.channels.on('click','.delete',function(){
+monitorStreamChannels.on('click','.delete',function(){
     $(this).parents('.stream-channel').remove()
-    $.aM.channelSave()
-    $.aM.channelPlacementInit()
+    monitorStreamChannelsave()
+    channelPlacementInit()
 })
-$.aM.e.on('change','[channel-detail]',function(){
-    $.aM.channelSave()
+monitorEditorWindow.on('change','[channel-detail]',function(){
+    monitorStreamChannelsave()
 })
 //////////////////
-$.aM.e.on('change','[groups]',function(){
+monitorEditorWindow.on('change','[groups]',function(){
   var e={};
-    e.e=$.aM.e.find('[groups]:checked');
-    e.s=[];
-    e.e.each(function(n,v){
-        e.s.push($(v).val())
+    var el = monitorEditorWindow.find('[groups]:checked');
+    var selectedGroups = [];
+    el.each(function(n,v){
+        selectedGroups.push($(v).val())
     });
-    $.aM.e.find('[detail="groups"]').val(JSON.stringify(e.s)).change()
+    monitorEditorWindow.find('[detail="groups"]').val(JSON.stringify(selectedGroups)).change()
 })
-$.aM.e.on('change','[group_detector_multi]',function(){
+monitorEditorWindow.on('change','[group_detector_multi]',function(){
   var e={};
-    e.e=$.aM.e.find('[group_detector_multi]:checked');
-    e.s=[];
-    e.e.each(function(n,v){
-        e.s.push($(v).val())
+    var el = monitorEditorWindow.find('[group_detector_multi]:checked');
+    var selectedMultiTrigger=[];
+    el.each(function(n,v){
+        selectedMultiTrigger.push($(v).val())
     });
-    $.aM.e.find('[detail="group_detector_multi"]').val(JSON.stringify(e.s)).change()
+    monitorEditorWindow.find('[detail="group_detector_multi"]').val(JSON.stringify(selectedMultiTrigger)).change()
 })
-$.aM.e.on('change','.detector_cascade_selection',function(){
+monitorEditorWindow.on('change','.detector_cascade_selection',function(){
   var e={};
-    e.e=$.aM.e.find('.detector_cascade_selection:checked');
-    e.s={};
-    e.e.each(function(n,v){
-        e.s[$(v).val()]={}
+    var el = monitorEditorWindow.find('.detector_cascade_selection:checked');
+    var selectedCascades = {};
+    el.each(function(n,v){
+        selectedCascades[$(v).val()]={}
     });
-    $.aM.e.find('[detail="detector_cascades"]').val(JSON.stringify(e.s)).change()
+    monitorEditorWindow.find('[detail="detector_cascades"]').val(JSON.stringify(selectedCascades)).change()
 })
-//$.aM.e.on('change','.detector_cascade_selection',function(){
+//monitorEditorWindow.on('change','.detector_cascade_selection',function(){
 //  var e={};
-//    e.details=$.aM.e.find('[name="details"]')
+//    e.details=monitorEditorWindow.find('[name="details"]')
 //    try{
 //        e.detailsVal=$.parseJSON(e.details.val())
 //    }catch(err){
 //        e.detailsVal={}
 //    }
 //    e.detailsVal.detector_cascades=[];
-//    e.e=$.aM.e.find('.detector_cascade_selection:checked');
-//    e.e.each(function(n,v){
+//    var el = monitorEditorWindow.find('.detector_cascade_selection:checked');
+//    el.each(function(n,v){
 //        e.detailsVal.detector_cascades.push($(v).val())
 //    });
 //    e.details.val(JSON.stringify(e.detailsVal))
 //})
-$.aM.e.find('.probe_config').click(function(){
-    $.pB.e.find('[name="url"]').val($.aM.buildMonitorURL());
-    $.pB.f.submit();
-    $.pB.e.modal('show');
+monitorEditorWindow.find('.probe_config').click(function(){
+    $.pB.submit(buildMonitorURL(),true)
 })
-$.aM.e.find('.import_config').click(function(e){
-  var e={};e.e=$(this);e.mid=e.e.parents('[mid]').attr('mid');
-    $.confirm.e.modal('show');
-    $.confirm.title.text(lang['Import Monitor Configuration'])
-    e.html=lang.ImportMonitorConfigurationText+'<div style="margin-top:15px"><div class="form-group"><textarea placeholder="'+lang['Paste JSON here.']+'" class="form-control"></textarea></div><label class="upload_file btn btn-primary btn-block"> Upload File <input class="upload" type=file name="files[]"></label></div>';
-    $.confirm.body.html(e.html)
+monitorEditorWindow.find('.import_config').click(function(e){
+    var el = $(this);
+    var monitorId = el.parents('[mid]').attr('mid');
+    $.confirm.create({
+        title: lang['Import Monitor Configuration'],
+        body: lang.ImportMonitorConfigurationText+'<div style="margin-top:15px"><div class="form-group"><textarea placeholder="'+lang['Paste JSON here.']+'" class="form-control"></textarea></div><label class="upload_file btn btn-primary btn-block"> Upload File <input class="upload" type=file name="files[]"></label></div>',
+        clickOptions: {
+            title: 'Import',
+            class: 'btn-primary'
+        },
+        clickCallback: function(){
+            try{
+                var monitorConfig = $.parseJSON($.confirm.e.find('textarea').val());
+                $.aM.import(monitorConfig)
+                monitorEditorWindow.modal('show')
+            }catch(err){
+                $.ccio.log(err)
+                $.ccio.init('note',{title:lang['Invalid JSON'],text:lang.InvalidJSONText,type:'error'})
+            }
+        }
+    })
     $.confirm.e.find('.upload').change(function(e){
         var files = e.target.files; // FileList object
         f = files[0];
@@ -760,72 +783,64 @@ $.aM.e.find('.import_config').click(function(e){
         }
         reader.readAsText(f);
     });
-    $.confirm.click({title:'Import',class:'btn-primary'},function(){
-        try{
-            e.values=$.parseJSON($.confirm.e.find('textarea').val());
-            $.aM.import(e)
-            $.aM.e.modal('show')
-        }catch(err){
-            $.ccio.log(err)
-            $.ccio.init('note',{title:lang['Invalid JSON'],text:lang.InvalidJSONText,type:'error'})
-        }
-    });
 });
-$.aM.e.find('.save_config').click(function(e){
-  var e={};e.e=$(this);e.mid=e.e.parents('[mid]').attr('mid');e.s=$.aM.f.serializeObject();
-    if(!e.mid||e.mid===''){
-        e.mid='NewMonitor'
+monitorEditorWindow.find('.save_config').click(function(e){
+    //export monior config in view
+  var el = $(this);
+  var monitorId = el.parents('[mid]').attr('mid');
+  var form = editorForm.serializeObject();
+    if(!monitorId||monitorId===''){
+        monitorId='NewMonitor'
     }
-    e.dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(e.s));
+    form.details = $.parseJSON(form.details)
+    e.dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(form));
     $('#temp').html('<a></a>')
         .find('a')
         .attr('href',e.dataStr)
-        .attr('download','Shinobi_'+e.mid+'_config.json')
+        .attr('download','Shinobi_'+monitorId+'_config.json')
         [0].click()
 });
-$.aM.e.find('.add_map').click(function(e){
-    $.aM.showInputMappingFields()
+monitorEditorWindow.find('.add_map').click(function(e){
+    showInputMappingFields()
     $.ccio.tm('input-map')
 });
-$.aM.e.find('.add_channel').click(function(e){
+monitorEditorWindow.find('.add_channel').click(function(e){
     $.ccio.tm('stream-channel')
 });
-$.aM.f.find('[detail="stream_type"]').change(function(e){
-    e.e=$(this);
-    if(e.e.val()==='jpeg'){$.aM.f.find('[detail="snap"]').val('1').change()}
+editorForm.find('[detail="stream_type"]').change(function(e){
+    var el = $(this);
+    if(el.val()==='jpeg')editorForm.find('[detail="snap"]').val('1').change()
 })
-$.aM.f.find('[name="type"]').change(function(e){
-    e.e=$(this);
-    if(e.e.val()==='h264'){$.aM.f.find('[name="protocol"]').val('rtsp').change()}
+editorForm.find('[name="type"]').change(function(e){
+    var el = $(this);
+    if(el.val()==='h264')editorForm.find('[name="protocol"]').val('rtsp').change()
 })
-$.aM.md=$.aM.f.find('[detail]');
-$.aM.md.change($.ccio.form.details)
-$.aM.f.on('change','[selector]',function(){
-    e={e:$(this)}
-    e.v=e.e.val();
-    e.a=e.e.attr('selector')
-    e.triggerChange=e.e.attr('triggerchange')
-    e.triggerChangeIgnore=e.e.attr('triggerChangeIgnore')
-    $.aM.f.find('.'+e.a+'_input').hide()
-    $.aM.f.find('.'+e.a+'_'+e.v).show();
-    $.aM.f.find('.'+e.a+'_text').text($(this).find('option:selected').text())
-    if(e.triggerChange && e.triggerChange !== '' && !e.triggerChangeIgnore || (e.triggerChangeIgnore && e.triggerChangeIgnore.split(',').indexOf(e.v) === -1)){
+editorForm.find('[detail]').change($.ccio.form.details)
+editorForm.on('change','[selector]',function(){
+    var el = $(this);
+    var key = el.attr('selector')
+    var value = el.val();
+    e.triggerChange = el.attr('triggerchange')
+    e.triggerChangeIgnore = el.attr('triggerChangeIgnore')
+    editorForm.find('.' + key + '_input').hide()
+    editorForm.find('.' + key + '_' + value).show();
+    editorForm.find('.' + key + '_text').text($(this).find('option:selected').text())
+    if(e.triggerChange && e.triggerChange !== '' && !e.triggerChangeIgnore || (e.triggerChangeIgnore && e.triggerChangeIgnore.split(',').indexOf(value) === -1)){
         console.log(e.triggerChange)
         $(e.triggerChange).trigger('change')
     }
-    $.aM.drawList()
+    drawList()
 });
-$.aM.f.find('[name="type"]').change(function(e){
-    e.e=$(this);
-    e.v=e.e.val();
-    e.h=$.aM.f.find('[name="path"]');
-    e.p=e.e.parents('.form-group');
-    switch(e.v){
+editorForm.find('[name="type"]').change(function(e){
+    var el = $(this);
+    var value = el.val();
+    var pathField = editorForm.find('[name="path"]');
+    switch(value){
         case'local':case'socket':
-            e.h.attr('placeholder','/dev/video0')
+            pathField.attr('placeholder','/dev/video0')
         break;
         default:
-            e.h.attr('placeholder','/videostream.cgi?1')
+            pathField.attr('placeholder','/videostream.cgi?1')
         break;
     }
 });
@@ -851,7 +866,7 @@ $.aM.f.find('[name="type"]').change(function(e){
             $('.shinobi-detector_name').empty()
             $('.shinobi-detector_plug').hide()
             $('.shinobi-detector-invert').show()
-            $.aM.drawList()
+            drawList()
         }else{
             var pluginTitle = []
             var pluginNotice = []
@@ -866,7 +881,10 @@ $.aM.f.find('[name="type"]').change(function(e){
             $('.shinobi-detector-invert').hide()
             $('.shinobi-detector_name').text(pluginTitle.join(', '))
             if(pluginNotice.length > 0)$('.shinobi-detector-msg').text(pluginNotice.join('<br>'))
-            $.aM.drawList()
+            drawList()
         }
     }
+    //
+    $.aM.channels = monitorStreamChannels
+    $.aM.maps = monitorSectionInputMaps
 })
