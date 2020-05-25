@@ -699,7 +699,7 @@ $(document).ready(function(e){
                 $.each($.ccio.init('cleanMon',e.mon),function(n,v,g){
                     if(n==='host'&&v.indexOf('@')>-1){g=v.split('@')[1]}else{g=v};
                     try{JSON.parse(g);return}catch(err){}
-                    e.html+='<tr><td><b>'+n+'</b></td><td>'+g+'</td></tr>';
+                    e.html+='<tr><td><b>'+n+'</b></td><td style="word-break:break-all">'+g+'</td></tr>';
                 })
                 e.html+='</tr></table>';
                 $.confirm.body.html(e.html)
