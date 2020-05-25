@@ -762,20 +762,13 @@ $user.ws.on('f',function (d){
             }
         break;
         case'ffprobe_stop':
-            $.pB.e.find('._loading').hide()
-            $.pB.o.append('<div><b>END</b></div>');
-            $.pB.e.find('.stop').hide();
-            $.pB.e.find('[type="submit"]').show();
+            $.pB.setAsLoading(false)
         break;
         case'ffprobe_start':
-            $.pB.e.find('._loading').show()
-            $.pB.o.empty();
-            $.pB.e.find('.stop').show();
-            $.pB.e.find('[type="submit"]').hide();
+            $.pB.setAsLoading(true)
         break;
         case'ffprobe_data':
-            $.pB.results=JSON.parse(d.data)
-            $.pB.o.append($.ccio.init('jsontoblock',$.pB.results))
+            $.pB.writeData(d.data)
         break;
         case'detector_cascade_list':
             d.tmp=''
