@@ -10,25 +10,6 @@ $(document).ready(function(e){
         }
     })
 
-    var createMonitorsList = function(selectElement,selectedMonitor){
-        var selectedOption
-        var loadedMonitors = $.ccio.mon
-        selectElement.find('.monitor').remove()
-        $.each(loadedMonitors,function(n,monitor){
-            selectElement.append(`<option class="monitor" value="${monitor.mid}">${monitor.name}</option>`)
-        })
-        var optionElements = selectElement.find('.monitor')
-        optionElements.prop('selected',false)
-        if(selectedMonitor !== ''){
-            selectedOption = selectElement.find(`.monitor[value="${selectedMonitor}"]`)
-        }else{
-            selectedOption = optionElements.first()
-        }
-        selectedOption.prop('selected',true)
-        var monitorId = selectedOption.attr('value')
-        return monitorId
-    }
-
     //Group Selector
     $.gR={e:$('#group_list'),b:$('#group_list_button')};
     $.gR.drawList=function(){

@@ -33,6 +33,7 @@
    "RAM": "RAM",
    "CPU": "CPU",
    "on": "on",
+   "Event Counts": "Event Counts",
    "Already Processing": "Already Processing",
    "No API Key": "No API Key",
    "Use Camera Timestamps": "Use Camera Timestamps",
