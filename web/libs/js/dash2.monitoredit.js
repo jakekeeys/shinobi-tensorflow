@@ -11,6 +11,7 @@ var copySettingsSelector = $('#copy_settings')
 var monitorPresetsSelection = $('#monitorPresetsSelection')
 var monitorPresetsNameField = $('#monitorPresetsName')
 var editorForm = monitorEditorWindow.find('form')
+var fieldsLoaded = {}
 var sections = {}
 var loadedPresets = {}
 monitorEditorWindow.find('.follow-list ul').affix();
@@ -357,6 +358,8 @@ var addSection = function(section){
         $.each(section.info,function(m,block){
             if(block.isFormGroupGroup === true){
                 addSection(block)
+            }else if(block.name){
+                fieldsLoaded[block.name] = block
             }
         })
     }
@@ -932,16 +935,26 @@ editorForm.find('[name="type"]').change(function(e){
         var selectedMonitor = getSelectedMonitorInfo()
         $.each(loadedPresets,function(n,preset){
             var hasSelectedMonitor = false
-            console.log(preset)
+            var humanizedMonitorKeys = {}
             $.each(preset.details.monitors || [],function(n,monitor){
                 if(monitor.mid === selectedMonitor.mid){
-                    hasSelectedMonitor = monitor
+                    hasSelectedMonitor = true
+                    $.each(monitor,function(key,value){
+                        if(key === 'details'){
+                            humanizedMonitorKeys.details = {}
+                            $.each(value,function(key,value){
+                                humanizedMonitorKeys.details[fieldsLoaded[`detail=${key}`] && fieldsLoaded[`detail=${key}`].field ? fieldsLoaded[`detail=${key}`].field : key] = value
+                            })
+                        }else{
+                            humanizedMonitorKeys[fieldsLoaded[key] && fieldsLoaded[key].field ? fieldsLoaded[key].field : key] = value
+                        }
+                    })
                 }
             })
             html += `<li class="mdl-list__item">
                 <span class="mdl-list__item-primary-content">
-                    ${preset.name} &nbsp;
-                    ${hasSelectedMonitor ? `<ul class="msg_list">${$.ccio.init('jsontoblock',hasSelectedMonitor)}</ul>` : ''}
+                    <code>${preset.name}</code> &nbsp;
+                    ${hasSelectedMonitor ? `<ul class="json-to-block striped">${$.ccio.init('jsontoblock',humanizedMonitorKeys)}</ul>` : ''}
                 </span>
                 <span class="mdl-list__item-secondary-action">
                     <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
@@ -980,7 +993,7 @@ editorForm.find('[name="type"]').change(function(e){
         if(!validation.ok){
             return
         }
-        var monitorConfig = Object.assign({},$.ccio.init('cleanMon',validation.monitorConfig))
+        var monitorConfig = validation.monitorConfig
         console.log(monitorConfig.mid)
         var inMemoryMonitorConfig = Object.assign({},$.ccio.init('cleanMon',$.ccio.mon[$user.ke+monitorConfig.mid+$user.auth_token]));
         var currentPreset = loadedPresets[presetName]

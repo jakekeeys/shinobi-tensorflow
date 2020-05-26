@@ -46,6 +46,13 @@
     background-clip: padding-box;
 }
 /**/
+.json-to-block div > div{
+    margin-left:10px;
+}
+.json-to-block.striped div > div{
+    padding-left:10px;
+    border-left: 2px solid #fff;
+}
 .flex{display:flex}
 .flex>div{flex:1}
 .flex-block{display:inline-flex;width:100%;flex-flow: row wrap;}

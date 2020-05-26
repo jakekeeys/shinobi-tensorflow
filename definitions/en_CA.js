@@ -89,8 +89,7 @@ module.exports = function(s,config,lang){
                        "info": [
                            {
                               "id": "monitorPresetsName",
-                              "field": lang.Name,
-                              "placeholder": "Fill to bind to new Preset."
+                              "field": lang['Preset Name'],
                            }
                        ]
                    },
@@ -1472,7 +1471,7 @@ module.exports = function(s,config,lang){
                       "possible": "1-23"
                    },
                    {
-                      "name": "preset_record",
+                      "name": "detail=preset_record",
                       "field": lang.Preset,
                       "description": "Preset flag for certain video encoders. If you find your camera is crashing every few seconds : try leaving it blank.",
                       "default": "",

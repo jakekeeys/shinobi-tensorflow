@@ -386,7 +386,7 @@ var diffObject = function (obj1, obj2) {
         }
         if (type1 === '[object Object]') {
             var objDiff = diffObject(item1, item2);
-            if (Object.keys(objDiff).length > 1) {
+            if (Object.keys(objDiff).length > 0) {
                 diffs[key] = objDiff;
             }
             return;
