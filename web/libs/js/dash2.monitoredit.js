@@ -329,6 +329,9 @@ var getMonitorEditFormFields = function(){
     var monitorConfig = editorForm.serializeObject()
     var errorsFound = []
     $.each(monitorConfig,function(n,v){monitorConfig[n]=v.trim()});
+    $.each(['fps','width','height','port'],function(n,key){
+        monitorConfig[key] = !isNaN(monitorConfig[key]) ? parseFloat(monitorConfig[key]) : monitorConfig[key]
+    })
     monitorConfig.mid = monitorConfig.mid.replace(/[^\w\s]/gi,'').replace(/ /g,'')
     if(monitorConfig.mid.length < 3){errorsFound.push('Monitor ID too short')}
     if(monitorConfig.port == ''){
@@ -931,11 +934,14 @@ editorForm.find('[name="type"]').change(function(e){
             var hasSelectedMonitor = false
             console.log(preset)
             $.each(preset.details.monitors || [],function(n,monitor){
-                if(monitor.mid === selectedMonitor.mid)hasSelectedMonitor = true
+                if(monitor.mid === selectedMonitor.mid){
+                    hasSelectedMonitor = monitor
+                }
             })
             html += `<li class="mdl-list__item">
                 <span class="mdl-list__item-primary-content">
-                    ${preset.name}
+                    ${preset.name} &nbsp;
+                    ${hasSelectedMonitor ? `<ul class="msg_list">${$.ccio.init('jsontoblock',hasSelectedMonitor)}</ul>` : ''}
                 </span>
                 <span class="mdl-list__item-secondary-action">
                     <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
@@ -974,7 +980,7 @@ editorForm.find('[name="type"]').change(function(e){
         if(!validation.ok){
             return
         }
-        var monitorConfig = validation.monitorConfig
+        var monitorConfig = Object.assign({},$.ccio.init('cleanMon',validation.monitorConfig))
         console.log(monitorConfig.mid)
         var inMemoryMonitorConfig = Object.assign({},$.ccio.init('cleanMon',$.ccio.mon[$user.ke+monitorConfig.mid+$user.auth_token]));
         var currentPreset = loadedPresets[presetName]
