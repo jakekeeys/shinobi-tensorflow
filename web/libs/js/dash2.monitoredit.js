@@ -6,9 +6,13 @@ var monitorEditorWindow = $('#add_monitor')
 var monitorsForCopy = $('#copy_settings_monitors')
 var monitorSectionInputMaps = $('#monSectionInputMaps')
 var monitorStreamChannels = $('#monSectionStreamChannels')
+var monSectionPresets = $('#monSectionPresets')
 var copySettingsSelector = $('#copy_settings')
+var monitorPresetsSelection = $('#monitorPresetsSelection')
+var monitorPresetsNameField = $('#monitorPresetsName')
 var editorForm = monitorEditorWindow.find('form')
 var sections = {}
+var loadedPresets = {}
 monitorEditorWindow.find('.follow-list ul').affix();
 $.aM.generateDefaultMonitorSettings = function(){
     return {
@@ -214,6 +218,22 @@ $.aM.generateDefaultMonitorSettings = function(){
        "shfr": "[]"
     }
 }
+var getSelectedMonitorInfo = function(){
+    var groupKey = monitorEditorWindow.attr('ke')
+    var monitorId = monitorEditorWindow.attr('mid')
+    return {
+        ke: groupKey,
+        mid: monitorId,
+        auth: $user.auth_token,
+    }
+}
+var differentiateMonitorConfig = function(firstConfig,secondConfig){
+    console.log(firstConfig,secondConfig)
+    var diffedConfig = {}
+    var firstConfigEditable = Object.assign(firstConfig,{details:$.parseJSON(firstConfig.details)})
+    var secondConfigEditable = Object.assign(secondConfig,{details:$.parseJSON(secondConfig.details)})
+    return diffObject(firstConfigEditable,secondConfigEditable)
+}
 var copyMonitorSettingsToSelected = function(monitorConfig){
     var monitorDetails = $.parseJSON(monitorConfig.details);
     var copyMonitors = monitorsForCopy.val();
@@ -304,6 +324,30 @@ var copyMonitorSettingsToSelected = function(monitorConfig){
         chosenMonitors[monitor.mid] = monitor;
     })
 }
+var getMonitorEditFormFields = function(){
+    var response = {ok: true}
+    var monitorConfig = editorForm.serializeObject()
+    var errorsFound = []
+    $.each(monitorConfig,function(n,v){monitorConfig[n]=v.trim()});
+    monitorConfig.mid = monitorConfig.mid.replace(/[^\w\s]/gi,'').replace(/ /g,'')
+    if(monitorConfig.mid.length < 3){errorsFound.push('Monitor ID too short')}
+    if(monitorConfig.port == ''){
+        if(monitorConfig.protocol === 'https'){
+            monitorConfig.port = 443
+        }else{
+            monitorConfig.port = 80
+        }
+    }
+    if(monitorConfig.name == ''){errorsFound.push('Monitor Name cannot be blank')}
+//    if(monitorConfig.protocol=='rtsp'){monitorConfig.ext='mp4',monitorConfig.type='rtsp'}
+    if(errorsFound.length > 0){
+        response.ok = false
+        response.errors = errorsFound
+        return response;
+    }
+    response.monitorConfig = monitorConfig
+    return response
+}
 var addSection = function(section){
     sections[section.name] = section.id
     if(section.info){
@@ -349,14 +393,14 @@ $.aM.import = function(options){
     var monitorDetails = $.parseJSON(monitorConfig.details);
     //get maps
     monitorSectionInputMaps.empty()
-    if(monitorDetails.input_maps&&monitorDetails.input_maps!==''){
+    if(monitorDetails.input_maps && monitorDetails.input_maps !== ''){
         var input_maps
         try{
             input_maps = $.parseJSON(monitorDetails.input_maps)
         }catch(er){
             input_maps = monitorDetails.input_maps;
         }
-        if(input_maps.length>0){
+        if(input_maps.length > 0){
             showInputMappingFields()
             $.each(input_maps,function(n,v){
                 var tempID = $.ccio.tm('input-map')
@@ -468,6 +512,9 @@ $.aM.import = function(options){
         //no group, this 'try' will be removed in future.
     };
     copySettingsSelector.val('0').change()
+
+    drawPresetsSection()
+
     var tmp = '';
     $.each($.ccio.mon,function(n,v){
         if(v.ke === $user.ke){
@@ -550,26 +597,13 @@ monitorEditorWindow.find('.refresh_cascades').click(function(e){
 })
 editorForm.submit(function(e){
     e.preventDefault();
-    var el = $(this)
-    var monitorConfig = el.serializeObject()
-    var errorsFound = []
-    $.each(monitorConfig,function(n,v){monitorConfig[n]=v.trim()});
-    monitorConfig.mid = monitorConfig.mid.replace(/[^\w\s]/gi,'').replace(/ /g,'')
-    if(monitorConfig.mid.length < 3){errorsFound.push('Monitor ID too short')}
-    if(monitorConfig.port == ''){
-        if(monitorConfig.protocol === 'https'){
-            monitorConfig.port = 443
-        }else{
-            monitorConfig.port = 80
-        }
-    }
-    if(monitorConfig.name == ''){errorsFound.push('Monitor Name cannot be blank')}
-//    if(monitorConfig.protocol=='rtsp'){monitorConfig.ext='mp4',monitorConfig.type='rtsp'}
-    if(errorsFound.length > 0){
+    var validation = getMonitorEditFormFields()
+    if(!validation.ok){
+        var errorsFound = validation.errors
         $.sM.e.find('.msg').html(errorsFound.join('<br>'));
         $.ccio.init('note',{title:'Configuration Invalid',text:errorsFound.join('<br>'),type:'error'});
-        return;
     }
+    var monitorConfig = validation.monitorConfig
     $.post(getApiPrefix()+'/configureMonitor/'+$user.ke+'/'+monitorConfig.mid,{data:JSON.stringify(monitorConfig)},function(d){
         $.ccio.log(d)
     })
@@ -884,6 +918,147 @@ editorForm.find('[name="type"]').change(function(e){
             drawList()
         }
     }
+    // presets
+    var loadPresets = function(callback){
+        $.get(getApiPrefix() + '/monitorStates/' + $user.ke,function(d){
+            if(callback)callback(d.presets)
+        })
+    }
+    var drawPresetsSection = function(){
+        var html = ''
+        var selectedMonitor = getSelectedMonitorInfo()
+        $.each(loadedPresets,function(n,preset){
+            var hasSelectedMonitor = false
+            console.log(preset)
+            $.each(preset.details.monitors || [],function(n,monitor){
+                if(monitor.mid === selectedMonitor.mid)hasSelectedMonitor = true
+            })
+            html += `<li class="mdl-list__item">
+                <span class="mdl-list__item-primary-content">
+                    ${preset.name}
+                </span>
+                <span class="mdl-list__item-secondary-action">
+                    <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+                        <input type="checkbox" value="${preset.name}" ${hasSelectedMonitor ? 'checked' : ''} class="mdl-switch__input"/>
+                    </label>
+                </span>
+            </li>`
+        })
+        monitorPresetsSelection.html(html)
+        componentHandler.upgradeAllRegistered()
+    }
+    var addNewPreset = function(callback){
+        var newName = monitorPresetsNameField.val()
+        if(newName === ''){
+            return $.ccio.init('note',{title:lang['Invalid Data'],text:lang['Name cannot be empty.'],type:'error'})
+        }
+        var data = JSON.stringify({
+            monitors: []
+        })
+        $.post(getApiPrefix() + '/monitorStates/' + $user.ke + '/' + newName + '/insert',{data:data},function(d){
+            $.ccio.log(d)
+            if(d.ok === true){
+                loadPresets(function(presets){
+                    $.each(presets,function(n,preset){
+                        loadedPresets[preset.name] = preset
+                    })
+                    drawPresetsSection()
+                    if(callback)callback(d)
+                })
+                $.ccio.init('note',{title:lang.Success,text:d.msg,type:'success'})
+            }
+        })
+    }
+    var addMonitorToPreset = function(presetName,callback){
+        var validation = getMonitorEditFormFields()
+        if(!validation.ok){
+            return
+        }
+        var monitorConfig = validation.monitorConfig
+        console.log(monitorConfig.mid)
+        var inMemoryMonitorConfig = Object.assign({},$.ccio.init('cleanMon',$.ccio.mon[$user.ke+monitorConfig.mid+$user.auth_token]));
+        var currentPreset = loadedPresets[presetName]
+        var presetMonitors = currentPreset.details.monitors || []
+        var newMonitorsArray = [].concat(presetMonitors)
+        var monitorIndexInPreset = newMonitorsArray.findIndex(monitor => monitor.mid === monitorConfig.mid)
+        delete(inMemoryMonitorConfig.ke)
+        delete(monitorConfig.ke)
+        var monitorPartialToAdd = differentiateMonitorConfig(inMemoryMonitorConfig,monitorConfig)
+        monitorPartialToAdd.mid = monitorConfig.mid
+        if(monitorIndexInPreset > -1){
+            newMonitorsArray[monitorIndexInPreset] = monitorPartialToAdd
+        }else{
+            newMonitorsArray.push(monitorPartialToAdd)
+        }
+        var data = JSON.stringify({
+            monitors: newMonitorsArray
+        })
+        $.post(getApiPrefix() + '/monitorStates/' + $user.ke + '/' + presetName + '/edit',{data:data},function(d){
+            $.ccio.log(d)
+            if(d.ok === true){
+                loadPresets(function(presets){
+                    $.each(presets,function(n,preset){
+                        loadedPresets[preset.name] = preset
+                    })
+                    drawPresetsSection()
+                    callback(d)
+                })
+                $.ccio.init('note',{title:lang.Success,text:d.msg,type:'success'})
+            }
+        })
+    }
+    var removeMonitorToPreset = function(presetName,callback){
+        var validation = getMonitorEditFormFields()
+        if(!validation.ok){
+            return
+        }
+        var monitorConfig = validation.monitorConfig
+        var currentPreset = loadedPresets[presetName]
+        var presetMonitors = currentPreset.details.monitors || []
+        var newMonitorsArray = [].concat(presetMonitors)
+        var monitorIndexInPreset = newMonitorsArray.findIndex(monitor => monitor.mid === monitorConfig.mid)
+        if(monitorIndexInPreset > -1){
+            delete(newMonitorsArray[monitorIndexInPreset])
+            newMonitorsArray = newMonitorsArray.filter(function () { return true })
+        }
+        var data = JSON.stringify({
+            monitors: newMonitorsArray
+        })
+        $.post(getApiPrefix() + '/monitorStates/' + $user.ke + '/' + presetName + '/edit',{data:data},function(d){
+            $.ccio.log(d)
+            if(d.ok === true){
+                loadPresets(function(presets){
+                    $.each(presets,function(n,preset){
+                        loadedPresets[preset.name] = preset
+                    })
+                    drawPresetsSection()
+                    callback(d)
+                })
+                $.ccio.init('note',{title:lang.Success,text:d.msg,type:'success'})
+            }
+        })
+    }
+    loadPresets(function(presets){
+        $.each(presets,function(n,preset){
+            loadedPresets[preset.name] = preset
+        })
+    })
+    monSectionPresets.find('.add-new').click(function(){
+        addNewPreset()
+    })
+    monitorPresetsSelection.on('change','.mdl-switch__input',function(){
+        var el = $(this)
+        var name = el.val()
+        if(el.is(':checked')){
+            addMonitorToPreset(name,function(d){
+                console.log(d)
+            })
+        }else{
+            removeMonitorToPreset(name,function(d){
+                console.log(d)
+            })
+        }
+    })
     //
     $.aM.channels = monitorStreamChannels
     $.aM.maps = monitorSectionInputMaps

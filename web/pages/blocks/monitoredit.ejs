@@ -200,15 +200,15 @@
                         if(fieldType === 'ul' || fieldType ===  'div' || fieldType ===  'btn'){ %>
                             <%- fieldElement %>
                         <% }else{ %>
-                        <div <%- hidden %> class="form-group <%- field['form-group-class'] %>">
-                            <label><div><span><%- field.field %>
-                                <% if(field.description){ %>
-                                    <small><%- field.description %></small>
-                                <% } %>
-                            </span></div>
-                                <%- fieldElement %>
-                            </label>
-                        </div>
+                            <div <%- hidden %> class="form-group <%- field['form-group-class'] %>">
+                                <label><div><span><%- field.field %>
+                                    <% if(field.description){ %>
+                                        <small><%- field.description %></small>
+                                    <% } %>
+                                </span></div>
+                                    <%- fieldElement %>
+                                </label>
+                            </div>
                         <% }
                           }
                           if(field['form-group-class-pre-layer']){ %>

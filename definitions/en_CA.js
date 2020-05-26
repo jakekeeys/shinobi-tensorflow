@@ -75,6 +75,32 @@ module.exports = function(s,config,lang){
                   }
                 ]
              },
+             "Presets": {
+                id: "monSectionPresets",
+               "name": lang.Presets,
+               "color": "purple",
+                isSection: true,
+               "info": [
+                   {
+                       "name": lang['Add New'],
+                       "headerTitle": `${lang['Add New']} <a class="btn btn-sm btn-success add-new pull-right"><i class="fa fa-plus"></i></a>`,
+                       "color": "grey",
+                       isFormGroupGroup: true,
+                       "info": [
+                           {
+                              "id": "monitorPresetsName",
+                              "field": lang.Name,
+                              "placeholder": "Fill to bind to new Preset."
+                           }
+                       ]
+                   },
+                   {
+                       "fieldType": 'ul',
+                       "id": "monitorPresetsSelection",
+                       "class": "mdl-list"
+                   },
+               ],
+             },
              "Connection": {
                 "name": lang.Connection,
                 "color": "orange",

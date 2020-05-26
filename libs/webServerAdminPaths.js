@@ -389,10 +389,8 @@ module.exports = function(s,config,lang,app){
                     presets.forEach(function(preset){
                         preset.details = JSON.parse(preset.details)
                     })
-                    endData.presets = presets
-                }else{
-                    endData.msg = user.lang['State Configuration Not Found']
                 }
+                endData.presets = presets || []
                 s.closeJsonResponse(res,endData)
             })
         })
