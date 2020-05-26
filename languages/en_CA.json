@@ -520,7 +520,7 @@
    "Video Codec": "Video Codec",
    "Delete Monitor States Preset": "Delete Monitor States Preset",
    "Delete Monitor State?": "Delete Monitor State",
-   "deleteMonitorStateText1": "Do you want to delete this Monitor States Preset?",
+   "deleteMonitorStateText1": "Do you want to delete this Monitor States Preset? The monitor configurations associated cannot be recovered.",
    "deleteMonitorStateText2": "Do you want to delete this Monitor's Preset?",
    "Search Images": "Search Images",
    "Launch in New Window": "Launch in New Window",

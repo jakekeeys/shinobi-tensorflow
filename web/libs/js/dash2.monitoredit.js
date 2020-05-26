@@ -927,7 +927,13 @@ editorForm.find('[name="type"]').change(function(e){
     // presets
     var loadPresets = function(callback){
         $.get(getApiPrefix() + '/monitorStates/' + $user.ke,function(d){
-            if(callback)callback(d.presets)
+            var presets = d.presets
+            loadedPresets = {}
+            $.each(presets,function(n,preset){
+                loadedPresets[preset.name] = preset
+            })
+            drawPresetsSection()
+            if(callback)callback(presets)
         })
     }
     var drawPresetsSection = function(){
@@ -951,15 +957,16 @@ editorForm.find('[name="type"]').change(function(e){
                     })
                 }
             })
-            html += `<li class="mdl-list__item">
+            html += `<li class="mdl-list__item" preset-name="${preset.name}">
                 <span class="mdl-list__item-primary-content">
                     <code>${preset.name}</code> &nbsp;
                     ${hasSelectedMonitor ? `<ul class="json-to-block striped">${$.ccio.init('jsontoblock',humanizedMonitorKeys)}</ul>` : ''}
                 </span>
                 <span class="mdl-list__item-secondary-action">
-                    <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+                    <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" style="margin-right: 15px">
                         <input type="checkbox" value="${preset.name}" ${hasSelectedMonitor ? 'checked' : ''} class="mdl-switch__input"/>
                     </label>
+                    <a class="btn btn-danger delete-preset"><i class="fa fa-trash-o"></i></a>
                 </span>
             </li>`
         })
@@ -978,13 +985,30 @@ editorForm.find('[name="type"]').change(function(e){
             $.ccio.log(d)
             if(d.ok === true){
                 loadPresets(function(presets){
-                    $.each(presets,function(n,preset){
-                        loadedPresets[preset.name] = preset
-                    })
-                    drawPresetsSection()
                     if(callback)callback(d)
                 })
                 $.ccio.init('note',{title:lang.Success,text:d.msg,type:'success'})
+            }
+        })
+    }
+    var deletePreset = function(presetName,callback){
+        $.confirm.create({
+            title: lang['Delete Monitor States Preset'],
+            body: lang.deleteMonitorStateText1,
+            clickOptions: {
+                title:'Delete',
+                class:'btn-danger'
+            },
+            clickCallback: function(){
+                $.post(getApiPrefix() + '/monitorStates/' + $user.ke + '/' + presetName + '/delete',function(d){
+                    $.ccio.log(d)
+                    if(d.ok === true){
+                        loadPresets(function(presets){
+                            if(callback)callback(d)
+                        })
+                        $.ccio.init('note',{title:lang.Success,text:d.msg,type:'success'})
+                    }
+                })
             }
         })
     }
@@ -1016,17 +1040,13 @@ editorForm.find('[name="type"]').change(function(e){
             $.ccio.log(d)
             if(d.ok === true){
                 loadPresets(function(presets){
-                    $.each(presets,function(n,preset){
-                        loadedPresets[preset.name] = preset
-                    })
-                    drawPresetsSection()
                     callback(d)
                 })
                 $.ccio.init('note',{title:lang.Success,text:d.msg,type:'success'})
             }
         })
     }
-    var removeMonitorToPreset = function(presetName,callback){
+    var removeMonitorFromPreset = function(presetName,callback){
         var validation = getMonitorEditFormFields()
         if(!validation.ok){
             return
@@ -1047,23 +1067,19 @@ editorForm.find('[name="type"]').change(function(e){
             $.ccio.log(d)
             if(d.ok === true){
                 loadPresets(function(presets){
-                    $.each(presets,function(n,preset){
-                        loadedPresets[preset.name] = preset
-                    })
-                    drawPresetsSection()
                     callback(d)
                 })
                 $.ccio.init('note',{title:lang.Success,text:d.msg,type:'success'})
             }
         })
     }
-    loadPresets(function(presets){
-        $.each(presets,function(n,preset){
-            loadedPresets[preset.name] = preset
-        })
-    })
+    loadPresets()
     monSectionPresets.find('.add-new').click(function(){
         addNewPreset()
+    })
+    monSectionPresets.on('click','.delete-preset',function(){
+        var presetName = $(this).parents('[preset-name]').attr('preset-name')
+        deletePreset(presetName)
     })
     monitorPresetsSelection.on('change','.mdl-switch__input',function(){
         var el = $(this)
@@ -1073,7 +1089,7 @@ editorForm.find('[name="type"]').change(function(e){
                 console.log(d)
             })
         }else{
-            removeMonitorToPreset(name,function(d){
+            removeMonitorFromPreset(name,function(d){
                 console.log(d)
             })
         }
