@@ -1023,9 +1023,20 @@ editorForm.find('[name="type"]').change(function(e){
             }
         })
     }
+    var validateMonitorPreset = function(monitorPartialToAdd){
+        var response = {ok: true}
+        var numberOfKeys = Object.keys(monitorPartialToAdd)
+        if(numberOfKeys.length < 2){
+            response.ok = false
+            response.msg = lang.monitorStateNotEnoughChanges
+            return response
+        }
+        return response
+    }
     var addMonitorToPreset = function(presetName,callback){
         var validation = getMonitorEditFormFields()
         if(!validation.ok){
+            callback(true)
             return
         }
         var monitorConfig = validation.monitorConfig
@@ -1039,6 +1050,14 @@ editorForm.find('[name="type"]').change(function(e){
         delete(monitorConfig.ke)
         var monitorPartialToAdd = differentiateMonitorConfig(inMemoryMonitorConfig,monitorConfig)
         monitorPartialToAdd.mid = monitorConfig.mid
+        //validateMonitorPreset
+        var monitorPresetValidation = validateMonitorPreset(monitorPartialToAdd)
+        if(!monitorPresetValidation.ok){
+            $.ccio.init('note',{title:lang.monitorStatesError,text:monitorPresetValidation.msg,type:'warning'})
+            callback(true)
+            return
+        }
+        //
         if(monitorIndexInPreset > -1){
             newMonitorsArray[monitorIndexInPreset] = monitorPartialToAdd
         }else{
@@ -1051,7 +1070,7 @@ editorForm.find('[name="type"]').change(function(e){
             $.ccio.log(d)
             if(d.ok === true){
                 loadPresets(function(presets){
-                    callback(d)
+                    callback(null,d)
                 })
                 $.ccio.init('note',{title:lang.Success,text:d.msg,type:'success'})
             }
@@ -1096,12 +1115,14 @@ editorForm.find('[name="type"]').change(function(e){
         var el = $(this)
         var name = el.val()
         if(el.is(':checked')){
-            addMonitorToPreset(name,function(d){
-                console.log(d)
+            addMonitorToPreset(name,function(err,d){
+                if(err){
+                    el.prop("checked", false)
+                    el.parents('.is-checked').removeClass('is-checked')
+                }
             })
         }else{
             removeMonitorFromPreset(name,function(d){
-                console.log(d)
             })
         }
     })
