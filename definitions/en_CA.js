@@ -16,7 +16,7 @@ module.exports = function(s,config,lang){
                       "field": lang.Mode,
                       "fieldType": "select",
                       "description": "This is the primary task of the monitor.",
-                      "default": "stop",
+                      "default": "start",
                       "example": "",
                       "selector": "h_m",
                       "possible": [
@@ -52,7 +52,7 @@ module.exports = function(s,config,lang){
                       "name": "name",
                       "field": lang.Name,
                       "description": "This is the human-readable display name for the monitor.",
-                      "example": "Bunny"
+                      "example": "Home-Front"
                    },
                    {
                       "name": "detail=max_keep_days",
