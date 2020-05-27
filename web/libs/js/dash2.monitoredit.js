@@ -898,6 +898,10 @@ editorForm.find('[name="type"]').change(function(e){
         break;
     }
 });
+monitorEditorWindow.find('.monitor-section-header').click(function(e){
+    var boxWrapper = $(this).parents('.form-group-group').toggleClass('hide-box-wrapper')
+
+});
     $.aM.connectedDetectorPlugins = {}
     $.aM.addDetectorPlugin = function(name,d){
         $.aM.connectedDetectorPlugins[d.plug] = {

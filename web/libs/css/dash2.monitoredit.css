@@ -1,0 +1,13 @@
+#add_monitor .hide-box-wrapper.form-group-group > h4{
+    margin: 0;
+    transition: 0;
+}
+#add_monitor .hide-box-wrapper.form-group-group{
+    padding: 0;
+    transition: 0;
+}
+#add_monitor .hide-box-wrapper .box-wrapper{
+    height: 0;
+    overflow: hidden;
+    transition: 0;
+}

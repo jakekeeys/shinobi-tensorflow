@@ -76,7 +76,7 @@
                    <% }
                     %>
                     <div <%- attributes.join(' ') %> style="<%- styles.join(';') %>" class="form-group-group <%- sectionClass.join(' ') %>">
-                        <h4 class="<%- monitorSettings.headerClass %>"><%- headerTitle %>
+                        <h4 class="monitor-section-header <%- monitorSettings.headerClass %>"><%- headerTitle %>
                             <% if(monitorSettings.headerButtons){ %>
                                 <div class="pull-right">
                                     <% monitorSettings.headerButtons.forEach(function(button){ %>
@@ -88,6 +88,7 @@
                                 </div>
                             <% } %>
                         </h4>
+                        <div class="box-wrapper">
                     <% if(monitorSettings['input-mapping']){ %>
                         <div class="form-group-group forestgreen" style="display:none" input-mapping="<%- monitorSettings['input-mapping'] %>">
                             <h4><%-lang['Input Feed']%>
@@ -221,6 +222,7 @@
                   }
                   %>
                   </div>
+                  </div>
                   <%
                   if(monitorSettings['section-pre-class']){ %>
                   </div>
@@ -268,4 +270,5 @@
     </form>
   </div>
 </div>
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.monitoredit.css">
 <script src="<%-window.libURL%>libs/js/dash2.monitoredit.js"></script>
