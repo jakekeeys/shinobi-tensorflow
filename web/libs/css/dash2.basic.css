@@ -440,6 +440,9 @@ ul.msg_list li .message {
     letter-spacing: 3pt;
     font-size: 8pt;
 }
+.text-white {
+    color: #fff!important;
+}
 /* Start of custom table sorter */
 .table .table-header-sorter {
     cursor: pointer;

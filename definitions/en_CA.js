@@ -83,14 +83,18 @@ module.exports = function(s,config,lang){
                "info": [
                    {
                        "name": lang['Add New'],
-                       "headerTitle": `${lang['Add New']} <a class="btn btn-sm btn-success add-new pull-right"><i class="fa fa-plus"></i></a>`,
                        "color": "grey",
                        isFormGroupGroup: true,
                        "info": [
                            {
                               "id": "monitorPresetsName",
                               "field": lang['Preset Name'],
-                           }
+                          },
+                           {
+                              "fieldType": "btn",
+                              "class": `btn-success add-new`,
+                              "btnContent": `<i class="fa fa-plus"></i> &nbsp; ${lang['Add']}`,
+                           },
                        ]
                    },
                    {
