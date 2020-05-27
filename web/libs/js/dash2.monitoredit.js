@@ -1143,4 +1143,5 @@ monitorEditorWindow.find('.monitor-section-header').click(function(e){
     //
     $.aM.channels = monitorStreamChannels
     $.aM.maps = monitorSectionInputMaps
+    $.aM.e = monitorEditorWindow
 })
