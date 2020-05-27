@@ -219,6 +219,20 @@ $.aM.generateDefaultMonitorSettings = function(){
        "shfr": "[]"
     }
 }
+var getHumanizedMonitorConfig = function(monitor){
+    var humanizedMonitorKeys = {}
+    $.each(monitor,function(key,value){
+        if(key === 'details'){
+            humanizedMonitorKeys.details = {}
+            $.each(value,function(key,value){
+                humanizedMonitorKeys.details[fieldsLoaded[`detail=${key}`] && fieldsLoaded[`detail=${key}`].field ? fieldsLoaded[`detail=${key}`].field : key] = value
+            })
+        }else{
+            humanizedMonitorKeys[fieldsLoaded[key] && fieldsLoaded[key].field ? fieldsLoaded[key].field : key] = value
+        }
+    })
+    return humanizedMonitorKeys
+}
 var getSelectedMonitorInfo = function(){
     var groupKey = monitorEditorWindow.attr('ke')
     var monitorId = monitorEditorWindow.attr('mid')
@@ -941,20 +955,11 @@ editorForm.find('[name="type"]').change(function(e){
         var selectedMonitor = getSelectedMonitorInfo()
         $.each(loadedPresets,function(n,preset){
             var hasSelectedMonitor = false
-            var humanizedMonitorKeys = {}
+            var humanizedMonitorKeys
             $.each(preset.details.monitors || [],function(n,monitor){
                 if(monitor.mid === selectedMonitor.mid){
                     hasSelectedMonitor = true
-                    $.each(monitor,function(key,value){
-                        if(key === 'details'){
-                            humanizedMonitorKeys.details = {}
-                            $.each(value,function(key,value){
-                                humanizedMonitorKeys.details[fieldsLoaded[`detail=${key}`] && fieldsLoaded[`detail=${key}`].field ? fieldsLoaded[`detail=${key}`].field : key] = value
-                            })
-                        }else{
-                            humanizedMonitorKeys[fieldsLoaded[key] && fieldsLoaded[key].field ? fieldsLoaded[key].field : key] = value
-                        }
-                    })
+                    humanizedMonitorKeys = getHumanizedMonitorConfig(monitor)
                 }
             })
             html += `<li class="mdl-list__item" preset-name="${preset.name}">
@@ -992,9 +997,15 @@ editorForm.find('[name="type"]').change(function(e){
         })
     }
     var deletePreset = function(presetName,callback){
+        var preset = loadedPresets[presetName]
+        var monitorsAssociated = `<code>${lang.Presets}</code><br><br><div class="row">`
+        $.each(preset.details.monitors,function(n,monitorConfigPartial){
+            monitorsAssociated += `<div class="col-md-6 json-to-block striped">${$.ccio.init('jsontoblock',getHumanizedMonitorConfig(monitorConfigPartial))}</div>`
+        })
+        monitorsAssociated += '</div>'
         $.confirm.create({
             title: lang['Delete Monitor States Preset'],
-            body: lang.deleteMonitorStateText1,
+            body: lang.deleteMonitorStateText1 + `<br><br>` + monitorsAssociated,
             clickOptions: {
                 title:'Delete',
                 class:'btn-danger'
