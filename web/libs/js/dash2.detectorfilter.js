@@ -8,6 +8,7 @@ $.detectorFilters.getSelected = function(){
 }
 $.detectorFilters.drawOptions = function(){
     var dFilters = $.detectorFilters.getCurrent()
+    $.detectorFilters.f.find('[name="id"]').val($.ccio.gid(5))
     $('#detector_filters optgroup').empty()
     $.each(dFilters,function(n,dFilter){
         $.ccio.tm('option',{auth_token:$user.auth_token,id:dFilter.id,name:dFilter.filter_name},'#detector_filters optgroup')
