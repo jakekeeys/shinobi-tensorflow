@@ -898,8 +898,19 @@ editorForm.find('[name="type"]').change(function(e){
         break;
     }
 });
+var boxWrappersHidden = $.ccio.op().boxWrappersHidden || {}
+$.each(boxWrappersHidden,function(boxId,hide){
+    if(hide){
+        $(`#${boxId}`).addClass('hide-box-wrapper')
+    }
+})
 monitorEditorWindow.find('.monitor-section-header').click(function(e){
-    var boxWrapper = $(this).parent('.form-group-group').toggleClass('hide-box-wrapper')
+    var parent = $(this).parent('.form-group-group')
+    var boxWrapper = parent.attr('id')
+    parent.toggleClass('hide-box-wrapper')
+    var hideBoxWrapper = parent.hasClass('hide-box-wrapper')
+    boxWrappersHidden[boxWrapper] = hideBoxWrapper
+    $.ccio.op('boxWrappersHidden',boxWrappersHidden)
 });
     $.aM.connectedDetectorPlugins = {}
     $.aM.addDetectorPlugin = function(name,d){
