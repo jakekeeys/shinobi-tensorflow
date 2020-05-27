@@ -385,7 +385,7 @@ const deleteOldEventCounts = function(v,callback){
     if(config.cron.deleteEvents===true&&v.d.event_days!==0){
         s.sqlQuery("DELETE FROM `Events Counts` WHERE ke=? AND `time` < ?",[v.ke,s.sqlDate(v.d.event_days+' DAY')],function(err,rrr){
             callback()
-            if(err)return console.error(err);
+            if(err && err.code !== 'ER_NO_SUCH_TABLE')return console.error(err);
             if(rrr.affectedRows && rrr.affectedRows.length > 0 || config.debugLog === true){
                 s.cx({f:'deleteEvents',msg:(rrr.affectedRows || 0)+' SQL rows older than '+v.d.event_days+' days deleted',ke:v.ke,time:moment()})
             }
