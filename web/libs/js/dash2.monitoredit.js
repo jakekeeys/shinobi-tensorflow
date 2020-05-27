@@ -225,7 +225,7 @@ var getHumanizedMonitorConfig = function(monitor){
         if(key === 'details'){
             humanizedMonitorKeys.details = {}
             $.each(value,function(key,value){
-                humanizedMonitorKeys.details[fieldsLoaded[`detail=${key}`] && fieldsLoaded[`detail=${key}`].field ? fieldsLoaded[`detail=${key}`].field : key] = value
+                humanizedMonitorKeys.details[fieldsLoaded[`detail=${key}`] && fieldsLoaded[`detail=${key}`].field ? fieldsLoaded[`detail=${key}`].field + ` (${key})` : key] = value
             })
         }else{
             humanizedMonitorKeys[fieldsLoaded[key] && fieldsLoaded[key].field ? fieldsLoaded[key].field : key] = value
