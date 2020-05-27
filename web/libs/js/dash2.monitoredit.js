@@ -977,11 +977,11 @@ monitorEditorWindow.find('.monitor-section-header').click(function(e){
                 }
             })
             html += `<li class="mdl-list__item" preset-name="${preset.name}">
-                <span class="mdl-list__item-primary-content">
+                <span class="mdl-list__item-primary-content" style="word-break:break-all">
                     <code>${preset.name}</code> &nbsp;
-                    ${hasSelectedMonitor ? `<ul class="json-to-block striped">${$.ccio.init('jsontoblock',humanizedMonitorKeys)}</ul>` : ''}
+                    ${hasSelectedMonitor ? `<ul class="json-to-block striped import-monitor-preset cursor-pointer">${$.ccio.init('jsontoblock',humanizedMonitorKeys)}</ul>` : ''}
                 </span>
-                <span class="mdl-list__item-secondary-action">
+                <span class="mdl-list__item-secondary-action text-right" style="width:150px">
                     <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" style="margin-right: 15px">
                         <input type="checkbox" value="${preset.name}" ${hasSelectedMonitor ? 'checked' : ''} class="mdl-switch__input"/>
                     </label>
@@ -1117,6 +1117,23 @@ monitorEditorWindow.find('.monitor-section-header').click(function(e){
             }
         })
     }
+    var loadMonitorPartialFromPreset = function(preset,monitorId){
+        $.confirm.create({
+            title: lang['Import Monitor Configuration'],
+            body: lang.undoAllUnsaveChanges,
+            clickOptions: {
+                title: 'Import',
+                class: 'btn-primary'
+            },
+            clickCallback: function(){
+                var monitorConfigPartial = preset.details.monitors.find(monitor => monitor.mid === monitorId) || {};
+                var copyCurrentConfig = $.ccio.init('cleanMon',$.ccio.mon[$user.ke+monitorId+$user.auth_token])
+                copyCurrentConfig.details = $.parseJSON(copyCurrentConfig.details)
+                var monitorObjectToLoad = mergeDeep(copyCurrentConfig,monitorConfigPartial);
+                $.aM.import(monitorObjectToLoad)
+            }
+        })
+    }
     loadPresets()
     monSectionPresets.find('.add-new').click(function(){
         addNewPreset()
@@ -1124,6 +1141,14 @@ monitorEditorWindow.find('.monitor-section-header').click(function(e){
     monSectionPresets.on('click','.delete-preset',function(){
         var presetName = $(this).parents('[preset-name]').attr('preset-name')
         deletePreset(presetName)
+    })
+    monSectionPresets.on('click','.import-monitor-preset',function(e){
+        e.preventDefault()
+        var presetName = $(this).parents('[preset-name]').attr('preset-name')
+        var preset = loadedPresets[presetName]
+        var currentMonitorInEditor = getSelectedMonitorInfo()
+        loadMonitorPartialFromPreset(preset,currentMonitorInEditor.mid)
+        return false
     })
     monitorPresetsSelection.on('change','.mdl-switch__input',function(){
         var el = $(this)

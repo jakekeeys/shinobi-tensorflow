@@ -443,6 +443,9 @@ ul.msg_list li .message {
 .text-white {
     color: #fff!important;
 }
+.cursor-pointer {
+    cursor: pointer!important;
+}
 /* Start of custom table sorter */
 .table .table-header-sorter {
     cursor: pointer;
