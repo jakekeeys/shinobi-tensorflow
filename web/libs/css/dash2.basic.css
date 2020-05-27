@@ -443,6 +443,9 @@ ul.msg_list li .message {
 .text-white {
     color: #fff!important;
 }
+.text-purple {
+    color: #576fff!important;
+}
 .cursor-pointer {
     cursor: pointer!important;
 }

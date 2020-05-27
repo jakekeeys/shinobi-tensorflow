@@ -970,7 +970,8 @@ monitorEditorWindow.find('.monitor-section-header').click(function(e){
         $.each(loadedPresets,function(n,preset){
             var hasSelectedMonitor = false
             var humanizedMonitorKeys
-            $.each(preset.details.monitors || [],function(n,monitor){
+            var presetMonitors = preset.details.monitors || []
+            $.each(presetMonitors,function(n,monitor){
                 if(monitor.mid === selectedMonitor.mid){
                     hasSelectedMonitor = true
                     humanizedMonitorKeys = getHumanizedMonitorConfig(monitor)
@@ -978,7 +979,7 @@ monitorEditorWindow.find('.monitor-section-header').click(function(e){
             })
             html += `<li class="mdl-list__item" preset-name="${preset.name}">
                 <span class="mdl-list__item-primary-content" style="word-break:break-all">
-                    <code>${preset.name}</code> &nbsp;
+                    <code class="epic-text">${preset.name}</code>&nbsp;<code class="epic-text text-purple">${presetMonitors.length} Monitor${presetMonitors.length > 1 ? 's' : ''}</code> &nbsp;
                     ${hasSelectedMonitor ? `<ul class="json-to-block striped import-monitor-preset cursor-pointer">${$.ccio.init('jsontoblock',humanizedMonitorKeys)}</ul>` : ''}
                 </span>
                 <span class="mdl-list__item-secondary-action text-right" style="width:150px">
