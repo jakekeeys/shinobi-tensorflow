@@ -7,6 +7,7 @@ var request = require('request');
 var SAT = require('sat')
 var V = SAT.Vector;
 var P = SAT.Polygon;
+var B = SAT.box;
 // Matrix In Region Libs />
 module.exports = function(s,config,lang){
     const countObjects = async (event) => {
@@ -35,13 +36,7 @@ module.exports = function(s,config,lang){
         var collisions = []
         var foundInRegion = false
         matrices.forEach(function(matrix){
-            var matrixPoints = [
-                new V(matrix.x,matrix.y),
-                new V(matrix.width,matrix.y),
-                new V(matrix.width,matrix.height),
-                new V(matrix.x,matrix.height)
-            ]
-            var matrixPoly = new P(new V(0,0), matrixPoints)
+            var matrixPoly = new B(new V(matrix.x, matrix.y), matrix.width, matrix.height).toPolygon()
             regionPolys.forEach(function(region,n){
                 var response = new SAT.Response()
                 var collided = SAT.testPolygonPolygon(matrixPoly, region, response)
