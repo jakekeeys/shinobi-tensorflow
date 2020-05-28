@@ -106,7 +106,7 @@ module.exports = function(s,config,lang){
                       "fieldType": "btn",
                       "attribute": `data-toggle="modal" data-target="#schedules"`,
                       "class": `btn-info`,
-                      "btnContent": `<i class="fa fa-clock"></i> &nbsp; ${lang['Schedules']}`,
+                      "btnContent": `<i class="fa fa-clock-o"></i> &nbsp; ${lang['Schedules']}`,
                    },
                ],
              },

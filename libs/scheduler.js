@@ -197,7 +197,6 @@ module.exports = function(s,config,lang,app,io){
                     s.checkDetails(schedule)
                 })
                 endData.schedules = schedules
-
                 s.closeJsonResponse(res,endData)
             })
         })
