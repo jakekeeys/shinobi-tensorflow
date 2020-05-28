@@ -423,9 +423,6 @@ $(document).ready(function(e){
                 e.d=JSON.parse(e.mon.details);
                 $.loadRegionEditor(e.d)
             break;
-            case'detector_filters':
-                $.detectorFilters.e.modal('show');
-            break;
             case'snapshot':
                 $.ccio.snapshot(e,function(url){
                     $('#temp').html('<a href="'+url+'" download="'+$.ccio.init('tf')+'_'+e.ke+'_'+e.mid+'.jpg">a</a>').find('a')[0].click();

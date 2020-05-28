@@ -102,6 +102,12 @@ module.exports = function(s,config,lang){
                        "id": "monitorPresetsSelection",
                        "class": "mdl-list"
                    },
+                   {
+                      "fieldType": "btn",
+                      "attribute": `data-toggle="modal" data-target="#schedules"`,
+                      "class": `btn-info`,
+                      "btnContent": `<i class="fa fa-clock"></i> &nbsp; ${lang['Schedules']}`,
+                   },
                ],
              },
              "Connection": {

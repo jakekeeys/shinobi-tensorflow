@@ -191,15 +191,13 @@ module.exports = function(s,config,lang,app,io){
                 theQueryValues.push(req.params.name)
             }
             s.sqlQuery(theQuery,theQueryValues,function(err,schedules){
-                if(schedules && schedules[0]){
-                    endData.ok = true
-                    schedules.forEach(function(schedule){
-                        s.checkDetails(schedule)
-                    })
-                    endData.schedules = schedules
-                }else{
-                    endData.msg = user.lang['Not Found']
-                }
+                endData.ok = true
+                schedules = schedules || []
+                schedules.forEach(function(schedule){
+                    s.checkDetails(schedule)
+                })
+                endData.schedules = schedules
+
                 s.closeJsonResponse(res,endData)
             })
         })
