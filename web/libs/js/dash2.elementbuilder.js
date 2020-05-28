@@ -104,7 +104,7 @@ $.ccio.tm=function(x,d,z,user){
             tmp+='<div class="stream-objects"></div>';
             tmp+='<div class="stream-hud">'
             tmp+='<div class="camera_cpu_usage"><div class="progress"><div class="progress-bar progress-bar-danger" role="progressbar"><span></span></div></div></div>';
-            tmp+='<div class="lamp" title="'+k.mode+'"><i class="fa fa-eercast"></i></div><div class="controls"><span title="'+lang['Currently viewing']+'" class="label label-default"><span class="viewers"></span></span> <a class="btn-xs btn-danger btn" monitor="mode" mode="record"><i class="fa fa-circle"></i> '+lang['Start Recording']+'</a> <a class="btn-xs btn-primary btn" monitor="mode" mode="start"><i class="fa fa-eye"></i> '+lang['Set to Watch Only']+'</a></div></div></div></div>'
+            tmp+='<div class="lamp" title="'+k.mode+'"><i class="fa fa-eercast"></i></div><div class="controls"><span title="'+lang['Currently viewing']+'" class="label label-default"><span class="viewers"></span></span> <a class="btn btn-xs btn-warning" monitor="trigger-event">'+ lang['Trigger Event'] +'</a></div></div></div></div>'
             tmp+='<div class="mdl-card__supporting-text text-center">';
             tmp+='<div class="indifference detector-fade"><div class="progress"><div class="progress-bar progress-bar-danger" role="progressbar"><span></span></div></div></div>';
             tmp+='<div class="monitor_details">';

@@ -1,7 +1,4 @@
 $(document).ready(function(){
-    $.schedules = {
-        e: $('#schedules')
-    }
     var loadedMonitorStates = {}
     var loadedSchedules = {}
     var schedulerWindow = $('#schedules')
@@ -41,18 +38,23 @@ $(document).ready(function(){
         loadSchedules()
     })
     schedulerWindow.on('click','.delete',function(e){
-        $.confirm.e.modal('show');
-        $.confirm.title.text(lang['Delete Monitor States Preset']);
-        $.confirm.body.html(lang.deleteMonitorStateText1);
-        $.confirm.click({title:'Delete',class:'btn-danger'},function(){
-            var form = schedulerForm.serializeObject()
-            $.post(getApiPrefix() + '/schedule/' + $user.ke + '/' + form.name + '/delete',function(d){
-                $.ccio.log(d)
-                if(d.ok === true){
-                    loadSchedules()
-                    $.ccio.init('note',{title:lang.Success,text:d.msg,type:'success'})
-                }
-            })
+        $.confirm.create({
+            title: lang['Delete Schedule'],
+            body: lang.deleteScheduleText,
+            clickOptions: {
+                title: 'Delete',
+                class: 'btn-danger'
+            },
+            clickCallback: function(){
+                var form = schedulerForm.serializeObject()
+                $.post(getApiPrefix() + '/schedule/' + $user.ke + '/' + form.name + '/delete',function(d){
+                    $.ccio.log(d)
+                    if(d.ok === true){
+                        loadSchedules()
+                        $.ccio.init('note',{title:lang.Success,text:d.msg,type:'success'})
+                    }
+                })
+            }
         })
     })
     scheduleSelector.change(function(e){
