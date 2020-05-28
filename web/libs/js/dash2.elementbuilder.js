@@ -321,64 +321,6 @@ $.ccio.tm=function(x,d,z,user){
             }
             $.ccio.init('ls')
         break;
-        case'detector-filters-where':
-            if(!d)d={};
-            d.id=$('#filters_where .row').length;
-            if(!d.p1){d.p1='indifference'}
-            if(!d.p2){d.p2='='}
-            if(!d.p3){d.p3=''}
-            if(!d.p4){d.p4='&&'}
-            tmp+='<div class="row where-row">'
-            tmp+='   <div class="form-group col-md-3">'
-            tmp+='       <label>'
-            tmp+='           <select class="form-control" where="p1">'
-            tmp+='               <option value="indifference" selected>'+lang['Indifference']+'</option>'
-            tmp+='               <option value="name">'+lang['Region Name']+'</option>'
-            tmp+='               <option value="reason">'+lang['Reason']+'</option>'
-            tmp+='               <option value="time">'+lang['Time']+'</option>'
-            tmp+='               <option value="plug">'+lang['Detection Engine']+'</option>'
-            tmp+='               <optgroup label="Matrix">'
-            tmp+='                  <option value="tag">'+lang['Object Tag']+'</option>'
-            tmp+='                  <option value="confidence">'+lang['Confidence']+'</option>'
-            tmp+='                  <option value="x">'+lang['X Point']+'</option>'
-            tmp+='                  <option value="y">'+lang['Y Point']+'</option>'
-            tmp+='                  <option value="height">'+lang['Height']+'</option>'
-            tmp+='                  <option value="width">'+lang['Width']+'</option>'
-            tmp+='               </optgroup>'
-            tmp+='           </select>'
-            tmp+='       </label>'
-            tmp+='   </div>'
-            tmp+='   <div class="form-group col-md-3">'
-            tmp+='       <label>'
-            tmp+='           <select class="form-control" where="p2">'
-            tmp+='               <option value="===" selected>'+lang['Equal to']+'</option>'
-            tmp+='               <option value="!==">'+lang['Not Equal to']+'</option>'
-            tmp+='               <option value="indexOf">'+lang['Contains']+'</option>'
-            tmp+='               <option value="!indexOf">'+lang['Does Not Contain']+'</option>'
-            tmp+='               <optgroup label="For Numbers">'
-            tmp+='                  <option value=">=">'+lang['Greater Than or Equal to']+'</option>'
-            tmp+='                  <option value=">">'+lang['Greater Than']+'</option>'
-            tmp+='                  <option value="<">'+lang['Less Than']+'</option>'
-            tmp+='                  <option value="<=">'+lang['Less Than or Equal to']+'</option>'
-            tmp+='               </optgroup>'
-            tmp+='           </select>'
-            tmp+='       </label>'
-            tmp+='   </div>'
-            tmp+='   <div class="form-group col-md-3">'
-            tmp+='       <label>'
-            tmp+='           <input class="form-control" placeholder="Value" title="'+lang.Value+'" where="p3">'
-            tmp+='       </label>'
-            tmp+='   </div>'
-            tmp+='   <div class="form-group col-md-3">'
-            tmp+='       <label>'
-            tmp+='           <select class="form-control" where="p4">'
-            tmp+='               <option value="&&" selected>'+lang['AND']+'</option>'
-            tmp+='               <option value="||">'+lang['OR']+'</option>'
-            tmp+='           </select>'
-            tmp+='       </label>'
-            tmp+='   </div>'
-            tmp+='</div>'
-        break;
         case'filters-where':
             if(!d)d={};
             d.id=$('#filters_where .row').length;
@@ -879,14 +821,6 @@ $.ccio.tm=function(x,d,z,user){
             k.mid=d.mid
             k.mon=$.ccio.mon[d.ke+d.mid+user.auth_token]
             $.ccio.init('monitorInfo',k)
-        break;
-        case'detector-filters-where':
-            $('#detector_filters_where').append(tmp);
-            $('#detector_filters_where .row [where="p4"][disabled]').prop('disabled',false)
-            $('#detector_filters_where .row:last [where="p1"]').val(d.p1)
-            $('#detector_filters_where .row:last [where="p2"]').val(d.p2)
-            $('#detector_filters_where .row:last [where="p3"]').val(d.p3)
-            $('#detector_filters_where .row:last [where="p4"]').val(d.p4).prop('disabled',true)
         break;
         case'filters-where':
             $('#filters_where').append(tmp);
