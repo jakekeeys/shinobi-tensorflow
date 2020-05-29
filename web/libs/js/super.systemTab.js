@@ -5,7 +5,7 @@ $(document).ready(function(){
             case'deleteLogs':
                 var html = 'Do you want to delete these logs? User logs will <b>not</b> be deleted.'
                 $.confirm.create({
-                    title: `${lang['Delete Logs']} <small>${e.u}</small>`,
+                    title: `${lang['Delete Logs']}`,
                     body: html,
                     clickOptions: {
                         class: 'btn-danger',
