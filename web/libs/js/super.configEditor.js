@@ -281,7 +281,7 @@ $(document).ready(function(){
             var html = '<p>This is a change being applied to the configuration file (conf.json). Are you sure you want to do this? You must restart Shinobi for these changes to take effect. <b>The JSON below is what you are about to save.</b></p>'
             html += `<pre>${newConfiguration}</pre>`
             $.confirm.create({
-                title: 'Save Configuration <small>conf.json</small>',
+                title: 'Save Configuration',
                 body: html,
                 clickOptions: {
                     class: 'btn-success',
