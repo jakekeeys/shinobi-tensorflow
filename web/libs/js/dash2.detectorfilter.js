@@ -4,16 +4,19 @@ $(document).ready(function(e){
     var detectorFiltersWindow = $('#detector_filter')
     var detectorFiltersSelector = $('#detector_filters')
     var detectorFiltersConditionRows = $('#detector_filters_where')
+    var detectorFiltersActions = detectorFiltersWindow.find('.actions')
     var detectorFiltersForm = detectorFiltersWindow.find('form');
+    var idField = detectorFiltersForm.find('[name="id"]')
+    var nameField = detectorFiltersForm.find('[name="filter_name"]')
+    var loadedFilters = {}
     var getSelectedFilter = function(){
         return detectorFiltersSelector.val()
     }
     var drawOptions = function(){
-        var dFilters = getFiltersFromMonitorInEditor()
-        detectorFiltersForm.find('[name="id"]').val($.ccio.gid(5))
-        detectorFiltersSelector.find('optgroup').empty()
-        $.each(dFilters,function(n,dFilter){
-            $.ccio.tm('option',{auth_token:$user.auth_token,id:dFilter.id,name:dFilter.filter_name},'#detector_filters optgroup')
+        idField.val($.ccio.gid(5))
+        detectorFiltersSelector.empty()
+        $.each(loadedFilters,function(n,dFilter){
+            $.ccio.tm('option',{auth_token:$user.auth_token,id:dFilter.id,name:dFilter.filter_name},'#detector_filters')
         })
     }
     var getFiltersFromMonitorInEditor = function(){
@@ -23,22 +26,48 @@ $(document).ready(function(e){
             return {}
         }
     }
-    var writeFiltersToMonitorEditor = function(){
-        var currentVals = getFiltersFromMonitorInEditor()
-        currentVals[$.detectorFilters.lastSave.id] = $.detectorFilters.lastSave
-        $.aM.e.find('[detail="detector_filters"]').val(JSON.stringify(currentVals)).change()
+    var getFormValues = function(){
+        var form = detectorFiltersForm.serializeObject()
+        $.each(form,function(key,value){
+            form[key] = value.trim()
+        })
+        //create conditions object (where)
+        form.where = []
+        detectorFiltersForm.find('.where-row').each(function(n,v){
+            var where = {}
+            $(v).find('[where]').each(function(m,b){
+                var el = $(this)
+                var value = el.val()
+                if(value){
+                    where[el.attr('where')] = value.trim()
+                }
+            })
+            if(where.p1 && where.p2 && where.p3)form.where.push(where)
+        })
+        // create actions object (do)
+        form.actions = {}
+        detectorFiltersForm.find('.actions-row').each(function(n,v){
+            var actions = $(v).find('[actions]')
+            form.actions[actions.attr('actions')] = actions.val()
+        })
+        form.filter_name = 'New Filter'
+        return form
+    }
+    var closeFiltersToMonitorEditor = function(form){
+        $.aM.e.find('[detail="detector_filters"]').val(JSON.stringify(loadedFilters)).change()
+        detectorFiltersWindow.modal('hide')
     }
     var drawDetectorFilterFieldsRow = function(d){
         if(!d)d = {};
         d.id = $('#filters_where .row').length;
         if(!d.p1){d.p1='indifference'}
-        if(!d.p2){d.p2='='}
+        if(!d.p2){d.p2='==='}
         if(!d.p3){d.p3=''}
         if(!d.p4){d.p4='&&'}
         tmp = `<div class="row where-row">
            <div class="form-group col-md-3">
                <label>
-                   <select class="form-control" where="p1">
+                   <select class="form-control input-sm" where="p1">
                        <option value="indifference" selected>${lang['Indifference']}</option>
                        <option value="name">${lang['Region Name']}</option>
                        <option value="reason">${lang['Reason']}</option>
@@ -57,7 +86,7 @@ $(document).ready(function(e){
            </div>
            <div class="form-group col-md-3">
                <label>
-                   <select class="form-control" where="p2">
+                   <select class="form-control input-sm" where="p2">
                        <option value="===" selected>${lang['Equal to']}</option>
                        <option value="!==">${lang['Not Equal to']}</option>
                        <option value="indexOf">${lang['Contains']}</option>
@@ -73,16 +102,19 @@ $(document).ready(function(e){
            </div>
            <div class="form-group col-md-3">
                <label>
-                   <input class="form-control" placeholder="Value" title="${lang.Value}" where="p3">
+                   <input class="form-control input-sm" placeholder="Value" title="${lang.Value}" where="p3">
                </label>
            </div>
-           <div class="form-group col-md-3">
+           <div class="form-group col-md-2">
                <label>
-                   <select class="form-control" where="p4">
+                   <select class="form-control input-sm" where="p4">
                        <option value="&&" selected>${lang['AND']}</option>
                        <option value="||">${lang['OR']}</option>
                    </select>
                </label>
+           </div>
+           <div class="form-group col-md-1">
+               <a class="btn btn-danger btn-block pull-right delete-condition">&nbsp;<i class="fa fa-trash-o"></i>&nbsp;</a>
            </div>
         </div>`
         detectorFiltersConditionRows.append(tmp);
@@ -91,6 +123,44 @@ $(document).ready(function(e){
         detectorFiltersConditionRows.find('.row:last [where="p2"]').val(d.p2)
         detectorFiltersConditionRows.find('.row:last [where="p3"]').val(d.p3)
         detectorFiltersConditionRows.find('.row:last [where="p4"]').val(d.p4).prop('disabled',true)
+    }
+    var createNewFilter = function(){
+        var newId = $.ccio.gid(5)
+        idField.val(newId)
+        detectorFiltersConditionRows.empty()
+        drawDetectorFilterFieldsRow()
+        nameField.val(newId)
+        var form = getFormValues()
+        loadedFilters[newId] = form
+        console.log(form)
+        drawOptions()
+        detectorFiltersSelector.val(newId)
+    }
+    var deleteSelectedFilter = function(){
+        var newObject = {}
+        var deleteId = getSelectedFilter()
+        $.each(loadedFilters,function(id,obj){
+            if(id === deleteId)return false;
+            newObject[id] = obj
+        })
+        loadedFilters = newObject
+        drawOptions()
+        selectFirstOption()
+    }
+    var updateSelectedFilter = function(){
+        var newObject = {}
+        var modifyId = getSelectedFilter()
+        loadedFilters[modifyId] = getFormValues()
+        console.log(modifyId,loadedFilters[modifyId])
+    }
+    var resetForm = function(){
+        detectorFiltersConditionRows.empty()
+        drawDetectorFilterFieldsRow()
+        detectorFiltersActions.find('.form-control').val('')
+        detectorFiltersActions.find('[actions="halt"]').val('0')
+    }
+    var selectFirstOption = function(){
+        detectorFiltersSelector.val(detectorFiltersSelector.find('option:first').val()).change()
     }
     detectorFiltersWindow.on('change','[where="p1"]',function(e){
         var el = $(this)
@@ -133,40 +203,38 @@ $(document).ready(function(e){
         p3.attr('placeholder',msg)
     })
     detectorFiltersWindow.on('shown.bs.modal',function(e){
+        loadedFilters = getFiltersFromMonitorInEditor()
         drawOptions()
+        selectFirstOption()
     })
     detectorFiltersWindow.on('click','.where .add',function(e){
-        drawDetectorFilterFieldsRow()
-    })
-    detectorFiltersWindow.on('click','.where .remove',function(e){
-        el = detectorFiltersConditionRows.find('.row');
-        if(el.length > 1){
-            el.last().remove();
-            detectorFiltersConditionRows.find('.row:last [where="p4"]').prop('disabled',true)
+        var modifyId = getSelectedFilter()
+        if(!modifyId){
+            createNewFilter()
+        }else{
+            drawDetectorFilterFieldsRow()
         }
     })
-    detectorFiltersForm.find('.delete').click(function(e){
-        var currentVals = getFiltersFromMonitorInEditor()
-        var newObject = {}
-        var deleteId = getSelectedFilter()
-        $.each(currentVals,function(id,obj){
-            if(id === deleteId)return false;
-            newObject[id] = obj
-        })
-        $.aM.e.find('[detail="detector_filters"]').val(JSON.stringify(newObject)).change()
-        drawOptions()
+    detectorFiltersWindow.on('click','.where .delete-condition',function(e){
+        if(detectorFiltersConditionRows.find('.where-row').length > 1){
+            $(this).parents('.where-row').remove()
+            detectorFiltersConditionRows.find('.row:last [where="p4"]').prop('disabled',true)
+            updateSelectedFilter()
+        }
     })
     detectorFiltersSelector.change(function(){
         var el = $(this)
         var filterId = el.val()
-        var filterName
         detectorFiltersConditionRows.empty()
-        if(filterId && filterId!==''){
-            var currentFilter = getFiltersFromMonitorInEditor()[filterId]
-            filterName = currentFilter.name
-            $.each(currentFilter.where,function(n,v){
-                drawDetectorFilterFieldsRow(v)
-            })
+        if(filterId && filterId !== ''){
+            var currentFilter = loadedFilters[filterId]
+            if(currentFilter.where.length > 0){
+                $.each(currentFilter.where,function(n,v){
+                    drawDetectorFilterFieldsRow(v)
+                })
+            }else{
+                drawDetectorFilterFieldsRow()
+            }
             $.each(currentFilter.actions,function(action,val){
                 detectorFiltersWindow.find('[actions="'+action+'"]').val(val)
             })
@@ -175,38 +243,23 @@ $(document).ready(function(e){
                 detectorFiltersForm.find('[name="'+n+'"]').val(v)
             })
         }else{
-            filterName = lang['Add New'];
-            detectorFiltersForm.find('[name="id"]').val($.ccio.gid(5));
-            drawDetectorFilterFieldsRow()
+            createNewFilter()
         }
-        detectorFiltersWindow.find('.filter_name').text(filterName)
-    }).change()
+    })
+    detectorFiltersWindow.find('.add-filter').click(function(){
+        createNewFilter()
+        resetForm()
+    })
+    detectorFiltersWindow.find('.delete-filter').click(function(e){
+        deleteSelectedFilter()
+    })
+    detectorFiltersForm.on('change','.where-row .form-control, .actions-row .form-control',function(e){
+        updateSelectedFilter()
+    })
     detectorFiltersForm.submit(function(e){
         e.preventDefault()
-        var el = $(this)
-        var form = el.serializeObject()
-        $.each(form,function(key,value){
-            form[key] = value.trim()
-        })
-        //create conditions object (where)
-        form.where = []
-        el.find('.where-row').each(function(n,v){
-            var where = {}
-            $(v).find('[where]').each(function(m,b){
-                var el = $(this)
-                where[el.attr('where')] = el.val().trim()
-            })
-            form.where.push(where)
-        })
-        // create actions object (do)
-        form.actions = {}
-        el.find('.actions-row').each(function(n,v){
-            var actions = $(v).find('[actions]')
-            form.actions[actions.attr('actions')] = actions.val()
-        })
-        $.detectorFilters.lastSave = form
-        writeFiltersToMonitorEditor()
-        detectorFiltersWindow.modal('hide')
+        closeFiltersToMonitorEditor()
         return false
     })
+    $.detectorFilters.getLoadedFilters = function(){return loadedFilters}
 })

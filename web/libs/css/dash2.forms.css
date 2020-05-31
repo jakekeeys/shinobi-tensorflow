@@ -32,6 +32,10 @@ form.modal-body{margin:0}
     letter-spacing: 3pt;
     font-size: 8pt;
 }
+.form-group-group > h4 .btn{
+    text-transform: none;
+    letter-spacing: initial;
+}
 .form-group-group > h4:empty{padding:2px}
 .form-group-group > h4 small{color:#fff;}
 .form-group-group.red{border-color:#d9534f}
