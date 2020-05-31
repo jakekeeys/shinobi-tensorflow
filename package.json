@@ -4,12 +4,6 @@
   "version": "2.0.0",
   "description": "CCTV and NVR in Node.js",
   "main": "camera.js",
-  "bin": "camera.js",
-  "scripts": {
-    "dev": "nodemon --inspect camera.js",
-    "test": "node camera.js test",
-    "start": "chmod +x INSTALL/start.sh && INSTALL/start.sh"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://gitlab.com/Shinobi-Systems/Shinobi.git"
@@ -17,18 +11,6 @@
   "author": "Moe Alam, Shinobi Systems",
   "bugs": {
     "url": "https://gitlab.com/Shinobi-Systems/Shinobi/issues"
-  },
-  "pkg": {
-    "assets": [
-      "libs/**/*",
-      "libs/**/**/*",
-      "libs/**/**/**/*",
-      "libs/**/**/**/**/*",
-      "languages/*",
-      "web/*",
-      "node_modules/ffmpeg-static/*",
-      "definitions/*"
-    ]
   },
   "homepage": "https://gitlab.com/Shinobi-Systems/Shinobi#readme",
   "dependencies": {
@@ -65,10 +47,29 @@
     "express-fileupload": "^1.1.6-alpha.6",
     "tree-kill":"1.2.2"
   },
-  "devDependencies": {
-    "nodemon": "^1.19.1"
+  "devDependencies": {},
+  "bin": "camera.js",
+  "scripts": {
+    "test": "node camera.js test",
+    "start": "chmod +x INSTALL/start.sh && INSTALL/start.sh",
+    "package": "pkg package.json -t linux,macos,win --out-path dist",
+    "package-x64": "pkg package.json -t linux-x64,macos-x64,win-x64 --out-path dist/x64",
+    "package-x86": "pkg package.json -t linux-x86,macos-x86,win-x86 --out-path dist/x86",
+    "package-armv6": "pkg package.json -t linux-armv6,macos-armv6,win-armv6 --out-path dist/armv6",
+    "package-armv7": "pkg package.json -t linux-armv7,macos-armv7,win-armv7 --out-path dist/armv7",
+    "package-all": "npm run package && npm run package-x64 && npm run package-x86 && npm run package-armv6 && npm run package-armv7"
   },
-  "nodemonConfig": {
-    "ignore": ["plugins/*"]
+  "pkg": {
+    "targets": [
+      "node12"
+    ],
+    "scripts": [
+    ],
+    "assets": [
+        "definitions/*",
+        "languages/*",
+        "web/*",
+        "test/*"
+    ]
   }
 }

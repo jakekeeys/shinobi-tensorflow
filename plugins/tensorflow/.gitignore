@@ -1,2 +1,4 @@
 conf.json
-cascades
+dist
+models
+.env

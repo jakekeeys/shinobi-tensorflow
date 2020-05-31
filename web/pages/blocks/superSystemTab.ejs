@@ -1,32 +1,17 @@
-<nav class="navbar navbar-rounded navbar-expand-lg bg-primary">
-    <div class="container">
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" system="deleteLogs">
-                        <p><i class="fa fa-trash-o"></i> <%-lang['Delete']%> <%-lang['Logs']%></p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" restart="system">
-                        <p><i class="fa fa-retweet"></i> <%-lang['Restart Core']%></p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" restart="cron">
-                        <p><i class="fa fa-retweet"></i> <%-lang['Restart CRON']%></p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" restart="logs">
-                        <p><i class="fa fa-retweet"></i> <%-lang['Flush PM2 Logs']%></p>
-                    </a>
-                </li>
-
-            </ul>
-        </div>
-    </div>
-</nav>
+<div class="mb-4 btn-group btn-group-justified">
+    <a href="#" class="btn btn-default" system="deleteLogs">
+        <i class="fa fa-trash-o"></i> <%-lang['Delete']%> <%-lang['Logs']%>
+    </a>
+    <a href="#" class="btn btn-default" restart="system">
+        <i class="fa fa-retweet"></i> <%- lang['Restart Core'] %>
+    </a>
+    <a href="#" class="btn btn-default" restart="cron">
+        <i class="fa fa-retweet"></i> <%- lang['Restart CRON'] %>
+    </a>
+    <a href="#" class="btn btn-white" restart="logs">
+        <i class="fa fa-retweet"></i> <%- lang['Flush PM2 Logs'] %>
+    </a>
+</div>
 <div id="logs" style="height:400px;overflow:auto">
     <table class="table table-striped"></table>
 </div>

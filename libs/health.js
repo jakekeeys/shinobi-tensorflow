@@ -7,22 +7,22 @@ module.exports = function(s,config,lang,io){
     }
     s.heartBeat()
     s.cpuUsage = function(callback){
-        k={}
+        var k = {}
         switch(s.platform){
             case'win32':
-                k.cmd="@for /f \"skip=1\" %p in ('wmic cpu get loadpercentage') do @echo %p%"
+                k.cmd = "@for /f \"skip=1\" %p in ('wmic cpu get loadpercentage') do @echo %p%"
             break;
             case'darwin':
-                k.cmd="ps -A -o %cpu | awk '{s+=$1} END {print s}'";
+                k.cmd = "ps -A -o %cpu | awk '{s+=$1} END {print s}'";
             break;
             case'linux':
-                k.cmd='top -b -n 2 | awk \'toupper($0) ~ /^.?CPU/ {gsub("id,","100",$8); gsub("%","",$8); print 100-$8}\' | tail -n 1';
+                k.cmd = 'top -b -n 2 | awk \'toupper($0) ~ /^.?CPU/ {gsub("id,","100",$8); gsub("%","",$8); print 100-$8}\' | tail -n 1';
             break;
             case'freebsd':
-                k.cmd='vmstat 1 2 | awk \'END{print 100-$19}\''
+                k.cmd = 'vmstat 1 2 | awk \'END{print 100-$19}\''
             break;
 	    case'openbsd':
-                k.cmd='vmstat 1 2 | awk \'END{print 100-$18}\''
+                k.cmd = 'vmstat 1 2 | awk \'END{print 100-$18}\''
             break;
         }
         if(config.customCpuCommand){

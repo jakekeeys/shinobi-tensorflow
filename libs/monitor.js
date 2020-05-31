@@ -33,7 +33,9 @@ module.exports = function(s,config,lang){
         // if(!s.group[e.ke].activeMonitors[e.mid].viewerConnectionCount){s.group[e.ke].activeMonitors[e.mid].viewerConnectionCount=0};
         if(!s.group[e.ke].activeMonitors[e.mid].parsedObjects){s.group[e.ke].activeMonitors[e.mid].parsedObjects={}};
         if(!s.group[e.ke].activeMonitors[e.mid].detector_motion_count){s.group[e.ke].activeMonitors[e.mid].detector_motion_count=[]};
+        if(!s.group[e.ke].activeMonitors[e.mid].eventsCounted){s.group[e.ke].activeMonitors[e.mid].eventsCounted = {}};
         if(!s.group[e.ke].activeMonitors[e.mid].isStarted){s.group[e.ke].activeMonitors[e.mid].isStarted = false};
+        if(!s.group[e.ke].activeMonitors[e.mid].pipe4BufferPieces){s.group[e.ke].activeMonitors[e.mid].pipe4BufferPieces = []};
         if(s.group[e.ke].activeMonitors[e.mid].delete){clearTimeout(s.group[e.ke].activeMonitors[e.mid].delete)}
         if(!s.group[e.ke].rawMonitorConfigurations){s.group[e.ke].rawMonitorConfigurations={}}
         s.onMonitorInitExtensions.forEach(function(extender){
@@ -140,7 +142,7 @@ module.exports = function(s,config,lang){
                     var snapBuffer = []
                     var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
                     var iconImageFile = streamDir + 'icon.jpg'
-                    var ffmpegCmd = s.splitForFFPMEG(`-loglevel warning -re -probesize 1000000 -analyzeduration 1000000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -vframes 1 "${temporaryImageFile}"`)
+                    var ffmpegCmd = s.splitForFFPMEG(`-loglevel warning -re -probesize 100000 -analyzeduration 100000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -vf "fps=1" -vframes 1 "${temporaryImageFile}"`)
                     fs.writeFileSync(s.group[monitor.ke].activeMonitors[monitor.id].sdir + 'snapCmd.txt',JSON.stringify({
                       cmd: ffmpegCmd,
                       temporaryImageFile: temporaryImageFile,
@@ -399,6 +401,7 @@ module.exports = function(s,config,lang){
             delete(activeMonitor.detectorFrameSaveBuffer);
             clearTimeout(activeMonitor.recordingSnapper);
             clearInterval(activeMonitor.getMonitorCpuUsage);
+            clearInterval(activeMonitor.objectCountIntervals);
             if(activeMonitor.onChildNodeExit){
                 activeMonitor.onChildNodeExit()
             }
@@ -924,7 +927,7 @@ module.exports = function(s,config,lang){
         }
         e.captureOne()
     }
-    var onDetectorJpegOutputAlone = function(e,d){
+    const onDetectorJpegOutputAlone = (e,d) => {
         s.ocvTx({
             f: 'frame',
             mon: s.group[e.ke].rawMonitorConfigurations[e.id].details,
@@ -934,12 +937,15 @@ module.exports = function(s,config,lang){
             frame: d
         })
     }
-    var onDetectorJpegOutputSecondary = function(e,d){
-        s.group[e.ke].activeMonitors[e.id].lastJpegDetectorFrame = d
+    const onDetectorJpegOutputSecondary = (e,buffer) => {
+        const theArray = s.group[e.ke].activeMonitors[e.id].pipe4BufferPieces
+        theArray.push(buffer)
+        if(buffer[buffer.length-2] === 0xFF && buffer[buffer.length-1] === 0xD9){
+            s.group[e.ke].activeMonitors[e.id].lastJpegDetectorFrame = Buffer.concat(theArray)
+            s.group[e.ke].activeMonitors[e.id].pipe4BufferPieces = []
+        }
     }
-    s.onMonitorDetectorDataOutputAlone = onDetectorJpegOutputAlone
-    s.onMonitorDetectorDataOutputSecondary = onDetectorJpegOutputSecondary
-    const createCameraFfmpegProcess = function(e){
+    const createCameraFfmpegProcess = (e) => {
         //launch ffmpeg (main)
         s.tx({
             f: 'monitor_starting',
@@ -947,7 +953,14 @@ module.exports = function(s,config,lang){
             mid: e.id,
             time: s.formattedTime()
         },'GRP_'+e.ke)
-        s.group[e.ke].activeMonitors[e.id].spawn = s.ffmpeg(e)
+        try{
+            s.group[e.ke].activeMonitors[e.id].spawn = s.ffmpeg(e)
+        }catch(err){
+            console.log('failed to launch, try again')
+            setTimeout(() => {
+                s.group[e.ke].activeMonitors[e.id].spawn = s.ffmpeg(e)
+            },3000)
+        }
         s.sendMonitorStatus({id:e.id,ke:e.ke,status:e.wantedStatus});
         //on unexpected exit restart
         s.group[e.ke].activeMonitors[e.id].spawn_exit = function(){
@@ -995,6 +1008,42 @@ module.exports = function(s,config,lang){
                     sendProcessCpuUsage()
                 }
             },1000 * 60)
+        }
+    }
+    const createEventCounter = function(monitor){
+        if(monitor.details.detector_obj_count === '1'){
+            const activeMonitor = s.group[monitor.ke].activeMonitors[monitor.id]
+            activeMonitor.eventsCountStartTime = new Date()
+            clearInterval(activeMonitor.objectCountIntervals)
+            activeMonitor.objectCountIntervals = setInterval(() => {
+                const eventsCounted = activeMonitor.eventsCounted || {}
+                const countsToSave = Object.assign(eventsCounted,{})
+                activeMonitor.eventsCounted = {}
+                const groupKey = monitor.ke
+                const monitorId = monitor.id
+                const startTime = new Date(activeMonitor.eventsCountStartTime + 0)
+                const endTime = new Date()
+                const countedKeys = Object.keys(countsToSave)
+                activeMonitor.eventsCountStartTime = new Date()
+                if(countedKeys.length > 0)countedKeys.forEach((tag) => {
+                    const tagInfo = countsToSave[tag]
+                    const count = Object.keys(tagInfo.count)
+                    const times = tagInfo.times
+                    const realTag = tagInfo.tag
+                    s.sqlQuery('INSERT INTO `Events Counts` (ke,mid,details,time,end,count,tag) VALUES (?,?,?,?,?,?,?)',[
+                        groupKey,
+                        monitorId,
+                        JSON.stringify({
+                            times: times,
+                            count: count,
+                        }),
+                        startTime,
+                        endTime,
+                        count.length,
+                        realTag
+                    ])
+                })
+            },60000) //every minute
         }
     }
     const createCameraStreamHandlers = function(e){
@@ -1052,12 +1101,13 @@ module.exports = function(s,config,lang){
             s.group[e.ke].activeMonitors[e.id].spawn.stdio[6].pipe(audioDetector.streamDecoder,{ end: false })
         }
         if(e.details.record_timelapse === '1'){
+            var timelapseRecordingDirectory = s.getTimelapseFrameDirectory(e)
             s.group[e.ke].activeMonitors[e.id].spawn.stdio[7].on('data',function(data){
                 var fileStream = s.group[e.ke].activeMonitors[e.id].recordTimelapseWriter
                 if(!fileStream){
                     var currentDate = s.formattedTime(null,'YYYY-MM-DD')
                     var filename = s.formattedTime() + '.jpg'
-                    var location = s.getTimelapseFrameDirectory(e) + currentDate + '/'
+                    var location = timelapseRecordingDirectory + currentDate + '/'
                     if(!fs.existsSync(location)){
                         fs.mkdirSync(location)
                     }
@@ -1096,12 +1146,22 @@ module.exports = function(s,config,lang){
                })
                 if(e.details.detector_use_detect_object === '1'){
                     s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
-                        s.onMonitorDetectorDataOutputSecondary(e,data)
+                        onDetectorJpegOutputSecondary(e,data)
                     })
                 }
             }else if(s.isAtleatOneDetectorPluginConnected){
-                s.group[e.ke].activeMonitors[e.id].spawn.stdio[3].on('data',function(data){
-                    s.onMonitorDetectorDataOutputAlone(e,data)
+                if(e.details.detector_use_detect_object === '1' && e.details.detector_send_frames !== '1'){
+                    s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
+                        onDetectorJpegOutputSecondary(e,data)
+                    })
+                }else{
+                    s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
+                        onDetectorJpegOutputAlone(e,data)
+                    })
+                }
+            }else{
+                s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
+                    // set so ffmpeg doesnt hang
                 })
             }
         }
@@ -1408,39 +1468,49 @@ module.exports = function(s,config,lang){
                 if(activeMonitor.isStarted === true){
                     e.errorCount = 0;
                     activeMonitor.errorSocketTimeoutCount = 0;
-                    cameraDestroy(e)
+                    try{
+                        cameraDestroy(e)
+                    }catch(err){
+
+                    }
                     startVideoProcessor = function(err,o){
                         if(o.success === true){
                             activeMonitor.isRecording = true
-                            createCameraFfmpegProcess(e)
-                            createCameraStreamHandlers(e)
-                            if(e.type === 'dashcam'){
-                                setTimeout(function(){
-                                    activeMonitor.allowStdinWrite = true
-                                    s.txToDashcamUsers({
-                                        f : 'enable_stream',
-                                        ke : e.ke,
-                                        mid : e.id
-                                    },e.ke)
-                                },30000)
+                            try{
+                                createCameraFfmpegProcess(e)
+                                createCameraStreamHandlers(e)
+                                createEventCounter(e)
+                                if(e.type === 'dashcam'){
+                                    setTimeout(function(){
+                                        activeMonitor.allowStdinWrite = true
+                                        s.txToDashcamUsers({
+                                            f : 'enable_stream',
+                                            ke : e.ke,
+                                            mid : e.id
+                                        },e.ke)
+                                    },30000)
+                                }
+                                if(
+                                    e.functionMode === 'record' ||
+                                    e.type === 'mjpeg' ||
+                                    e.type === 'h264' ||
+                                    e.type === 'local'
+                                ){
+                                    catchNewSegmentNames(e)
+                                    cameraFilterFfmpegLog(e)
+                                }
+                                if(e.coProcessor === true){
+                                    setTimeout(function(){
+                                        s.coSpawnLauncher(e)
+                                    },6000)
+                                }
+                                s.onMonitorStartExtensions.forEach(function(extender){
+                                    extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
+                                })
+                            }catch(err){
+                                console.log('Failed to Load',e.id,e.ke)
+                                console.log(err)
                             }
-                            if(
-                                e.functionMode === 'record' ||
-                                e.type === 'mjpeg' ||
-                                e.type === 'h264' ||
-                                e.type === 'local'
-                            ){
-                                catchNewSegmentNames(e)
-                                cameraFilterFfmpegLog(e)
-                            }
-                            if(e.coProcessor === true){
-                                setTimeout(function(){
-                                    s.coSpawnLauncher(e)
-                                },6000)
-                            }
-                            s.onMonitorStartExtensions.forEach(function(extender){
-                                extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
-                            })
                           }else{
                               s.onMonitorPingFailedExtensions.forEach(function(extender){
                                   extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)

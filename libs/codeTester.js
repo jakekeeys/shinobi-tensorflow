@@ -46,7 +46,7 @@ module.exports = function(s,config,lang){
                 }
             ],null,3))
             setTimeout(function(){
-                require(s.mainDirectory + '/test/run.js')(s,config,lang,io)
+                require('../test/run.js')(s,config,lang,io)
             },500)
         }
     }

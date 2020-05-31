@@ -223,7 +223,7 @@ $.ccio.globalWebsocket=function(d,user){
                 var snapElement = $('[mid="'+d.mid+'"][ke="'+d.ke+'"][auth="'+user.auth_token+'"] .snapshot')
                 switch(d.snapshot_format){
                     case'plc':
-                        snapElement.attr('src',placeholder.getData(placeholder.plcimg(d.snapshot)))
+                        snapElement.attr('src',placeholder.getData(placeholder.plcimg({text:d.snapshot.toUpperCase().split('').join(' '), fsize: 25, bgcolor:'#1462a5'})))
                     break;
                     case'ab':
                         d.reader = new FileReader();
@@ -762,20 +762,13 @@ $user.ws.on('f',function (d){
             }
         break;
         case'ffprobe_stop':
-            $.pB.e.find('._loading').hide()
-            $.pB.o.append('<div><b>END</b></div>');
-            $.pB.e.find('.stop').hide();
-            $.pB.e.find('[type="submit"]').show();
+            $.pB.setAsLoading(false)
         break;
         case'ffprobe_start':
-            $.pB.e.find('._loading').show()
-            $.pB.o.empty();
-            $.pB.e.find('.stop').show();
-            $.pB.e.find('[type="submit"]').hide();
+            $.pB.setAsLoading(true)
         break;
         case'ffprobe_data':
-            $.pB.results=JSON.parse(d.data)
-            $.pB.o.append($.ccio.init('jsontoblock',$.pB.results))
+            $.pB.writeData(d.data)
         break;
         case'detector_cascade_list':
             d.tmp=''

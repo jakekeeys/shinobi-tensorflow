@@ -3,20 +3,21 @@ module.exports = function(config){
   switch(config.tfjsBuild){
       case'gpu':
           tfjsSuffix = '-gpu'
+          var tf = require('@tensorflow/tfjs-node-gpu')
       break;
       case'cpu':
+          var tf = require('@tensorflow/tfjs-node')
       break;
       default:
           try{
-              require(`@tensorflow/tfjs-node-gpu`)
               tfjsSuffix = '-gpu'
+              var tf = require('@tensorflow/tfjs-node-gpu')
           }catch(err){
               console.log(err)
           }
       break;
   }
 
-  var tf = require(`@tensorflow/tfjs-node${tfjsSuffix}`)
   const cocossd = require('@tensorflow-models/coco-ssd');
   // const mobilenet = require('@tensorflow-models/mobilenet');
 

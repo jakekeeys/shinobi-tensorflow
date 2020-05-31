@@ -46,6 +46,13 @@
     background-clip: padding-box;
 }
 /**/
+.json-to-block div > div{
+    margin-left:10px;
+}
+.json-to-block.striped div > div{
+    padding-left:10px;
+    border-left: 2px solid #fff;
+}
 .flex{display:flex}
 .flex>div{flex:1}
 .flex-block{display:inline-flex;width:100%;flex-flow: row wrap;}
@@ -432,6 +439,15 @@ ul.msg_list li .message {
     text-transform: uppercase;
     letter-spacing: 3pt;
     font-size: 8pt;
+}
+.text-white {
+    color: #fff!important;
+}
+.text-purple {
+    color: #576fff!important;
+}
+.cursor-pointer {
+    cursor: pointer!important;
 }
 /* Start of custom table sorter */
 .table .table-header-sorter {

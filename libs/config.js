@@ -4,7 +4,11 @@ module.exports = function(s){
         config : s.mainDirectory+'/conf.json',
         languages : s.mainDirectory+'/languages'
     }
-    var config = require(s.location.config);
+    try{
+        var config = require(s.location.config)
+    }catch(err){
+        var config = {}
+    }
     if(!config.productType){
         config.productType = 'CE'
     }
@@ -40,7 +44,6 @@ module.exports = function(s){
     if(config.insertOrphans === undefined){config.insertOrphans = true}
     if(config.orphanedVideoCheckMax === undefined){config.orphanedVideoCheckMax = 2}
     if(config.detectorMergePamRegionTriggers === undefined){config.detectorMergePamRegionTriggers = false}
-    if(config.wallClockTimestampAsDefault === undefined){config.wallClockTimestampAsDefault = true}
     //Child Nodes
     if(config.childNodes === undefined)config.childNodes = {};
         //enabled

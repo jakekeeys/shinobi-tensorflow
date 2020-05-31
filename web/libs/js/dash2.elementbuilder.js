@@ -1,3 +1,21 @@
+var createMonitorsList = function(selectElement,selectedMonitor){
+    var selectedOption
+    var loadedMonitors = $.ccio.mon
+    selectElement.find('.monitor').remove()
+    $.each(loadedMonitors,function(n,monitor){
+        selectElement.append(`<option class="monitor" value="${monitor.mid}">${monitor.name}</option>`)
+    })
+    var optionElements = selectElement.find('.monitor')
+    optionElements.prop('selected',false)
+    if(selectedMonitor !== ''){
+        selectedOption = selectElement.find(`.monitor[value="${selectedMonitor}"]`)
+    }else{
+        selectedOption = optionElements.first()
+    }
+    selectedOption.prop('selected',true)
+    var monitorId = selectedOption.attr('value')
+    return monitorId
+}
 $.ccio.tm=function(x,d,z,user){
     var tmp='';if(!d){d={}};
     var k={}
@@ -33,7 +51,7 @@ $.ccio.tm=function(x,d,z,user){
             })
         break;
         case 1://monitor icon
-            d.src=placeholder.getData(placeholder.plcimg({bgcolor:'#b57d00',text:'...'}));
+            d.src=placeholder.getData(placeholder.plcimg({bgcolor:'#1d88e2',text:'...'}));
             tmp+='<div auth="'+user.auth_token+'" mid="'+d.mid+'" ke="'+d.ke+'" title="'+d.mid+' : '+d.name+'" class="monitor_block glM'+d.mid+user.auth_token+' col-md-4"><img monitor="watch" class="snapshot" src="'+d.src+'"><div class="box"><div class="title monitor_name truncate">'+d.name+'</div><div class="list-data"><div class="monitor_mid">'+d.mid+'</div><div><b>'+lang['Save as']+' :</b> <span class="monitor_ext">'+d.ext+'</span></div><div><b>Status :</b> <span class="monitor_status">'+d.status+'</span></div></div><div class="icons text-center">'
             tmp+='<div class="btn-group btn-group-xs">'
                 var buttons = {
@@ -86,7 +104,7 @@ $.ccio.tm=function(x,d,z,user){
             tmp+='<div class="stream-objects"></div>';
             tmp+='<div class="stream-hud">'
             tmp+='<div class="camera_cpu_usage"><div class="progress"><div class="progress-bar progress-bar-danger" role="progressbar"><span></span></div></div></div>';
-            tmp+='<div class="lamp" title="'+k.mode+'"><i class="fa fa-eercast"></i></div><div class="controls"><span title="'+lang['Currently viewing']+'" class="label label-default"><span class="viewers"></span></span> <a class="btn-xs btn-danger btn" monitor="mode" mode="record"><i class="fa fa-circle"></i> '+lang['Start Recording']+'</a> <a class="btn-xs btn-primary btn" monitor="mode" mode="start"><i class="fa fa-eye"></i> '+lang['Set to Watch Only']+'</a></div></div></div></div>'
+            tmp+='<div class="lamp" title="'+k.mode+'"><i class="fa fa-eercast"></i></div><div class="controls"><span title="'+lang['Currently viewing']+'" class="label label-default"><span class="viewers"></span></span> <a class="btn btn-xs btn-warning" monitor="trigger-event">'+ lang['Trigger Event'] +'</a></div></div></div></div>'
             tmp+='<div class="mdl-card__supporting-text text-center">';
             tmp+='<div class="indifference detector-fade"><div class="progress"><div class="progress-bar progress-bar-danger" role="progressbar"><span></span></div></div></div>';
             tmp+='<div class="monitor_details">';
@@ -281,8 +299,12 @@ $.ccio.tm=function(x,d,z,user){
             }else{
                 $.each(monitorMutes,function(monitorId,choice){
                     if(choice === 1){
-                        var vidEl = $('.monitor_item[mid="' + monitorId + '"] video')[0]
-                        vidEl.muted = true
+                        try{
+                            var vidEl = $('.monitor_item[mid="' + monitorId + '"] video')[0]
+                            vidEl.muted = true
+                        }catch(err){
+
+                        }
                     }
                 })
             }
@@ -298,64 +320,6 @@ $.ccio.tm=function(x,d,z,user){
                 d.e.find('.time').livestamp('destroy').toggleClass('livestamped livestamp').text(d.logged_in_at)
             }
             $.ccio.init('ls')
-        break;
-        case'detector-filters-where':
-            if(!d)d={};
-            d.id=$('#filters_where .row').length;
-            if(!d.p1){d.p1='indifference'}
-            if(!d.p2){d.p2='='}
-            if(!d.p3){d.p3=''}
-            if(!d.p4){d.p4='&&'}
-            tmp+='<div class="row where-row">'
-            tmp+='   <div class="form-group col-md-3">'
-            tmp+='       <label>'
-            tmp+='           <select class="form-control" where="p1">'
-            tmp+='               <option value="indifference" selected>'+lang['Indifference']+'</option>'
-            tmp+='               <option value="name">'+lang['Region Name']+'</option>'
-            tmp+='               <option value="reason">'+lang['Reason']+'</option>'
-            tmp+='               <option value="time">'+lang['Time']+'</option>'
-            tmp+='               <option value="plug">'+lang['Detection Engine']+'</option>'
-            tmp+='               <optgroup label="Matrix">'
-            tmp+='                  <option value="tag">'+lang['Object Tag']+'</option>'
-            tmp+='                  <option value="confidence">'+lang['Confidence']+'</option>'
-            tmp+='                  <option value="x">'+lang['X Point']+'</option>'
-            tmp+='                  <option value="y">'+lang['Y Point']+'</option>'
-            tmp+='                  <option value="height">'+lang['Height']+'</option>'
-            tmp+='                  <option value="width">'+lang['Width']+'</option>'
-            tmp+='               </optgroup>'
-            tmp+='           </select>'
-            tmp+='       </label>'
-            tmp+='   </div>'
-            tmp+='   <div class="form-group col-md-3">'
-            tmp+='       <label>'
-            tmp+='           <select class="form-control" where="p2">'
-            tmp+='               <option value="===" selected>'+lang['Equal to']+'</option>'
-            tmp+='               <option value="!==">'+lang['Not Equal to']+'</option>'
-            tmp+='               <option value="indexOf">'+lang['Contains']+'</option>'
-            tmp+='               <option value="!indexOf">'+lang['Does Not Contain']+'</option>'
-            tmp+='               <optgroup label="For Numbers">'
-            tmp+='                  <option value=">=">'+lang['Greater Than or Equal to']+'</option>'
-            tmp+='                  <option value=">">'+lang['Greater Than']+'</option>'
-            tmp+='                  <option value="<">'+lang['Less Than']+'</option>'
-            tmp+='                  <option value="<=">'+lang['Less Than or Equal to']+'</option>'
-            tmp+='               </optgroup>'
-            tmp+='           </select>'
-            tmp+='       </label>'
-            tmp+='   </div>'
-            tmp+='   <div class="form-group col-md-3">'
-            tmp+='       <label>'
-            tmp+='           <input class="form-control" placeholder="Value" title="'+lang.Value+'" where="p3">'
-            tmp+='       </label>'
-            tmp+='   </div>'
-            tmp+='   <div class="form-group col-md-3">'
-            tmp+='       <label>'
-            tmp+='           <select class="form-control" where="p4">'
-            tmp+='               <option value="&&" selected>'+lang['AND']+'</option>'
-            tmp+='               <option value="||">'+lang['OR']+'</option>'
-            tmp+='           </select>'
-            tmp+='       </label>'
-            tmp+='   </div>'
-            tmp+='</div>'
         break;
         case'filters-where':
             if(!d)d={};
@@ -793,12 +757,14 @@ $.ccio.tm=function(x,d,z,user){
         case 1:
             z='#monitors_list .link-monitors-list[auth="'+user.auth_token+'"][ke="'+d.ke+'"]'
             if($('.link-monitors-list[auth="'+user.auth_token+'"][ke="'+d.ke+'"]').length===0){
-                $("#monitors_list").append('<div class="link-monitors-list" auth="'+user.auth_token+'" ke="'+d.ke+'"></div>')
+                $("#monitors_list").append('<div class="link-monitors-list" style="height:100%" auth="'+user.auth_token+'" ke="'+d.ke+'"></div>')
                 var options = {
                     cellHeight: 80,
                     verticalMargin: 10,
                 };
                 $(z).sortable({
+                    handle: '.title',
+                    containment: "parent",
                     stop : function(event,ui){
                         var order = {}
                         $('.link-monitors-list').each(function(n,block){
@@ -817,7 +783,6 @@ $.ccio.tm=function(x,d,z,user){
                         $user.details.monitorListOrder = order
                         $.ccio.cx({f:'monitorListOrder',monitorListOrder:order},user)
                     },
-                    handle: '.title'
                 })
             }
             $(z).prepend(tmp)
@@ -856,14 +821,6 @@ $.ccio.tm=function(x,d,z,user){
             k.mid=d.mid
             k.mon=$.ccio.mon[d.ke+d.mid+user.auth_token]
             $.ccio.init('monitorInfo',k)
-        break;
-        case'detector-filters-where':
-            $('#detector_filters_where').append(tmp);
-            $('#detector_filters_where .row [where="p4"][disabled]').prop('disabled',false)
-            $('#detector_filters_where .row:last [where="p1"]').val(d.p1)
-            $('#detector_filters_where .row:last [where="p2"]').val(d.p2)
-            $('#detector_filters_where .row:last [where="p3"]').val(d.p3)
-            $('#detector_filters_where .row:last [where="p4"]').val(d.p4).prop('disabled',true)
         break;
         case'filters-where':
             $('#filters_where').append(tmp);

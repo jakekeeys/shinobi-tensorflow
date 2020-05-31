@@ -33,7 +33,7 @@ $(document).ready(function(e){
         timePickerSeconds: true,
         timePickerIncrement: 30,
         locale: {
-            format: 'MM/DD/YYYY h:mm A'
+            format: 'DD/MM/YYYY h:mm A'
         }
     },function(start, end, label){
         // $.pwrvid.drawTimeline()

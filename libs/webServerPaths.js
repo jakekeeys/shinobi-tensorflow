@@ -983,14 +983,10 @@ module.exports = function(s,config,lang,app,io){
     ], function (req,res){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            var hasRestrictions = user.details.sub && user.details.allmonitors !== '1'
-            if(
-                user.permissions.watch_videos==="0" ||
-                hasRestrictions && (!user.details.video_view || user.details.video_view.indexOf(req.params.id)===-1)
-            ){
-                res.end(s.prettyPrint([]))
-                return
-            }
+            const userDetails = user.details
+            const monitorId = req.params.id
+            const groupKey = req.params.ke
+            const hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1';
             var origURL = req.originalUrl.split('/')
             var videoParam = origURL[origURL.indexOf(req.params.auth) + 1]
             var videoSet = 'Videos'
@@ -999,101 +995,32 @@ module.exports = function(s,config,lang,app,io){
                     videoSet = 'Cloud Videos'
                 break;
             }
-            req.sql='SELECT * FROM `'+videoSet+'` WHERE ke=?';req.ar=[req.params.ke];
-            req.count_sql='SELECT COUNT(*) FROM `'+videoSet+'` WHERE ke=?';req.count_ar=[req.params.ke];
-            if(req.query.archived=='1'){
-                req.sql+=' AND details LIKE \'%"archived":"1"\''
-                req.count_sql+=' AND details LIKE \'%"archived":"1"\''
-            }
-            if(!req.params.id){
-                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                    req.or=[];
-                    user.details.monitors.forEach(function(v,n){
-                        req.or.push('mid=?');req.ar.push(v)
-                    })
-                    req.sql+=' AND ('+req.or.join(' OR ')+')'
-                    req.count_sql+=' AND ('+req.or.join(' OR ')+')'
-                }
-            }else{
-                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                    req.count_sql+=' and mid=?';req.count_ar.push(req.params.id)
-                }else{
-                    res.end('[]');
-                    return;
-                }
-            }
-            if(req.query.start||req.query.end){
-                if(req.query.start && req.query.start !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                }
-                if(req.query.end && req.query.end !== ''){
-                    req.query.end = s.stringToSqlTime(req.query.end)
-                }
-                if(!req.query.startOperator||req.query.startOperator==''){
-                    req.query.startOperator='>='
-                }
-                if(!req.query.endOperator||req.query.endOperator==''){
-                    req.query.endOperator='<='
-                }
-                var endIsStartTo
-                var theEndParameter = '`end`'
-                if(req.query.endIsStartTo){
-                    endIsStartTo = true
-                    theEndParameter = '`time`'
-                }
-                switch(true){
-                    case(req.query.start&&req.query.start!==''&&req.query.end&&req.query.end!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ? AND '+theEndParameter+' '+req.query.endOperator+' ?';
-                        req.count_sql+=' AND `time` '+req.query.startOperator+' ? AND '+theEndParameter+' '+req.query.endOperator+' ?';
-                        req.ar.push(req.query.start)
-                        req.ar.push(req.query.end)
-                        req.count_ar.push(req.query.start)
-                        req.count_ar.push(req.query.end)
-                    break;
-                    case(req.query.start&&req.query.start!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ?';
-                        req.count_sql+=' AND `time` '+req.query.startOperator+' ?';
-                        req.ar.push(req.query.start)
-                        req.count_ar.push(req.query.start)
-                    break;
-                    case(req.query.end&&req.query.end!==''):
-                        req.sql+=' AND '+theEndParameter+' '+req.query.endOperator+' ?';
-                        req.count_sql+=' AND '+theEndParameter+' '+req.query.endOperator+' ?';
-                        req.ar.push(req.query.end)
-                        req.count_ar.push(req.query.end)
-                    break;
-                }
-            }
-            req.sql+=' ORDER BY `time` DESC';
-            if(!req.query.limit||req.query.limit==''){
-                req.query.limit='100'
-            }
-            if(req.query.limit!=='0'){
-                req.sql+=' LIMIT '+req.query.limit
-            }
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(!r){
-                    res.end(s.prettyPrint({total:0,limit:req.query.limit,skip:0,videos:[]}));
-                    return
-                }
-                s.sqlQuery(req.count_sql,req.count_ar,function(err,count){
-                    s.buildVideoLinks(r,{
-                        auth : req.params.auth,
-                        videoParam : videoParam,
-                        hideRemote : config.hideCloudSaveUrls,
-                        videoParam : videoParam
-                    })
-                    if(req.query.limit.indexOf(',')>-1){
-                        req.skip=parseInt(req.query.limit.split(',')[0])
-                        req.query.limit=parseInt(req.query.limit.split(',')[1])
-                    }else{
-                        req.skip=0
-                        req.query.limit=parseInt(req.query.limit)
-                    }
-                    res.end(s.prettyPrint({isUTC:config.useUTC,total:count[0]['COUNT(*)'],limit:req.query.limit,skip:req.skip,videos:r,endIsStartTo:endIsStartTo}));
+            s.sqlQueryBetweenTimesWithPermissions({
+                table: videoSet,
+                user: user,
+                groupKey: req.params.ke,
+                monitorId: req.params.id,
+                startTime: req.query.start,
+                endTime: req.query.end,
+                startTimeOperator: req.query.startOperator,
+                endTimeOperator: req.query.endOperator,
+                limit: req.query.limit,
+                archived: req.query.archived,
+                endIsStartTo: !!req.query.endIsStartTo,
+                parseRowDetails: false,
+                rowName: 'videos',
+                preliminaryValidationFailed: (
+                    user.permissions.watch_videos === "0" ||
+                    hasRestrictions &&
+                    (!userDetails.video_view || userDetails.video_view.indexOf(monitorId)===-1)
+                )
+            },(response) => {
+                s.buildVideoLinks(response.videos,{
+                    auth : req.params.auth,
+                    videoParam : videoParam,
+                    hideRemote : config.hideCloudSaveUrls,
                 })
+                res.end(s.prettyPrint(response))
             })
         },res,req);
     });
@@ -1104,144 +1031,74 @@ module.exports = function(s,config,lang,app,io){
 		config.webPaths.apiPrefix+':auth/events/:ke',
 		config.webPaths.apiPrefix+':auth/events/:ke/:id'
 	], function (req,res){
-        req.ret={ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.video_view.indexOf(req.params.id)===-1){
-                res.end(s.prettyPrint([]))
-                return
-            }
-            req.sql='SELECT * FROM Events WHERE ke=?';req.ar=[req.params.ke];
-            if(!req.params.id){
-                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                    req.or=[];
-                    user.details.monitors.forEach(function(v,n){
-                        req.or.push('mid=?');req.ar.push(v)
-                    })
-                    req.sql+=' AND ('+req.or.join(' OR ')+')'
-                }
-            }else{
-                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                }else{
-                    res.end('[]');
-                    return;
-                }
-            }
-            if(req.query.start||req.query.end){
-                if(req.query.start && req.query.start !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                }
-                if(req.query.end && req.query.end !== ''){
-                    req.query.end = s.stringToSqlTime(req.query.end)
-                }
-                if(!req.query.startOperator||req.query.startOperator==''){
-                    req.query.startOperator='>='
-                }
-                if(!req.query.endOperator||req.query.endOperator==''){
-                    req.query.endOperator='<='
-                }
-                switch(true){
-                    case(req.query.start&&req.query.start!==''&&req.query.end&&req.query.end!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ? AND `time` '+req.query.endOperator+' ?';
-                        req.ar.push(req.query.start)
-                        req.ar.push(req.query.end)
-                    break;
-                    case(req.query.start&&req.query.start!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ?';
-                        req.ar.push(req.query.start)
-                    break;
-                    case(req.query.end&&req.query.end!==''):
-                        req.sql+=' AND `time` '+req.query.endOperator+' ?';
-                        req.ar.push(req.query.end)
-                    break;
-                }
-            }
-            req.sql+=' ORDER BY `time` DESC';
-            if(!req.query.limit||req.query.limit==''){
-                req.query.limit='100'
-            }
-            if(req.query.limit!=='0'){
-                req.sql+=' LIMIT '+req.query.limit
-            }
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(err){
-                    err.sql=req.sql;
-                    res.end(s.prettyPrint(err));
-                    return
-                }
-                if(!r){r=[]}
-                r.forEach(function(v,n){
-                    r[n].details=JSON.parse(v.details);
-                })
-                res.end(s.prettyPrint(r));
+            const userDetails = user.details
+            const monitorId = req.params.id
+            const groupKey = req.params.ke
+            const hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1';
+            s.sqlQueryBetweenTimesWithPermissions({
+                table: 'Events',
+                user: user,
+                groupKey: req.params.ke,
+                monitorId: req.params.id,
+                startTime: req.query.start,
+                endTime: req.query.end,
+                startTimeOperator: req.query.startOperator,
+                endTimeOperator: req.query.endOperator,
+                limit: req.query.limit,
+                endIsStartTo: true,
+                parseRowDetails: true,
+                noFormat: true,
+                noCount: true,
+                rowName: 'events',
+                preliminaryValidationFailed: (
+                    user.permissions.watch_videos === "0" ||
+                    hasRestrictions &&
+                    (!userDetails.video_view || userDetails.video_view.indexOf(monitorId)===-1)
+                )
+            },(response) => {
+                res.end(s.prettyPrint(response))
             })
-        },res,req);
-    });
+        })
+    })
     /**
     * API : Get Logs
      */
-    app.get([config.webPaths.apiPrefix+':auth/logs/:ke',config.webPaths.apiPrefix+':auth/logs/:ke/:id'], function (req,res){
-        req.ret={ok:false};
+    app.get([
+        config.webPaths.apiPrefix+':auth/logs/:ke',
+        config.webPaths.apiPrefix+':auth/logs/:ke/:id'
+    ], function (req,res){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            if(user.permissions.get_logs==="0" || user.details.sub && user.details.view_logs !== '1'){
-                res.end(s.prettyPrint([]))
-                return
-            }
-            req.sql='SELECT * FROM Logs WHERE ke=?';req.ar=[req.params.ke];
-            if(!req.params.id){
-                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                    req.or=[];
-                    user.details.monitors.forEach(function(v,n){
-                        req.or.push('mid=?');req.ar.push(v)
-                    })
-                    req.sql+=' AND ('+req.or.join(' OR ')+')'
-                }
-            }else{
-                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1||req.params.id.indexOf('$')>-1){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                }else{
-                    res.end('[]');
-                    return;
-                }
-            }
-            if(req.query.start||req.query.end){
-                if(!req.query.startOperator||req.query.startOperator==''){
-                    req.query.startOperator='>='
-                }
-                if(!req.query.endOperator||req.query.endOperator==''){
-                    req.query.endOperator='<='
-                }
-                if(req.query.start && req.query.start !== '' && req.query.end && req.query.end !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                    req.query.end = s.stringToSqlTime(req.query.end)
-                    req.sql+=' AND `time` '+req.query.startOperator+' ? AND `time` '+req.query.endOperator+' ?';
-                    req.ar.push(req.query.start)
-                    req.ar.push(req.query.end)
-                }else if(req.query.start && req.query.start !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                    req.sql+=' AND `time` '+req.query.startOperator+' ?';
-                    req.ar.push(req.query.start)
-                }
-            }
-            if(!req.query.limit||req.query.limit==''){req.query.limit=50}
-            req.sql+=' ORDER BY `time` DESC LIMIT '+req.query.limit+'';
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(err){
-                    err.sql=req.sql;
-                    res.end(s.prettyPrint(err));
-                    return
-                }
-                if(!r){r=[]}
-                r.forEach(function(v,n){
-                    r[n].info=JSON.parse(v.info)
+            const userDetails = user.details
+            const monitorId = req.params.id
+            const groupKey = req.params.ke
+            const hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1';
+            s.sqlQueryBetweenTimesWithPermissions({
+                table: 'Logs',
+                user: user,
+                groupKey: req.params.ke,
+                monitorId: req.params.id,
+                startTime: req.query.start,
+                endTime: req.query.end,
+                startTimeOperator: req.query.startOperator,
+                endTimeOperator: req.query.endOperator,
+                limit: req.query.limit || 50,
+                endIsStartTo: true,
+                noFormat: true,
+                noCount: true,
+                rowName: 'logs',
+                preliminaryValidationFailed: (
+                    user.permissions.get_logs === "0" || userDetails.sub && userDetails.view_logs !== '1'
+                )
+            },(response) => {
+                response.forEach(function(v,n){
+                    v.info = JSON.parse(v.info)
                 })
-                res.end(s.prettyPrint(r));
+                res.end(s.prettyPrint(response))
             })
-        },res,req);
+        },res,req)
     })
     /**
     * API : Get Monitors Online
@@ -1791,6 +1648,61 @@ module.exports = function(s,config,lang,app,io){
             s.userLog(req.params,{type:'Test',msg:'Hook Test'})
             res.end(s.prettyPrint({ok:true}))
         },res,req);
+    })
+    /**
+    * API : Object Detection Counter Status
+     */
+    app.get(config.webPaths.apiPrefix+':auth/eventCountStatus/:ke/:id', function (req,res){
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,function(user){
+            if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
+                res.end(user.lang['Not Permitted'])
+                return
+            }
+            var selectedObject = s.group[req.params.ke].activeMonitors[req.params.id].eventsCounted
+            res.end(s.prettyPrint({
+                ok: true,
+                counted: Object.keys(selectedObject).length,
+                tags: selectedObject,
+            }))
+        },res,req)
+    })
+    /**
+    * API : Object Detection Counter Status
+     */
+    app.get([
+        config.webPaths.apiPrefix+':auth/eventCounts/:ke',
+        config.webPaths.apiPrefix+':auth/eventCounts/:ke/:id'
+    ], function (req,res){
+        res.setHeader('Content-Type', 'application/json')
+        s.auth(req.params,function(user){
+            const userDetails = user.details
+            const monitorId = req.params.id
+            const groupKey = req.params.ke
+            var hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1';
+            s.sqlQueryBetweenTimesWithPermissions({
+                table: 'Events Counts',
+                user: user,
+                groupKey: req.params.ke,
+                monitorId: req.params.id,
+                startTime: req.query.start,
+                endTime: req.query.end,
+                startTimeOperator: req.query.startOperator,
+                endTimeOperator: req.query.endOperator,
+                limit: req.query.limit,
+                archived: req.query.archived,
+                endIsStartTo: !!req.query.endIsStartTo,
+                parseRowDetails: true,
+                rowName: 'counts',
+                preliminaryValidationFailed: (
+                    user.permissions.watch_videos === "0" ||
+                    hasRestrictions &&
+                    (!userDetails.video_view || userDetails.video_view.indexOf(monitorId)===-1)
+                )
+            },(response) => {
+                res.end(s.prettyPrint(response))
+            })
+        },res,req)
     })
     /**
     * API : Camera PTZ Controller

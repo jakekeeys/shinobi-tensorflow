@@ -6,7 +6,7 @@ form.modal-body{margin:0}
 .form-group label>div:nth-child(2){width:70%;padding:5px;border:1px solid #dedede;border-radius:5px}
 .dark .form-group label>div,.dark .form-group label>div>span{border-color:#454545;color:#fff}
 .important.form-group label>div:nth-child(2),.important.form-group label>div>span{border-color:red}
-.form-group label span small{margin-left: 2px;display:block;font-weight: 600;}
+.form-group label span small{margin-left: 2px;display:block;font-weight: 400;}
 .form-group-group .round-left{border-radius: 50px 0 0 50px;margin-left:10px}
 .form-group-group blockquote:before,.form-group-group blockquote:after{display:none!important}
 .form-group-group blockquote{letter-spacing:normal;font-style:normal}
@@ -23,15 +23,27 @@ form.modal-body{margin:0}
 .dark .form-group-group .mdl-list__item{color:#fff;border-bottom:1px solid #444;}
 .dark .form-group-group .mdl-list__item:hover{background:#555;}
 .form-group-group:visible:last-child,.form-group-group > .form-group:last-child{margin-bottom:0}
-.form-group-group > h4{margin:0 -10px 15px -10px;padding:15px;background:#ddd;}
+.form-group-group > h4{
+    margin:0 -10px 15px -10px;
+    padding:15px;
+    background:#ddd;
+    font-family: sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 3pt;
+    font-size: 8pt;
+}
+.form-group-group > h4 .btn{
+    text-transform: none;
+    letter-spacing: initial;
+}
 .form-group-group > h4:empty{padding:2px}
 .form-group-group > h4 small{color:#fff;}
 .form-group-group.red{border-color:#d9534f}
 .form-group-group.red > h4{background:#d9534f;color:#fff}
 .form-group-group.purple{border-color:#3f51b5}
 .form-group-group.purple > h4{background:#3f51b5;color:#fff}
-.form-group-group.blue{border-color:#337ab7}
-.form-group-group.blue > h4{background:#337ab7;color:#fff}
+.form-group-group.blue{border-color:#375182}
+.form-group-group.blue > h4{background:#375182;color:#fff}
 .form-group-group.navy{border-color:#31708f}
 .form-group-group.navy > h4{background:#31708f;color:#fff}
 .form-group-group.green{border-color:#449d44}
@@ -44,3 +56,6 @@ form.modal-body{margin:0}
 .form-group-group.grey > h4{background:#777;color:#fff}
 .dark .form-group-group{background:#222}
 .form-group-group:last-child {margin-bottom: 0}
+
+.btn-group-justified {display: flex}
+.btn-group-justified .btn {flex: 1}

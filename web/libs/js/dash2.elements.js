@@ -122,7 +122,7 @@ $(document).ready(function(e){
     $('body')
     .on('click','.logout',function(e){
         var logout = function(user,callback){
-            $.get($.ccio.init('location',user)+user.auth_token+'/logout/'+user.ke+'/'+user.uid,callback)
+            $.get(getApiPrefix() + '/logout/'+user.ke+'/'+user.uid,callback)
         }
         $.each($.users,function(n,linkedShinobiUser){
             logout(linkedShinobiUser,function(){});
@@ -387,7 +387,7 @@ $(document).ready(function(e){
                     if($.ccio.mon[e.ke+e.mid+user.auth_token].popOut){
                         $.ccio.mon[e.ke+e.mid+user.auth_token].popOut.close()
                     }
-                    $.ccio.mon[e.ke+e.mid+user.auth_token].popOut = window.open($.ccio.init('location',user)+user.auth_token+'/embed/'+e.ke+'/'+e.mid+'/fullscreen|jquery|relative|gui','pop_'+e.mid+user.auth_token,'height='+img.height+',width='+img.width);
+                    $.ccio.mon[e.ke+e.mid+user.auth_token].popOut = window.open(getApiPrefix() + '/embed/'+e.ke+'/'+e.mid+'/fullscreen|jquery|relative|gui','pop_'+e.mid+user.auth_token,'height='+img.height+',width='+img.width);
                 }
                 if(e.mon.watch===1){
                     $.ccio.snapshot(e,function(url){
@@ -406,22 +406,19 @@ $(document).ready(function(e){
             case'mode':
                 e.mode=e.e.attr('mode')
                 if(e.mode){
-                    $.getJSON($.ccio.init('location',user)+user.auth_token+'/monitor/'+e.ke+'/'+e.mid+'/'+e.mode,function(d){
+                    $.getJSON(getApiPrefix() + '/monitor/'+e.ke+'/'+e.mid+'/'+e.mode,function(d){
                         $.ccio.log(d)
                     })
                 }
             break;
-            case'timelapseJpeg':
-                $.timelapseJpeg.e.modal('show')
-                $.timelapseJpeg.monitors.find('.monitor').remove()
-                $.each($.ccio.mon,function(n,v){
-                    $.timelapseJpeg.monitors.append('<option class="monitor" value="'+v.mid+'">'+v.name+'</option>')
+            case'trigger-event':
+                $.getJSON(getApiPrefix() + '/motion/'+e.ke+'/'+e.mid+'/?data={"plug":"camera1","name":"stairs","reason":"motion","confidence":197.4755859375}',function(d){
+                    $.ccio.log(d)
                 })
-                e.e=$.timelapseJpeg.monitors.find('.monitor').prop('selected',false)
-                if(e.mid!==''){
-                    e.e=$.timelapseJpeg.monitors.find('.monitor[value="'+e.mid+'"]')
-                }
-                e.e.first().prop('selected',true)
+            break;
+            case'timelapseJpeg':
+                var monitorId = createMonitorsList($.timelapseJpeg.monitorsList)
+                $.timelapseJpeg.openWindow(monitorId)
             break;
             case'region':
                 if(!e.mon){
@@ -430,9 +427,6 @@ $(document).ready(function(e){
                 }
                 e.d=JSON.parse(e.mon.details);
                 $.loadRegionEditor(e.d)
-            break;
-            case'detector_filters':
-                $.detectorFilters.e.modal('show');
             break;
             case'snapshot':
                 $.ccio.snapshot(e,function(url){
@@ -469,7 +463,7 @@ $(document).ready(function(e){
                         videoSet = 'cloudVideos'
                     break;
                 }
-                e.videoURL=$.ccio.init('location',user)+user.auth_token+'/'+videoSet+'/'+e.ke+'/'+e.mid+'?limit='+e.limit+'&start='+$.ccio.init('th',e.dateRange.startDate)+'&end='+$.ccio.init('th',e.dateRange.endDate);
+                e.videoURL=getApiPrefix() + '/'+videoSet+'/'+e.ke+'/'+e.mid+'?limit='+e.limit+'&start='+e.dateRange.startDate.utc().format('YYYY-MM-DDTHH:mm:ss')+'&end='+e.dateRange.endDate.utc().format('YYYY-MM-DDTHH:mm:ss');
                 $.getJSON(e.videoURL,function(d){
                     d.pages=d.total/100;
                     $('.video_viewer_total').text(d.total)
@@ -501,9 +495,10 @@ $(document).ready(function(e){
                                         $.vidview.loadedVideos[v.filename] = Object.assign(v,{})
                                         var n=$.ccio.mon[v.ke+v.mid+user.auth_token];
                                         if(n){v.title=n.name+' - '+(parseInt(v.size)/1048576).toFixed(2)+'mb';}
-                                        v.start=v.time;
+                                        v.start = moment.utc(v.time).local()
+                                        v.end = moment.utc(v.end).local()
     //                                    v.filename=$.ccio.init('tf',v.time)+'.'+v.ext;
-                                        e.ar.push(v);
+                                        e.ar.push(v)
                                     }
                                 })
                                 e.b.html('')
@@ -706,7 +701,7 @@ $(document).ready(function(e){
                 $.each($.ccio.init('cleanMon',e.mon),function(n,v,g){
                     if(n==='host'&&v.indexOf('@')>-1){g=v.split('@')[1]}else{g=v};
                     try{JSON.parse(g);return}catch(err){}
-                    e.html+='<tr><td><b>'+n+'</b></td><td>'+g+'</td></tr>';
+                    e.html+='<tr><td><b>'+n+'</b></td><td style="word-break:break-all">'+g+'</td></tr>';
                 })
                 e.html+='</tr></table>';
                 $.confirm.body.html(e.html)
@@ -715,7 +710,7 @@ $(document).ready(function(e){
                         title:'Delete Monitor',
                         class:'btn-danger',
                         callback:function(){
-                            $.get($.ccio.init('location',user)+user.auth_token+'/configureMonitor/'+user.ke+'/'+e.mon.mid+'/delete',function(d){
+                            $.get(getApiPrefix() + '/configureMonitor/'+user.ke+'/'+e.mon.mid+'/delete',function(d){
                                 $.ccio.log(d)
                             })
                         }
@@ -724,7 +719,7 @@ $(document).ready(function(e){
                         title:'Delete Monitor and Files',
                         class:'btn-danger',
                         callback:function(){
-                            $.get($.ccio.init('location',user)+user.auth_token+'/configureMonitor/'+user.ke+'/'+e.mon.mid+'/delete?deleteFiles=true',function(d){
+                            $.get(getApiPrefix() + '/configureMonitor/'+user.ke+'/'+e.mon.mid+'/delete?deleteFiles=true',function(d){
                                 $.ccio.log(d)
                             })
                         }

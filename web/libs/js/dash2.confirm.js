@@ -26,6 +26,10 @@ $(document).ready(function(){
         if(options.title && options.body){
             $.confirm.e.modal('show')
             $.confirm.title.text(options.title)
+            $.confirm.body.css('word-wrap','initial')
+            if(options.breakWord){
+                $.confirm.body.css('word-wrap','break-word')
+            }
             $.confirm.body.html(options.body)
         }
         if(options.clickOptions && options.clickCallback)$.confirm.click(options.clickOptions,options.clickCallback)

@@ -7,9 +7,23 @@ var request = require('request');
 var SAT = require('sat')
 var V = SAT.Vector;
 var P = SAT.Polygon;
+var B = SAT.box;
 // Matrix In Region Libs />
 module.exports = function(s,config,lang){
-    isAtleastOneMatrixInRegion = function(regions,matrices,callback){
+    const countObjects = async (event) => {
+        const matrices = event.details.matrices
+        const eventsCounted = s.group[event.ke].activeMonitors[event.id].eventsCounted || {}
+        if(matrices){
+            matrices.forEach((matrix)=>{
+                const id = matrix.tag
+                if(!eventsCounted[id])eventsCounted[id] = {times: [], count: {}, tag: matrix.tag}
+                if(!isNaN(matrix.id))eventsCounted[id].count[matrix.id] = 1
+                eventsCounted[id].times.push(new Date().getTime())
+            })
+        }
+        return eventsCounted
+    }
+    const isAtleastOneMatrixInRegion = function(regions,matrices,callback){
         var regionPolys = []
         var matrixPoints = []
         regions.forEach(function(region,n){
@@ -22,13 +36,7 @@ module.exports = function(s,config,lang){
         var collisions = []
         var foundInRegion = false
         matrices.forEach(function(matrix){
-            var matrixPoints = [
-                new V(matrix.x,matrix.y),
-                new V(matrix.width,matrix.y),
-                new V(matrix.width,matrix.height),
-                new V(matrix.x,matrix.height)
-            ]
-            var matrixPoly = new P(new V(0,0), matrixPoints)
+            var matrixPoly = new B(new V(matrix.x, matrix.y), matrix.width, matrix.height).toPolygon()
             regionPolys.forEach(function(region,n){
                 var response = new SAT.Response()
                 var collided = SAT.testPolygonPolygon(matrixPoly, region, response)
@@ -89,6 +97,7 @@ module.exports = function(s,config,lang){
         })
     }
     s.triggerEvent = function(d,forceSave){
+        var didCountingAlready = false
         var filter = {
             halt : false,
             addToMotionCounter : true,
@@ -97,7 +106,8 @@ module.exports = function(s,config,lang){
             webhook : true,
             command : true,
             record : true,
-            indifference : false
+            indifference : false,
+            countObjects : true
         }
         s.onEventTriggerBeforeFilterExtensions.forEach(function(extender){
             extender(d,filter)
@@ -237,6 +247,10 @@ module.exports = function(s,config,lang){
         if(filter.addToMotionCounter && filter.record){
             s.group[d.ke].activeMonitors[d.id].detector_motion_count.push(d)
         }
+        if(filter.countObjects && currentConfig.detector_obj_count === '1' && currentConfig.detector_obj_count_in_region !== '1'){
+            didCountingAlready = true
+            countObjects(d)
+        }
         if(filter.useLock){
             if(s.group[d.ke].activeMonitors[d.id].motion_lock){
                 return
@@ -261,6 +275,9 @@ module.exports = function(s,config,lang){
             var isMatrixInRegions = isAtleastOneMatrixInRegion(regions,d.details.matrices)
             if(isMatrixInRegions){
                 s.debugLog('Matrix in region!')
+                if(filter.countObjects && currentConfig.detector_obj_count === '1' && currentConfig.detector_obj_count_in_region === '1' && !didCountingAlready){
+                    countObjects(d)
+                }
             }else{
                 return
             }
@@ -393,6 +410,7 @@ module.exports = function(s,config,lang){
                 s.group[d.ke].activeMonitors[d.id].eventBasedRecording.allowEnd = true
                 s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stdin.setEncoding('utf8')
                 s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stdin.write('q')
+                s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.kill('SIGINT')
                 delete(s.group[d.ke].activeMonitors[d.id].eventBasedRecording.timeout)
             },detector_timeout * 1000 * 60)
         }
