@@ -22,7 +22,8 @@ fi
 # else
 #     echo "OpenCV found... : $(opencv_version)"
 # fi
-bash <(curl -s https://gitlab.com/Shinobi-Systems/supplements/-/raw/master/downgradeGccG++.sh)
+echo "If you get gcc/g++ build errors you can try running this then the installer again."
+echo "bash <(curl -s https://gitlab.com/Shinobi-Systems/supplements/-/raw/master/downgradeGccG++.sh)"
 echo "============="
 echo "Shinobi - Do you want to Install Tiny Weights?"
 echo "This is better for Graphics Cards with less than 4GB RAM"

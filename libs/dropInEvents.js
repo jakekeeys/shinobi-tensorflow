@@ -235,6 +235,7 @@ module.exports = function(s,config,lang,app,io){
         var SMTPServer = require("smtp-server").SMTPServer;
         if(!config.smtpServerPort && (config.smtpServerSsl && config.smtpServerSsl.enabled !== false || config.ssl)){config.smtpServerPort = 465}else if(!config.smtpServerPort){config.smtpServerPort = 25}
         var smtpOptions = {
+            logger: config.debugLog || config.smtpServerLog,
             hideSTARTTLS: config.smtpServerHideStartTls,
             onAuth(auth, session, callback) {
                 var username = auth.username
