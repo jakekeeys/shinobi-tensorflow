@@ -13,7 +13,6 @@ $(document).ready(function(e){
         return detectorFiltersSelector.val()
     }
     var drawOptions = function(){
-        idField.val($.ccio.gid(5))
         detectorFiltersSelector.empty()
         $.each(loadedFilters,function(n,dFilter){
             $.ccio.tm('option',{auth_token:$user.auth_token,id:dFilter.id,name:dFilter.filter_name},'#detector_filters')
@@ -50,7 +49,7 @@ $(document).ready(function(e){
             var actions = $(v).find('[actions]')
             form.actions[actions.attr('actions')] = actions.val()
         })
-        form.filter_name = 'New Filter'
+        form.filter_name = form.filter_name || 'New Filter'
         return form
     }
     var closeFiltersToMonitorEditor = function(form){
@@ -134,7 +133,7 @@ $(document).ready(function(e){
         loadedFilters[newId] = form
         console.log(form)
         drawOptions()
-        detectorFiltersSelector.val(newId)
+        detectorFiltersSelector.val(newId).change()
     }
     var deleteSelectedFilter = function(){
         var newObject = {}
@@ -253,7 +252,7 @@ $(document).ready(function(e){
     detectorFiltersWindow.find('.delete-filter').click(function(e){
         deleteSelectedFilter()
     })
-    detectorFiltersForm.on('change','.where-row .form-control, .actions-row .form-control',function(e){
+    detectorFiltersForm.on('change','[name="filter_name"], .where-row .form-control, .actions-row .form-control',function(e){
         updateSelectedFilter()
     })
     detectorFiltersForm.submit(function(e){
