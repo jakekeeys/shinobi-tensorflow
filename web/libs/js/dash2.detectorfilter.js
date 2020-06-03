@@ -50,7 +50,7 @@ $(document).ready(function(e){
             var actions = $(v).find('[actions]')
             form.actions[actions.attr('actions')] = actions.val()
         })
-        form.filter_name = 'New Filter'
+        form.filter_name = form.filter_name || 'New Filter'
         return form
     }
     var closeFiltersToMonitorEditor = function(form){
@@ -253,7 +253,7 @@ $(document).ready(function(e){
     detectorFiltersWindow.find('.delete-filter').click(function(e){
         deleteSelectedFilter()
     })
-    detectorFiltersForm.on('change','.where-row .form-control, .actions-row .form-control',function(e){
+    detectorFiltersForm.on('change','[name="filter_name"], .where-row .form-control, .actions-row .form-control',function(e){
         updateSelectedFilter()
     })
     detectorFiltersForm.submit(function(e){
