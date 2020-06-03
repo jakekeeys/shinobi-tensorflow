@@ -13,7 +13,6 @@ $(document).ready(function(e){
         return detectorFiltersSelector.val()
     }
     var drawOptions = function(){
-        idField.val($.ccio.gid(5))
         detectorFiltersSelector.empty()
         $.each(loadedFilters,function(n,dFilter){
             $.ccio.tm('option',{auth_token:$user.auth_token,id:dFilter.id,name:dFilter.filter_name},'#detector_filters')
@@ -134,7 +133,7 @@ $(document).ready(function(e){
         loadedFilters[newId] = form
         console.log(form)
         drawOptions()
-        detectorFiltersSelector.val(newId)
+        detectorFiltersSelector.val(newId).change()
     }
     var deleteSelectedFilter = function(){
         var newObject = {}
