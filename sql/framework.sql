@@ -157,6 +157,8 @@ CREATE TABLE IF NOT EXISTS `Timelapse Frames` (
   `time` timestamp NULL DEFAULT NULL,
   `size` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- Dumping structure for table ccio.Timelapse Frames
+CREATE TABLE IF NOT EXISTS `Cloud Timelapse Frames` (`ke` varchar(50) NOT NULL,`mid` varchar(50) NOT NULL,`href` text NOT NULL,`details` longtext,`filename` varchar(50) NOT NULL,`time` timestamp NULL DEFAULT NULL,`size` int(11) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Dumping structure for table ccio.Events Counts
 CREATE TABLE `Events Counts` (

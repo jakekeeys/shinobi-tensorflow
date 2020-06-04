@@ -1526,7 +1526,11 @@ module.exports = function(s,config,lang){
                         e.type !== 'local' &&
                         e.details.skip_ping !== '1'
                     ){
-                        connectionTester.test(strippedHost,e.port,2000,startVideoProcessor);
+                        try{
+                            connectionTester.test(strippedHost,e.port,2000,startVideoProcessor);
+                        }catch(err){
+                            startVideoProcessor(null,{success:true})
+                        }
                     }else{
                         startVideoProcessor(null,{success:true})
                     }
@@ -1872,6 +1876,16 @@ module.exports = function(s,config,lang){
                 if(isNaN(e.cutoff)===true){e.cutoff=15}
                 //start drawing files
                 delete(activeMonitor.childNode)
+                //validate port
+                if(
+                    e.type !== 'socket' &&
+                    e.type !== 'dashcam' &&
+                    e.protocol !== 'udp' &&
+                    e.type !== 'local' &&
+                    e.details.skip_ping !== '1'
+                ){
+                    e.port = e.port ? e.port : e.protocol === 'https' ? '443' : '80'
+                }
                 launchMonitorProcesses(e)
             break;
             default:
