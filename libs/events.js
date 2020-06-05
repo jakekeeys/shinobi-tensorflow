@@ -7,7 +7,7 @@ var request = require('request');
 var SAT = require('sat')
 var V = SAT.Vector;
 var P = SAT.Polygon;
-var B = SAT.box;
+var B = SAT.Box;
 // Matrix In Region Libs />
 module.exports = function(s,config,lang){
     const countObjects = async (event) => {
