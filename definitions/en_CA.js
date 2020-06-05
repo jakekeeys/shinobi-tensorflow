@@ -2674,7 +2674,7 @@ module.exports = function(s,config,lang){
                            {
                               "name": "detail=detector_sensitivity",
                               "field": lang['Minimum Change'],
-                              "description": "The motion confidence rating must exceed this value to be seen as a trigger. This option was previously named \"Indifference\".",
+                              "description": "The motion confidence rating must exceed this value to be seen as a trigger. This number correlates directly to the confidence rating returned by the motion detector. This option was previously named \"Indifference\".",
                               "default": "10",
                               "example": "10",
                               "possible": ""
