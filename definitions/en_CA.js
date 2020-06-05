@@ -2673,16 +2673,16 @@ module.exports = function(s,config,lang){
                            // },
                            {
                               "name": "detail=detector_sensitivity",
-                              "field": lang.Indifference,
-                              "description": "This can mean multiple things depending on the detector used. Built-In Motion Detection defines this as \"Percentage Changed in View or Region\"",
+                              "field": lang['Minimum Change'],
+                              "description": "The motion confidence rating must exceed this value to be seen as a trigger. This number correlates directly to the confidence rating returned by the motion detector. This option was previously named \"Indifference\".",
                               "default": "10",
                               "example": "10",
                               "possible": ""
                            },
                            {
                               "name": "detail=detector_max_sensitivity",
-                              "field": lang["Max Indifference"],
-                              "description": "An upperbound to indifference. Any value over this amount will be ignored.",
+                              "field": lang["Maximum Change"],
+                              "description": "The motion confidence rating must be lower than this value to be seen as a trigger. Leave blank for no maximum. This option was previously named \"Max Indifference\".",
                               "default": "",
                               "example": "75",
                               "possible": ""
@@ -2706,7 +2706,7 @@ module.exports = function(s,config,lang){
                            {
                               "name": "detail=detector_frame",
                               "field": lang["Full Frame Detection"],
-                              "description": "This will read the entire frame for pixel differences.",
+                              "description": "This will read the entire frame for pixel differences. This is the same as creating a region that covers the entire screen.",
                               "default": "1",
                               "example": "",
                               "fieldType": "select",

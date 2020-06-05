@@ -15,7 +15,10 @@ var addSection = function(section){
         var userSettingsId = section.name.replace(/[^a-zA-Z ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/ /g, '')
         section.id = userSettingsId
     }
-    $.sM.sections[section.name] = section.id
+    $.sM.sections[section.name] = {
+        id: section.id,
+        color: section.color
+    }
     if(section.info){
         $.each(section.info,function(m,block){
             if(block.isFormGroupGroup === true){
@@ -35,10 +38,11 @@ $.each($.ccio.definitions['Account Settings'].blocks,function(n,section){
 $.sM.drawList = function(){
     var list = $.sM.e.find('.follow-list ul')
     var html = ''
-    $.each($.sM.sections,function(sectionName,sectionId){
+    $.each($.sM.sections,function(sectionName,section){
+        var sectionId = section.id
         var el = $('#' + sectionId)
         if(el.length > 0){
-            html += '<li><a class="scrollTo" href="#' + sectionId + '" scrollToParent="#settings .modal-body">' + sectionName + '</a></li>'
+            html += `<li><a class="scrollTo" href="#${sectionId}" scrollToParent="#settings .modal-body"><span class="dot dot-${section.color}"></span>${sectionName}</a></li>`
         }
     })
     list.html(html)
