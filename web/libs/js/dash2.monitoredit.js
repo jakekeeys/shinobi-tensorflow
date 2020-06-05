@@ -367,7 +367,10 @@ var getMonitorEditFormFields = function(){
     return response
 }
 var addSection = function(section){
-    sections[section.name] = section.id
+    sections[section.name] = {
+        id: section.id,
+        color: section.color
+    }
     if(section.info){
         $.each(section.info,function(m,block){
             if(block.isFormGroupGroup === true){
@@ -389,10 +392,11 @@ $.each($.ccio.definitions['Monitor Settings'].blocks,function(n,section){
 var drawList = function(){
     var list = monitorEditorWindow.find('.follow-list ul')
     var html = ''
-    $.each(sections,function(sectionName,sectionId){
+    $.each(sections,function(sectionName,section){
+        var sectionId = section.id
         var el = $('#' + sectionId + ':visible')
         if(el.length > 0){
-            html += '<li><a class="scrollTo" href="#' + sectionId + '" scrollToParent="#add_monitor .modal-body">' + sectionName + '</a></li>'
+            html += `<li><a class="scrollTo" href="#${sectionId}" scrollToParent="#add_monitor .modal-body"><span class="dot dot-${section.color}"></span>${sectionName}</a></li>`
         }
     })
     list.html(html)
