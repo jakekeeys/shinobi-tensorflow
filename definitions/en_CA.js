@@ -2681,7 +2681,7 @@ module.exports = function(s,config,lang){
                            },
                            {
                               "name": "detail=detector_max_sensitivity",
-                              "field": lang["Max Change"],
+                              "field": lang["Maximum Change"],
                               "description": "The motion confidence rating must be lower than this value to be seen as a trigger. Leave blank for no maximum. This option was previously named \"Max Indifference\".",
                               "default": "",
                               "example": "75",
