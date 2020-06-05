@@ -1877,14 +1877,22 @@ module.exports = function(s,config,lang){
                 //start drawing files
                 delete(activeMonitor.childNode)
                 //validate port
-                if(
-                    e.type !== 'socket' &&
-                    e.type !== 'dashcam' &&
-                    e.protocol !== 'udp' &&
-                    e.type !== 'local' &&
-                    e.details.skip_ping !== '1'
-                ){
-                    e.port = e.port ? e.port : e.protocol === 'https' ? '443' : '80'
+                if(!e.port){
+                    switch(e.protocol){
+                        case'http':
+                            e.port = '80'
+                        break;
+                        case'rtmps':
+                        case'https':
+                            e.port = '443'
+                        break;
+                        case'rtmp':
+                            e.port = '1935'
+                        break;
+                        case'rtsp':
+                            e.port = '554'
+                        break;
+                    }
                 }
                 launchMonitorProcesses(e)
             break;
