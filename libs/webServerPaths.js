@@ -1940,8 +1940,9 @@ module.exports = function(s,config,lang,app,io){
                             req.query.flags = ''
                         }
                     }
-                    req.probeCommand = s.splitForFFPMEG(req.query.flags+' -i '+req.query.url).join(' ')
-                    exec('ffprobe '+req.probeCommand+' | echo ',function(err,stdout,stderr){
+                    req.probeCommand = s.splitForFFPMEG(req.query.flags + ` -i "${req.query.url}"`).join(' ')
+                    exec('ffprobe ' + req.probeCommand,function(err,stdout,stderr){
+                        console.log(stderr,stdout)
                         delete(user.ffprobe)
                         if(err){
                            req.ret.error=(err)
