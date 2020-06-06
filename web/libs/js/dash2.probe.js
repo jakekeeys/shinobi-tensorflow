@@ -22,16 +22,8 @@ $(document).ready(function(e){
         setAsLoading(true)
         var el = $(this)
         var form = el.serializeObject()
-        var flags = ''
+        var flags = 'default'
         var url = form.url.trim()
-        switch(form.mode){
-            case'json':
-                flags = '-print_format json -show_format -show_streams'
-            break;
-        }
-    //    if(url.indexOf('{{JSON}}')>-1){
-    //        url='-v quiet -print_format json -show_format -show_streams '+url
-    //    }
         $.get(`${getApiPrefix()}/probe/${$user.ke}?url=${encodeURIComponent(`'${url}'`)}&flags=${flags}`,function(data){
             if(data.ok === true){
                 var html
@@ -40,6 +32,7 @@ $(document).ready(function(e){
                     loadedProbe.url = url
                     html = $.ccio.init('jsontoblock',loadedProbe)
                 }catch(err){
+                    console.log(err)
                     html = data.result
                 }
                 outputView.append(html)
@@ -66,25 +59,25 @@ $(document).ready(function(e){
                         selectedPrimary = stream
                     break;
                     case'audio':
+                        audioStream = stream
                         switch(true){
                             case codecNameContains('aac'):
                                 audioStream.isAAC = true
-                                audioStream = stream
                             break;
                             case codecNameContains('pcm_alaw'):
                             case codecNameContains('law'):
                                 audioStream.isAAC = false
-                                audioStream = stream
                             break;
                         }
                     break;
                 }
             })
 
+            //select input type, primary video codec
             var codecNameContains = function(find){
                 return stringContains(find,selectedPrimary.codec_name)
             }
-            var streamVideoCodec = 'copy'
+            var primaryVideoCodec = 'copy'
             var monitorCaptureRate = ''
             var selectedType = selectedPrimary.codec_name
             if(stringContains('.m3u8',loadedProbe.url)){
@@ -92,34 +85,55 @@ $(document).ready(function(e){
             }else if(stringContains('rtmp://',loadedProbe.url) || stringContains('rtmps://',loadedProbe.url)){
                 selectedType = 'rtmp'
             }else if(loadedProbe.url.substring(0,1) === '/'){
-                if(!codecNameContains('h264'){
-                    streamVideoCodec = 'libx264'
+                if(!codecNameContains('h264')){
+                    primaryVideoCodec = 'libx264'
                 }
                 selectedType = 'local'
                 monitorCaptureRate = loadedProbe.r_frame_rate ? eval(loadedProbe.r_frame_rate) : ''
             }else if(codecNameContains('h264') || codecNameContains('hvec') || codecNameContains('h265')){
                 selectedType = 'h264'
             }else if(codecNameContains('mjpg') || codecNameContains('mjpeg')){
-                streamVideoCodec = 'libx264'
+                primaryVideoCodec = 'libx264'
                 selectedType = 'mjpeg'
                 monitorCaptureRate = loadedProbe.r_frame_rate ? eval(loadedProbe.r_frame_rate) : ''
             }else if(codecNameContains('jpg') || codecNameContains('jpeg')){
                 selectedType = 'jpeg'
                 monitorCaptureRate = loadedProbe.r_frame_rate ? eval(loadedProbe.r_frame_rate) : ''
             }
+            //select primary audio codec
+            var primaryAudioCodec = 'no'
+            if(audioStream){
+                primaryAudioCodec = 'aac'
+                // if(audioStream.isAAC){
+                //     primaryAudioCodec = 'copy'
+                // }else{
+                //     primaryAudioCodec = 'aac'
+                // }
+            }
 
             var monitorConfig = mergeDeep($.aM.generateDefaultMonitorSettings(),{
                 type: selectedType,
+                fps: monitorCaptureRate, //videoRecordRate
                 details: {
-                    sfps: monitorCaptureRate,
                     auto_host: loadedProbe.url,
                     primary_input: `0:${selectedIndex || '0'}`,
-                    stream_vcodec: streamVideoCodec,
-                    stream_acodec: '',
+                    sfps: monitorCaptureRate,
+                    vcodec: primaryVideoCodec,
+                    acodec: primaryAudioCodec,
+                    stream_vcodec: primaryVideoCodec,
+                    stream_acodec: primaryAudioCodec,
+                    stream_fps: monitorCaptureRate,
+                    detector_buffer_vcodec: primaryVideoCodec,
+                    detector_buffer_acodec: primaryAudioCodec,
+                    detector_buffer_fps: monitorCaptureRate,
                 }
             })
-            $.aM.import(loadedProbe)
+            $.aM.import(monitorConfig)
+            $.aM.e.find('[detail="auto_host"]').change()
             $.aM.e.modal('show')
+            probeWindow.modal('hide')
+        }else{
+            console.log('No Probe Result Loaded!')
         }
     })
     probeWindow.on('hidden.bs.modal',function(){

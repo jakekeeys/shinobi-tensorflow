@@ -1942,13 +1942,12 @@ module.exports = function(s,config,lang,app,io){
                     }
                     req.probeCommand = s.splitForFFPMEG(req.query.flags + ` -i "${req.query.url}"`).join(' ')
                     exec('ffprobe ' + req.probeCommand,function(err,stdout,stderr){
-                        console.log(stderr,stdout)
                         delete(user.ffprobe)
                         if(err){
                            req.ret.error=(err)
                         }else{
-                            req.ret.ok=true
-                            req.ret.result = stdout+stderr
+                            req.ret.ok = true
+                            req.ret.result = stderr
                         }
                         req.ret.probe = req.probeCommand
                         res.end(s.prettyPrint(req.ret));
