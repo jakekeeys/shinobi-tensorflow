@@ -8,13 +8,11 @@ $(document).ready(function(e){
         if(appearance){
             probeWindow.find('._loading').show()
             outputView.empty()
-            probeWindow.find('.stop').show()
-            probeWindow.find('[type="submit"]').hide()
+            probeWindow.find('[type="submit"]').prop('disabled',true)
         }else{
             probeWindow.find('._loading').hide()
             outputView.append('<div><b>END</b></div>')
-            probeWindow.find('.stop').hide()
-            probeWindow.find('[type="submit"]').show()
+            probeWindow.find('[type="submit"]').prop('disabled',false)
         }
     }
     probeForm.submit(function(e){
@@ -24,11 +22,11 @@ $(document).ready(function(e){
         var form = el.serializeObject()
         var flags = 'default'
         var url = form.url.trim()
-        $.get(`${getApiPrefix()}/probe/${$user.ke}?url=${encodeURIComponent(`'${url}'`)}&flags=${flags}`,function(data){
+        $.get(`${getApiPrefix()}/probe/${$user.ke}?url=${encodeURIComponent(`'${url}'`)}`,function(data){
             if(data.ok === true){
                 var html
                 try{
-                    loadedProbe = JSON.parse(data.result)
+                    loadedProbe = data.result
                     loadedProbe.url = url
                     html = $.ccio.init('jsontoblock',loadedProbe)
                 }catch(err){
@@ -37,7 +35,7 @@ $(document).ready(function(e){
                 }
                 outputView.append(html)
             }else{
-                $.ccio.init('note',{title:'Failed to Probe',text:data.error,type:'error'});
+                $.ccio.init('note',{title:'Failed to Probe',text:$.stringJSON(data.error),type:'error'});
             }
             setAsLoading(false)
         })
@@ -141,7 +139,9 @@ $(document).ready(function(e){
     })
     probeWindow.find('.stop').click(function(e){
         el = $(this)
-       // $.ccio.cx({f:'ffprobe',ff:'stop'})
+        $.get(`${getApiPrefix()}/probe/${$user.ke}?action=stop`,function(data){
+            setAsLoading(false)
+        })
     })
     $.pB = {
         submit: function(url,show){

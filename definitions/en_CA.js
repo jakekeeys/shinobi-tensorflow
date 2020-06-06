@@ -429,6 +429,11 @@ module.exports = function(s,config,lang){
                        "example": "",
                        "form-group-class": "h_onvif_input h_onvif_1",
                     },
+                    {
+                       "fieldType": "btn",
+                       "class": `btn-success probe_config`,
+                       "btnContent": `<i class="fa fa-search"></i> &nbsp; ${lang.FFprobe}`,
+                    },
                 ]
             },
              "Input": {

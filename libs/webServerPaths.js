@@ -1913,47 +1913,34 @@ module.exports = function(s,config,lang,app,io){
     /**
     * API : FFprobe
      */
+    var activeProbes = {}
     app.get(config.webPaths.apiPrefix+':auth/probe/:ke',function (req,res){
-        req.ret={ok:false};
-        res.setHeader('Content-Type', 'application/json');
+        var endData = {ok: false}
         s.auth(req.params,function(user){
-            switch(req.query.action){
-    //            case'stop':
-    //                exec('kill -9 '+user.ffprobe.pid,{detatched: true})
-    //            break;
-                default:
-                    if(!req.query.url){
-                        req.ret.error = 'Missing URL'
-                        res.end(s.prettyPrint(req.ret));
-                        return
-                    }
-                    if(user.ffprobe){
-                        req.ret.error = 'Account is already probing'
-                        res.end(s.prettyPrint(req.ret));
-                        return
-                    }
-                    user.ffprobe=1;
-                    if(req.query.flags==='default'){
-                        req.query.flags = '-v quiet -print_format json -show_format -show_streams'
-                    }else{
-                        if(!req.query.flags){
-                            req.query.flags = ''
-                        }
-                    }
-                    req.probeCommand = s.splitForFFPMEG(req.query.flags + ` -i "${req.query.url}"`).join(' ')
-                    exec('ffprobe ' + req.probeCommand,function(err,stdout,stderr){
-                        delete(user.ffprobe)
-                        if(err){
-                           req.ret.error=(err)
-                        }else{
-                            req.ret.ok = true
-                            req.ret.result = stderr
-                        }
-                        req.ret.probe = req.probeCommand
-                        res.end(s.prettyPrint(req.ret));
-                    })
-                break;
+            var url = req.query.url
+            if(!url){
+                endData.error = 'Missing URL'
+                s.closeJsonResponse(res,endData)
+                return
             }
+            if(activeProbes[req.params.auth]){
+                endData.error = 'Account is already probing'
+                s.closeJsonResponse(res,endData)
+                return
+            }
+            activeProbes[req.params.auth] = 1
+            const probeCommand = s.splitForFFPMEG(`-v quiet -print_format json -show_format -show_streams -i "${url}"`).join(' ')
+            exec('ffprobe ' + probeCommand,function(err,stdout,stderr){
+                delete(activeProbes[req.params.auth])
+                if(err){
+                    endData.error = (err)
+                }else{
+                    endData.ok = true
+                    endData.result = s.parseJSON(stdout)
+                }
+                endData.probe = probeCommand
+                s.closeJsonResponse(res,endData)
+            })
         },res,req);
     })
     /**
