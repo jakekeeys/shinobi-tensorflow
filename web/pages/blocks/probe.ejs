@@ -6,7 +6,7 @@
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
-        <h4 class="modal-title" id="probeLabel"><i class="fa fa-search"></i> &nbsp; <%-lang.FFprobe%> <small><span style="display:none" class="_loading"> &nbsp; <i class="fa fa-pulse fa-spinner"></i></span></small></h4>
+        <h4 class="modal-title" id="probeLabel"><i class="fa fa-search"></i> &nbsp; <%-lang.FFprobe%></h4>
       </div>
       <div class="modal-body">
           <div class="text-center msg"></div>
@@ -18,12 +18,13 @@
                 <div><input class="form-control" name="url" placeholder="<%-lang.Example%> : http://192.168.88.126/videostream.cgi or /dev/video0"></div>
             </label>
         </div>
+
         <div class="output_data"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default pull-left" data-dismiss="modal"><i class="fa fa-times"></i> <%-lang.Close%></button>
-        <button type="button" class="btn btn-primary fill"><%-lang.Import%></button>
-        <button type="submit" class="btn btn-success"><%-lang.FFprobe%></button>
+        <button type="button" class="btn btn-primary fill"><i class="fa fa-wrench"></i> <%-lang.Import%></button>
+        <button type="submit" class="btn btn-success"><i class="fa fa-search"></i> <%-lang.Check%></button>
       </div>
     </form>
   </div>

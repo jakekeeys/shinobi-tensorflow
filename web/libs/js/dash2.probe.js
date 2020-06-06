@@ -8,11 +8,11 @@ $(document).ready(function(e){
         if(appearance){
             probeWindow.find('._loading').show()
             outputView.empty()
-            probeWindow.find('[type="submit"]').prop('disabled',true)
+            probeWindow.find('[type="submit"]').prop('disabled',true).html('<i class="fa fa-pulse fa-spinner"></i> ' + lang['Please Wait...'])
         }else{
             probeWindow.find('._loading').hide()
             outputView.append('<div><b>END</b></div>')
-            probeWindow.find('[type="submit"]').prop('disabled',false)
+            probeWindow.find('[type="submit"]').prop('disabled',false).html('<i class="fa fa-search"></i> ' + lang.FFprobe)
         }
     }
     probeForm.submit(function(e){
