@@ -80,6 +80,11 @@ window.chartColors = {
     purple: 'rgb(153, 102, 255)',
     grey: 'rgb(201, 203, 207)'
 };
+window.stringContains = function(find,string,toLowerCase){
+    var newString = string + ''
+    if(toLowerCase)newString = newString.toLowerCase()
+    return newString.indexOf(find) > -1
+}
 //global form functions
 $.ccio.form={};
 $.ccio.form.details=function(e){
