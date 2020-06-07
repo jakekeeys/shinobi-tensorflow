@@ -81,6 +81,8 @@ require('./libs/ffmpeg.js')(s,config,lang,function(ffmpeg){
     require('./libs/customAutoLoad.js')(s,config,lang,app,io)
     //scheduling engine
     require('./libs/shinobiHub.js')(s,config,lang,app,io)
+    //onvif, ffprobe engine
+    require('./libs/scanners.js')(s,config,lang,app,io)
     //scheduling engine
     require('./libs/scheduler.js')(s,config,lang,app,io)
     //on-start actions, daemon(s) starter
