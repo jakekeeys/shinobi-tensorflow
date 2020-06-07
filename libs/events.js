@@ -52,6 +52,49 @@ module.exports = function(s,config,lang){
         if(callback)callback(foundInRegion,collisions)
         return foundInRegion
     }
+    const moveLock = {}
+    const moveCameraPtzToMatrix = function(event){
+        if(moveLock[event.ke + event.id])return;
+        clearTimeout(moveLock[event.ke + event.id])
+        moveLock[event.ke + event.id] = setTimeout(() => {
+            delete(moveLock[event.ke + event.id])
+        },3000)
+        var imgHeight = event.details.imgHeight
+        var imgWidth = event.details.imgWidth
+        var imageCenterX = imgHeight / 2
+        var imageCenterY = imgWidth / 2
+        var matrices = event.details.matrices
+        var largestMatrix = matrices[0] //for now just get first
+        // matrices.forEach((matrix) => {
+        //     matrix
+        // })
+        var matrixCenterX = largestMatrix.x + (largestMatrix.width / 2)
+        var matrixCenterY = largestMatrix.y + (largestMatrix.height / 2)
+        var distanceX = parseFloat(((matrixCenterX - imageCenterX) / 500).toFixed(1))
+        var distanceY = parseFloat(((matrixCenterY - imageCenterY) / 500).toFixed(1))
+        // console.log('imageCenterX',imageCenterX)
+        // console.log('imageCenterY',imageCenterY)
+        // console.log('matrixCenterX',matrixCenterX)
+        // console.log('matrixCenterY',matrixCenterY)
+        // console.log('distanceX',distanceX)
+        // console.log('distanceY',distanceY)
+        // if(matrixCenterX < imageCenterX){
+        //
+        // }
+        var axis = [
+            {direction: 'x', amount: distanceX},
+            {direction: 'y', amount: distanceY},
+            {direction: 'z', amount: 0},
+        ]
+        s.cameraControl({
+            axis: axis,
+            // axis: [{direction: 'x', amount: 1.0}],
+            mid: event.id,
+            ke: event.ke
+        },(msg) => {
+            // console.log(msg)
+        })
+    }
     s.addEventDetailsToString = function(eventData,string,addOps){
         //d = event data
         if(!addOps)addOps = {}
@@ -250,6 +293,9 @@ module.exports = function(s,config,lang){
         if(filter.countObjects && currentConfig.detector_obj_count === '1' && currentConfig.detector_obj_count_in_region !== '1'){
             didCountingAlready = true
             countObjects(d)
+        }
+        if(currentConfig.detector_ptz_follow === '1'){
+            moveCameraPtzToMatrix(d)
         }
         if(filter.useLock){
             if(s.group[d.ke].activeMonitors[d.id].motion_lock){

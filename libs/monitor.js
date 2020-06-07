@@ -526,20 +526,27 @@ module.exports = function(s,config,lang){
                                 ProfileToken : device.current_profile.token,
                                 Velocity : {}
                             }
-                            var onvifDirections = {
-                                "left" : [-1.0,'x'],
-                                "right" : [1.0,'x'],
-                                "down" : [-1.0,'y'],
-                                "up" : [1.0,'y'],
-                                "zoom_in" : [1.0,'z'],
-                                "zoom_out" : [-1.0,'z']
+                            if(e.axis){
+                                e.axis.forEach((axis) => {
+                                    controlOptions.Velocity[axis.direction] = axis.amount
+                                })
+                            }else{
+                                var onvifDirections = {
+                                    "left": [-1.0,'x'],
+                                    "right": [1.0,'x'],
+                                    "down": [-1.0,'y'],
+                                    "up": [1.0,'y'],
+                                    "zoom_in": [1.0,'z'],
+                                    "zoom_out": [-1.0,'z']
+                                }
+                                var direction = onvifDirections[e.direction]
+                                controlOptions.Velocity[direction[1]] = direction[0];
                             }
-                            var direction = onvifDirections[e.direction]
-                            controlOptions.Velocity[direction[1]] = direction[0];
                             (['x','y','z']).forEach(function(axis){
                                 if(!controlOptions.Velocity[axis])
                                     controlOptions.Velocity[axis] = 0
                             })
+                            console.log(controlOptions)
                             if(monitorConfig.details.control_stop=='1'){
                                 device.services.ptz.continuousMove(controlOptions).then(function(err){
                                     s.userLog(e,{type:'Control Trigger Started'});
@@ -547,12 +554,12 @@ module.exports = function(s,config,lang){
                                         setTimeout(function(){
                                             msg = {type:'Control Trigger Ended'}
                                             s.userLog(e,msg)
-                                            callback(msg)
                                             device.services.ptz.stop(stopOptions).then((result) => {
 //                                                    console.log(JSON.stringify(result['data'], null, '  '));
                                             }).catch((error) => {
                                                 console.log(error);
                                             });
+                                            callback(msg)
                                         },monitorConfig.details.control_url_stop_timeout)
                                     }
                                 }).catch(function(err){

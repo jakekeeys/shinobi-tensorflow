@@ -33,6 +33,7 @@
    "RAM": "RAM",
    "CPU": "CPU",
    "on": "on",
+   "PTZ Follow": "PTZ Follow",
    "Event Counts": "Event Counts",
    "Already Processing": "Already Processing",
    "No API Key": "No API Key",
