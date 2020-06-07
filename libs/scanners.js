@@ -54,7 +54,7 @@ module.exports = function(s,config,lang,app,io){
             ip = addressRange.join(',')
         }
         if(ports === ''){
-            ports = '80,8080,8000,7575,8081,9080'
+            ports = '80,8080,8000,7575,8081,9080,8090,8999'
         }
         if(ports.indexOf('-') > -1){
             ports = ports.split('-')

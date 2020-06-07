@@ -53,6 +53,13 @@ module.exports = function(s,config,lang){
         return foundInRegion
     }
     const moveLock = {}
+    const getLargestMatrix = (matrices) => {
+        var largestMatrix = {width: 0, height: 0}
+        matrices.forEach((matrix) => {
+            if(matrix.width > largestMatrix.width && matrix.height > largestMatrix.height)largestMatrix = matrix
+        })
+        return largestMatrix.x ? largestMatrix : null
+    }
     const moveCameraPtzToMatrix = function(event){
         if(moveLock[event.ke + event.id])return;
         clearTimeout(moveLock[event.ke + event.id])
@@ -64,23 +71,23 @@ module.exports = function(s,config,lang){
         var imageCenterX = imgHeight / 2
         var imageCenterY = imgWidth / 2
         var matrices = event.details.matrices
-        var largestMatrix = matrices[0] //for now just get first
-        // matrices.forEach((matrix) => {
-        //     matrix
-        // })
+        var largestMatrix = getLargestMatrix(matrices.filter(matrix => matrix.tag === 'person'))
+        // console.log(matrices.find(matrix => matrix.tag === 'person'))
+        if(!largestMatrix)return;
         var matrixCenterX = largestMatrix.x + (largestMatrix.width / 2)
         var matrixCenterY = largestMatrix.y + (largestMatrix.height / 2)
-        var distanceX = parseFloat(((matrixCenterX - imageCenterX) / 500).toFixed(1))
-        var distanceY = parseFloat(((matrixCenterY - imageCenterY) / 500).toFixed(1))
+        var rawDistanceX = matrixCenterX - imageCenterX
+        var rawDistanceY = matrixCenterY - imageCenterY
+        var distanceX = parseFloat((rawDistanceX / 500).toFixed(1))
+        var distanceY = parseFloat((rawDistanceY / 500).toFixed(1))
         // console.log('imageCenterX',imageCenterX)
         // console.log('imageCenterY',imageCenterY)
         // console.log('matrixCenterX',matrixCenterX)
         // console.log('matrixCenterY',matrixCenterY)
+        // console.log('rawDistanceX',rawDistanceX)
+        // console.log('rawDistanceY',rawDistanceY)
         // console.log('distanceX',distanceX)
         // console.log('distanceY',distanceY)
-        // if(matrixCenterX < imageCenterX){
-        //
-        // }
         var axis = [
             {direction: 'x', amount: distanceX},
             {direction: 'y', amount: distanceY},

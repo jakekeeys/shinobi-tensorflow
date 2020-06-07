@@ -566,6 +566,9 @@ module.exports = function(s,config,lang){
                                     console.log(err)
                                 });
                             }else{
+                                controlOptions.Speed = {'x': 1, 'y': 1, 'z': 1}
+                                controlOptions.Position = Object.assign(controlOptions.Velocity,{})
+                                delete(controlOptions.Velocity)
                                 device.services.ptz.absoluteMove(controlOptions).then(function(err){
                                     msg = {type:'Control Triggered'}
                                     s.userLog(e,msg);
