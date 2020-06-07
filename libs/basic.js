@@ -52,6 +52,11 @@ module.exports = function(s,config){
         }
         return json
     }
+    s.stringContains = function(find,string,toLowerCase){
+        var newString = string + ''
+        if(toLowerCase)newString = newString.toLowerCase()
+        return newString.indexOf(find) > -1
+    }
     s.addUserPassToUrl = function(url,user,pass){
         var splitted = url.split('://')
         splitted[1] = user + ':' + pass + '@' + splitted[1]

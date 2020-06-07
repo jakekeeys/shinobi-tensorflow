@@ -116,7 +116,28 @@ module.exports = function(s,config,lang,app,io){
                 responseList.push(cameraResponse)
                 if(foundCameraCallback)foundCameraCallback(Object.assign(cameraResponse,{f: 'onvif'}))
             }catch(err){
-                console.log(err)
+                const searchError = (find) => {
+                    return s.stringContains(find,err.message,true)
+                }
+                var foundDevice = false
+                switch(true){
+                    //ONVIF camera found but denied access
+                    case searchError('400'): //Bad Request - Sender not Authorized
+                    case searchError('405'): //Method Not Allowed
+                        foundDevice = true
+                    break;
+                    //Webserver exists but undetermined if IP Camera
+                    case searchError('404'): //Not Found
+                        foundDevice = true
+                    break;
+                }
+                if(foundDevice && foundCameraCallback)foundCameraCallback({
+                    f: 'onvif',
+                    ff: 'failed_capture',
+                    ip: camera.ip,
+                    port: camera.port,
+                    error: err.message
+                });
                 s.debugLog(err)
             }
         })
@@ -124,7 +145,6 @@ module.exports = function(s,config,lang,app,io){
     }
     const runOnvifMethod = (onvifOptions,callback) => {
         var response = {ok: false}
-        console.log(onvifOptions)
         var errorMessage = function(msg,error){
             response.ok = false
             response.msg = msg
@@ -189,7 +209,6 @@ module.exports = function(s,config,lang,app,io){
                 }else{
                     command = Camera[onvifOptions.auth.action](options)
                 }
-                console.log(Camera)
                 completeAction(command)
             }
         }
