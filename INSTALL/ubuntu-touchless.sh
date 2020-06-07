@@ -13,9 +13,15 @@ getubuntuversion=$(lsb_release -r | awk '{print $2}' | cut -d . -f1)
 echo "============="
 echo " Ubuntu Version: $getubuntuversion"
 echo "============="
-sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
-sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
-sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
+echo "Shinobi - Do you want to temporarily disable IPv6?"
+echo "Sometimes IPv6 causes Ubuntu package updates to fail. Only do this if your machine doesn't rely on IPv6."
+echo "(y)es or (N)o"
+read -r disableIpv6
+if [ "$disableIpv6" = "y" ] || [ "$disableIpv6" = "Y" ]; then
+    sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+    sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
+fi
 if [ "$getubuntuversion" = "18" ] || [ "$getubuntuversion" > "18" ]; then
     apt install sudo wget -y
     sudo apt install -y software-properties-common
