@@ -402,6 +402,7 @@ module.exports = function(s,config,lang){
             clearTimeout(activeMonitor.recordingSnapper);
             clearInterval(activeMonitor.getMonitorCpuUsage);
             clearInterval(activeMonitor.objectCountIntervals);
+            delete(activeMonitor.onvifConnection)
             if(activeMonitor.onChildNodeExit){
                 activeMonitor.onChildNodeExit()
             }
@@ -546,7 +547,9 @@ module.exports = function(s,config,lang){
                                 if(!controlOptions.Velocity[axis])
                                     controlOptions.Velocity[axis] = 0
                             })
-                            console.log(controlOptions)
+                            // console.log(controlOptions,controlOptions.Velocity.x > 0 ? 'right' : controlOptions.Velocity.x === 0 ? 'center' : 'left')
+                            // console.log(controlOptions.Velocity.x > 0 ? 'right' : controlOptions.Velocity.x === 0 ? 'center' : 'left')
+                            // console.log(controlOptions.Velocity.y > 0 ? 'up' : controlOptions.Velocity.y === 0 ? 'center' : 'down')
                             if(monitorConfig.details.control_stop=='1'){
                                 device.services.ptz.continuousMove(controlOptions).then(function(err){
                                     s.userLog(e,{type:'Control Trigger Started'});
@@ -567,9 +570,9 @@ module.exports = function(s,config,lang){
                                 });
                             }else{
                                 controlOptions.Speed = {'x': 1, 'y': 1, 'z': 1}
-                                controlOptions.Position = Object.assign(controlOptions.Velocity,{})
+                                controlOptions.Translation = Object.assign(controlOptions.Velocity,{})
                                 delete(controlOptions.Velocity)
-                                device.services.ptz.absoluteMove(controlOptions).then(function(err){
+                                device.services.ptz.relativeMove(controlOptions).then(function(err){
                                     msg = {type:'Control Triggered'}
                                     s.userLog(e,msg);
                                     callback(msg)

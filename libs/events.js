@@ -76,7 +76,7 @@ module.exports = function(s,config,lang){
         if(!largestMatrix)return;
         var matrixCenterX = largestMatrix.x + (largestMatrix.width / 2)
         var matrixCenterY = largestMatrix.y + (largestMatrix.height / 2)
-        var rawDistanceX = matrixCenterX - imageCenterX
+        var rawDistanceX = matrixCenterX - imageCenterX - largestMatrix.width / 2
         var rawDistanceY = matrixCenterY - imageCenterY
         var distanceX = parseFloat((rawDistanceX / 500).toFixed(1))
         var distanceY = parseFloat((rawDistanceY / 500).toFixed(1))
@@ -88,9 +88,13 @@ module.exports = function(s,config,lang){
         // console.log('rawDistanceY',rawDistanceY)
         // console.log('distanceX',distanceX)
         // console.log('distanceY',distanceY)
+        if(distanceX > 1)distanceX = 1
+        if(distanceX < -1)distanceX = -1
+        if(distanceY > 1)distanceY = 1
+        if(distanceY < -1)distanceY = -1
         var axis = [
-            {direction: 'x', amount: distanceX},
-            {direction: 'y', amount: distanceY},
+            {direction: 'x', amount: distanceX > 0.1 || distanceX < -0.1 ? distanceX : 0},
+            {direction: 'y', amount: 0},
             {direction: 'z', amount: 0},
         ]
         s.cameraControl({
