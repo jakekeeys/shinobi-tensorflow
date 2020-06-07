@@ -5,6 +5,25 @@ $.oB={
     v:$('#onvif_video'),
 };
 $.oB.f=$.oB.e.find('form');$.oB.o=$.oB.e.find('.output_data');
+var drawProbeResult = function(options){
+    var tempID = $.ccio.gid();
+    $.oB.foundMonitors[tempID] = Object.assign({},options);
+    $.oB.e.find('._loading').hide()
+    $.oB.e.find('._notfound').remove()
+    $.oB.e.find('[type="submit"]').prop('disabled',false)
+    var info = options.error ? options.error : options.info ? $.ccio.init('jsontoblock',options.info) : ''
+    var streamUrl = options.error ? '' : 'No Stream URL Found'
+    if(options.uri){
+        streamUrl = options.uri
+    }
+    $('#onvif_probe .output_data').append(`<tr onvif_row="${tempID}">
+        <td><a ${options.error ? `target="_blank" href="http${options.port == 443 ? 's' : ''}://${options.ip}:${options.port}"` : ''} class="btn btn-sm btn-primary ${options.error ? '' : 'copy'}">&nbsp;<i class="fa fa-${options.error ? 'link' : 'copy'}"></i>&nbsp;</a></td>
+        <td class="ip">${options.ip}</td>
+        <td class="port">${options.port}</td>
+        <td>${info}</td>
+        <td class="url">${streamUrl}</td>
+    </tr>`)
+}
 $.oB.f.submit(function(ee){
     ee.preventDefault();
     e={};
@@ -57,4 +76,5 @@ $.oB.e.find('[name="user"]').change(function(e){
 if($.ccio.op().onvif_probe_user){
     $.oB.e.find('[name="user"]').val($.ccio.op().onvif_probe_user)
 }
+$.oB.drawProbeResult = drawProbeResult
 })

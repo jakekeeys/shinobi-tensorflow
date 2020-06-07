@@ -54,7 +54,7 @@ module.exports = function(s,config,lang,app,io){
             ip = addressRange.join(',')
         }
         if(ports === ''){
-            ports = '80,8080,8000,7575,8081,554'
+            ports = '80,8080,8000,7575,8081,9080'
         }
         if(ports.indexOf('-') > -1){
             ports = ports.split('-')
@@ -120,15 +120,21 @@ module.exports = function(s,config,lang,app,io){
                     return s.stringContains(find,err.message,true)
                 }
                 var foundDevice = false
+                var errorMessage = ''
                 switch(true){
                     //ONVIF camera found but denied access
                     case searchError('400'): //Bad Request - Sender not Authorized
+                        foundDevice = true
+                        errorMessage = lang.ONVIFErr400
+                    break;
                     case searchError('405'): //Method Not Allowed
                         foundDevice = true
+                        errorMessage = lang.ONVIFErr405
                     break;
                     //Webserver exists but undetermined if IP Camera
                     case searchError('404'): //Not Found
                         foundDevice = true
+                        errorMessage = lang.ONVIFErr404
                     break;
                 }
                 if(foundDevice && foundCameraCallback)foundCameraCallback({
@@ -136,7 +142,7 @@ module.exports = function(s,config,lang,app,io){
                     ff: 'failed_capture',
                     ip: camera.ip,
                     port: camera.port,
-                    error: err.message
+                    error: errorMessage
                 });
                 s.debugLog(err)
             }
