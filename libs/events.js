@@ -243,6 +243,42 @@ module.exports = function(s,config,lang){
                                 })
                             }
                         break;
+                        case'name':
+                            if (d.details.matrices){
+                                var regions = s.group[d.ke].activeMonitors[d.id].parsedObjects.cords
+                                regions.forEach(function(region,position){
+                                    switch(condition.p2){
+                                        case'indexOf':
+                                            if(region.name.indexOf(condition.p3) > -1){
+                                                var isMatrixInRegion = isAtleastOneMatrixInRegion([region],d.details.matrices);
+                                            }
+                                        break;
+                                        case'!indexOf':
+                                            if(region.name.indexOf(condition.p3) === -1){
+                                                var isMatrixInRegion = isAtleastOneMatrixInRegion([region],d.details.matrices);
+                                            }
+                                        break;
+                                        case'===':
+                                            if(region.name === condition.p3){
+                                                var isMatrixInRegion = isAtleastOneMatrixInRegion([region],d.details.matrices);
+                                            }
+                                        break;
+                                        case'!==':
+                                            if(region.name !== condition.p3){
+                                                var isMatrixInRegion = isAtleastOneMatrixInRegion([region],d.details.matrices);
+                                            }
+                                        break;
+                                        default:
+                                            //s.systemLog(lang['Numeric criteria unsupported for Region tests, Ignoring Conditional'])
+                                            s.systemLog('Numeric criteria unsupported for Region tests, Ignoring Conditional')
+                                        break;
+                                    }
+                                    if(isMatrixInRegion) {
+                                        conditionChain[place].ok = true; // default is false
+                                    };
+                                });
+                            }
+                        break;
                         case'time':
                             var timeNow = new Date()
                             var timeCondition = new Date()
