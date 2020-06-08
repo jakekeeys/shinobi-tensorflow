@@ -68,16 +68,18 @@ module.exports = function(s,config,lang){
         },3000)
         var imgHeight = event.details.imgHeight
         var imgWidth = event.details.imgWidth
-        var imageCenterX = imgHeight / 2
-        var imageCenterY = imgWidth / 2
+        var thresholdX = imgWidth * 0.1
+        var thresholdY = imgHeight * 0.1
+        var imageCenterX = imgWidth / 2
+        var imageCenterY = imgHeight / 2
         var matrices = event.details.matrices
         var largestMatrix = getLargestMatrix(matrices.filter(matrix => matrix.tag === 'person'))
         // console.log(matrices.find(matrix => matrix.tag === 'person'))
         if(!largestMatrix)return;
         var matrixCenterX = largestMatrix.x + (largestMatrix.width / 2)
         var matrixCenterY = largestMatrix.y + (largestMatrix.height / 2)
-        var rawDistanceX = matrixCenterX - imageCenterX - largestMatrix.width / 2
-        var rawDistanceY = matrixCenterY - imageCenterY
+        var rawDistanceX = (matrixCenterX - imageCenterX)// - largestMatrix.width / 2
+        var rawDistanceY = (matrixCenterY - imageCenterY)// + largestMatrix.height / 2
         var distanceX = parseFloat((rawDistanceX / 500).toFixed(1))
         var distanceY = parseFloat((rawDistanceY / 500).toFixed(1))
         // console.log('imageCenterX',imageCenterX)
@@ -88,13 +90,16 @@ module.exports = function(s,config,lang){
         // console.log('rawDistanceY',rawDistanceY)
         // console.log('distanceX',distanceX)
         // console.log('distanceY',distanceY)
+        // console.log('thresholdX',thresholdX,rawDistanceX > thresholdX || rawDistanceX < -thresholdX)
+        // console.log('thresholdY',thresholdY,rawDistanceY > thresholdY || rawDistanceY < -thresholdY)
+        // console.log('largestMatrix.y < 30',largestMatrix.y < 30)
         if(distanceX > 1)distanceX = 1
         if(distanceX < -1)distanceX = -1
         if(distanceY > 1)distanceY = 1
         if(distanceY < -1)distanceY = -1
         var axis = [
-            {direction: 'x', amount: distanceX > 0.1 || distanceX < -0.1 ? distanceX : 0},
-            {direction: 'y', amount: 0},
+            {direction: 'x', amount: rawDistanceX > thresholdX || rawDistanceX < -thresholdX ? distanceX : 0},
+            {direction: 'y', amount: rawDistanceY > thresholdY || rawDistanceY < -thresholdY ? -distanceY : largestMatrix.y < 30 ? 0.5 :0},
             {direction: 'z', amount: 0},
         ]
         s.cameraControl({
