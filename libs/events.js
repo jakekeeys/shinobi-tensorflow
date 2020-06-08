@@ -65,7 +65,7 @@ module.exports = function(s,config,lang){
         clearTimeout(moveLock[event.ke + event.id])
         moveLock[event.ke + event.id] = setTimeout(() => {
             delete(moveLock[event.ke + event.id])
-        },3000)
+        },1000)
         var imgHeight = event.details.imgHeight
         var imgWidth = event.details.imgWidth
         var thresholdX = imgWidth * 0.1
@@ -99,7 +99,7 @@ module.exports = function(s,config,lang){
         if(distanceY < -1)distanceY = -1
         var axis = [
             {direction: 'x', amount: rawDistanceX > thresholdX || rawDistanceX < -thresholdX ? distanceX : 0},
-            {direction: 'y', amount: rawDistanceY > thresholdY || rawDistanceY < -thresholdY ? -distanceY : largestMatrix.y < 30 ? 0.5 : largestMatrix.y > imgHeight - 30 ? -0.5 :0},
+            {direction: 'y', amount: largestMatrix.y < 30 ? 0.5 : rawDistanceY > thresholdY || rawDistanceY < -thresholdY ? -distanceY : 0},
             {direction: 'z', amount: 0},
         ]
         s.cameraControl({
