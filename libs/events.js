@@ -99,7 +99,7 @@ module.exports = function(s,config,lang){
         if(distanceY < -1)distanceY = -1
         var axis = [
             {direction: 'x', amount: rawDistanceX > thresholdX || rawDistanceX < -thresholdX ? distanceX : 0},
-            {direction: 'y', amount: rawDistanceY > thresholdY || rawDistanceY < -thresholdY ? -distanceY : largestMatrix.y < 30 ? 0.5 :0},
+            {direction: 'y', amount: rawDistanceY > thresholdY || rawDistanceY < -thresholdY ? -distanceY : largestMatrix.y < 30 ? 0.5 : largestMatrix.y > imgHeight - 30 ? -0.5 :0},
             {direction: 'z', amount: 0},
         ]
         s.cameraControl({
