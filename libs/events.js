@@ -77,6 +77,7 @@ module.exports = function(s,config,lang){
         if(callback)callback(collisions)
         return collisions
     }
+    const nonEmpty = (element) => element.length !== 0;
     const moveLock = {}
     const getLargestMatrix = (matrices) => {
         var largestMatrix = {width: 0, height: 0}
@@ -271,76 +272,79 @@ module.exports = function(s,config,lang){
                             break;
                         }
                     }
-                    switch(condition.p1){
-                        case'tag':
-                        case'x':
-                        case'y':
-                        case'height':
-                        case'width':
-                        case'confidence':
-                            if(testMatrices){
-                                testMatrices.forEach(function(matrix,position){
-                                    if (matrix) modifyFilters(matrix,position)
-                                })
-                            }
-                        break;
-                        case'name':
-                            if (testMatrices){
-                                var regions = s.group[d.ke].activeMonitors[d.id].parsedObjects.cords
-                                regions.forEach(function(region,position){
-                                    switch(condition.p2){
-                                        case'indexOf':
-                                            if(region.name.indexOf(condition.p3) > -1){
-                                                testMatrices = testMatrices.concat(scanMatricesforCollisions(region,testMatrices));
-                                            }
-                                        break;
-                                        case'!indexOf':
-                                            if(region.name.indexOf(condition.p3) === -1){
-                                                testMatrices = testMatrices.concat(scanMatricesforCollisions(region,testMatrices));
-                                            }
-                                        break;
-                                        case'===':
-                                            if(region.name === condition.p3){
-                                                testMatrices = scanMatricesforCollisions(region,testMatrices);
-                                            }
-                                        break;
-                                        case'!==':
-                                            if(region.name !== condition.p3){
-                                                testMatrices = testMatrices.concat(scanMatricesforCollisions(region,testMatrices));
-                                            }
-                                        break;
-                                        default:
-                                            //s.systemLog(lang['Numeric criteria unsupported for Region tests, Ignoring Conditional'])
-                                            s.systemLog('Numeric criteria unsupported for Region tests, Ignoring Conditional')
-                                        break;
-                                    }
-                                    if(testMatrices.length > 0) {
-                                        conditionChain[place].ok = true; // default is false
-                                    };
-                                });
-                            }
-                        break;
-                        case'time':
-                            var timeNow = new Date()
-                            var timeCondition = new Date()
-                            var doAtTime = condition.p3.split(':')
-                            var atHour = parseInt(doAtTime[0]) - 1
-                            var atHourNow = timeNow.getHours()
-                            var atMinuteNow = timeNow.getMinutes()
-                            var atSecondNow = timeNow.getSeconds()
-                            if(atHour){
-                                var atMinute = parseInt(doAtTime[1]) - 1 || timeNow.getMinutes()
-                                var atSecond = parseInt(doAtTime[2]) - 1 || timeNow.getSeconds()
-                                var nowAddedInSeconds = atHourNow * 60 * 60 + atMinuteNow * 60 + atSecondNow
-                                var conditionAddedInSeconds = atHour * 60 * 60 + atMinute * 60 + atSecond
-                                if(eval('nowAddedInSeconds '+condition.p2+' conditionAddedInSeconds')){
-                                    conditionChain[place].ok = true
+                    if (testMatrices.some(nonEmpty)){
+                        switch(condition.p1){
+                            case'tag':
+                            case'x':
+                            case'y':
+                            case'height':
+                            case'width':
+                            case'confidence':
+                                if(testMatrices){
+                                    testMatrices.forEach(function(matrix,position){
+                                        if (matrix) modifyFilters(matrix,position)
+                                    })
                                 }
-                            }
-                        break;
-                        default:
-                            modifyFilters(d.details)
-                        break;
+                            break;
+                            case'name':
+                                if (testMatrices){
+                                    var regions = s.group[d.ke].activeMonitors[d.id].parsedObjects.cords
+                                    regions.forEach(function(region,position){
+                                        switch(condition.p2){
+                                            case'indexOf':
+                                                if(region.name.indexOf(condition.p3) > -1){
+                                                    testMatrices = testMatrices.concat(scanMatricesforCollisions(region,testMatrices));
+						    if(testMatrices.some(nonEmpty)) conditionChain[place].ok = true; // default is false
+                                                }
+                                            break;
+                                            case'!indexOf':
+                                                if(region.name.indexOf(condition.p3) === -1){
+                                                    testMatrices = testMatrices.concat(scanMatricesforCollisions(region,testMatrices));
+						    if(testMatrices.some(nonEmpty)) conditionChain[place].ok = true; // default is false
+                                                }
+                                            break;
+                                            case'===':
+                                                if(region.name === condition.p3){
+                                                    testMatrices = scanMatricesforCollisions(region,testMatrices);
+						    if(testMatrices.some(nonEmpty)) conditionChain[place].ok = true; // default is false
+                                                }
+                                            break;
+                                            case'!==':
+                                                if(region.name !== condition.p3){
+                                                    testMatrices = testMatrices.concat(scanMatricesforCollisions(region,testMatrices));
+						    if(testMatrices.some(nonEmpty)) conditionChain[place].ok = true; // default is false
+                                                }
+                                            break;
+                                            default:
+                                                //s.systemLog(lang['Numeric criteria unsupported for Region tests, Ignoring Conditional'])
+                                                s.systemLog('Numeric criteria unsupported for Region tests, Ignoring Conditional')
+                                            break;
+                                        }
+                                    });
+                                }
+                            break;
+                            case'time':
+                                var timeNow = new Date()
+                                var timeCondition = new Date()
+                                var doAtTime = condition.p3.split(':')
+                                var atHour = parseInt(doAtTime[0]) - 1
+                                var atHourNow = timeNow.getHours()
+                                var atMinuteNow = timeNow.getMinutes()
+                                var atSecondNow = timeNow.getSeconds()
+                                if(atHour){
+                                    var atMinute = parseInt(doAtTime[1]) - 1 || timeNow.getMinutes()
+                                    var atSecond = parseInt(doAtTime[2]) - 1 || timeNow.getSeconds()
+                                    var nowAddedInSeconds = atHourNow * 60 * 60 + atMinuteNow * 60 + atSecondNow
+                                    var conditionAddedInSeconds = atHour * 60 * 60 + atMinute * 60 + atSecond
+                                    if(eval('nowAddedInSeconds '+condition.p2+' conditionAddedInSeconds')){
+                                        conditionChain[place].ok = true
+                                    }
+                                }
+                            break;
+                            default:
+                                modifyFilters(d.details)
+                            break;
+                        }
                     }
                     if (condition.p4 === '||' || dFilter.where.length-1 === place){
                         if (testMatrices.length > 0) matchedMatrices = matchedMatrices.concat(testMatrices)
