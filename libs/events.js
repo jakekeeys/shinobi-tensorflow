@@ -53,6 +53,31 @@ module.exports = function(s,config,lang){
         if(callback)callback(foundInRegion,collisions)
         return foundInRegion
     }
+    const scanMatricesforCollisions = function(region,matrices,callback){
+        var matrixPoints = []
+        var collisions = []
+        if (!region || !matrices){
+            if(callback)callback(collisions)
+            return collisions
+        }
+        var polyPoints = []
+        region.points.forEach(function(point){
+            polyPoints.push(new V(parseInt(point[0]),parseInt(point[1])))
+        })
+        var regionPoly = new P(new V(0,0), polyPoints)
+        matrices.forEach(function(matrix){
+            if (matrix){
+                var matrixPoly = new B(new V(matrix.x, matrix.y), matrix.width, matrix.height).toPolygon()
+                var response = new SAT.Response()
+                var collided = SAT.testPolygonPolygon(matrixPoly, regionPoly, response)
+                if(collided === true){
+                    collisions.push(matrix)
+                }
+            }
+        })
+        if(callback)callback(collisions)
+        return collisions
+    }
     const moveLock = {}
     const getLargestMatrix = (matrices) => {
         var largestMatrix = {width: 0, height: 0}
@@ -168,6 +193,8 @@ module.exports = function(s,config,lang){
         d.mon=s.group[d.ke].rawMonitorConfigurations[d.id];
         var currentConfig = s.group[d.ke].rawMonitorConfigurations[d.id].details
         var hasMatrices = (d.details.matrices && d.details.matrices.length > 0)
+        var allMatrices = d.details.matrices
+        var matchedMatrices = []
         //read filters
         if(
             currentConfig.use_detector_filters === '1' &&
@@ -192,36 +219,49 @@ module.exports = function(s,config,lang){
                 }
                 return newVal
             }
+            var defaultDrop = false;
+            var globalDropActive = false;
+            if (d.id.startsWith('DROP_')){
+                defaultDrop = true; // forces unmatched events to be dropped
+                globalDropActive = true;
+            }
+            var testMatrices = [...allMatrices] // default
             var filters = currentConfig.detector_filters
             Object.keys(filters).forEach(function(key){
                 var conditionChain = {}
+                testMatrices = [...allMatrices] // for new filter reset the matrices to be tested against
                 var dFilter = filters[key]
                 dFilter.where.forEach(function(condition,place){
                     conditionChain[place] = {ok:false,next:condition.p4,matrixCount:0}
-                    if(d.details.matrices)conditionChain[place].matrixCount = d.details.matrices.length
+                    if(testMatrices)conditionChain[place].matrixCount = testMatrices.length
                     var modifyFilters = function(toCheck,matrixPosition){
                         var param = toCheck[condition.p1]
                         var pass = function(){
-                            if(matrixPosition && dFilter.actions.halt === '1'){
-                                delete(d.details.matrices[matrixPosition])
-                            }else{
-                                conditionChain[place].ok = true
-                            }
+                            conditionChain[place].ok = true
+                        }
+                        var fail = function(){
+                            if (matrixPosition !== undefined) delete(testMatrices[matrixPosition])
                         }
                         switch(condition.p2){
                             case'indexOf':
                                 if(param.indexOf(condition.p3) > -1){
                                     pass()
+                                } else {
+                                    fail()
                                 }
                             break;
                             case'!indexOf':
                                 if(param.indexOf(condition.p3) === -1){
                                     pass()
+                                } else {
+                                    fail()
                                 }
                             break;
                             default:
                                 if(eval('param '+condition.p2+' "'+condition.p3.replace(/"/g,'\\"')+'"')){
                                     pass()
+                                } else {
+                                    fail()
                                 }
                             break;
                         }
@@ -232,36 +272,36 @@ module.exports = function(s,config,lang){
                         case'y':
                         case'height':
                         case'width':
-		        case'confidence':
-                            if(d.details.matrices){
-                                d.details.matrices.forEach(function(matrix,position){
-                                    modifyFilters(matrix,position)
+                        case'confidence':
+                            if(testMatrices){
+                                testMatrices.forEach(function(matrix,position){
+                                    if (matrix) modifyFilters(matrix,position)
                                 })
                             }
                         break;
                         case'name':
-                            if (d.details.matrices){
+                            if (testMatrices){
                                 var regions = s.group[d.ke].activeMonitors[d.id].parsedObjects.cords
                                 regions.forEach(function(region,position){
                                     switch(condition.p2){
                                         case'indexOf':
                                             if(region.name.indexOf(condition.p3) > -1){
-                                                var isMatrixInRegion = isAtleastOneMatrixInRegion([region],d.details.matrices);
+                                                testMatrices = testMatrices.concat(scanMatricesforCollisions(region,testMatrices));
                                             }
                                         break;
                                         case'!indexOf':
                                             if(region.name.indexOf(condition.p3) === -1){
-                                                var isMatrixInRegion = isAtleastOneMatrixInRegion([region],d.details.matrices);
+                                                testMatrices = testMatrices.concat(scanMatricesforCollisions(region,testMatrices));
                                             }
                                         break;
                                         case'===':
                                             if(region.name === condition.p3){
-                                                var isMatrixInRegion = isAtleastOneMatrixInRegion([region],d.details.matrices);
+                                                testMatrices = scanMatricesforCollisions(region,testMatrices);
                                             }
                                         break;
                                         case'!==':
                                             if(region.name !== condition.p3){
-                                                var isMatrixInRegion = isAtleastOneMatrixInRegion([region],d.details.matrices);
+                                                testMatrices = testMatrices.concat(scanMatricesforCollisions(region,testMatrices));
                                             }
                                         break;
                                         default:
@@ -269,7 +309,7 @@ module.exports = function(s,config,lang){
                                             s.systemLog('Numeric criteria unsupported for Region tests, Ignoring Conditional')
                                         break;
                                     }
-                                    if(isMatrixInRegion) {
+                                    if(testMatrices.length > 0) {
                                         conditionChain[place].ok = true; // default is false
                                     };
                                 });
@@ -297,6 +337,10 @@ module.exports = function(s,config,lang){
                             modifyFilters(d.details)
                         break;
                     }
+                    if (condition.p4 === '||' || dFilter.where.length-1 === place){
+                        if (testMatrices.length > 0) matchedMatrices = matchedMatrices.concat(testMatrices)
+                        testMatrices = [...allMatrices] // reset matrices for next group of conditions
+                    }
                 })
                 var conditionArray = Object.values(conditionChain)
                 var validationString = ''
@@ -313,20 +357,29 @@ module.exports = function(s,config,lang){
                             var value = dFilter.actions[key]
                             filter[key] = parseValue(key,value)
                         })
+			defaultDrop = false;
                     }else{
                         filter.halt = true
                     }
                 }
             })
-            if(d.details.matrices && d.details.matrices.length === 0 || filter.halt === true){
+            if(matchedMatrices && matchedMatrices.length === 0 || filter.halt === true){
                 return
             }else if(hasMatrices){
-                var reviewedMatrix = []
-                d.details.matrices.forEach(function(matrix){
-                    if(matrix)reviewedMatrix.push(matrix)
-                })
-                d.details.matrices = reviewedMatrix
+                // remove empty elements
+                matchedMatrices = matchedMatrices.filter(value => Object.keys(value).length !== 0)
+                // remove duplicate matches
+                matchedMatrices = matchedMatrices.filter((matrix, index, self) =>
+                    index === self.findIndex((t) => (
+                        t.x === matrix.x && t.y === matrix.y && t.tag === matrix.tag && t.confidence === matrix.confidence
+                    ))
+                )
+                d.details.matrices = matchedMatrices
             }
+        }
+        // -- delayed decision here --
+        if (defaultDrop) {
+            return;
         }
         var eventTime = new Date()
         //motion counter
