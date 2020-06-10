@@ -242,6 +242,7 @@ module.exports = function(s,config,lang){
                         case'y':
                         case'height':
                         case'width':
+		        case'confidence':
                             if(d.details.matrices){
                                 d.details.matrices.forEach(function(matrix,position){
                                     modifyFilters(matrix,position)
