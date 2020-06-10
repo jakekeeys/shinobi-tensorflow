@@ -367,7 +367,7 @@ module.exports = function(s,config,lang){
                     }
                 }
             })
-            if(matchedMatrices && matchedMatrices.length === 0 || filter.halt === true){
+            if(filter.halt === true){
                 return
             }else if(hasMatrices){
                 // remove empty elements
