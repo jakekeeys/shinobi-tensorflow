@@ -8,14 +8,10 @@ module.exports = function(s,config,lang,app,io){
         var stopOptions = {ProfileToken : device.current_profile.token,'PanTilt': true,'Zoom': true}
         switch(options.direction){
             case'center':
-                var msg =  {type:'Center button inactive'}
-                s.userLog(options,msg)
-                callback(msg)
+                callback({type:'Center button inactive'})
             break;
             case'stopMove':
-                var msg =  {type:'Control Trigger Ended'}
-                s.userLog(options,msg)
-                callback(msg)
+                callback({type:'Control Trigger Ended'})
                 s.runOnvifMethod({
                     auth: {
                         ke: options.ke,
@@ -64,11 +60,8 @@ module.exports = function(s,config,lang,app,io){
                         options: controlOptions,
                     },(response) => {
                         if(response.ok){
-                            s.userLog(options,{type: 'Control Trigger Started'})
                             if(controlUrlStopTimeout != '0'){
                                 setTimeout(function(){
-                                    var msg =  {type: 'Control Trigger Ended'}
-                                    s.userLog(options,msg)
                                     s.runOnvifMethod({
                                         auth: {
                                             ke: options.ke,
@@ -82,11 +75,11 @@ module.exports = function(s,config,lang,app,io){
                                             console.log(error)
                                         }
                                     })
-                                    callback(msg)
+                                    callback({type: 'Control Triggered'})
                                 },controlUrlStopTimeout)
                             }
                         }else{
-                            console.log(response)
+                            s.debugLog(response)
                         }
                     })
                 }else{
@@ -141,7 +134,6 @@ module.exports = function(s,config,lang,app,io){
                         ke: e.ke,
                         id: e.id,
                     })
-                    console.log(response)
                     if(response.ok){
                         moveCamera({
                             ke: e.ke,
@@ -161,10 +153,15 @@ module.exports = function(s,config,lang,app,io){
                     },callback)
                 }
             }catch(err){
-                console.log(err)
-                var msg = {type:lang['Control Error'],msg:{msg:lang.ControlErrorText2,error:err,direction:e.direction}}
-                s.userLog(e,msg)
-                callback(msg)
+                s.debugLog(err)
+                callback({
+                    type: lang['Control Error'],
+                    msg: {
+                        msg: lang.ControlErrorText2,
+                        error: err,
+                        direction: e.direction
+                    }
+                })
             }
         }else{
             var stopCamera = function(){
@@ -207,9 +204,7 @@ module.exports = function(s,config,lang,app,io){
                 }
                 request(requestOptions,function(err,data){
                     if(err){
-                        var msg =  {ok:false,type:'Control Error',msg:err};
-                        callback(msg)
-                        s.userLog(e,msg);
+                        callback({ok:false,type:'Control Error',msg:err})
                         return
                     }
                     if(monitorConfig.details.control_stop == '1' && e.direction !== 'center' ){
@@ -220,9 +215,7 @@ module.exports = function(s,config,lang,app,io){
                             },controlUrlStopTimeout)
                         }
                     }else{
-                        var msg =  {ok:true,type:'Control Triggered'};
-                        callback(msg)
-                        s.userLog(e,msg);
+                        callback({ok:true,type:'Control Triggered'})
                     }
                 })
             }
