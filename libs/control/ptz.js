@@ -139,7 +139,10 @@ module.exports = function(s,config,lang,app,io){
                             id: e.id,
                             direction: e.direction,
                             axis: e.axis,
-                        },callback)
+                        },(msg) => {
+                            msg.msg = e.direction
+                            callback(msg)
+                        })
                     }else{
                         s.userLog(e,{type:lang['Control Error'],msg:response.error})
                     }
@@ -149,7 +152,10 @@ module.exports = function(s,config,lang,app,io){
                         id: e.id,
                         direction: e.direction,
                         axis: e.axis,
-                    },callback)
+                    },(msg) => {
+                        if(!msg.msg)msg.msg = {direction: e.direction}
+                        callback(msg)
+                    })
                 }
             }catch(err){
                 s.debugLog(err)
