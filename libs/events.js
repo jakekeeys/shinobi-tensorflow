@@ -105,7 +105,7 @@ module.exports = function(s,config,lang){
         s.cameraControl({
             axis: axis,
             // axis: [{direction: 'x', amount: 1.0}],
-            mid: event.id,
+            id: event.id,
             ke: event.ke
         },(msg) => {
             s.userLog(event,msg)

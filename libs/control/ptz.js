@@ -105,42 +105,41 @@ module.exports = function(s,config,lang,app,io){
             break;
         }
     }
-    const ptzControl = async function(e,callback){
-        s.checkDetails(e)
-        if(!s.group[e.ke] || !s.group[e.ke].activeMonitors[e.id]){return}
-        const monitorConfig = s.group[e.ke].rawMonitorConfigurations[e.id]
+    const ptzControl = async function(options,callback){
+        if(!s.group[options.ke] || !s.group[options.ke].activeMonitors[options.id]){return}
+        const monitorConfig = s.group[options.ke].rawMonitorConfigurations[options.id]
         const controlUrlMethod = monitorConfig.details.control_url_method || 'GET'
         const controlBaseUrl = monitorConfig.details.control_base_url || s.buildMonitorUrl(monitorConfig, true)
         if(monitorConfig.details.control !== "1"){
             s.userLog(e,{type:lang['Control Error'],msg:lang.ControlErrorText1});
             return
         }
-        if(monitorConfig.details.control_url_stop_timeout === '0' && monitorConfig.details.control_stop === '1' && s.group[e.ke].activeMonitors[e.id].ptzMoving === true){
-            e.direction = 'stopMove'
-            s.group[e.ke].activeMonitors[e.id].ptzMoving = false
+        if(monitorConfig.details.control_url_stop_timeout === '0' && monitorConfig.details.control_stop === '1' && s.group[options.ke].activeMonitors[options.id].ptzMoving === true){
+            options.direction = 'stopMove'
+            s.group[options.ke].activeMonitors[options.id].ptzMoving = false
         }else{
-            s.group[e.ke].activeMonitors[e.id].ptzMoving = true
+            s.group[options.ke].activeMonitors[options.id].ptzMoving = true
         }
         if(controlUrlMethod === 'ONVIF'){
             try{
                 //create onvif connection
                 if(
-                    !s.group[e.ke].activeMonitors[e.id].onvifConnection ||
-                    !s.group[e.ke].activeMonitors[e.id].onvifConnection.current_profile ||
-                    !s.group[e.ke].activeMonitors[e.id].onvifConnection.current_profile.token
+                    !s.group[options.ke].activeMonitors[options.id].onvifConnection ||
+                    !s.group[options.ke].activeMonitors[options.id].onvifConnection.current_profile ||
+                    !s.group[options.ke].activeMonitors[options.id].onvifConnection.current_profile.token
                 ){
                     const response = await s.createOnvifDevice({
-                        ke: e.ke,
-                        id: e.id,
+                        ke: options.ke,
+                        id: options.id,
                     })
                     if(response.ok){
                         moveCamera({
-                            ke: e.ke,
-                            id: e.id,
-                            direction: e.direction,
-                            axis: e.axis,
+                            ke: options.ke,
+                            id: options.id,
+                            direction: options.direction,
+                            axis: options.axis,
                         },(msg) => {
-                            msg.msg = e.direction
+                            msg.msg = options.direction
                             callback(msg)
                         })
                     }else{
@@ -148,12 +147,12 @@ module.exports = function(s,config,lang,app,io){
                     }
                 }else{
                     moveCamera({
-                        ke: e.ke,
-                        id: e.id,
-                        direction: e.direction,
-                        axis: e.axis,
+                        ke: options.ke,
+                        id: options.id,
+                        direction: options.direction,
+                        axis: options.axis,
                     },(msg) => {
-                        if(!msg.msg)msg.msg = {direction: e.direction}
+                        if(!msg.msg)msg.msg = {direction: options.direction}
                         callback(msg)
                     })
                 }
@@ -164,14 +163,14 @@ module.exports = function(s,config,lang,app,io){
                     msg: {
                         msg: lang.ControlErrorText2,
                         error: err,
-                        direction: e.direction
+                        direction: options.direction
                     }
                 })
             }
         }else{
             const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
             var stopCamera = function(){
-                var stopURL = controlBaseUrl + monitorConfig.details['control_url_'+e.direction+'_stop']
+                var stopURL = controlBaseUrl + monitorConfig.details[`control_url_${options.direction}_stop`]
                 var options = s.cameraControlOptionsFromUrl(stopURL,monitorConfig)
                 var requestOptions = {
                     url : stopURL,
@@ -194,7 +193,7 @@ module.exports = function(s,config,lang,app,io){
                     s.userLog(e,msg);
                 })
             }
-            if(e.direction === 'stopMove'){
+            if(options.direction === 'stopMove'){
                 stopCamera()
             }else{
                 var requestOptions = {
@@ -213,7 +212,7 @@ module.exports = function(s,config,lang,app,io){
                         callback({ok:false,type:'Control Error',msg:err})
                         return
                     }
-                    if(monitorConfig.details.control_stop == '1' && e.direction !== 'center' ){
+                    if(monitorConfig.details.control_stop == '1' && options.direction !== 'center' ){
                         s.userLog(e,{type:'Control Triggered Started'});
                         if(controlUrlStopTimeout > 0){
                             setTimeout(function(){

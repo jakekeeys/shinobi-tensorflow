@@ -435,7 +435,7 @@ $(document).ready(function(e){
             break;
             case'control':
                 e.a=e.e.attr('control')
-                $.ccio.cx({f:'monitor',ff:'control',direction:e.a,mid:e.mid,ke:e.ke},user)
+                $.ccio.cx({f:'monitor',ff:'control',direction:e.a,id:e.mid,ke:e.ke},user)
             break;
             case'videos_table':case'calendar':case'video_grid'://call videos table or calendar or video grid
                 $.vidview.launcher=$(this);
