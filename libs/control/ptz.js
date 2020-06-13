@@ -111,12 +111,11 @@ module.exports = function(s,config,lang,app,io){
         const monitorConfig = s.group[e.ke].rawMonitorConfigurations[e.id]
         const controlUrlMethod = monitorConfig.details.control_url_method || 'GET'
         const controlBaseUrl = monitorConfig.details.control_base_url || s.buildMonitorUrl(monitorConfig, true)
-        const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
         if(monitorConfig.details.control !== "1"){
             s.userLog(e,{type:lang['Control Error'],msg:lang.ControlErrorText1});
             return
         }
-        if(controlUrlStopTimeout === '0' && monitorConfig.details.control_stop === '1' && s.group[e.ke].activeMonitors[e.id].ptzMoving === true){
+        if(monitorConfig.details.control_url_stop_timeout === '0' && monitorConfig.details.control_stop === '1' && s.group[e.ke].activeMonitors[e.id].ptzMoving === true){
             e.direction = 'stopMove'
             s.group[e.ke].activeMonitors[e.id].ptzMoving = false
         }else{
@@ -164,6 +163,7 @@ module.exports = function(s,config,lang,app,io){
                 })
             }
         }else{
+            const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
             var stopCamera = function(){
                 var stopURL = controlBaseUrl + monitorConfig.details['control_url_'+e.direction+'_stop']
                 var options = s.cameraControlOptionsFromUrl(stopURL,monitorConfig)
