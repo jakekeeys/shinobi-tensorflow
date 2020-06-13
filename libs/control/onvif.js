@@ -4,10 +4,9 @@ var onvif = require("node-onvif");
 module.exports = function(s,config,lang,app,io){
     const createOnvifDevice = async (onvifAuth) => {
         var response = {ok: false}
-        var controlURL
         const monitorConfig = s.group[onvifAuth.ke].rawMonitorConfigurations[onvifAuth.id]
         const controlBaseUrl = monitorConfig.details.control_base_url || s.buildMonitorUrl(monitorConfig, true)
-        const controlURLOptions = s.cameraControlOptionsFromUrl(controlURL,monitorConfig)
+        const controlURLOptions = s.cameraControlOptionsFromUrl(controlBaseUrl,monitorConfig)
         //create onvif connection
         const device = new onvif.OnvifDevice({
             xaddr : 'http://' + controlURLOptions.host + ':' + controlURLOptions.port + '/onvif/device_service',

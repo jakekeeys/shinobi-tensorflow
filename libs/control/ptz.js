@@ -1,17 +1,19 @@
 var os = require('os');
 var exec = require('child_process').exec;
 module.exports = function(s,config,lang,app,io){
-    const moveCamera = function(options){
+    const moveCamera = function(options,callback){
+        const monitorConfig = s.group[options.ke].rawMonitorConfigurations[options.id]
+        const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
         const device = s.group[options.ke].activeMonitors[options.id].onvifConnection
         var stopOptions = {ProfileToken : device.current_profile.token,'PanTilt': true,'Zoom': true}
         switch(options.direction){
             case'center':
-                const msg =  {type:'Center button inactive'}
+                var msg =  {type:'Center button inactive'}
                 s.userLog(options,msg)
                 callback(msg)
             break;
             case'stopMove':
-                const msg =  {type:'Control Trigger Ended'}
+                var msg =  {type:'Control Trigger Ended'}
                 s.userLog(options,msg)
                 callback(msg)
                 s.runOnvifMethod({
@@ -51,7 +53,7 @@ module.exports = function(s,config,lang,app,io){
                     if(!controlOptions.Velocity[axis])
                         controlOptions.Velocity[axis] = 0
                 })
-                if(monitorConfig.details.control_stop == '1'){
+                if(monitorConfig.details.control_stop === '1'){
                     s.runOnvifMethod({
                         auth: {
                             ke: options.ke,
@@ -62,11 +64,11 @@ module.exports = function(s,config,lang,app,io){
                         options: controlOptions,
                     },(response) => {
                         if(response.ok){
-                            s.userLog(e,{type: 'Control Trigger Started'})
-                            if(controlUrlStopTimeout !== '0'){
+                            s.userLog(options,{type: 'Control Trigger Started'})
+                            if(controlUrlStopTimeout != '0'){
                                 setTimeout(function(){
-                                    const msg =  {type: 'Control Trigger Ended'}
-                                    s.userLog(e,msg)
+                                    var msg =  {type: 'Control Trigger Ended'}
+                                    s.userLog(options,msg)
                                     s.runOnvifMethod({
                                         auth: {
                                             ke: options.ke,
@@ -101,24 +103,22 @@ module.exports = function(s,config,lang,app,io){
                         options: controlOptions,
                     },(response) => {
                         if(response.ok){
-                            const msg =  {type: 'Control Triggered'}
-                            s.userLog(e,msg)
-                            callback(msg)
+                            callback({type: 'Control Triggered'})
                         }else{
-                            console.log(err)
+                            s.debugLog(err)
                         }
                     })
                 }
             break;
         }
     }
-    const ptzControl = function(e,callback){
+    const ptzControl = async function(e,callback){
         s.checkDetails(e)
         if(!s.group[e.ke] || !s.group[e.ke].activeMonitors[e.id]){return}
         const monitorConfig = s.group[e.ke].rawMonitorConfigurations[e.id]
         const controlUrlMethod = monitorConfig.details.control_url_method || 'GET'
-        const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
         const controlBaseUrl = monitorConfig.details.control_base_url || s.buildMonitorUrl(monitorConfig, true)
+        const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
         if(monitorConfig.details.control !== "1"){
             s.userLog(e,{type:lang['Control Error'],msg:lang.ControlErrorText1});
             return
@@ -137,20 +137,20 @@ module.exports = function(s,config,lang,app,io){
                     !s.group[e.ke].activeMonitors[e.id].onvifConnection.current_profile ||
                     !s.group[e.ke].activeMonitors[e.id].onvifConnection.current_profile.token
                 ){
-                    const response = s.createOnvifDevice({
+                    const response = await s.createOnvifDevice({
                         ke: e.ke,
                         id: e.id,
                     })
+                    console.log(response)
                     if(response.ok){
                         moveCamera({
                             ke: e.ke,
                             id: e.id,
                             direction: e.direction,
                             axis: e.axis,
-                        })
+                        },callback)
                     }else{
-                        s.userLog(e,{type:lang['Control Error'],msg:error})
-                        console.log(error)
+                        s.userLog(e,{type:lang['Control Error'],msg:response.error})
                     }
                 }else{
                     moveCamera({
@@ -158,11 +158,11 @@ module.exports = function(s,config,lang,app,io){
                         id: e.id,
                         direction: e.direction,
                         axis: e.axis,
-                    })
+                    },callback)
                 }
             }catch(err){
                 console.log(err)
-                const msg = {type:lang['Control Error'],msg:{msg:lang.ControlErrorText2,error:err,direction:e.direction}}
+                var msg = {type:lang['Control Error'],msg:{msg:lang.ControlErrorText2,error:err,direction:e.direction}}
                 s.userLog(e,msg)
                 callback(msg)
             }
@@ -183,9 +183,9 @@ module.exports = function(s,config,lang,app,io){
                 }
                 request(requestOptions,function(err,data){
                     if(err){
-                        const msg =  {ok:false,type:'Control Error',msg:err}
+                        var msg =  {ok:false,type:'Control Error',msg:err}
                     }else{
-                        const msg =  {ok:true,type:'Control Trigger Ended'}
+                        var msg =  {ok:true,type:'Control Trigger Ended'}
                     }
                     callback(msg)
                     s.userLog(e,msg);
@@ -207,12 +207,12 @@ module.exports = function(s,config,lang,app,io){
                 }
                 request(requestOptions,function(err,data){
                     if(err){
-                        const msg =  {ok:false,type:'Control Error',msg:err};
+                        var msg =  {ok:false,type:'Control Error',msg:err};
                         callback(msg)
                         s.userLog(e,msg);
                         return
                     }
-                    if(monitorConfig.details.control_stop=='1'&&e.direction!=='center'){
+                    if(monitorConfig.details.control_stop == '1' && e.direction !== 'center' ){
                         s.userLog(e,{type:'Control Triggered Started'});
                         if(controlUrlStopTimeout > 0){
                             setTimeout(function(){
@@ -220,7 +220,7 @@ module.exports = function(s,config,lang,app,io){
                             },controlUrlStopTimeout)
                         }
                     }else{
-                        const msg =  {ok:true,type:'Control Triggered'};
+                        var msg =  {ok:true,type:'Control Triggered'};
                         callback(msg)
                         s.userLog(e,msg);
                     }

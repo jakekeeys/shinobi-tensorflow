@@ -480,7 +480,6 @@ module.exports = function(s,config,lang){
         });
     }
     s.cameraControlOptionsFromUrl = function(e,monitorConfig){
-        s.checkDetails(e)
         URLobject = URL.parse(e)
         if(monitorConfig.details.control_url_method === 'ONVIF' && monitorConfig.details.control_base_url === ''){
             if(monitorConfig.details.onvif_port === ''){
