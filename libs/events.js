@@ -78,21 +78,10 @@ module.exports = function(s,config,lang){
         if(!largestMatrix)return;
         var matrixCenterX = largestMatrix.x + (largestMatrix.width / 2)
         var matrixCenterY = largestMatrix.y + (largestMatrix.height / 2)
-        var rawDistanceX = (matrixCenterX - imageCenterX)// - largestMatrix.width / 2
-        var rawDistanceY = (matrixCenterY - imageCenterY)// + largestMatrix.height / 2
+        var rawDistanceX = (matrixCenterX - imageCenterX)
+        var rawDistanceY = (matrixCenterY - imageCenterY)
         var distanceX = parseFloat((rawDistanceX / 500).toFixed(1))
         var distanceY = parseFloat((rawDistanceY / 500).toFixed(1))
-        // console.log('imageCenterX',imageCenterX)
-        // console.log('imageCenterY',imageCenterY)
-        // console.log('matrixCenterX',matrixCenterX)
-        // console.log('matrixCenterY',matrixCenterY)
-        // console.log('rawDistanceX',rawDistanceX)
-        // console.log('rawDistanceY',rawDistanceY)
-        // console.log('distanceX',distanceX)
-        // console.log('distanceY',distanceY)
-        // console.log('thresholdX',thresholdX,rawDistanceX > thresholdX || rawDistanceX < -thresholdX)
-        // console.log('thresholdY',thresholdY,rawDistanceY > thresholdY || rawDistanceY < -thresholdY)
-        // console.log('largestMatrix.y < 30',largestMatrix.y < 30)
         if(distanceX > 1)distanceX = 1
         if(distanceX < -1)distanceX = -1
         if(distanceY > 1)distanceY = 1
