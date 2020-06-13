@@ -149,101 +149,6 @@ module.exports = function(s,config,lang,app,io){
         })
         return responseList
     }
-    const runOnvifMethod = (onvifOptions,callback) => {
-        var response = {ok: false}
-        var errorMessage = function(msg,error){
-            response.ok = false
-            response.msg = msg
-            response.error = error
-            callback(response)
-        }
-        var actionCallback = function(onvifActionResponse){
-            response.ok = true
-            if(onvifActionResponse.data){
-                response.responseFromDevice = onvifActionResponse.data
-            }else{
-                response.responseFromDevice = onvifActionResponse
-            }
-            if(onvifActionResponse.soap)response.soap = onvifActionResponse.soap
-            callback(response)
-        }
-        var isEmpty = function(obj) {
-            for(var key in obj) {
-                if(obj.hasOwnProperty(key))
-                    return false;
-            }
-            return true;
-        }
-        var doAction = function(Camera){
-            var completeAction = function(command){
-                if(command && command.then){
-                    command.then(actionCallback).catch(function(error){
-                        errorMessage('Device Action responded with an error',error)
-                    })
-                }else if(command){
-                    response.ok = true
-                    response.repsonseFromDevice = command
-                    callback(response)
-                }else{
-                    response.error = 'Big Errors, Please report it to Shinobi Development'
-                    callback(response)
-                }
-            }
-            var action
-            if(onvifOptions.auth.service){
-                if(Camera.services[onvifOptions.auth.service] === undefined){
-                    return errorMessage('This is not an available service. Please use one of the following : '+Object.keys(Camera.services).join(', '))
-                }
-                if(Camera.services[onvifOptions.auth.service] === null){
-                    return errorMessage('This service is not activated. Maybe you are not connected through ONVIF. You can test by attempting to use the "Control" feature with ONVIF in Shinobi.')
-                }
-                action = Camera.services[onvifOptions.auth.service][onvifOptions.auth.action]
-            }else{
-                action = Camera[onvifOptions.auth.action]
-            }
-            if(!action || typeof action !== 'function'){
-                errorMessage(onvifOptions.auth.action+' is not an available ONVIF function. See https://github.com/futomi/node-onvif for functions.')
-            }else{
-                var argNames = s.getFunctionParamNames(action)
-                var options
-                var command
-                if(argNames[0] === 'options' || argNames[0] === 'params'){
-                    options = onvifOptions.options || {}
-                }
-                if(onvifOptions.auth.service){
-                    command = Camera.services[onvifOptions.auth.service][onvifOptions.auth.action](options)
-                }else{
-                    command = Camera[onvifOptions.auth.action](options)
-                }
-                completeAction(command)
-            }
-        }
-        if(!s.group[onvifOptions.auth.ke].activeMonitors[onvifOptions.auth.id].onvifConnection){
-            //prepeare onvif connection
-            var controlURL
-            var monitorConfig = s.group[onvifOptions.auth.ke].rawMonitorConfigurations[onvifOptions.auth.id]
-            if(!monitorConfig.details.control_base_url||monitorConfig.details.control_base_url===''){
-                controlURL = s.buildMonitorUrl(monitorConfig, true)
-            }else{
-                controlURL = monitorConfig.details.control_base_url
-            }
-            var controlURLOptions = s.cameraControlOptionsFromUrl(controlURL,monitorConfig)
-            //create onvif connection
-            s.group[onvifOptions.auth.ke].activeMonitors[onvifOptions.auth.id].onvifConnection = new onvif.OnvifDevice({
-                xaddr : 'http://' + controlURLOptions.host + ':' + controlURLOptions.port + '/onvif/device_service',
-                user : controlURLOptions.username,
-                pass : controlURLOptions.password
-            })
-            var device = s.group[onvifOptions.auth.ke].activeMonitors[onvifOptions.auth.id].onvifConnection
-            device.init().then((info) => {
-                if(info)doAction(device)
-            }).catch(function(error){
-                return errorMessage('Device responded with an error',error)
-            })
-        }else{
-            doAction(s.group[onvifOptions.auth.ke].activeMonitors[onvifOptions.auth.id].onvifConnection)
-        }
-    }
     const onWebSocketConnection = async (cn) => {
         const tx = function(z){if(!z.ke){z.ke=cn.ke;};cn.emit('f',z);}
         cn.on('f',(d) => {
@@ -255,28 +160,6 @@ module.exports = function(s,config,lang,app,io){
         })
     }
     s.onWebSocketConnection(onWebSocketConnection)
-    /**
-    * API : ONVIF Method Controller
-     */
-    app.all([
-        config.webPaths.apiPrefix+':auth/onvif/:ke/:id/:action',
-        config.webPaths.apiPrefix+':auth/onvif/:ke/:id/:service/:action'
-    ],function (req,res){
-        s.auth(req.params,function(user){
-            runOnvifMethod({
-                auth: {
-                    ke: req.params.ke,
-                    id: req.params.id,
-                    auth: req.params.auth,
-                    action: req.params.action,
-                    service: req.params.service,
-                },
-                options: s.getPostData(req,'options',true) || s.getPostData(req,'params',true),
-            },(endData) => {
-                s.closeJsonResponse(res,endData)
-            })
-        },res,req);
-    })
     /**
     * API : FFprobe
      */
