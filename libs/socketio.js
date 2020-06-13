@@ -733,8 +733,9 @@ module.exports = function(s,config,lang,io){
                                 }
                             break;
                             case'control':
-                                s.cameraControl(d,function(resp){
-                                    tx({f:'control',response:resp})
+                                s.cameraControl(d,function(msg){
+                                    s.userLog(d,msg)
+                                    tx({f:'control',response:msg})
                                 })
                             break;
                             case'jpeg_off':

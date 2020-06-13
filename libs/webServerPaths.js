@@ -1709,8 +1709,9 @@ module.exports = function(s,config,lang,app,io){
     app.get(config.webPaths.apiPrefix+':auth/control/:ke/:id/:direction', function (req,res){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            s.cameraControl(req.params,function(resp){
-                res.end(s.prettyPrint(resp))
+            s.cameraControl(req.params,function(msg){
+                s.userLog(d,msg)
+                res.end(s.prettyPrint(msg))
             });
         },res,req);
     })

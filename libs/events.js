@@ -108,6 +108,7 @@ module.exports = function(s,config,lang){
             mid: event.id,
             ke: event.ke
         },(msg) => {
+            s.userLog(event,msg)
             // console.log(msg)
         })
     }
