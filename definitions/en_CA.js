@@ -3019,53 +3019,6 @@ module.exports = function(s,config,lang){
                             ]
                          },
                          {
-                            "name": "detail=detector_ptz_follow",
-                            "field": lang['PTZ Tracking'],
-                            "description": "Follow the largest detected Detected Object with PTZ? Requires an Object Detector running or matrices provided with events.",
-                            "default": "0",
-                            "example": "",
-                            "selector": "h_det_tracking",
-                            "fieldType": "select",
-                            "possible": [
-                                {
-                                   "name": lang.No,
-                                   "value": "0"
-                                },
-                                {
-                                   "name": lang.Yes,
-                                   "value": "1"
-                                }
-                            ]
-                         },
-                         {
-                            "name": "detail=detector_ptz_follow_target",
-                            "field": lang['PTZ Tracking Target'],
-                            "description": "",
-                            "default": "person",
-                            "example": "",
-                            "form-group-class": "h_det_tracking_input h_det_tracking_1",
-                            "possible": ""
-                         },
-                         {
-                            "name": "detail=detector_obj_count",
-                            "field": lang["Count Objects"],
-                            "description": "Count detected objects.",
-                            "default": "0",
-                            "example": "",
-                            "selector": "h_det_count",
-                            "fieldType": "select",
-                            "possible": [
-                               {
-                                  "name": lang.No,
-                                  "value": "0"
-                               },
-                               {
-                                  "name": lang.Yes,
-                                  "value": "1"
-                               }
-                            ]
-                         },
-                         {
                              hidden: true,
                             "name": "detail=detector_obj_count_in_region",
                             "field": lang["Count Objects only inside Regions"],
@@ -3467,6 +3420,53 @@ module.exports = function(s,config,lang){
                        "example": "",
                        "form-group-class": "h_cs_input h_cs_1",
                        "possible": ""
+                    },
+                    {
+                       "name": "detail=detector_ptz_follow",
+                       "field": lang['PTZ Tracking'],
+                       "description": "Follow the largest detected Detected Object with PTZ? Requires an Object Detector running or matrices provided with events.",
+                       "default": "0",
+                       "example": "",
+                       "selector": "h_det_tracking",
+                       "fieldType": "select",
+                       "possible": [
+                           {
+                              "name": lang.No,
+                              "value": "0"
+                           },
+                           {
+                              "name": lang.Yes,
+                              "value": "1"
+                           }
+                       ]
+                    },
+                    {
+                       "name": "detail=detector_ptz_follow_target",
+                       "field": lang['PTZ Tracking Target'],
+                       "description": "",
+                       "default": "person",
+                       "example": "",
+                       "form-group-class": "h_det_tracking_input h_det_tracking_1",
+                       "possible": ""
+                    },
+                    {
+                       "name": "detail=detector_obj_count",
+                       "field": lang["Count Objects"],
+                       "description": "Count detected objects.",
+                       "default": "0",
+                       "example": "",
+                       "selector": "h_det_count",
+                       "fieldType": "select",
+                       "possible": [
+                          {
+                             "name": lang.No,
+                             "value": "0"
+                          },
+                          {
+                             "name": lang.Yes,
+                             "value": "1"
+                          }
+                       ]
                     },
                     {
                        "name": "detail=control_url_center",
