@@ -421,25 +421,6 @@ module.exports = function(s,config,lang){
                        ]
                     },
                     {
-                       "name": "detail=detector_ptz_follow",
-                       "field": lang['PTZ Follow'],
-                       "description": "Follow the largest detected Detected Object with PTZ? Requires an Object Detector running.",
-                       "default": "0",
-                       "example": "",
-                       "form-group-class": "h_onvif_input h_onvif_1",
-                       "fieldType": "select",
-                       "possible": [
-                           {
-                              "name": lang.No,
-                              "value": "0"
-                           },
-                           {
-                              "name": lang.Yes,
-                              "value": "1"
-                           }
-                       ]
-                    },
-                    {
                         hidden: true,
                        "name": "detail=onvif_port",
                        "field": lang['ONVIF Port'],
@@ -3036,6 +3017,34 @@ module.exports = function(s,config,lang){
                                   "value": "1"
                                }
                             ]
+                         },
+                         {
+                            "name": "detail=detector_ptz_follow",
+                            "field": lang['PTZ Tracking'],
+                            "description": "Follow the largest detected Detected Object with PTZ? Requires an Object Detector running or matrices provided with events.",
+                            "default": "0",
+                            "example": "",
+                            "selector": "h_det_tracking",
+                            "fieldType": "select",
+                            "possible": [
+                                {
+                                   "name": lang.No,
+                                   "value": "0"
+                                },
+                                {
+                                   "name": lang.Yes,
+                                   "value": "1"
+                                }
+                            ]
+                         },
+                         {
+                            "name": "detail=detector_ptz_follow_target",
+                            "field": lang['PTZ Tracking Target'],
+                            "description": "",
+                            "default": "person",
+                            "example": "",
+                            "form-group-class": "h_det_tracking_input h_det_tracking_1",
+                            "possible": ""
                          },
                          {
                             "name": "detail=detector_obj_count",

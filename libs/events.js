@@ -10,6 +10,7 @@ var P = SAT.Polygon;
 var B = SAT.Box;
 // Matrix In Region Libs />
 module.exports = function(s,config,lang){
+    const ptz = require('./control/ptz.js')(s,config,lang)
     const countObjects = async (event) => {
         const matrices = event.details.matrices
         const eventsCounted = s.group[event.ke].activeMonitors[event.id].eventsCounted || {}
@@ -60,46 +61,45 @@ module.exports = function(s,config,lang){
         })
         return largestMatrix.x ? largestMatrix : null
     }
-    const moveCameraPtzToMatrix = function(event){
+    const moveCameraPtzToMatrix = function(event,trackingTarget){
         if(moveLock[event.ke + event.id])return;
         clearTimeout(moveLock[event.ke + event.id])
         moveLock[event.ke + event.id] = setTimeout(() => {
             delete(moveLock[event.ke + event.id])
         },1000)
-        var imgHeight = event.details.imgHeight
-        var imgWidth = event.details.imgWidth
-        var thresholdX = imgWidth * 0.1
-        var thresholdY = imgHeight * 0.1
-        var imageCenterX = imgWidth / 2
-        var imageCenterY = imgHeight / 2
-        var matrices = event.details.matrices
-        var largestMatrix = getLargestMatrix(matrices.filter(matrix => matrix.tag === 'person'))
+        const imgHeight = event.details.imgHeight
+        const imgWidth = event.details.imgWidth
+        const thresholdX = imgWidth * 0.125
+        const thresholdY = imgHeight * 0.125
+        const imageCenterX = imgWidth / 2
+        const imageCenterY = imgHeight / 2
+        const matrices = event.details.matrices
+        const largestMatrix = getLargestMatrix(matrices.filter(matrix => matrix.tag === (trackingTarget || 'person')))
         // console.log(matrices.find(matrix => matrix.tag === 'person'))
         if(!largestMatrix)return;
-        var matrixCenterX = largestMatrix.x + (largestMatrix.width / 2)
-        var matrixCenterY = largestMatrix.y + (largestMatrix.height / 2)
-        var rawDistanceX = (matrixCenterX - imageCenterX)
-        var rawDistanceY = (matrixCenterY - imageCenterY)
-        var distanceX = parseFloat((rawDistanceX / 500).toFixed(1))
-        var distanceY = parseFloat((rawDistanceY / 500).toFixed(1))
-        if(distanceX > 1)distanceX = 1
-        if(distanceX < -1)distanceX = -1
-        if(distanceY > 1)distanceY = 1
-        if(distanceY < -1)distanceY = -1
-        var axis = [
-            {direction: 'x', amount: rawDistanceX > thresholdX || rawDistanceX < -thresholdX ? distanceX : 0},
-            {direction: 'y', amount: largestMatrix.y < 30 && largestMatrix.height > imgHeight * 0.8 ? 0.5 : rawDistanceY > thresholdY || rawDistanceY < -thresholdY ? -distanceY : 0},
-            {direction: 'z', amount: 0},
-        ]
-        s.cameraControl({
-            axis: axis,
-            // axis: [{direction: 'x', amount: 1.0}],
-            id: event.id,
-            ke: event.ke
-        },(msg) => {
-            s.userLog(event,msg)
-            // console.log(msg)
-        })
+        const matrixCenterX = largestMatrix.x + (largestMatrix.width / 2)
+        const matrixCenterY = largestMatrix.y + (largestMatrix.height / 2)
+        const rawDistanceX = (matrixCenterX - imageCenterX)
+        const rawDistanceY = (matrixCenterY - imageCenterY)
+        const distanceX = imgWidth / rawDistanceX
+        const distanceY = imgHeight / rawDistanceY
+        const axisX = rawDistanceX > thresholdX || rawDistanceX < -thresholdX ? distanceX : 0
+        const axisY = largestMatrix.y < 30 && largestMatrix.height > imgHeight * 0.8 ? 0.5 : rawDistanceY > thresholdY || rawDistanceY < -thresholdY ? -distanceY : 0
+        if(axisX !== 0 || axisY !== 0){
+            ptz.control({
+                axis: [
+                    {direction: 'x', amount: axisX === 0 ? 0 : axisX > 0 ? 0.01 : -0.01},
+                    {direction: 'y', amount: axisY === 0 ? 0 : axisY > 0 ? 0.01 : -0.01},
+                    {direction: 'z', amount: 0},
+                ],
+                // axis: [{direction: 'x', amount: 1.0}],
+                id: event.id,
+                ke: event.ke
+            },(msg) => {
+                s.userLog(event,msg)
+                // console.log(msg)
+            })
+        }
     }
     s.addEventDetailsToString = function(eventData,string,addOps){
         //d = event data
@@ -302,7 +302,7 @@ module.exports = function(s,config,lang){
             countObjects(d)
         }
         if(currentConfig.detector_ptz_follow === '1'){
-            moveCameraPtzToMatrix(d)
+            moveCameraPtzToMatrix(d,currentConfig.detector_ptz_follow_target)
         }
         if(filter.useLock){
             if(s.group[d.ke].activeMonitors[d.id].motion_lock){

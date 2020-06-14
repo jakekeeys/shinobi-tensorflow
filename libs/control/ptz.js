@@ -1,32 +1,62 @@
 var os = require('os');
 var exec = require('child_process').exec;
 module.exports = function(s,config,lang,app,io){
-    const moveCamera = function(options,callback){
+    const moveLock = {}
+    const startMove = async function(options,callback){
+        const device = s.group[options.ke].activeMonitors[options.id].onvifConnection
+        if(!device){
+            const response = await s.createOnvifDevice({
+                ke: options.ke,
+                id: options.id,
+            })
+            const device = s.group[options.ke].activeMonitors[options.id].onvifConnection
+        }
+        options.controlOptions.ProfileToken = device.current_profile.token
+        s.runOnvifMethod({
+            auth: {
+                ke: options.ke,
+                id: options.id,
+                action: 'continuousMove',
+                service: 'ptz',
+            },
+            options: options.controlOptions,
+        },callback)
+    }
+    const stopMove = function(options,callback){
+        const device = s.group[options.ke].activeMonitors[options.id].onvifConnection
+        s.runOnvifMethod({
+            auth: {
+                ke: options.ke,
+                id: options.id,
+                action: 'stop',
+                service: 'ptz',
+            },
+            options: {
+                'PanTilt': true,
+                'Zoom': true,
+                ProfileToken: device.current_profile.token
+            },
+        },callback)
+    }
+    const moveOnvifCamera = function(options,callback){
         const monitorConfig = s.group[options.ke].rawMonitorConfigurations[options.id]
         const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
-        const device = s.group[options.ke].activeMonitors[options.id].onvifConnection
-        var stopOptions = {ProfileToken : device.current_profile.token,'PanTilt': true,'Zoom': true}
         switch(options.direction){
             case'center':
                 callback({type:'Center button inactive'})
             break;
             case'stopMove':
                 callback({type:'Control Trigger Ended'})
-                s.runOnvifMethod({
-                    auth: {
-                        ke: options.ke,
-                        id: options.id,
-                        action: 'stop',
-                        service: 'ptz',
-                    },
-                    options: stopOptions,
+                stopMove({
+                    ke: options.ke,
+                    id: options.id,
                 },(response) => {
 
                 })
             break;
             default:
+            try{
                 var controlOptions = {
-                    ProfileToken : device.current_profile.token,
                     Velocity : {}
                 }
                 if(options.axis){
@@ -43,33 +73,24 @@ module.exports = function(s,config,lang,app,io){
                         "zoom_out": [-1.0,'z']
                     }
                     var direction = onvifDirections[options.direction]
-                    controlOptions.Velocity[direction[1]] = direction[0];
+                    controlOptions.Velocity[direction[1]] = direction[0]
                 }
                 (['x','y','z']).forEach(function(axis){
                     if(!controlOptions.Velocity[axis])
                         controlOptions.Velocity[axis] = 0
                 })
                 if(monitorConfig.details.control_stop === '1'){
-                    s.runOnvifMethod({
-                        auth: {
-                            ke: options.ke,
-                            id: options.id,
-                            action: 'continuousMove',
-                            service: 'ptz',
-                        },
-                        options: controlOptions,
+                    startMove({
+                        ke: options.ke,
+                        id: options.id,
+                        controlOptions: controlOptions
                     },(response) => {
                         if(response.ok){
                             if(controlUrlStopTimeout != '0'){
                                 setTimeout(function(){
-                                    s.runOnvifMethod({
-                                        auth: {
-                                            ke: options.ke,
-                                            id: options.id,
-                                            action: 'stop',
-                                            service: 'ptz',
-                                        },
-                                        options: stopOptions,
+                                    stopMove({
+                                        ke: options.ke,
+                                        id: options.id,
                                     },(response) => {
                                         if(!response.ok){
                                             console.log(error)
@@ -88,8 +109,8 @@ module.exports = function(s,config,lang,app,io){
                     delete(controlOptions.Velocity)
                     s.runOnvifMethod({
                         auth: {
-                            ke: e.ke,
-                            id: e.id,
+                            ke: options.ke,
+                            id: options.id,
                             action: 'relativeMove',
                             service: 'ptz',
                         },
@@ -98,10 +119,14 @@ module.exports = function(s,config,lang,app,io){
                         if(response.ok){
                             callback({type: 'Control Triggered'})
                         }else{
-                            s.debugLog(err)
+                            callback({type: 'Control Triggered', error: response.error})
                         }
                     })
                 }
+            }catch(err){
+                console.log(err)
+                console.log(new Error())
+            }
             break;
         }
     }
@@ -133,7 +158,7 @@ module.exports = function(s,config,lang,app,io){
                         id: options.id,
                     })
                     if(response.ok){
-                        moveCamera({
+                        moveOnvifCamera({
                             ke: options.ke,
                             id: options.id,
                             direction: options.direction,
@@ -146,7 +171,7 @@ module.exports = function(s,config,lang,app,io){
                         s.userLog(e,{type:lang['Control Error'],msg:response.error})
                     }
                 }else{
-                    moveCamera({
+                    moveOnvifCamera({
                         ke: options.ke,
                         id: options.id,
                         direction: options.direction,
@@ -227,4 +252,9 @@ module.exports = function(s,config,lang,app,io){
         }
     }
     s.cameraControl = ptzControl
+    return {
+        control: ptzControl,
+        startMove: startMove,
+        stopMove: stopMove,
+    }
 }
