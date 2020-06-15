@@ -66,7 +66,7 @@ require('./libs/ffmpeg.js')(s,config,lang,function(ffmpeg){
     //cluster module
     require('./libs/childNode.js')(s,config,lang,app,io)
     //cloud uploaders : amazon s3, webdav, backblaze b2..
-    require('./libs/uploaders.js')(s,config,lang)
+    require('./libs/uploaders.js')(s,config,lang,app,io)
     //notifiers : discord..
     require('./libs/notification.js')(s,config,lang)
     //notifiers : discord..

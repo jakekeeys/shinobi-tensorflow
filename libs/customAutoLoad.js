@@ -1,28 +1,7 @@
 var fs = require('fs')
 var express = require('express')
 module.exports = function(s,config,lang,app,io){
-    function mergeDeep(...objects) {
-      const isObject = obj => obj && typeof obj === 'object';
 
-      return objects.reduce((prev, obj) => {
-        Object.keys(obj).forEach(key => {
-          const pVal = prev[key];
-          const oVal = obj[key];
-
-          if (Array.isArray(pVal) && Array.isArray(oVal)) {
-            prev[key] = pVal.concat(...oVal);
-          }
-          else if (isObject(pVal) && isObject(oVal)) {
-            prev[key] = mergeDeep(pVal, oVal);
-          }
-          else {
-            prev[key] = oVal;
-          }
-        });
-
-        return prev;
-      }, {});
-    }
     s.customAutoLoadModules = {}
     s.customAutoLoadTree = {
         pages: [],
@@ -147,12 +126,12 @@ module.exports = function(s,config,lang,app,io){
                                                     var fileData = require(definitionsFolder + filename)
                                                     var rule = filename.replace('.json','').replace('.js','')
                                                     if(config.language === rule){
-                                                        s.definitions = mergeDeep(s.definitions,fileData)
+                                                        s.definitions = s.mergeDeep(s.definitions,fileData)
                                                     }
                                                     if(s.loadedDefinitons[rule]){
-                                                        s.loadedDefinitons[rule] = mergeDeep(s.loadedDefinitons[rule],fileData)
+                                                        s.loadedDefinitons[rule] = s.mergeDeep(s.loadedDefinitons[rule],fileData)
                                                     }else{
-                                                        s.loadedDefinitons[rule] = mergeDeep(s.copySystemDefaultDefinitions(),fileData)
+                                                        s.loadedDefinitons[rule] = s.mergeDeep(s.copySystemDefaultDefinitions(),fileData)
                                                     }
                                                 })
                                             })

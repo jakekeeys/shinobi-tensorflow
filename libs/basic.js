@@ -69,6 +69,28 @@ module.exports = function(s,config){
         }
         return x.replace('__DIR__',s.mainDirectory)
     }
+    s.mergeDeep = function(...objects) {
+      const isObject = obj => obj && typeof obj === 'object';
+
+      return objects.reduce((prev, obj) => {
+        Object.keys(obj).forEach(key => {
+          const pVal = prev[key];
+          const oVal = obj[key];
+
+          if (Array.isArray(pVal) && Array.isArray(oVal)) {
+            prev[key] = pVal.concat(...oVal);
+          }
+          else if (isObject(pVal) && isObject(oVal)) {
+            prev[key] = s.mergeDeep(pVal, oVal);
+          }
+          else {
+            prev[key] = oVal;
+          }
+        });
+
+        return prev;
+      }, {});
+    }
     s.md5 = function(x){return crypto.createHash('md5').update(x).digest("hex")}
     s.createHash = s.md5
     switch(config.passwordType){
