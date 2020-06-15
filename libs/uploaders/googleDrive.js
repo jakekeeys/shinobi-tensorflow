@@ -39,8 +39,7 @@ module.exports = (s,config,lang,app,io) => {
                               reject(err)
                             } else {
                                 s.group[video.ke].googleDriveFolderIds[video.ke + video.mid] = response.data.id
-                                console.log(response.data.id)
-                              resolve(response.data.id)
+                                resolve(response.data.id)
                             }
                           })
                       }
