@@ -8,6 +8,50 @@ module.exports = (s,config,lang,app,io) => {
         const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
         return oAuth2Client
     }
+    const getVideoDirectoryId = (video) => {
+        return new Promise((resolve, reject) => {
+            const videoDirectory = s.group[video.ke].init.googd_dir + video.ke + '/' + video.mid
+            if(!s.group[video.ke].googleDriveFolderIds[video.ke + video.mid]){
+                var pageToken = null;
+                s.group[video.ke].googleDrive.files.list({
+                  q: `name='${videoDirectory}'`,
+                  fields: 'nextPageToken, files(id, name)',
+                  spaces: 'drive',
+                  pageToken: pageToken
+                }, function (err, res) {
+                  if (err) {
+                      reject(err)
+                  } else {
+                      var file = res.data.files
+                      if(file[0]){
+                          file = file[0]
+                          s.group[video.ke].googleDriveFolderIds[video.ke + video.mid] = file.id
+                          resolve(file.id)
+                      }else{
+                          s.group[video.ke].googleDrive.files.create({
+                            resource: {
+                              'name': videoDirectory,
+                              'mimeType': 'application/vnd.google-apps.folder'
+                            },
+                            fields: 'id'
+                          }, function (err, response) {
+                            if (err) {
+                              reject(err)
+                            } else {
+                                s.group[video.ke].googleDriveFolderIds[video.ke + video.mid] = response.data.id
+                                console.log(response.data.id)
+                              resolve(response.data.id)
+                            }
+                          })
+                      }
+                  }
+                })
+            }else{
+                resolve(s.group[video.ke].googleDriveFolderIds[video.ke + video.mid])
+            }
+
+        })
+    }
     //Google Drive Storage
     var beforeAccountSaveForGoogleDrive = function(d){
         //d = save event
@@ -37,6 +81,7 @@ module.exports = (s,config,lang,app,io) => {
             userDetails = Object.assign(userDetails,config.cloudUploaders.GoogleDrive)
         }
         if(userDetails.googd_save === '1'){
+            s.group[e.ke].googleDriveFolderIds = {}
             var oAuth2Client
             if(!s.group[e.ke].googleDriveOAuth2Client){
                 oAuth2Client = initializeOAuth(userDetails.googd_credentials)
@@ -85,7 +130,7 @@ module.exports = (s,config,lang,app,io) => {
             callback()
         })
     }
-    var uploadVideoToGoogleDrive = function(e,k){
+    var uploadVideoToGoogleDrive = async function(e,k){
         //e = video object
         //k = temporary values
         if(!k)k={};
@@ -100,8 +145,13 @@ module.exports = (s,config,lang,app,io) => {
             var bucketName = s.group[e.ke].init.googd_bucket
             var saveLocation = s.group[e.ke].init.googd_dir+e.ke+'/'+e.mid+'/'+k.filename
             s.group[e.ke].googleDrive.files.create({
+                  resource: {
+                      name: k.filename,
+                      parents: [await getVideoDirectoryId(e)]
+                  },
                   requestBody: {
-                    name: saveLocation,
+                    name: k.filename,
+                    parents: [await getVideoDirectoryId(e)],
                     mimeType: 'video/'+ext
                   },
                   media: {
@@ -208,12 +258,7 @@ module.exports = (s,config,lang,app,io) => {
             s.group[video.ke].googleDrive.files
                 .get({fileId, alt: 'media'}, {responseType: 'stream'})
                 .then(res => {
-                    resolve(res.data.on('end', () => {
-                      console.log('Done downloading file.');
-                    })
-                    .on('error', err => {
-                      console.error('Error downloading file.');
-                    }))
+                    resolve(res.data)
                 }).catch(reject)
         })
     }
@@ -288,7 +333,7 @@ module.exports = (s,config,lang,app,io) => {
            {
                "hidden": true,
               "fieldType": "btn",
-              "attribute": `style="margin-bottom:10px" href="javascript:$.get(getApiPrefix() + '/googleDriveOAuthRequest/' + $user.ke,function(data){if(data.ok)window.open(data.authUrl, 'Google Drive Authentication', 'width=800,height=400');})"`,
+              "attribute": `style="margin-bottom:1em" href="javascript:$.get(getApiPrefix() + '/googleDriveOAuthRequest/' + $user.ke,function(data){if(data.ok)window.open(data.authUrl, 'Google Drive Authentication', 'width=800,height=400');})"`,
               "class": `btn-success`,
               "form-group-class": "autosave_googd_input autosave_googd_1",
               "btnContent": `<i class="fa fa-plus"></i> &nbsp; ${lang['Get Code']}`,
