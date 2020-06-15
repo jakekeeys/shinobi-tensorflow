@@ -46,6 +46,7 @@ module.exports = function(s,config){
     }
     //
     s.cloudDiskUseStartupExtensions = {}
+    s.cloudDiskUseOnGetVideoDataExtensions = {}
 
     ////// EVENTS //////
     s.onEventTriggerExtensions = []

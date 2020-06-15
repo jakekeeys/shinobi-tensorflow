@@ -110,9 +110,7 @@ module.exports = (s,config,lang,app,io) => {
                   }
               }).then(function(response){
                   const data = response.data
-                    if(err){
-                        s.userLog(e,{type:lang['Google Drive Storage Upload Error'],msg:err})
-                    }
+
                     if(s.group[e.ke].init.googd_log === '1' && data && data.id){
                         var save = [
                             e.mid,
@@ -135,6 +133,9 @@ module.exports = (s,config,lang,app,io) => {
                         s.purgeCloudDiskForGroup(e,'googd')
                     }
                 }).catch((err) => {
+                    if(err){
+                        s.userLog(e,{type:lang['Google Drive Storage Upload Error'],msg:err})
+                    }
                     console.log(err)
                 })
         }
@@ -196,6 +197,26 @@ module.exports = (s,config,lang,app,io) => {
             callback()
         });
     }
+    var onGetVideoData = async (video) => {
+        // e = user
+        var videoDetails = s.parseJSON(video.details)
+        const fileId = videoDetails.id
+        if(videoDetails.type !== 'googd'){
+            return
+        }
+        return new Promise((resolve, reject) => {
+            s.group[video.ke].googleDrive.files
+                .get({fileId, alt: 'media'}, {responseType: 'stream'})
+                .then(res => {
+                    resolve(res.data.on('end', () => {
+                      console.log('Done downloading file.');
+                    })
+                    .on('error', err => {
+                      console.error('Error downloading file.');
+                    }))
+                }).catch(reject)
+        })
+    }
     //
     app.get([config.webPaths.apiPrefix+':auth/googleDriveOAuthRequest/:ke'], (req,res) => {
         s.auth(req.params,async (user) => {
@@ -227,7 +248,8 @@ module.exports = (s,config,lang,app,io) => {
         beforeAccountSave: beforeAccountSaveForGoogleDrive,
         onAccountSave: cloudDiskUseStartupForGoogleDrive,
         onInsertTimelapseFrame: onInsertTimelapseFrame,
-        onDeleteTimelapseFrameFromCloud: onDeleteTimelapseFrameFromCloud
+        onDeleteTimelapseFrameFromCloud: onDeleteTimelapseFrameFromCloud,
+        onGetVideoData: onGetVideoData
     })
     return {
        "evaluation": "details.use_googd !== '0'",
@@ -275,17 +297,6 @@ module.exports = (s,config,lang,app,io) => {
               "hidden": true,
               "field": lang['OAuth Code'],
               "name": "detail=googd_code",
-              "form-group-class": "autosave_googd_input autosave_googd_1",
-              "description": "",
-              "default": "",
-              "example": "",
-              "possible": ""
-           },
-           {
-              "hidden": true,
-              "field": lang.Bucket,
-              "name": "detail=googd_bucket",
-              "placeholder": "Example : slippery-seal",
               "form-group-class": "autosave_googd_input autosave_googd_1",
               "description": "",
               "default": "",

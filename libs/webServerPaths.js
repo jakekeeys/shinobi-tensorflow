@@ -1523,7 +1523,16 @@ module.exports = function(s,config,lang,app,io){
             s.sqlQuery('SELECT * FROM `Cloud Videos` WHERE ke=? AND mid=? AND `time`=? LIMIT 1',[req.params.ke,req.params.id,time],function(err,r){
                 if(r&&r[0]){
                     r = r[0]
-                    req.pipe(request(r.href)).pipe(res)
+                    if(JSON.parse(r.details).type === 'googd' && s.cloudDiskUseOnGetVideoDataExtensions['googd']){
+                        s.cloudDiskUseOnGetVideoDataExtensions['googd'](r).then((dataPipe) => {
+                            dataPipe.pipe(res)
+                        }).catch((err) => {
+                            console.log(err)
+                            res.end(user.lang['File Not Found in Database'])
+                        })
+                    }else{
+                        req.pipe(request(r.href)).pipe(res)
+                    }
                 }else{
                     res.end(user.lang['File Not Found in Database'])
                 }
