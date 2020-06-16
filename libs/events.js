@@ -187,7 +187,6 @@ module.exports = function(s,config,lang){
         s.onEventTriggerBeforeFilterExtensions.forEach(function(extender){
             extender(d,filter)
         })
-        var detailString = JSON.stringify(d.details);
         if(!s.group[d.ke]||!s.group[d.ke].activeMonitors[d.id]){
             return s.systemLog(lang['No Monitor Found, Ignoring Request'])
         }
@@ -462,6 +461,7 @@ module.exports = function(s,config,lang){
             }
             //save this detection result in SQL, only coords. not image.
             if(forceSave || (filter.save && currentConfig.detector_save === '1')){
+                var detailString = JSON.stringify(d.details);
                 s.sqlQuery('INSERT INTO Events (ke,mid,details,time) VALUES (?,?,?,?)',[d.ke,d.id,detailString,eventTime])
             }
             if(currentConfig.detector === '1' && currentConfig.detector_notrigger === '1'){
