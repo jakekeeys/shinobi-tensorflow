@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS `Events` (
   `ke` varchar(50) DEFAULT NULL,
   `mid` varchar(50) DEFAULT NULL,
   `details` text,
-  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY `events_index` (`ke`,`mid`,`time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 -- Data exporting was unselected.
@@ -23,7 +24,8 @@ CREATE TABLE IF NOT EXISTS `Logs` (
   `ke` varchar(50) DEFAULT NULL,
   `mid` varchar(50) DEFAULT NULL,
   `info` text,
-  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY `logs_index` (`ke`,`mid`,`time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Data exporting was unselected.
@@ -80,5 +82,6 @@ CREATE TABLE IF NOT EXISTS `Videos` (
   `frames` int(11) DEFAULT NULL,
   `end` timestamp NULL DEFAULT NULL,
   `status` int(1) DEFAULT '0' COMMENT '0:Building,1:Complete,2:Read,3:Archive',
-  `details` text
+  `details` text,
+  KEY `time_index` (`time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
