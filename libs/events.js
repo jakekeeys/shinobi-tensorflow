@@ -417,8 +417,21 @@ module.exports = function(s,config,lang){
         // check if object should be in region
         if(hasMatrices && currentConfig.detector_obj_region === '1'){
             var regions = s.group[d.ke].activeMonitors[d.id].parsedObjects.cords
-            var isMatrixInRegions = isAtleastOneMatrixInRegion(regions,d.details.matrices)
-            if(isMatrixInRegions){
+            testMatrices = d.details.matrices // matrices that made it passed filters
+            matchedMatrices = []
+            regions.forEach(function(region,position){
+                matchedMatrices = matchedMatrices.concat(scanMatricesforCollisions(region,testMatrices));
+            })
+            if (matchedMatrices.length > 2){
+                // remove duplicate matches
+                matchedMatrices = matchedMatrices.filter((matrix, index, self) =>
+                    index === self.findIndex((t) => (
+                        t.x === matrix.x && t.y === matrix.y && t.tag === matrix.tag && t.confidence === matrix.confidence
+                    ))
+                )
+            }
+            d.details.matrices = matchedMatrices // pass matrices that are within a region
+            if(d.details.matrices && d.details.matrices.length > 0){
                 s.debugLog('Matrix in region!')
                 if(filter.countObjects && currentConfig.detector_obj_count === '1' && currentConfig.detector_obj_count_in_region === '1' && !didCountingAlready){
                     countObjects(d)
