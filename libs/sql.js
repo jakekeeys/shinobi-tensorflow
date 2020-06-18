@@ -148,7 +148,7 @@ module.exports = function(s,config){
             if(err)console.error(err)
         },true)
         //Add index to Monitors table
-        s.sqlQuery('CREATE INDEX `monitors_index` ON Monitors(`ke`, `mode`, `time`, `ext`);',[],function(err){
+        s.sqlQuery('CREATE INDEX `monitors_index` ON Monitors(`ke`, `mode`, `type`, `ext`);',[],function(err){
             if(err)console.error(err)
         },true)
         //Add index to Timelapse Frames table
