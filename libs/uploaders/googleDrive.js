@@ -144,10 +144,6 @@ module.exports = (s,config,lang,app,io) => {
             var bucketName = s.group[e.ke].init.googd_bucket
             var saveLocation = s.group[e.ke].init.googd_dir+e.ke+'/'+e.mid+'/'+k.filename
             s.group[e.ke].googleDrive.files.create({
-                  resource: {
-                      name: k.filename,
-                      parents: [await getVideoDirectoryId(e)]
-                  },
                   requestBody: {
                     name: k.filename,
                     parents: [await getVideoDirectoryId(e)],
