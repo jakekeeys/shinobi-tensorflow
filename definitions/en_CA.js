@@ -3424,7 +3424,7 @@ module.exports = function(s,config,lang){
                     {
                        "name": "detail=detector_ptz_follow",
                        "field": lang['PTZ Tracking'],
-                       "description": "Follow the largest detected Detected Object with PTZ? Requires an Object Detector running or matrices provided with events.",
+                       "description": "Follow the largest detected object with PTZ? Requires an Object Detector running or matrices provided with events.",
                        "default": "0",
                        "example": "",
                        "selector": "h_det_tracking",

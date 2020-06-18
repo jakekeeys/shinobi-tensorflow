@@ -661,96 +661,6 @@ module.exports = function(s,config,lang){
             }
         },60000*1);
     }
-    const cameraPullJpegStream = function(e){
-        if(!e.details.sfps||e.details.sfps===''){
-            e.details.sfps = 1
-        }
-        var capture_fps = parseFloat(e.details.sfps);
-        if(isNaN(capture_fps)){capture_fps = 1}
-        if(s.group[e.ke].activeMonitors[e.id].spawn){
-            s.group[e.ke].activeMonitors[e.id].spawn.stdin.on('error',function(err){
-                if(err&&e.details.loglevel!=='quiet'){
-                    s.userLog(e,{type:'STDIN ERROR',msg:err});
-                }
-            })
-        }else{
-            if(e.functionMode === 'record'){
-                s.userLog(e,{type:lang.FFmpegCantStart,msg:lang.FFmpegCantStartText});
-                return
-            }
-        }
-        e.captureOne = function(f){
-            s.group[e.ke].activeMonitors[e.id].recordingSnapRequest = request({
-                url: s.buildMonitorUrl(e),
-                method: 'GET',
-                encoding: null,
-                timeout: 15000
-            },function(err,data){
-                if(err){
-                    return;
-                }
-            }).on('data',function(d){
-                if(!e.buffer0){
-                    e.buffer0 = [d]
-                }else{
-                    e.buffer0.push(d)
-                }
-                if((d[d.length-2] === 0xFF && d[d.length-1] === 0xD9)){
-                    e.buffer0 = Buffer.concat(e.buffer0);
-                  if(s.group[e.ke].activeMonitors[e.id].spawn&&s.group[e.ke].activeMonitors[e.id].spawn.stdin){
-                      s.group[e.ke].activeMonitors[e.id].spawn.stdin.write(e.buffer0);
-                  }
-                  if(s.group[e.ke].activeMonitors[e.id].isStarted === true){
-                      s.group[e.ke].activeMonitors[e.id].recordingSnapper = setTimeout(function(){
-                          e.captureOne()
-                      },1000/capture_fps)
-                  }
-                  e.buffer0 = null
-                }
-                if(!e.timeOut){
-                    e.timeOut = setTimeout(function(){
-                        e.errorCount = 0;
-                        delete(e.timeOut)
-                    },3000)
-                }
-            }).on('error', function(err){
-                ++e.errorCount
-                clearTimeout(e.timeOut)
-                delete(e.timeOut)
-                if(e.details.loglevel !== 'quiet'){
-                    s.userLog(e,{
-                        type: lang['JPEG Error'],
-                        msg: {
-                            msg: lang.JPEGErrorText,
-                            info: err
-                        }
-                    });
-                    switch(err.code){
-                        case'ESOCKETTIMEDOUT':
-                        case'ETIMEDOUT':
-                            ++s.group[e.ke].activeMonitors[e.id].errorSocketTimeoutCount
-                            if(
-                                e.details.fatal_max !== 0 &&
-                                s.group[e.ke].activeMonitors[e.id].errorSocketTimeoutCount > e.details.fatal_max
-                            ){
-                                s.userLog(e,{type:lang['Fatal Maximum Reached'],msg:{code:'ESOCKETTIMEDOUT',msg:lang.FatalMaximumReachedText}});
-                                s.camera('stop',e)
-                            }else{
-                                s.userLog(e,{type:lang['Restarting Process'],msg:{code:'ESOCKETTIMEDOUT',msg:lang.FatalMaximumReachedText}});
-                                s.camera('restart',e)
-                            }
-                            return;
-                        break;
-                    }
-                }
-                if(e.details.fatal_max !== 0 && e.errorCount > e.details.fatal_max){
-                    clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingSnapper)
-                    launchMonitorProcesses(s.cleanMonitorObject(e))
-                }
-            })
-        }
-        e.captureOne()
-    }
     const onDetectorJpegOutputAlone = (e,d) => {
         s.ocvTx({
             f: 'frame',
@@ -877,9 +787,6 @@ module.exports = function(s,config,lang){
         //emitter for mjpeg
         if(!e.details.stream_mjpeg_clients||e.details.stream_mjpeg_clients===''||isNaN(e.details.stream_mjpeg_clients)===false){e.details.stream_mjpeg_clients=20;}else{e.details.stream_mjpeg_clients=parseInt(e.details.stream_mjpeg_clients)}
         s.group[e.ke].activeMonitors[e.id].emitter = new events.EventEmitter().setMaxListeners(e.details.stream_mjpeg_clients);
-        if(e.type==='jpeg'){
-            cameraPullJpegStream(e)
-        }
         if(e.details.detector_audio === '1'){
             if(s.group[e.ke].activeMonitors[e.id].audioDetector){
               s.group[e.ke].activeMonitors[e.id].audioDetector.stop()
@@ -1290,8 +1197,6 @@ module.exports = function(s,config,lang){
                 //check host to see if has password and user in it
                 clearTimeout(activeMonitor.recordingChecker)
                 if(activeMonitor.isStarted === true){
-                    e.errorCount = 0;
-                    activeMonitor.errorSocketTimeoutCount = 0;
                     try{
                         cameraDestroy(e)
                     }catch(err){
