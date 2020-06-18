@@ -151,6 +151,10 @@ module.exports = function(s,config){
         s.sqlQuery('CREATE INDEX `monitors_index` ON Monitors(`ke`, `mode`, `time`, `ext`);',[],function(err){
             if(err)console.error(err)
         },true)
+        //Add index to Timelapse Frames table
+        s.sqlQuery('CREATE INDEX `timelapseframes_index` ON `Timelapse Frames`(`ke`, `mid`, `time`);',[],function(err){
+            if(err)console.error(err)
+        },true)
         //add Cloud Videos table, will remove in future
         s.sqlQuery('CREATE TABLE IF NOT EXISTS `Cloud Videos` (`mid` varchar(50) NOT NULL,`ke` varchar(50) DEFAULT NULL,`href` text NOT NULL,`size` float DEFAULT NULL,`time` timestamp NULL DEFAULT NULL,`end` timestamp NULL DEFAULT NULL,`status` int(1) DEFAULT \'0\',`details` text)' + mySQLtail + ';',[],function(err){
             if(err)console.error(err)
