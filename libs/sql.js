@@ -136,15 +136,19 @@ module.exports = function(s,config){
             if(err)console.error(err)
         },true)
         //Add index to Videos table
-        s.sqlQuery('CREATE INDEX videos_index ON Videos(time);',[],function(err){
+        s.sqlQuery('CREATE INDEX `videos_index` ON Videos(`time`);',[],function(err){
             if(err)console.error(err)
         },true)
         //Add index to Events table
-        s.sqlQuery('CREATE INDEX events_index ON Events(ke, mid, time);',[],function(err){
+        s.sqlQuery('CREATE INDEX `events_index` ON Events(`ke`, `mid`, `time`);',[],function(err){
             if(err)console.error(err)
         },true)
-         //Add index to Logs table
-        s.sqlQuery('CREATE INDEX logs_index ON Events(ke, mid, time);',[],function(err){
+        //Add index to Logs table
+        s.sqlQuery('CREATE INDEX `logs_index` ON Logs(`ke`, `mid`, `time`);',[],function(err){
+            if(err)console.error(err)
+        },true)
+        //Add index to Monitors table
+        s.sqlQuery('CREATE INDEX `monitors_index` ON Monitors(`ke`, `mode`, `time`, `ext`);',[],function(err){
             if(err)console.error(err)
         },true)
         //add Cloud Videos table, will remove in future
