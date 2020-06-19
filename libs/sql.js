@@ -141,7 +141,12 @@ module.exports = function(s,config){
         },true)
         //add Events Counts table, will remove in future
         s.sqlQuery('CREATE TABLE IF NOT EXISTS `Events Counts` (`ke` varchar(50) NOT NULL,`mid` varchar(50) NOT NULL,`details` longtext NOT NULL,`time` timestamp NOT NULL DEFAULT current_timestamp(),`end` timestamp NOT NULL DEFAULT current_timestamp(),`count` int(10) NOT NULL DEFAULT 1,`tag` varchar(30) DEFAULT NULL)' + mySQLtail + ';',[],function(err){
-            if(err && err.code !== 'ER_TABLE_EXISTS_ERROR')console.error(err)
+            if(err && err.code !== 'ER_TABLE_EXISTS_ERROR'){
+                console.error(err)
+            }
+            s.sqlQuery('ALTER TABLE `Events Counts`	ADD COLUMN `time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `details`;',[],function(err){
+                // console.error(err)
+            },true)
         },true)
         //add Cloud Timelapse Frames table, will remove in future
         s.sqlQuery('CREATE TABLE IF NOT EXISTS `Cloud Timelapse Frames` (`ke` varchar(50) NOT NULL,`mid` varchar(50) NOT NULL,`href` text NOT NULL,`details` longtext,`filename` varchar(50) NOT NULL,`time` timestamp NULL DEFAULT NULL,`size` int(11) NOT NULL)' + mySQLtail + ';',[],function(err){

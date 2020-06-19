@@ -115,8 +115,7 @@ if(rawMonitorConfig.details.detector === '1' && rawMonitorConfig.details.detecto
     writeToStderr(err.stack)
   }
 }
-writeToStderr('rawMonitorConfig.type ' + rawMonitorConfig.type)
-writeToStderr('rawMonitorConfig.key ' + Object.keys(cameraProcess.stdio))
+ 
 if(rawMonitorConfig.type === 'jpeg'){
     var recordingSnapRequest
     var recordingSnapper
