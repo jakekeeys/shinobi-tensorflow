@@ -53,7 +53,7 @@ module.exports = function(s,config,lang){
         if(callback)callback(foundInRegion,collisions)
         return foundInRegion
     }
-    const scanMatricesforCollisions = function(region,matrices,callback){
+    const scanMatricesforCollisions = function(region,matrices){
         var matrixPoints = []
         var collisions = []
         if (!region || !matrices){
@@ -75,7 +75,6 @@ module.exports = function(s,config,lang){
                 }
             }
         })
-        if(callback)callback(collisions)
         return collisions
     }
     const nonEmpty = (element) => element.length !== 0;
@@ -219,14 +218,10 @@ module.exports = function(s,config,lang){
                 }
                 return newVal
             }
-            var defaultDrop = false;
-            var globalDropActive = false;
-            if (d.id.startsWith('DROP_')){
-                defaultDrop = true; // forces unmatched events to be dropped
-                globalDropActive = true;
-            }
+            var defaultDrop = true; // forces unmatched events to be dropped
             var testMatrices = [...allMatrices] // default
             var filters = currentConfig.detector_filters
+            var hasFilters = (filters.length > 0)
             Object.keys(filters).forEach(function(key){
                 var conditionChain = {}
                 testMatrices = [...allMatrices] // for new filter reset the matrices to be tested against
@@ -379,10 +374,10 @@ module.exports = function(s,config,lang){
                 )
                 d.details.matrices = matchedMatrices
             }
-        }
-        // -- delayed decision here --
-        if (defaultDrop) {
-            return;
+            // -- delayed decision here --
+            if (defaultDrop && hasFilters) {
+                return;
+            }
         }
         var eventTime = new Date()
         //motion counter
