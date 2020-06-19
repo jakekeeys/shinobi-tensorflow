@@ -1,4 +1,3 @@
--- Dumping structure for table ccio.API
 CREATE TABLE IF NOT EXISTS `API` (
   `ke` varchar(50) DEFAULT NULL,
   `uid` varchar(50) DEFAULT NULL,
@@ -8,26 +7,22 @@ CREATE TABLE IF NOT EXISTS `API` (
   `time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Data exporting was unselected.
--- Dumping structure for table ccio.Events
 CREATE TABLE IF NOT EXISTS `Events` (
   `ke` varchar(50) DEFAULT NULL,
   `mid` varchar(50) DEFAULT NULL,
   `details` text,
-  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY `events_index` (`ke`,`mid`,`time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
--- Data exporting was unselected.
--- Dumping structure for table ccio.Logs
 CREATE TABLE IF NOT EXISTS `Logs` (
   `ke` varchar(50) DEFAULT NULL,
   `mid` varchar(50) DEFAULT NULL,
   `info` text,
-  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY `logs_index` (`ke`,`mid`,`time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Data exporting was unselected.
--- Dumping structure for table ccio.Monitors
 CREATE TABLE IF NOT EXISTS `Monitors` (
   `mid` varchar(50) DEFAULT NULL,
   `ke` varchar(50) DEFAULT NULL,
@@ -44,11 +39,10 @@ CREATE TABLE IF NOT EXISTS `Monitors` (
   `fps` int(8) DEFAULT '1',
   `mode` varchar(15) DEFAULT NULL,
   `width` int(11) DEFAULT '640',
-  `height` int(11) DEFAULT '360'
+  `height` int(11) DEFAULT '360',
+  KEY `monitors_index` (`ke`,`mode`,`type`,`ext`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Data exporting was unselected.
--- Dumping structure for table ccio.Presets
 CREATE TABLE IF NOT EXISTS `Presets` (
   `ke` varchar(50) DEFAULT NULL,
   `name` text,
@@ -56,8 +50,6 @@ CREATE TABLE IF NOT EXISTS `Presets` (
   `type` enum('monitor','event','user') DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Data exporting was unselected.
--- Dumping structure for table ccio.Users
 CREATE TABLE IF NOT EXISTS `Users` (
   `ke` varchar(50) DEFAULT NULL,
   `uid` varchar(50) DEFAULT NULL,
@@ -68,8 +60,6 @@ CREATE TABLE IF NOT EXISTS `Users` (
   UNIQUE KEY `mail` (`mail`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Data exporting was unselected.
--- Dumping structure for table ccio.Videos
 CREATE TABLE IF NOT EXISTS `Videos` (
   `mid` varchar(50) DEFAULT NULL,
   `ke` varchar(50) DEFAULT NULL,
@@ -80,5 +70,6 @@ CREATE TABLE IF NOT EXISTS `Videos` (
   `frames` int(11) DEFAULT NULL,
   `end` timestamp NULL DEFAULT NULL,
   `status` int(1) DEFAULT '0' COMMENT '0:Building,1:Complete,2:Read,3:Archive',
-  `details` text
+  `details` text,
+  KEY `videos_index` (`time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
