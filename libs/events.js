@@ -380,10 +380,6 @@ module.exports = function(s,config,lang){
             }
         }
         var eventTime = new Date()
-        //motion counter
-        if(filter.addToMotionCounter && filter.record){
-            s.group[d.ke].activeMonitors[d.id].detector_motion_count.push(d)
-        }
         if(filter.countObjects && currentConfig.detector_obj_count === '1' && currentConfig.detector_obj_count_in_region !== '1'){
             didCountingAlready = true
             countObjects(d)
@@ -439,6 +435,10 @@ module.exports = function(s,config,lang){
         if(filter.indifference !== false && d.details.confidence < parseFloat(filter.indifference)){
             // fails indifference check for modified indifference
             return
+        }
+        //motion counter
+        if(filter.addToMotionCounter && filter.record){
+            s.group[d.ke].activeMonitors[d.id].detector_motion_count.push(d)
         }
         //
         if(d.doObjectDetection === true){
