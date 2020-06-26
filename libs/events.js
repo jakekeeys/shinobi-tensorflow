@@ -221,7 +221,7 @@ module.exports = function(s,config,lang){
             var defaultDrop = true; // forces unmatched events to be dropped
             var testMatrices = [...allMatrices] // default
             var filters = currentConfig.detector_filters
-            var hasFilters = (filters.length > 0)
+            var hasFilters = (Object.keys(filters).length > 0)
             Object.keys(filters).forEach(function(key){
                 var conditionChain = {}
                 testMatrices = [...allMatrices] // for new filter reset the matrices to be tested against
