@@ -218,6 +218,17 @@ module.exports = function(s,config,lang){
                 }
                 return newVal
             }
+            var compressMatrices = function(passedMatrices){
+                // remove empty elements
+                passedMatrices = passedMatrices.filter(value => Object.keys(value).length !== 0)
+                // remove duplicate matches
+                passedMatrices = passedMatrices.filter((matrix, index, self) =>
+                    index === self.findIndex((t) => (
+                        t.x === matrix.x && t.y === matrix.y && t.tag === matrix.tag && t.confidence === matrix.confidence
+                    ))
+                )
+                return(passedMatrices)
+            }
             var defaultDrop = true; // forces unmatched events to be dropped
             var testMatrices = [...allMatrices] // default
             var filters = currentConfig.detector_filters
@@ -305,11 +316,37 @@ module.exports = function(s,config,lang){
                                                 }
                                             break;
                                             default:
-                                                //s.systemLog(lang['Numeric criteria unsupported for Region tests, Ignoring Conditional'])
-                                                s.systemLog('Numeric criteria unsupported for Region tests, Ignoring Conditional')
+                                                s.userLog({mid:'$USER',ke:d.ke},{type:lang["Detector Filters"],msg:lang['Numeric criteria unsupported for Region tests, Ignoring Conditional']})
                                             break;
                                         }
                                     });
+                                }
+                            break;
+                            case'count':
+                                if (testMatrices){
+                                    testMatrices = compressMatrices(testMatrices)
+                                    var objectCount = testMatrices.length
+                                    switch(condition.p2){
+                                        case'indexOf':
+                                        case'!indexOf':
+                                            s.userLog({mid:'$USER',ke:d.ke},{type:lang["Detector Filters"],msg:lang['Text criteria unsupported for Object Count tests, Ignoring Conditional']})
+                                        break;
+                                        case'===':
+                                            if(objectCount == condition.p3){
+                                                conditionChain[place].ok = true;
+                                            }
+                                        break;
+                                        case'!==':
+                                            if(objectCount != condition.p3){
+                                                conditionChain[place].ok = true;
+                                            }
+                                        break;
+                                        default:
+                                            if(eval(objectCount+' '+condition.p2+' "'+condition.p3.replace(/"/g,'\\"')+'"')){
+                                                conditionChain[place].ok = true;
+                                            }
+                                        break;
+                                    }
                                 }
                             break;
                             case'time':
@@ -364,15 +401,7 @@ module.exports = function(s,config,lang){
             if(filter.halt === true){
                 return
             }else if(hasMatrices){
-                // remove empty elements
-                matchedMatrices = matchedMatrices.filter(value => Object.keys(value).length !== 0)
-                // remove duplicate matches
-                matchedMatrices = matchedMatrices.filter((matrix, index, self) =>
-                    index === self.findIndex((t) => (
-                        t.x === matrix.x && t.y === matrix.y && t.tag === matrix.tag && t.confidence === matrix.confidence
-                    ))
-                )
-                d.details.matrices = matchedMatrices
+                d.details.matrices = compressMatrices(matchedMatrices)
             }
             // -- delayed decision here --
             if (defaultDrop && hasFilters) {
@@ -414,12 +443,7 @@ module.exports = function(s,config,lang){
                 matchedMatrices = matchedMatrices.concat(scanMatricesforCollisions(region,testMatrices));
             })
             if (matchedMatrices.length > 2){
-                // remove duplicate matches
-                matchedMatrices = matchedMatrices.filter((matrix, index, self) =>
-                    index === self.findIndex((t) => (
-                        t.x === matrix.x && t.y === matrix.y && t.tag === matrix.tag && t.confidence === matrix.confidence
-                    ))
-                )
+                matchedMatrices = compressMatrices(matchedMatrices)
             }
             d.details.matrices = matchedMatrices // pass matrices that are within a region
             if(d.details.matrices && d.details.matrices.length > 0){
