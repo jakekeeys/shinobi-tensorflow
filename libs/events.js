@@ -316,7 +316,7 @@ module.exports = function(s,config,lang){
                                                 }
                                             break;
                                             default:
-                                                s.systemLog(lang['Numeric criteria unsupported for Region tests, Ignoring Conditional'])
+                                                s.userLog({mid:'$USER',ke:d.ke},{type:lang["Detector Filters"],msg:lang['Numeric criteria unsupported for Region tests, Ignoring Conditional']})
                                             break;
                                         }
                                     });
@@ -329,7 +329,7 @@ module.exports = function(s,config,lang){
                                     switch(condition.p2){
                                         case'indexOf':
                                         case'!indexOf':
-                                            s.systemLog(lang['Text criteria unsupported for Object Count tests, Ignoring Conditional'])
+                                            s.userLog({mid:'$USER',ke:d.ke},{type:lang["Detector Filters"],msg:lang['Text criteria unsupported for Object Count tests, Ignoring Conditional']})
                                         break;
                                         case'===':
                                             if(objectCount == condition.p3){
