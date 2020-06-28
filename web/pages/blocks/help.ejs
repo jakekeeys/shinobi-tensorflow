@@ -17,13 +17,36 @@
             <h4 class="modal-title" id="help_windowLabel"><i class="fa fa-question-circle"></i> &nbsp; <span><%-lang.Help%></span></h4>
           </div>
           <div class="modal-body">
-              <blockquote class="blockquoteInHelp">
-                  <a href="https://hub.shinobi.video/explore" target="_blank"><img src="<%-window.libURL%>libs/img/icon/apple-touch-icon-152x152.png" class="pull-right" style="border-radius:50%;margin-left:20px;border: 1px solid #c3996b;"></a>
-                  <p>For information about how to use Shinobi you can check out the <a target="_blank" href="http://shinobi.video/docs">Docs</a>.</p>
-                  <p><a target="_blank" href="https://discord.gg/ehRd8Zz"><i class="fa fa-comments-o"></i> Discord</a> Community Chat is great for meeting people and asking questions. For general questions and community support you can also try the <a href="https://www.reddit.com/r/ShinobiCCTV"><i class="fa fa-reddit"></i> Reddit forum</a>.</p>
-              </blockquote>
               <div class="row">
                   <% [
+                      {
+                          bigIcon: "smile-o",
+                          title: "It's a proven fact",
+                          info: `Generosity makes you a happier person, please consider supporting the development.`,
+                          buttons: [
+                              {
+                                  icon: 'share-square-o',
+                                  color: 'default',
+                                  text: 'ShinobiShop Subscriptions',
+                                  href: 'https://licenses.shinobi.video/subscribe',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'paypal',
+                                  color: 'default',
+                                  text: 'Donate by PayPal',
+                                  href: 'https://www.paypal.me/ShinobiCCTV',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'bank',
+                                  color: 'default',
+                                  text: 'University of Zurich (UZH)',
+                                  href: 'https://www.media.uzh.ch/en/Press-Releases/2017/Generosity.html',
+                                  class: ''
+                              },
+                          ]
+                      },
                       {
                           title: "New to Shinobi?",
                           info: `Try reading over some of these links to get yourself started.`,
@@ -54,6 +77,27 @@
                                   color: 'default',
                                   text: 'RTSP Camera Optimization',
                                   href: 'https://shinobi.video/articles/2017-07-29-how-i-optimized-my-rtsp-camera',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'comments-o',
+                                  color: 'info',
+                                  text: 'Community Chat',
+                                  href: 'https://discord.gg/ehRd8Zz',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'reddit',
+                                  color: 'info',
+                                  text: 'Forum on Reddit',
+                                  href: 'https://www.reddit.com/r/ShinobiCCTV',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'file-o',
+                                  color: 'primary',
+                                  text: 'Documentation',
+                                  href: 'http://shinobi.video/docs',
                                   class: ''
                               }
                           ]
@@ -191,9 +235,8 @@
                           ]
                       },
                       {
-                          width: '12',
-                          title: "Donations, One-Time Payment Support",
-                          info: `Sometimes a subscription isn't practical for people. In which case you may show support through a PayPal donation. And as a thank you for doing so your <b>PayPal Transaction ID</b> can be used as a <code>subscriptionId</code> in your Shinobi configuration file. <br><br>Each 5 USD/EUR or 7 CAD will provide one month of activated usage. <i>Meaning, a $20 USD donation today makes this popup go away for 4 months.</i>`,
+                          title: "Donations, One-Time Boost",
+                          info: `Sometimes a subscription isn't practical for people. In which case you may show support through a PayPal donation. And as a thank you for doing so your <b>PayPal Transaction ID</b> can be used as a <code>subscriptionId</code> in your Shinobi configuration file. <br><br>Each 5 USD/EUR or 7 CAD will provide one month of activated usage. <i>Meaning, a $20 USD donation today makes this popup go away (or activates the mobile app) for 4 months.</i>`,
                           buttons: [
                               {
                                   icon: 'paypal',
@@ -207,6 +250,7 @@
                   ].forEach((promo) => { %>
                       <div class="col-md-<%- promo.width || '6' %>">
                       <div class="helpquote" style="margin-bottom:5px;font-size:10pt;padding: 10px 20px;border-left: 5px solid #eee;">
+                          <%- promo.bigIcon ? `<div style="margin-bottom:15px;text-align:center"><i class="fa fa-${promo.bigIcon} fa-5x"></i></div>` : '' %>
                           <%- promo.title ? `<h4>${promo.title}</h4>` : '' %>
                           <p><%- promo.info %></p>
                           <% if(promo.buttons) { %>
