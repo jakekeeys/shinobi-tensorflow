@@ -186,14 +186,13 @@ module.exports = function(s,config,lang){
         s.onEventTriggerBeforeFilterExtensions.forEach(function(extender){
             extender(d,filter)
         })
+        var detailString = JSON.stringify(d.details);
         if(!s.group[d.ke]||!s.group[d.ke].activeMonitors[d.id]){
             return s.systemLog(lang['No Monitor Found, Ignoring Request'])
         }
         d.mon=s.group[d.ke].rawMonitorConfigurations[d.id];
         var currentConfig = s.group[d.ke].rawMonitorConfigurations[d.id].details
         var hasMatrices = (d.details.matrices && d.details.matrices.length > 0)
-        var allMatrices = d.details.matrices || []
-        var matchedMatrices = []
         //read filters
         if(
             currentConfig.use_detector_filters === '1' &&
@@ -218,163 +217,74 @@ module.exports = function(s,config,lang){
                 }
                 return newVal
             }
-            var compressMatrices = function(passedMatrices){
-                // remove empty elements
-                passedMatrices = passedMatrices.filter(value => Object.keys(value).length !== 0)
-                // remove duplicate matches
-                passedMatrices = passedMatrices.filter((matrix, index, self) =>
-                    index === self.findIndex((t) => (
-                        t.x === matrix.x && t.y === matrix.y && t.tag === matrix.tag && t.confidence === matrix.confidence
-                    ))
-                )
-                return(passedMatrices)
-            }
-            var defaultDrop = true; // forces unmatched events to be dropped
-            var testMatrices = [...allMatrices] // default
             var filters = currentConfig.detector_filters
-            var hasFilters = (Object.keys(filters).length > 0)
             Object.keys(filters).forEach(function(key){
                 var conditionChain = {}
-                testMatrices = [...allMatrices] // for new filter reset the matrices to be tested against
                 var dFilter = filters[key]
                 dFilter.where.forEach(function(condition,place){
                     conditionChain[place] = {ok:false,next:condition.p4,matrixCount:0}
-                    if(testMatrices)conditionChain[place].matrixCount = testMatrices.length
+                    if(d.details.matrices)conditionChain[place].matrixCount = d.details.matrices.length
                     var modifyFilters = function(toCheck,matrixPosition){
                         var param = toCheck[condition.p1]
                         var pass = function(){
-                            conditionChain[place].ok = true
-                        }
-                        var fail = function(){
-                            if (matrixPosition !== undefined) delete(testMatrices[matrixPosition])
+                            if(matrixPosition && dFilter.actions.halt === '1'){
+                                delete(d.details.matrices[matrixPosition])
+                            }else{
+                                conditionChain[place].ok = true
+                            }
                         }
                         switch(condition.p2){
                             case'indexOf':
                                 if(param.indexOf(condition.p3) > -1){
                                     pass()
-                                } else {
-                                    fail()
                                 }
                             break;
                             case'!indexOf':
                                 if(param.indexOf(condition.p3) === -1){
                                     pass()
-                                } else {
-                                    fail()
                                 }
                             break;
                             default:
                                 if(eval('param '+condition.p2+' "'+condition.p3.replace(/"/g,'\\"')+'"')){
                                     pass()
-                                } else {
-                                    fail()
                                 }
                             break;
                         }
                     }
-                    if (testMatrices.some(nonEmpty)){
-                        switch(condition.p1){
-                            case'tag':
-                            case'x':
-                            case'y':
-                            case'height':
-                            case'width':
-                            case'confidence':
-                                if(testMatrices){
-                                    testMatrices.forEach(function(matrix,position){
-                                        if (matrix) modifyFilters(matrix,position)
-                                    })
+                    switch(condition.p1){
+                        case'tag':
+                        case'x':
+                        case'y':
+                        case'height':
+                        case'width':
+		                case'confidence':
+                            if(d.details.matrices){
+                                d.details.matrices.forEach(function(matrix,position){
+                                    modifyFilters(matrix,position)
+                                })
+                            }
+                        break;
+                        case'time':
+                            var timeNow = new Date()
+                            var timeCondition = new Date()
+                            var doAtTime = condition.p3.split(':')
+                            var atHour = parseInt(doAtTime[0]) - 1
+                            var atHourNow = timeNow.getHours()
+                            var atMinuteNow = timeNow.getMinutes()
+                            var atSecondNow = timeNow.getSeconds()
+                            if(atHour){
+                                var atMinute = parseInt(doAtTime[1]) - 1 || timeNow.getMinutes()
+                                var atSecond = parseInt(doAtTime[2]) - 1 || timeNow.getSeconds()
+                                var nowAddedInSeconds = atHourNow * 60 * 60 + atMinuteNow * 60 + atSecondNow
+                                var conditionAddedInSeconds = atHour * 60 * 60 + atMinute * 60 + atSecond
+                                if(eval('nowAddedInSeconds '+condition.p2+' conditionAddedInSeconds')){
+                                    conditionChain[place].ok = true
                                 }
-                            break;
-                            case'name':
-                                if (testMatrices){
-                                    var regions = s.group[d.ke].activeMonitors[d.id].parsedObjects.cords
-                                    regions.forEach(function(region,position){
-                                        switch(condition.p2){
-                                            case'indexOf':
-                                                if(region.name.indexOf(condition.p3) > -1){
-                                                    testMatrices = testMatrices.concat(scanMatricesforCollisions(region,testMatrices));
-						    if(testMatrices.some(nonEmpty)) conditionChain[place].ok = true; // default is false
-                                                }
-                                            break;
-                                            case'!indexOf':
-                                                if(region.name.indexOf(condition.p3) === -1){
-                                                    testMatrices = testMatrices.concat(scanMatricesforCollisions(region,testMatrices));
-						    if(testMatrices.some(nonEmpty)) conditionChain[place].ok = true; // default is false
-                                                }
-                                            break;
-                                            case'===':
-                                                if(region.name === condition.p3){
-                                                    testMatrices = scanMatricesforCollisions(region,testMatrices);
-						    if(testMatrices.some(nonEmpty)) conditionChain[place].ok = true; // default is false
-                                                }
-                                            break;
-                                            case'!==':
-                                                if(region.name !== condition.p3){
-                                                    testMatrices = testMatrices.concat(scanMatricesforCollisions(region,testMatrices));
-						    if(testMatrices.some(nonEmpty)) conditionChain[place].ok = true; // default is false
-                                                }
-                                            break;
-                                            default:
-                                                s.userLog({mid:'$USER',ke:d.ke},{type:lang["Detector Filters"],msg:lang['Numeric criteria unsupported for Region tests, Ignoring Conditional']})
-                                            break;
-                                        }
-                                    });
-                                }
-                            break;
-                            case'count':
-                                if (testMatrices){
-                                    testMatrices = compressMatrices(testMatrices)
-                                    var objectCount = testMatrices.length
-                                    switch(condition.p2){
-                                        case'indexOf':
-                                        case'!indexOf':
-                                            s.userLog({mid:'$USER',ke:d.ke},{type:lang["Detector Filters"],msg:lang['Text criteria unsupported for Object Count tests, Ignoring Conditional']})
-                                        break;
-                                        case'===':
-                                            if(objectCount == condition.p3){
-                                                conditionChain[place].ok = true;
-                                            }
-                                        break;
-                                        case'!==':
-                                            if(objectCount != condition.p3){
-                                                conditionChain[place].ok = true;
-                                            }
-                                        break;
-                                        default:
-                                            if(eval(objectCount+' '+condition.p2+' "'+condition.p3.replace(/"/g,'\\"')+'"')){
-                                                conditionChain[place].ok = true;
-                                            }
-                                        break;
-                                    }
-                                }
-                            break;
-                            case'time':
-                                var timeNow = new Date()
-                                var timeCondition = new Date()
-                                var doAtTime = condition.p3.split(':')
-                                var atHour = parseInt(doAtTime[0]) - 1
-                                var atHourNow = timeNow.getHours()
-                                var atMinuteNow = timeNow.getMinutes()
-                                var atSecondNow = timeNow.getSeconds()
-                                if(atHour){
-                                    var atMinute = parseInt(doAtTime[1]) - 1 || timeNow.getMinutes()
-                                    var atSecond = parseInt(doAtTime[2]) - 1 || timeNow.getSeconds()
-                                    var nowAddedInSeconds = atHourNow * 60 * 60 + atMinuteNow * 60 + atSecondNow
-                                    var conditionAddedInSeconds = atHour * 60 * 60 + atMinute * 60 + atSecond
-                                    if(eval('nowAddedInSeconds '+condition.p2+' conditionAddedInSeconds')){
-                                        conditionChain[place].ok = true
-                                    }
-                                }
-                            break;
-                            default:
-                                modifyFilters(d.details)
-                            break;
-                        }
-                    }
-                    if (condition.p4 === '||' || dFilter.where.length-1 === place){
-                        if (testMatrices.length > 0) matchedMatrices = matchedMatrices.concat(testMatrices)
-                        testMatrices = [...allMatrices] // reset matrices for next group of conditions
+                            }
+                        break;
+                        default:
+                            modifyFilters(d.details)
+                        break;
                     }
                 })
                 var conditionArray = Object.values(conditionChain)
@@ -392,23 +302,26 @@ module.exports = function(s,config,lang){
                             var value = dFilter.actions[key]
                             filter[key] = parseValue(key,value)
                         })
-			defaultDrop = false;
                     }else{
                         filter.halt = true
                     }
                 }
             })
-            if(filter.halt === true){
+            if(d.details.matrices && d.details.matrices.length === 0 || filter.halt === true){
                 return
             }else if(hasMatrices){
-                d.details.matrices = compressMatrices(matchedMatrices)
-            }
-            // -- delayed decision here --
-            if (defaultDrop && hasFilters) {
-                return;
+                var reviewedMatrix = []
+                d.details.matrices.forEach(function(matrix){
+                    if(matrix)reviewedMatrix.push(matrix)
+                })
+                d.details.matrices = reviewedMatrix
             }
         }
         var eventTime = new Date()
+        //motion counter
+        if(filter.addToMotionCounter && filter.record){
+            s.group[d.ke].activeMonitors[d.id].detector_motion_count.push(d)
+        }
         if(filter.countObjects && currentConfig.detector_obj_count === '1' && currentConfig.detector_obj_count_in_region !== '1'){
             didCountingAlready = true
             countObjects(d)
@@ -437,16 +350,8 @@ module.exports = function(s,config,lang){
         // check if object should be in region
         if(hasMatrices && currentConfig.detector_obj_region === '1'){
             var regions = s.group[d.ke].activeMonitors[d.id].parsedObjects.cords
-            testMatrices = d.details.matrices // matrices that made it passed filters
-            matchedMatrices = []
-            regions.forEach(function(region,position){
-                matchedMatrices = matchedMatrices.concat(scanMatricesforCollisions(region,testMatrices));
-            })
-            if (matchedMatrices.length > 2){
-                matchedMatrices = compressMatrices(matchedMatrices)
-            }
-            d.details.matrices = matchedMatrices // pass matrices that are within a region
-            if(d.details.matrices && d.details.matrices.length > 0){
+            var isMatrixInRegions = isAtleastOneMatrixInRegion(regions,d.details.matrices)
+            if(isMatrixInRegions){
                 s.debugLog('Matrix in region!')
                 if(filter.countObjects && currentConfig.detector_obj_count === '1' && currentConfig.detector_obj_count_in_region === '1' && !didCountingAlready){
                     countObjects(d)
@@ -459,10 +364,6 @@ module.exports = function(s,config,lang){
         if(filter.indifference !== false && d.details.confidence < parseFloat(filter.indifference)){
             // fails indifference check for modified indifference
             return
-        }
-        //motion counter
-        if(filter.addToMotionCounter && filter.record){
-            s.group[d.ke].activeMonitors[d.id].detector_motion_count.push(d)
         }
         //
         if(d.doObjectDetection === true){
@@ -493,7 +394,6 @@ module.exports = function(s,config,lang){
             }
             //save this detection result in SQL, only coords. not image.
             if(forceSave || (filter.save && currentConfig.detector_save === '1')){
-                var detailString = JSON.stringify(d.details);
                 s.sqlQuery('INSERT INTO Events (ke,mid,details,time) VALUES (?,?,?,?)',[d.ke,d.id,detailString,eventTime])
             }
             if(currentConfig.detector === '1' && currentConfig.detector_notrigger === '1'){
