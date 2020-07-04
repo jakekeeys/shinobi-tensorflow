@@ -192,7 +192,7 @@ module.exports = function(s,config,lang){
         d.mon=s.group[d.ke].rawMonitorConfigurations[d.id];
         var currentConfig = s.group[d.ke].rawMonitorConfigurations[d.id].details
         var hasMatrices = (d.details.matrices && d.details.matrices.length > 0)
-        var allMatrices = d.details.matrices
+        var allMatrices = d.details.matrices || []
         var matchedMatrices = []
         //read filters
         if(
