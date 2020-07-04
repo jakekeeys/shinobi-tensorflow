@@ -2513,7 +2513,6 @@ module.exports = function(s,config,lang){
                       "description": "The amount of time until a trigger is allowed to send another email with motion details and another image.",
                       "default": "10",
                       "example": "",
-                      "form-group-class": "h_det_email_input h_det_email_1",
                       "form-group-class-pre-layer": "h_det_input h_det_1",
                       "possible": ""
                    },
