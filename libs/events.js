@@ -183,15 +183,15 @@ module.exports = function(s,config,lang){
             indifference : false,
             countObjects : true
         }
-        s.onEventTriggerBeforeFilterExtensions.forEach(function(extender){
-            extender(d,filter)
-        })
         var detailString = JSON.stringify(d.details);
         if(!s.group[d.ke]||!s.group[d.ke].activeMonitors[d.id]){
             return s.systemLog(lang['No Monitor Found, Ignoring Request'])
         }
         d.mon=s.group[d.ke].rawMonitorConfigurations[d.id];
         var currentConfig = s.group[d.ke].rawMonitorConfigurations[d.id].details
+        s.onEventTriggerBeforeFilterExtensions.forEach(function(extender){
+            extender(d,filter)
+        })
         var hasMatrices = (d.details.matrices && d.details.matrices.length > 0)
         //read filters
         if(

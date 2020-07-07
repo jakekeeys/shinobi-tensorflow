@@ -275,10 +275,14 @@ module.exports = function(s,config,lang){
             }
         }
         var onEventTriggerBeforeFilterForEmail = function(d,filter){
-            filter.mail = true
+            if(d.mon.details.detector_mail === '1'){
+                filter.mail = true
+            }else{
+                filter.mail = false
+            }
         }
         var onEventTriggerForEmail = function(d,filter){
-            if(filter.mail && config.mail && !s.group[d.ke].activeMonitors[d.id].detector_mail && d.mon.details.detector_mail === '1'){
+            if(filter.mail && config.mail && !s.group[d.ke].activeMonitors[d.id].detector_mail){
                 s.sqlQuery('SELECT mail FROM Users WHERE ke=? AND details NOT LIKE ?',[d.ke,'%"sub"%'],function(err,r){
                     r=r[0];
                     var detector_mail_timeout
