@@ -24,7 +24,8 @@ module.exports = function(config){
 
   async function loadCocoSsdModal() {
       const modal = await cocossd.load({
-          base: config.cocoBase || 'lite_mobilenet_v2' //lite_mobilenet_v2
+          base: config.cocoBase || 'lite_mobilenet_v2', //lite_mobilenet_v2
+          modelUrl: config.cocoUrl,
       })
       return modal;
   }
