@@ -46,7 +46,7 @@ module.exports = function(s,config,lang,io){
         s.knexQuery({
             action: "select",
             columns: "*",
-            tableName: "Monitors",
+            table: "Monitors",
         }).asCallback(function(err,monitors) {
             foundMonitors = monitors
             if(err){s.systemLog(err)}
@@ -122,7 +122,7 @@ module.exports = function(s,config,lang,io){
         s.knexQuery({
             action: "select",
             columns: "*",
-            tableName: "Videos",
+            table: "Videos",
             where: [
                 ['ke','=',user.ke],
                 ['status','!=',0],
@@ -131,7 +131,7 @@ module.exports = function(s,config,lang,io){
             s.knexQuery({
                 action: "select",
                 columns: "*",
-                tableName: "Timelapse Frames",
+                table: "Timelapse Frames",
                 where: [
                     ['ke','=',user.ke],
                 ]
@@ -139,7 +139,7 @@ module.exports = function(s,config,lang,io){
                 s.knexQuery({
                     action: "select",
                     columns: "*",
-                    tableName: "Files",
+                    table: "Files",
                     where: [
                         ['ke','=',user.ke],
                     ]
@@ -209,7 +209,7 @@ module.exports = function(s,config,lang,io){
             s.knexQuery({
                 action: "select",
                 columns: "*",
-                tableName: "Cloud Videos",
+                table: "Cloud Videos",
                 where: [
                     ['ke','=',user.ke],
                     ['status','!=',0],
@@ -237,7 +237,7 @@ module.exports = function(s,config,lang,io){
             s.knexQuery({
                 action: "select",
                 columns: "*",
-                tableName: "Cloud Timelapse Frames",
+                table: "Cloud Timelapse Frames",
                 where: [
                     ['ke','=',user.ke],
                 ]
@@ -328,7 +328,7 @@ module.exports = function(s,config,lang,io){
         s.knexQuery({
             action: "select",
             columns: "*",
-            tableName: "Users",
+            table: "Users",
             where: [
                 ['details','NOT LIKE','%"sub"%']
             ]

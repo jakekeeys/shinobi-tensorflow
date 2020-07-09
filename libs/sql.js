@@ -62,18 +62,30 @@ module.exports = function(s,config){
         .asCallback(callback)
     }, 4);
     const knexQuery = (options) => {
+        if(config.debugLog === true){
+            s.debugLog('s.knexQuery QUERY',options)
+        }
         // options = {
         //     action: "",
         //     columns: "",
-        //     tableName: ""
+        //     table: ""
         // }
         var response
         switch(options.action){
             case'select':
-                response = s.databaseEngine.select(...options.columns)
+                if(!options.columns)options.columns = '*'
+                response = s.databaseEngine.select(...options.columns).from(options.table)
+            break;
+            case'update':
+                response = s.databaseEngine(options.table).update(options.update)
+            break;
+            case'delete':
+                response = s.databaseEngine(options.table).del()
+            break;
+            case'insert':
+                response = s.databaseEngine(options.table).insert(options.insert)
             break;
         }
-        response.from(options.tableName)
         if(options.where){
             var didOne = false;
             options.where.forEach((where) => {
@@ -82,7 +94,9 @@ module.exports = function(s,config){
                     didOne = true
                     whereIsArray ? response.where(...where) : response.where(where)
                 }else if(where.length === 4){
-                    switch(where[0]){
+                    const separator = where[0] + ''
+                    where.shift()
+                    switch(separator){
                         case'and':
                             whereIsArray ? response.andWhere(...where) : response.andWhere(where)
                         break;
@@ -93,6 +107,11 @@ module.exports = function(s,config){
                 }else{
                     whereIsArray ? response.andWhere(...where) : response.andWhere(where)
                 }
+            })
+        }
+        if(options.update || options.insert){
+            response.asCallback(function(err,r) {
+                if(err)console.log(err)
             })
         }
         return response
