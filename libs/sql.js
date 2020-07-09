@@ -73,7 +73,7 @@ module.exports = function(s,config){
         var dbQuery
         switch(options.action){
             case'select':
-                if(!options.columns)options.columns = '*'
+                !options.columns ? '*' : options.columns.indexOf(',') > -1 ? options.columns.split(',') : options.columns;
                 dbQuery = s.databaseEngine.select(...options.columns).from(options.table)
             break;
             case'update':
