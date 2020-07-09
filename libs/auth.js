@@ -16,7 +16,7 @@ module.exports = function(s,config,lang){
                 ['uid','=',params.uid],
                 ['ke','=',params.ke],
             ]
-        }).asCallback(function(err,r) {
+        },function(err,r) {
             if(!r)r = []
             var user = r[0]
             callback(err,user)
@@ -31,7 +31,7 @@ module.exports = function(s,config,lang){
                 ['auth','=',params.auth],
                 ['ke','=',params.ke],
             ]
-        }).asCallback(function(err,r) {
+        },function(err,r) {
             if(!r)r = []
             var user = r[0]
             callback(err,user)
@@ -48,8 +48,9 @@ module.exports = function(s,config,lang){
                 ['pass','=',params.password],
                 ['or','mail','=',params.username],
                 ['pass','=',s.createHash(params.password)],
-            ]
-        }).limit(1).asCallback(function(err,r) {
+            ],
+            limit: 1
+        },function(err,r) {
             if(!r)r = []
             var user = r[0]
             callback(err,user)
@@ -65,7 +66,7 @@ module.exports = function(s,config,lang){
                 ['code','=',params.auth],
                 ['ke','=',params.ke],
             ]
-        }).asCallback(function(err,r) {
+        },function(err,r) {
             if(!r)r = []
             var apiKey = r[0]
             callback(err,apiKey)
@@ -267,7 +268,7 @@ module.exports = function(s,config,lang){
                         where: [
                             ['details','NOT LIKE','%"sub"%'],
                         ]
-                    }).asCallback(function(err,r) {
+                    },function(err,r) {
                         adminUsersSelected = r
                         success()
                     })

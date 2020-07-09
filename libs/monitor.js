@@ -1410,7 +1410,7 @@ module.exports = function(s,config,lang){
                 ['ke','=',form.ke],
                 ['mid','=',form.mid],
             ]
-        }).asCallback(function(err,r) {
+        },function(err,r) {
             var affectMonitor = false
             var monitorQuery = {}
             var txData = {
@@ -1676,7 +1676,7 @@ module.exports = function(s,config,lang){
                     columns: "*",
                     table: "Monitors",
                     where: monitorQuery
-                }).asCallback(function(err,monitors){
+                },function(err,monitors){
                     console.log(err,monitors)
                     if(monitors && monitors[0]){
                         monitors.forEach(function(monitor){

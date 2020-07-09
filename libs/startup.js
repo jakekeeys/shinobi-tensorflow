@@ -47,7 +47,7 @@ module.exports = function(s,config,lang,io){
             action: "select",
             columns: "*",
             table: "Monitors",
-        }).asCallback(function(err,monitors) {
+        },function(err,monitors) {
             foundMonitors = monitors
             if(err){s.systemLog(err)}
             if(monitors && monitors[0]){
@@ -127,7 +127,7 @@ module.exports = function(s,config,lang,io){
                 ['ke','=',user.ke],
                 ['status','!=',0],
             ]
-        }).asCallback(function(err,videos) {
+        },function(err,videos) {
             s.knexQuery({
                 action: "select",
                 columns: "*",
@@ -135,7 +135,7 @@ module.exports = function(s,config,lang,io){
                 where: [
                     ['ke','=',user.ke],
                 ]
-            }).asCallback(function(err,timelapseFrames) {
+            },function(err,timelapseFrames) {
                 s.knexQuery({
                     action: "select",
                     columns: "*",
@@ -143,7 +143,7 @@ module.exports = function(s,config,lang,io){
                     where: [
                         ['ke','=',user.ke],
                     ]
-                }).asCallback(function(err,files) {
+                },function(err,files) {
                     var usedSpaceVideos = 0
                     var usedSpaceTimelapseFrames = 0
                     var usedSpaceFilebin = 0
@@ -214,7 +214,7 @@ module.exports = function(s,config,lang,io){
                     ['ke','=',user.ke],
                     ['status','!=',0],
                 ]
-            }).asCallback(function(err,videos) {
+            },function(err,videos) {
                 if(videos && videos[0]){
                     videos.forEach(function(video){
                         var storageType = JSON.parse(video.details).type
@@ -241,7 +241,7 @@ module.exports = function(s,config,lang,io){
                 where: [
                     ['ke','=',user.ke],
                 ]
-            }).asCallback(function(err,frames) {
+            },function(err,frames) {
                 if(frames && frames[0]){
                     frames.forEach(function(frame){
                         var storageType = JSON.parse(frame.details).type
@@ -332,7 +332,7 @@ module.exports = function(s,config,lang,io){
             where: [
                 ['details','NOT LIKE','%"sub"%']
             ]
-        }).asCallback(function(err,users) {
+        },function(err,users) {
             if(users && users[0]){
                 users.forEach(function(user){
                     checkedAdminUsers[user.ke] = user
