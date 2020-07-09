@@ -61,7 +61,7 @@ module.exports = function(s,config){
         .raw(data.query,data.values)
         .asCallback(callback)
     }, 4);
-    const knexQuery = (options) => {
+    const knexQuery = (options,callback) => {
         if(config.debugLog === true){
             s.debugLog('s.knexQuery QUERY',options)
         }
@@ -109,9 +109,16 @@ module.exports = function(s,config){
                 }
             })
         }
-        if(options.update || options.insert){
+        if(options.orderBy){
+            dbQuery.orderBy(...options.orderBy)
+        }
+        if(options.limit){
+            dbQuery.limit(options.limit)
+        }
+        if(callback || options.update || options.insert){
             dbQuery.asCallback(function(err,r) {
                 if(err)console.log(err)
+                if(callback)callback(err,r)
             })
         }
         return dbQuery
