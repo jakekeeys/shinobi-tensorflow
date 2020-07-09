@@ -539,6 +539,9 @@ module.exports = function(s,config,lang){
             s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
         }
     }
+    s.getStreamsDirectory = (monitor) => {
+        return s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
+    }
     const createRecordingDirectory = function(e,callback){
         var directory
         if(e.details && e.details.dir && e.details.dir !== '' && config.childNodes.mode !== 'child'){
@@ -764,18 +767,22 @@ module.exports = function(s,config,lang){
                     const count = Object.keys(tagInfo.count)
                     const times = tagInfo.times
                     const realTag = tagInfo.tag
-                    s.sqlQuery('INSERT INTO `Events Counts` (ke,mid,details,time,end,count,tag) VALUES (?,?,?,?,?,?,?)',[
-                        groupKey,
-                        monitorId,
-                        JSON.stringify({
-                            times: times,
-                            count: count,
-                        }),
-                        startTime,
-                        endTime,
-                        count.length,
-                        realTag
-                    ])
+                    s.knexQuery({
+                        action: "insert",
+                        table: "Events Counts",
+                        insert: {
+                            ke: groupKey,
+                            mid: monitorId,
+                            details: JSON.stringify({
+                                times: times,
+                                count: count,
+                            }),
+                            time: startTime,
+                            end: endTime,
+                            count: count.length,
+                            tag: realTag
+                        }
+                    })
                 })
             },60000) //every minute
         }
@@ -1395,10 +1402,17 @@ module.exports = function(s,config,lang){
         }
         form.mid = form.mid.replace(/[^\w\s]/gi,'').replace(/ /g,'')
         form = s.cleanMonitorObjectForDatabase(form)
-        s.sqlQuery('SELECT * FROM Monitors WHERE ke=? AND mid=?',[form.ke,form.mid],function(er,r){
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            table: "Monitors",
+            where: [
+                ['ke','=',form.ke],
+                ['mid','=',form.mid],
+            ]
+        }).asCallback(function(err,r) {
             var affectMonitor = false
-            var monitorQuery = []
-            var monitorQueryValues = []
+            var monitorQuery = {}
             var txData = {
                 f: 'monitor_edit',
                 mid: form.mid,
@@ -1416,19 +1430,23 @@ module.exports = function(s,config,lang){
                         form[v] !== false &&
                         form[v] !== `false`
                     ){
-                        monitorQuery.push(v+'=?')
                         if(form[v] instanceof Object){
                             form[v] = s.s(form[v])
                         }
-                        monitorQueryValues.push(form[v])
+                        monitorQuery[v] = form[v]
                     }
                 })
-                monitorQuery = monitorQuery.join(',')
-                monitorQueryValues.push(form.ke)
-                monitorQueryValues.push(form.mid)
                 s.userLog(form,{type:'Monitor Updated',msg:'by user : '+user.uid})
                 endData.msg = user.lang['Monitor Updated by user']+' : '+user.uid
-                s.sqlQuery('UPDATE Monitors SET '+monitorQuery+' WHERE ke=? AND mid=?',monitorQueryValues)
+                s.knexQuery({
+                    action: "update",
+                    table: "Monitors",
+                    update: monitorQuery,
+                    where: [
+                        ['ke','=',form.ke],
+                        ['mid','=',form.mid],
+                    ]
+                })
                 affectMonitor = true
             }else if(
                 !s.group[form.ke].init.max_camera ||
@@ -1436,22 +1454,21 @@ module.exports = function(s,config,lang){
                 Object.keys(s.group[form.ke].activeMonitors).length <= parseInt(s.group[form.ke].init.max_camera)
             ){
                 txData.new = true
-                monitorQueryInsertValues = []
                 Object.keys(form).forEach(function(v){
                     if(form[v] && form[v] !== ''){
-                        monitorQuery.push(v)
-                        monitorQueryInsertValues.push('?')
                         if(form[v] instanceof Object){
                             form[v] = s.s(form[v])
                         }
-                        monitorQueryValues.push(form[v])
+                        monitorQuery[v] = form[v]
                     }
                 })
-                monitorQuery = monitorQuery.join(',')
-                monitorQueryInsertValues = monitorQueryInsertValues.join(',')
                 s.userLog(form,{type:'Monitor Added',msg:'by user : '+user.uid})
                 endData.msg = user.lang['Monitor Added by user']+' : '+user.uid
-                s.sqlQuery('INSERT INTO Monitors ('+monitorQuery+') VALUES ('+monitorQueryInsertValues+')',monitorQueryValues)
+                s.knexQuery({
+                    action: "insert",
+                    table: "Monitors",
+                    insert: monitorQuery
+                })
                 affectMonitor = true
             }else{
                 txData.f = 'monitor_edit_failed'
@@ -1640,15 +1657,27 @@ module.exports = function(s,config,lang){
             if(notFound === false){
                 var sqlQuery = 'SELECT * FROM Monitors WHERE ke=? AND '
                 var monitorQuery = []
-                var sqlQueryValues = [groupKey]
                 var monitorPresets = {}
+                var didOne = false;
                 preset.details.monitors.forEach(function(monitor){
-                    monitorQuery.push('mid=?')
-                    sqlQueryValues.push(monitor.mid)
+                    const whereConditions = {}
+                    if(!didOne){
+                        didOne = true
+                        whereConditions.ke = groupKey
+                        monitorQuery.push(['ke','=',groupKey])
+                    }else{
+                        monitorQuery.push(['or','ke','=',groupKey])
+                    }
+                    monitorQuery.push(['mid','=',monitor.mid])
                     monitorPresets[monitor.mid] = monitor
                 })
-                sqlQuery += '('+monitorQuery.join(' OR ')+')'
-                s.sqlQuery(sqlQuery,sqlQueryValues,function(err,monitors){
+                s.knexQuery({
+                    action: "select",
+                    columns: "*",
+                    table: "Monitors",
+                    where: monitorQuery
+                }).asCallback(function(err,monitors){
+                    console.log(err,monitors)
                     if(monitors && monitors[0]){
                         monitors.forEach(function(monitor){
                             s.checkDetails(monitor)
