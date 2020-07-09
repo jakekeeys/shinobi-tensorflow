@@ -70,20 +70,20 @@ module.exports = function(s,config){
         //     columns: "",
         //     table: ""
         // }
-        var response
+        var dbQuery
         switch(options.action){
             case'select':
                 if(!options.columns)options.columns = '*'
-                response = s.databaseEngine.select(...options.columns).from(options.table)
+                dbQuery = s.databaseEngine.select(...options.columns).from(options.table)
             break;
             case'update':
-                response = s.databaseEngine(options.table).update(options.update)
+                dbQuery = s.databaseEngine(options.table).update(options.update)
             break;
             case'delete':
-                response = s.databaseEngine(options.table).del()
+                dbQuery = s.databaseEngine(options.table).del()
             break;
             case'insert':
-                response = s.databaseEngine(options.table).insert(options.insert)
+                dbQuery = s.databaseEngine(options.table).insert(options.insert)
             break;
         }
         if(options.where){
@@ -92,29 +92,29 @@ module.exports = function(s,config){
                 var whereIsArray = where instanceof Array;
                 if(!didOne){
                     didOne = true
-                    whereIsArray ? response.where(...where) : response.where(where)
+                    whereIsArray ? dbQuery.where(...where) : dbQuery.where(where)
                 }else if(where.length === 4){
                     const separator = where[0] + ''
                     where.shift()
                     switch(separator){
                         case'and':
-                            whereIsArray ? response.andWhere(...where) : response.andWhere(where)
+                            whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
                         break;
                         case'or':
-                            whereIsArray ? response.orWhere(...where) : response.orWhere(where)
+                            whereIsArray ? dbQuery.orWhere(...where) : dbQuery.orWhere(where)
                         break;
                     }
                 }else{
-                    whereIsArray ? response.andWhere(...where) : response.andWhere(where)
+                    whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
                 }
             })
         }
         if(options.update || options.insert){
-            response.asCallback(function(err,r) {
+            dbQuery.asCallback(function(err,r) {
                 if(err)console.log(err)
             })
         }
-        return response
+        return dbQuery
     }
     s.knexQuery = knexQuery
     s.sqlQuery = function(query,values,onMoveOn,hideLog){
