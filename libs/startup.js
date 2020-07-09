@@ -43,7 +43,11 @@ module.exports = function(s,config,lang,io){
         })
         s.systemLog(lang.startUpText4)
         //preliminary monitor start
-        s.sqlQuery('SELECT * FROM Monitors', function(err,monitors) {
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            tableName: "Monitors",
+        }).asCallback(function(err,monitors) {
             foundMonitors = monitors
             if(err){s.systemLog(err)}
             if(monitors && monitors[0]){
@@ -115,9 +119,31 @@ module.exports = function(s,config,lang,io){
         s.group[user.ke].sizeLimit = parseFloat(userDetails.size) || 10000
         s.group[user.ke].sizeLimitVideoPercent = parseFloat(userDetails.size_video_percent) || 90
         s.group[user.ke].sizeLimitTimelapseFramesPercent = parseFloat(userDetails.size_timelapse_percent) || 10
-        s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND status!=?',[user.ke,0],function(err,videos){
-            s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE ke=?',[user.ke],function(err,timelapseFrames){
-                s.sqlQuery('SELECT * FROM `Files` WHERE ke=?',[user.ke],function(err,files){
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            tableName: "Videos",
+            where: [
+                ['ke','=',user.ke],
+                ['status','!=',0],
+            ]
+        }).asCallback(function(err,videos) {
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                tableName: "Timelapse Frames",
+                where: [
+                    ['ke','=',user.ke],
+                ]
+            }).asCallback(function(err,timelapseFrames) {
+                s.knexQuery({
+                    action: "select",
+                    columns: "*",
+                    tableName: "Files",
+                    where: [
+                        ['ke','=',user.ke],
+                    ]
+                }).asCallback(function(err,files) {
                     var usedSpaceVideos = 0
                     var usedSpaceTimelapseFrames = 0
                     var usedSpaceFilebin = 0
@@ -180,7 +206,15 @@ module.exports = function(s,config,lang,io){
             if(s.cloudDiskUseStartupExtensions[storageType])s.cloudDiskUseStartupExtensions[storageType](user,userDetails)
         })
         var loadCloudVideos = function(callback){
-            s.sqlQuery('SELECT * FROM `Cloud Videos` WHERE ke=? AND status!=?',[user.ke,0],function(err,videos){
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                tableName: "Cloud Videos",
+                where: [
+                    ['ke','=',user.ke],
+                    ['status','!=',0],
+                ]
+            }).asCallback(function(err,videos) {
                 if(videos && videos[0]){
                     videos.forEach(function(video){
                         var storageType = JSON.parse(video.details).type
@@ -200,7 +234,14 @@ module.exports = function(s,config,lang,io){
             })
         }
         var loadCloudTimelapseFrames = function(callback){
-            s.sqlQuery('SELECT * FROM `Cloud Timelapse Frames` WHERE ke=?',[user.ke],function(err,frames){
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                tableName: "Cloud Timelapse Frames",
+                where: [
+                    ['ke','=',user.ke],
+                ]
+            }).asCallback(function(err,frames) {
                 if(frames && frames[0]){
                     frames.forEach(function(frame){
                         var storageType = JSON.parse(frame.details).type
@@ -284,7 +325,14 @@ module.exports = function(s,config,lang,io){
     }
     var loadAdminUsers = function(callback){
         //get current disk used for each isolated account (admin user) on startup
-        s.sqlQuery('SELECT * FROM Users WHERE details NOT LIKE ?',['%"sub"%'],function(err,users){
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            tableName: "Users",
+            where: [
+                ['details','NOT LIKE','%"sub"%']
+            ]
+        }).asCallback(function(err,users) {
             if(users && users[0]){
                 users.forEach(function(user){
                     checkedAdminUsers[user.ke] = user
