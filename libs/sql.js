@@ -61,6 +61,43 @@ module.exports = function(s,config){
         .raw(data.query,data.values)
         .asCallback(callback)
     }, 4);
+    const knexQuery = (options) => {
+        // options = {
+        //     action: "",
+        //     columns: "",
+        //     tableName: ""
+        // }
+        var response
+        switch(options.action){
+            case'select':
+                response = s.databaseEngine.select(...options.columns)
+            break;
+        }
+        response.from(options.tableName)
+        if(options.where){
+            var didOne = false;
+            options.where.forEach((where) => {
+                var whereIsArray = where instanceof Array;
+                if(!didOne){
+                    didOne = true
+                    whereIsArray ? response.where(...where) : response.where(where)
+                }else if(where.length === 4){
+                    switch(where[0]){
+                        case'and':
+                            whereIsArray ? response.andWhere(...where) : response.andWhere(where)
+                        break;
+                        case'or':
+                            whereIsArray ? response.orWhere(...where) : response.orWhere(where)
+                        break;
+                    }
+                }else{
+                    whereIsArray ? response.andWhere(...where) : response.andWhere(where)
+                }
+            })
+        }
+        return response
+    }
+    s.knexQuery = knexQuery
     s.sqlQuery = function(query,values,onMoveOn,hideLog){
         if(!values){values=[]}
         if(typeof values === 'function'){
