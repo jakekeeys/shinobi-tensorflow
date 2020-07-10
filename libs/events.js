@@ -394,7 +394,16 @@ module.exports = function(s,config,lang){
             }
             //save this detection result in SQL, only coords. not image.
             if(forceSave || (filter.save && currentConfig.detector_save === '1')){
-                s.sqlQuery('INSERT INTO Events (ke,mid,details,time) VALUES (?,?,?,?)',[d.ke,d.id,detailString,eventTime])
+                s.knexQuery({
+                    action: "insert",
+                    table: "Events",
+                    insert: {
+                        ke: d.ke,
+                        mid: d.id,
+                        details: detailString,
+                        time: eventTime,
+                    }
+                })
             }
             if(currentConfig.detector === '1' && currentConfig.detector_notrigger === '1'){
                 s.setNoEventsDetector(s.group[d.ke].rawMonitorConfigurations[d.id])
