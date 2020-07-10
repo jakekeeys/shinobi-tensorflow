@@ -61,8 +61,39 @@ module.exports = function(s,config){
         .raw(data.query,data.values)
         .asCallback(callback)
     }, 4);
+    const processWhereCondition = (dbQuery,where,didOne) => {
+        var whereIsArray = where instanceof Array;
+        if(where[0] && where[0] instanceof Array){
+            dbQuery.where(function() {
+                var _this = this
+                var didOneInsideGroup = false
+                where.forEach((whereInsideGroup) => {
+                    console.log('LINE',whereInsideGroup)
+                    processWhereCondition(_this,whereInsideGroup,didOneInsideGroup)
+                })
+            })
+        }else if(!didOne){
+            didOne = true
+            whereIsArray ? dbQuery.where(...where) : dbQuery.where(where)
+        }else if(where.length === 4){
+            const separator = where[0] + ''
+            where.shift()
+            switch(separator){
+                case'and':
+                    whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
+                break;
+                case'or':
+                    whereIsArray ? dbQuery.orWhere(...where) : dbQuery.orWhere(where)
+                break;
+            }
+        }else{
+            whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
+        }
+
+    }
     const knexQuery = (options,callback) => {
-        if(config.debugLog === true){
+        if(!s.databaseEngine)return// console.log('Database Not Set');
+        if(config.debugLogVerbose && config.debugLog === true){
             s.debugLog('s.knexQuery QUERY',options)
         }
         // options = {
@@ -73,7 +104,7 @@ module.exports = function(s,config){
         var dbQuery
         switch(options.action){
             case'select':
-                !options.columns ? '*' : options.columns.indexOf(',') > -1 ? options.columns.split(',') : options.columns;
+                options.columns = options.columns.indexOf(',') === -1 ? [options.columns] : options.columns.split(',');
                 dbQuery = s.databaseEngine.select(...options.columns).from(options.table)
             break;
             case'update':
@@ -89,24 +120,7 @@ module.exports = function(s,config){
         if(options.where){
             var didOne = false;
             options.where.forEach((where) => {
-                var whereIsArray = where instanceof Array;
-                if(!didOne){
-                    didOne = true
-                    whereIsArray ? dbQuery.where(...where) : dbQuery.where(where)
-                }else if(where.length === 4){
-                    const separator = where[0] + ''
-                    where.shift()
-                    switch(separator){
-                        case'and':
-                            whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
-                        break;
-                        case'or':
-                            whereIsArray ? dbQuery.orWhere(...where) : dbQuery.orWhere(where)
-                        break;
-                    }
-                }else{
-                    whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
-                }
+                processWhereCondition(dbQuery,where,didOne)
             })
         }
         if(options.orderBy){
@@ -114,6 +128,9 @@ module.exports = function(s,config){
         }
         if(options.limit){
             dbQuery.limit(options.limit)
+        }
+        if(config.debugLog === true){
+            console.log(dbQuery.toString())
         }
         if(callback || options.update || options.insert){
             dbQuery.asCallback(function(err,r) {
@@ -292,7 +309,14 @@ module.exports = function(s,config){
         var endTimeOperator = options.endTimeOperator
         var startTime = options.startTime
         if(preliminaryValidationFailed){
-            callback([]);
+            if(options.noFormat){
+                callback([]);
+            }else{
+                callback({
+                    ok: true,
+                    [rowName]: [],
+                })
+            }
             return
         }
         var queryString = 'SELECT * FROM `' + theTableSelected + '` WHERE ke=?'
