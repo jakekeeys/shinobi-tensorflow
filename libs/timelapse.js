@@ -2,78 +2,6 @@ var fs = require('fs')
 var moment = require('moment')
 var express = require('express')
 module.exports = function(s,config,lang,app,io){
-    var getFrameRows = function(options,callback){
-       var whereQuery = [
-           ['ke','=',options.groupKey],
-       ]
-       const monitorRestrictions = options.monitorRestrictions
-       var frameLimit = parseInt(options.limit) || 500
-       const chosenDate = options.date
-       const startDate = options.startDate ? s.stringToSqlTime(options.startDate) : null
-       const endDate = options.endDate ? s.stringToSqlTime(options.endDate) : null
-       const startOperator = options.startOperator || '>='
-       const endOperator = options.endOperator || '<='
-       if(chosenDate){
-           if(chosenDate.indexOf('-') === -1 && !isNaN(chosenDate)){
-               chosenDate = parseInt(chosenDate)
-           }
-           var selectedDate = chosenDate
-           if(typeof chosenDate === 'string' && chosenDate.indexOf('.') > -1){
-               selectedDate = chosenDate.split('.')[0]
-           }
-           selectedDate = new Date(selectedDate)
-           var utcSelectedDate = new Date(selectedDate.getTime() + selectedDate.getTimezoneOffset() * 60000)
-           startDate = moment(utcSelectedDate).format('YYYY-MM-DD HH:mm:ss')
-           var dayAfter = utcSelectedDate
-           dayAfter.setDate(dayAfter.getDate() + 1)
-           endDate = moment(dayAfter).format('YYYY-MM-DD HH:mm:ss')
-       }
-       if(startDate){
-           if(endDate){
-               whereQuery.push(['time',startOperator,startDate])
-               whereQuery.push(['time',endOperator,endDate])
-           }else{
-               whereQuery.push(['time',startOperator,startDate])
-           }
-       }
-       if(monitorRestrictions && monitorRestrictions.length > 0){
-           whereQuery.push(monitorRestrictions)
-       }
-       if(options.archived){
-           whereQuery.push(['details','LIKE',`%"archived":"1"%`])
-       }
-       if(options.filename){
-           whereQuery.push(['filename','=',options.filename])
-           frameLimit = "1";
-       }
-       s.knexQuery({
-           action: "select",
-           columns: "*",
-           table: "Timelapse Frames",
-           where: whereQuery,
-           orderBy: ['time','desc'],
-           limit: frameLimit || '500'
-       },(err,r) => {
-           if(err){
-               callback({
-                   ok: false,
-                   total: 0,
-                   limit: frameLimit,
-                   frames: []
-               })
-           }else{
-               r.forEach(function(file){
-                   file.details = s.parseJSON(file.details)
-               })
-               callback({
-                   ok: true,
-                   total: r.length,
-                   limit: frameLimit,
-                   frames: r
-               })
-           }
-       })
-    }
     s.getTimelapseFrameDirectory = function(e){
         if(e.mid&&!e.id){e.id=e.mid}
         s.checkDetails(e)
@@ -230,16 +158,18 @@ module.exports = function(s,config,lang,app,io){
                 return
             }
             const monitorRestrictions = s.getMonitorRestrictions(user.details,req.params.id)
-            getFrameRows({
+            s.getDatabaseRows({
                 monitorRestrictions: monitorRestrictions,
+                table: 'Timelapse Frames',
                 groupKey: req.params.ke,
                 date: req.query.date,
-                startDate: req.query.startDate,
-                endDate: req.query.endDate,
+                startDate: req.query.start,
+                endDate: req.query.end,
                 startOperator: req.query.startOperator,
                 endOperator: req.query.endOperator,
                 limit: req.query.limit,
                 archived: req.query.archived,
+                type: 'frames'
             },(response) => {
                 var isMp4Call = !!(req.query.mp4 || (req.params.date && typeof req.params.date === 'string' && req.params.date.indexOf('.') > -1))
                 if(isMp4Call && response.frames[0]){
