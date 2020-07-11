@@ -7,7 +7,7 @@ module.exports = function(s,config,lang,app,io){
             action: "select",
             columns: "*",
             table: "Schedules"
-        },function(err,rows) {
+        },(err,rows) => {
             rows.forEach(function(schedule){
                 s.updateSchedule(schedule)
             })

@@ -224,7 +224,7 @@ module.exports = function(s,config,lang){
             columns: "*",
             table: "Videos",
             where: whereQuery
-        },function(err,r) {
+        },(err,r) => {
             if(r && r[0]){
                 r = r[0]
                 fs.chmod(e.dir+filename,0o777,function(err){
@@ -249,7 +249,7 @@ module.exports = function(s,config,lang){
                         action: "delete",
                         table: "Videos",
                         where: whereQuery
-                    },function(err) {
+                    },(err) => {
                         if(err){
                             s.systemLog(lang['File Delete Error'] + ' : '+e.ke+' : '+' : '+e.id,err)
                         }
@@ -375,14 +375,14 @@ module.exports = function(s,config,lang){
             columns: "*",
             table: "Cloud Videos",
             where: whereQuery
-        },function(err,r) {
+        },(err,r) => {
             if(r&&r[0]){
                 r = r[0]
                 s.knexQuery({
                     action: "delete",
                     table: "Cloud Videos",
                     where: whereQuery
-                },function(err,r) {
+                },(err,r) => {
                     s.deleteVideoFromCloudExtensionsRunner(e,r)
                 })
             }else{
@@ -424,13 +424,13 @@ module.exports = function(s,config,lang){
                                     ['time','=',s.nameToTime(filename)],
                                 ],
                                 limit: 1
-                            },function(err,rows) {
+                            },(err,rows) => {
                                 if(!err && (!rows || !rows[0])){
                                     ++orphanedFilesCount
                                     var video = rows[0]
                                     s.insertCompletedVideo(monitor,{
                                         file : filename
-                                    },function(){
+                                    },() => {
                                         fileComplete()
                                     })
                                 }else{
