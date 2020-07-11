@@ -1734,6 +1734,35 @@ module.exports = function(s,config,lang){
         })
         return cameras
     }
+    s.getMonitorRestrictions = (permissions,monitorId) => {
+        const monitorRestrictions = []
+        if(
+            !monitorId &&
+            permissions.sub &&
+            permissions.monitors &&
+            permissions.allmonitors !== '1'
+        ){
+            try{
+                permissions.monitors = JSON.parse(permissions.monitors)
+                permissions.monitors.forEach(function(v,n){
+                    if(n === 0){
+                        monitorRestrictions.push(['mid','=',v])
+                    }else{
+                        monitorRestrictions.push(['or','mid','=',v])
+                    }
+                })
+            }catch(er){
+                console.log(er)
+            }
+        }else if(
+            !permissions.sub ||
+            permissions.allmonitors !== '0' ||
+            permissions.monitors.indexOf(monitorId) >- 1
+        ){
+            monitorRestrictions.push(['mid','=',monitorId])
+        }
+        return monitorRestrictions
+    }
     // s.checkViewerConnectionsForMonitor = function(monitorObject){
     //     var monitorConfig = s.group[monitorObject.ke].rawMonitorConfigurations[monitorObject.mid]
     //     if(monitorConfig.mode === 'start'){
