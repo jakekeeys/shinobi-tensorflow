@@ -24,15 +24,28 @@ module.exports = function(s,config,lang){
                     var currentPurge = s.group[e.ke].sizePurgeQueue[0]
                     var reRunCheck = function(){}
                     var deleteSetOfVideos = function(err,videos,storageIndex,callback){
-                        var videosToDelete = []
-                        var queryValues = [e.ke]
                         var completedCheck = 0
+                        var whereQuery = [
+                            ['ke','=',e.ke],
+                            []
+                        ]
                         if(videos){
+                            var didOne = false
                             videos.forEach(function(video){
                                 video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
-                                videosToDelete.push('(mid=? AND `time`=?)')
-                                queryValues.push(video.mid)
-                                queryValues.push(video.time)
+                                if(didOne){
+                                    const whereGroup = [
+                                        ['or','mid','=',video.mid],
+                                        ['time','=',video.time]
+                                    ]
+                                }else{
+                                    didOne = false
+                                    const whereGroup = [
+                                        ['mid','=',video.mid],
+                                        ['time','=',video.time]
+                                    ]
+                                }
+                                whereQuery[1].push(whereGroup)
                                 fs.chmod(video.dir,0o777,function(err){
                                     fs.unlink(video.dir,function(err){
                                         ++completedCheck
@@ -43,9 +56,12 @@ module.exports = function(s,config,lang){
                                                 }
                                             })
                                         }
-                                        if(videosToDelete.length === completedCheck){
-                                            videosToDelete = videosToDelete.join(' OR ')
-                                            s.sqlQuery('DELETE FROM Videos WHERE ke =? AND ('+videosToDelete+')',queryValues,function(){
+                                        if(whereQuery[1].length > 0 && whereQuery[1].length === completedCheck){
+                                            s.knexQuery({
+                                                action: "delete",
+                                                table: "Videos",
+                                                where: whereQuery
+                                            },() => {
                                                 reRunCheck()
                                             })
                                         }
@@ -72,22 +88,35 @@ module.exports = function(s,config,lang){
                         }else{
                             console.log(err)
                         }
-                        if(videosToDelete.length === 0){
+                        if(whereQuery[1].length === 0){
                             if(callback)callback()
                         }
                     }
                     var deleteSetOfTimelapseFrames = function(err,frames,storageIndex,callback){
-                        var framesToDelete = []
-                        var queryValues = [e.ke]
+                        var whereQuery = [
+                            ['ke','=',e.ke],
+                            []
+                        ]
                         var completedCheck = 0
                         if(frames){
+                            var didOne = false
                             frames.forEach(function(frame){
                                 var selectedDate = frame.filename.split('T')[0]
                                 var dir = s.getTimelapseFrameDirectory(frame)
                                 var fileLocationMid = `${dir}` + frame.filename
-                                framesToDelete.push('(mid=? AND `time`=?)')
-                                queryValues.push(frame.mid)
-                                queryValues.push(frame.time)
+                                if(didOne){
+                                    const whereGroup = [
+                                        ['or','mid','=',frame.mid],
+                                        ['time','=',frame.time]
+                                    ]
+                                }else{
+                                    didOne = false
+                                    const whereGroup = [
+                                        ['mid','=',frame.mid],
+                                        ['time','=',frame.time]
+                                    ]
+                                }
+                                whereQuery[1].push(whereGroup)
                                 fs.unlink(fileLocationMid,function(err){
                                     ++completedCheck
                                     if(err){
@@ -97,9 +126,12 @@ module.exports = function(s,config,lang){
                                             }
                                         })
                                     }
-                                    if(framesToDelete.length === completedCheck){
-                                        framesToDelete = framesToDelete.join(' OR ')
-                                        s.sqlQuery('DELETE FROM `Timelapse Frames` WHERE ke =? AND ('+framesToDelete+')',queryValues,function(){
+                                    if(whereQuery[1].length > 0 && whereQuery[1].length === completedCheck){
+                                        s.knexQuery({
+                                            action: "delete",
+                                            table: "Timelapse Frames",
+                                            where: whereQuery
+                                        },() => {
                                             reRunCheck()
                                         })
                                     }
@@ -125,21 +157,33 @@ module.exports = function(s,config,lang){
                         }else{
                             console.log(err)
                         }
-                        if(framesToDelete.length === 0){
+                        if(whereQuery[1].length === 0){
                             if(callback)callback()
                         }
                     }
                     var deleteSetOfFileBinFiles = function(err,files,storageIndex,callback){
-                        var filesToDelete = []
-                        var queryValues = [e.ke]
+                        var whereQuery = [
+                            ['ke','=',e.ke],
+                            []
+                        ]
                         var completedCheck = 0
                         if(files){
                             files.forEach(function(file){
                                 var dir = s.getFileBinDirectory(file)
                                 var fileLocationMid = `${dir}` + file.name
-                                filesToDelete.push('(mid=? AND `name`=?)')
-                                queryValues.push(file.mid)
-                                queryValues.push(file.name)
+                                if(didOne){
+                                    const whereGroup = [
+                                        ['or','mid','=',file.mid],
+                                        ['name','=',file.name]
+                                    ]
+                                }else{
+                                    didOne = false
+                                    const whereGroup = [
+                                        ['mid','=',file.mid],
+                                        ['name','=',file.name]
+                                    ]
+                                }
+                                whereQuery[1].push(whereGroup)
                                 fs.unlink(fileLocationMid,function(err){
                                     ++completedCheck
                                     if(err){
@@ -149,9 +193,12 @@ module.exports = function(s,config,lang){
                                             }
                                         })
                                     }
-                                    if(filesToDelete.length === completedCheck){
-                                        filesToDelete = filesToDelete.join(' OR ')
-                                        s.sqlQuery('DELETE FROM `Files` WHERE ke =? AND ('+filesToDelete+')',queryValues,function(){
+                                    if(whereQuery[1].length > 0 && whereQuery[1].length === completedCheck){
+                                        s.knexQuery({
+                                            action: "delete",
+                                            table: "Files",
+                                            where: whereQuery
+                                        },() => {
                                             reRunCheck()
                                         })
                                     }
@@ -168,7 +215,7 @@ module.exports = function(s,config,lang){
                         }else{
                             console.log(err)
                         }
-                        if(framesToDelete.length === 0){
+                        if(whereQuery[1].length === 0){
                             if(callback)callback()
                         }
                     }
@@ -178,9 +225,21 @@ module.exports = function(s,config,lang){
                         }
                         //run purge command
                         if(s.group[e.ke].usedSpaceVideos > (s.group[e.ke].sizeLimit * (s.group[e.ke].sizeLimitVideoPercent / 100) * config.cron.deleteOverMaxOffset)){
-                                s.sqlQuery('SELECT * FROM Videos WHERE status != 0 AND details NOT LIKE \'%"archived":"1"%\' AND ke=? AND details NOT LIKE \'%"dir"%\' ORDER BY `time` ASC LIMIT 3',[e.ke],function(err,rows){
-                                    deleteSetOfVideos(err,rows,null,callback)
-                                })
+                            s.knexQuery({
+                                action: "select",
+                                columns: "*",
+                                table: "Videos",
+                                where: [
+                                    ['ke','=',e.ke],
+                                    ['status','!=','0'],
+                                    ['details','NOT LIKE',`%"archived":"1"%`],
+                                    ['details','NOT LIKE',`%"dir"%`],
+                                ],
+                                orderBy: ['time','asc'],
+                                limit: 3
+                            },(err,rows) => {
+                                deleteSetOfVideos(err,rows,null,callback)
+                            })
                         }else{
                             callback()
                         }
@@ -208,7 +267,19 @@ module.exports = function(s,config,lang){
                                 var storageIndex = s.group[e.ke].addStorageUse[storageId]
                                 //run purge command
                                 if(storageIndex.usedSpace > (storageIndex.sizeLimit * (storageIndex.deleteOffset || config.cron.deleteOverMaxOffset))){
-                                    s.sqlQuery('SELECT * FROM Videos WHERE status != 0 AND details NOT LIKE \'%"archived":"1"%\' AND ke=? AND details LIKE ? ORDER BY `time` ASC LIMIT 3',[e.ke,`%"dir":"${storage.value}"%`],function(err,rows){
+                                    s.knexQuery({
+                                        action: "select",
+                                        columns: "*",
+                                        table: "Videos",
+                                        where: [
+                                            ['ke','=',e.ke],
+                                            ['status','!=','0'],
+                                            ['details','NOT LIKE',`%"archived":"1"%`],
+                                            ['details','LIKE',`%"dir":"${storage.value}"%`],
+                                        ],
+                                        orderBy: ['time','asc'],
+                                        limit: 3
+                                    },(err,rows) => {
                                         deleteSetOfVideos(err,rows,storageIndex,callback)
                                     })
                                 }else{
@@ -225,9 +296,19 @@ module.exports = function(s,config,lang){
                         }
                         //run purge command
                         if(s.group[e.ke].usedSpaceTimelapseFrames > (s.group[e.ke].sizeLimit * (s.group[e.ke].sizeLimitTimelapseFramesPercent / 100) * config.cron.deleteOverMaxOffset)){
-                                s.sqlQuery('SELECT * FROM `Timelapse Frames` WHERE ke=? AND details NOT LIKE \'%"archived":"1"%\' ORDER BY `time` ASC LIMIT 3',[e.ke],function(err,frames){
-                                    deleteSetOfTimelapseFrames(err,frames,null,callback)
-                                })
+                            s.knexQuery({
+                                action: "select",
+                                columns: "*",
+                                table: "Timelapse Frames",
+                                where: [
+                                    ['ke','=',e.ke],
+                                    ['details','NOT LIKE',`%"archived":"1"%`],
+                                ],
+                                orderBy: ['time','asc'],
+                                limit: 3
+                            },(err,frames) => {
+                                deleteSetOfTimelapseFrames(err,frames,null,callback)
+                            })
                         }else{
                             callback()
                         }
@@ -239,9 +320,18 @@ module.exports = function(s,config,lang){
                             }
                             //run purge command
                             if(s.group[e.ke].usedSpaceFileBin > (s.group[e.ke].sizeLimit * (s.group[e.ke].sizeLimitFileBinPercent / 100) * config.cron.deleteOverMaxOffset)){
-                                    s.sqlQuery('SELECT * FROM `Files` WHERE ke=? ORDER BY `time` ASC LIMIT 1',[e.ke],function(err,frames){
-                                        deleteSetOfFileBinFiles(err,frames,null,callback)
-                                    })
+                                s.knexQuery({
+                                    action: "select",
+                                    columns: "*",
+                                    table: "Files",
+                                    where: [
+                                        ['ke','=',e.ke],
+                                    ],
+                                    orderBy: ['time','asc'],
+                                    limit: 1
+                                },(err,frames) => {
+                                    deleteSetOfFileBinFiles(err,frames,null,callback)
+                                })
                             }else{
                                 callback()
                             }
@@ -306,8 +396,19 @@ module.exports = function(s,config,lang){
     s.userLog = function(e,x){
         if(e.id && !e.mid)e.mid = e.id
         if(!x||!e.mid){return}
-        if((e.details&&e.details.sqllog==='1')||e.mid.indexOf('$')>-1){
-            s.sqlQuery('INSERT INTO Logs (ke,mid,info) VALUES (?,?,?)',[e.ke,e.mid,s.s(x)]);
+        if(
+            (e.details && e.details.sqllog === '1') ||
+            e.mid.indexOf('$') > -1
+        ){
+            s.knexQuery({
+                action: "insert",
+                table: "Logs",
+                insert: {
+                    ke: e.ke,
+                    mid: e.mid,
+                    info: s.s(x),
+                }
+            })
         }
         s.tx({f:'log',ke:e.ke,mid:e.mid,log:x,time:s.timeObject()},'GRPLOG_'+e.ke);
     }
@@ -343,13 +444,21 @@ module.exports = function(s,config,lang){
         if(!s.group[e.ke].init){
             s.group[e.ke].init={};
         }
-        s.sqlQuery('SELECT * FROM Users WHERE ke=? AND details NOT LIKE ?',[e.ke,'%"sub"%'],function(ar,r){
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            table: "Users",
+            where: [
+                ['ke','=',e.ke],
+                ['details','NOT LIKE',`%"sub"%`],
+            ]
+        },function(err,r) {
             if(r && r[0]){
                 r = r[0];
-                ar = JSON.parse(r.details);
+                const details = JSON.parse(r.details);
                 //load extenders
                 s.loadGroupAppExtensions.forEach(function(extender){
-                    extender(r,ar)
+                    extender(r,details)
                 })
                 //disk Used Emitter
                 if(!s.group[e.ke].diskUsedEmitter){
@@ -391,30 +500,57 @@ module.exports = function(s,config,lang){
                             var deleteVideos = function(){
                                 //run purge command
                                 if(cloudDisk.sizeLimitCheck && cloudDisk.usedSpace > (cloudDisk.sizeLimit*config.cron.deleteOverMaxOffset)){
-                                        s.sqlQuery('SELECT * FROM `Cloud Videos` WHERE status != 0 AND ke=? AND details LIKE \'%"type":"'+storageType+'"%\' ORDER BY `time` ASC LIMIT 2',[e.ke],function(err,videos){
-                                            var videosToDelete = []
-                                            var queryValues = [e.ke]
-                                            if(!videos)return console.log(err)
-                                            videos.forEach(function(video){
-                                                video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
-                                                videosToDelete.push('(mid=? AND `time`=?)')
-                                                queryValues.push(video.mid)
-                                                queryValues.push(video.time)
-                                                s.setCloudDiskUsedForGroup(e,{
-                                                    amount : -(video.size/1048576),
-                                                    storageType : storageType
-                                                })
-                                                s.deleteVideoFromCloudExtensionsRunner(e,storageType,video)
-                                            })
-                                            if(videosToDelete.length > 0){
-                                                videosToDelete = videosToDelete.join(' OR ')
-                                                s.sqlQuery('DELETE FROM `Cloud Videos` WHERE ke =? AND ('+videosToDelete+')',queryValues,function(){
-                                                    deleteVideos()
-                                                })
+                                    s.knexQuery({
+                                        action: "select",
+                                        columns: "*",
+                                        table: "Cloud Videos",
+                                        where: [
+                                            ['status','!=','0'],
+                                            ['ke','=',e.ke],
+                                            ['details','LIKE',`%"type":"${storageType}"%`],
+                                        ],
+                                        orderBy: ['time','asc'],
+                                        limit: 2
+                                    },function(err,videos) {
+                                        if(!videos)return console.log(err)
+                                        var whereQuery = [
+                                            ['ke','=',e.ke],
+                                            []
+                                        ]
+                                        var didOne = false
+                                        videos.forEach(function(video){
+                                            video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
+                                            if(didOne){
+                                                const whereGroup = [
+                                                    ['or','mid','=',video.mid],
+                                                    ['time','=',video.time]
+                                                ]
                                             }else{
-                                                finish()
+                                                didOne = false
+                                                const whereGroup = [
+                                                    ['mid','=',video.mid],
+                                                    ['time','=',video.time]
+                                                ]
                                             }
+                                            whereQuery[1].push(whereGroup)
+                                            s.setCloudDiskUsedForGroup(e,{
+                                                amount : -(video.size/1048576),
+                                                storageType : storageType
+                                            })
+                                            s.deleteVideoFromCloudExtensionsRunner(e,storageType,video)
                                         })
+                                        if(whereQuery[1].length > 0){
+                                            s.knexQuery({
+                                                action: "delete",
+                                                table: "Cloud Videos",
+                                                where: whereQuery
+                                            },() => {
+                                                deleteVideos()
+                                            })
+                                        }else{
+                                            finish()
+                                        }
+                                    })
                                 }else{
                                     finish()
                                 }
@@ -425,22 +561,48 @@ module.exports = function(s,config,lang){
                                 }
                                 //run purge command
                                 if(cloudDisk.usedSpaceTimelapseFrames > (cloudDisk.sizeLimit * (s.group[e.ke].sizeLimitTimelapseFramesPercent / 100) * config.cron.deleteOverMaxOffset)){
-                                    s.sqlQuery('SELECT * FROM `Cloud Timelapse Frames` WHERE ke=? AND details NOT LIKE \'%"archived":"1"%\' ORDER BY `time` ASC LIMIT 3',[e.ke],function(err,frames){
-                                        var framesToDelete = []
-                                        var queryValues = [e.ke]
+                                    s.knexQuery({
+                                        action: "select",
+                                        columns: "*",
+                                        table: "Cloud Timelapse Frames",
+                                        where: [
+                                            ['ke','=',e.ke],
+                                            ['details','NOT LIKE',`%"archived":"1"%`],
+                                        ],
+                                        orderBy: ['time','asc'],
+                                        limit: 3
+                                    },(err,frames) => {
                                         if(!frames)return console.log(err)
+                                        var whereQuery = [
+                                            ['ke','=',e.ke],
+                                            []
+                                        ]
                                         frames.forEach(function(frame){
                                             frame.dir = s.getVideoDirectory(frame) + s.formattedTime(frame.time) + '.' + frame.ext
-                                            framesToDelete.push('(mid=? AND `time`=?)')
-                                            queryValues.push(frame.mid)
-                                            queryValues.push(frame.time)
+                                            if(didOne){
+                                                const whereGroup = [
+                                                    ['or','mid','=',frame.mid],
+                                                    ['time','=',frame.time]
+                                                ]
+                                            }else{
+                                                didOne = false
+                                                const whereGroup = [
+                                                    ['mid','=',frame.mid],
+                                                    ['time','=',frame.time]
+                                                ]
+                                            }
+                                            whereQuery[1].push(whereGroup)
                                             s.setCloudDiskUsedForGroup(e,{
                                                 amount : -(frame.size/1048576),
                                                 storageType : storageType
                                             })
                                             s.deleteVideoFromCloudExtensionsRunner(e,storageType,frame)
                                         })
-                                        s.sqlQuery('DELETE FROM `Cloud Timelapse Frames` WHERE ke =? AND ('+framesToDelete+')',queryValues,function(){
+                                        s.knexQuery({
+                                            action: "delete",
+                                            table: "Cloud Timelapse Frames",
+                                            where: whereQuery
+                                        },() => {
                                             deleteTimelapseFrames(callback)
                                         })
                                     })
@@ -513,60 +675,69 @@ module.exports = function(s,config,lang){
                         s.sendDiskUsedAmountToClients(e)
                     })
                 }
-                Object.keys(ar).forEach(function(v){
-                    s.group[e.ke].init[v] = ar[v]
+                Object.keys(details).forEach(function(v){
+                    s.group[e.ke].init[v] = details[v]
                 })
             }
         })
     }
     s.accountSettingsEdit = function(d,dontRunExtensions){
-        s.sqlQuery('SELECT details FROM Users WHERE ke=? AND uid=?',[d.ke,d.uid],function(err,r){
-            if(r&&r[0]){
-                r=r[0];
-                d.d=JSON.parse(r.details);
-                if(!d.d.sub || d.d.user_change !== "0"){
+        s.knexQuery({
+            action: "select",
+            columns: "details",
+            table: "Users",
+            where: [
+                ['ke','=',d.ke],
+                ['uid','=',d.uid],
+            ]
+        },function(err,r) {
+            if(r && r[0]){
+                r = r[0];
+                const details = JSON.parse(r.details);
+                if(!details.sub || details.user_change !== "0"){
                     if(d.cnid){
-                        if(d.d.get_server_log === '1'){
+                        if(details.get_server_log === '1'){
                             s.clientSocketConnection[d.cnid].join('GRPLOG_'+d.ke)
                         }else{
                             s.clientSocketConnection[d.cnid].leave('GRPLOG_'+d.ke)
                         }
                     }
                     ///unchangeable from client side, so reset them in case they did.
-                    d.form.details=JSON.parse(d.form.details)
+                    var form = d.form
+                    var formDetails = JSON.parse(form.details)
                     if(!dontRunExtensions){
                         s.beforeAccountSaveExtensions.forEach(function(extender){
                             extender(d)
                         })
                     }
                     //admin permissions
-                    d.form.details.permissions=d.d.permissions
-                    d.form.details.edit_size=d.d.edit_size
-                    d.form.details.edit_days=d.d.edit_days
-                    d.form.details.use_admin=d.d.use_admin
-                    d.form.details.use_ldap=d.d.use_ldap
-                    d.form.details.landing_page=d.d.landing_page
+                    formDetails.permissions = details.permissions
+                    formDetails.edit_size = details.edit_size
+                    formDetails.edit_days = details.edit_days
+                    formDetails.use_admin = details.use_admin
+                    formDetails.use_ldap = details.use_ldap
+                    formDetails.landing_page = details.landing_page
                     //check
-                    if(d.d.edit_days == "0"){
-                        d.form.details.days = d.d.days;
+                    if(details.edit_days == "0"){
+                        formDetails.days = details.days;
                     }
-                    if(d.d.edit_size == "0"){
-                        d.form.details.size = d.d.size;
-                        d.form.details.addStorage = d.d.addStorage;
+                    if(details.edit_size == "0"){
+                        formDetails.size = details.size;
+                        formDetails.addStorage = details.addStorage;
                     }
-                    if(d.d.sub){
-                        d.form.details.sub=d.d.sub;
-                        if(d.d.monitors){d.form.details.monitors=d.d.monitors;}
-                        if(d.d.allmonitors){d.form.details.allmonitors=d.d.allmonitors;}
-                        if(d.d.monitor_create){d.form.details.monitor_create=d.d.monitor_create;}
-                        if(d.d.video_delete){d.form.details.video_delete=d.d.video_delete;}
-                        if(d.d.video_view){d.form.details.video_view=d.d.video_view;}
-                        if(d.d.monitor_edit){d.form.details.monitor_edit=d.d.monitor_edit;}
-                        if(d.d.size){d.form.details.size=d.d.size;}
-                        if(d.d.days){d.form.details.days=d.d.days;}
-                        delete(d.form.details.mon_groups)
+                    if(details.sub){
+                        formDetails.sub = details.sub;
+                        if(details.monitors){formDetails.monitors = details.monitors;}
+                        if(details.allmonitors){formDetails.allmonitors = details.allmonitors;}
+                        if(details.monitor_create){formDetails.monitor_create = details.monitor_create;}
+                        if(details.video_delete){formDetails.video_delete = details.video_delete;}
+                        if(details.video_view){formDetails.video_view = details.video_view;}
+                        if(details.monitor_edit){formDetails.monitor_edit = details.monitor_edit;}
+                        if(details.size){formDetails.size = details.size;}
+                        if(details.days){formDetails.days = details.days;}
+                        delete(formDetails.mon_groups)
                     }
-                    var newSize = parseFloat(d.form.details.size) || 10000
+                    var newSize = parseFloat(formDetails.size) || 10000
                     //load addStorageUse
                     var currentStorageNumber = 0
                     var readStorageArray = function(){
@@ -581,7 +752,7 @@ module.exports = function(s,config,lang){
                             readStorageArray()
                             return
                         }
-                        var detailContainer = d.form.details || s.group[r.ke].init
+                        var detailContainer = formDetails || s.group[r.ke].init
                         var storageId = path
                         var detailsContainerAddStorage = s.parseJSON(detailContainer.addStorage)
                         if(!s.group[d.ke].addStorageUse[storageId])s.group[d.ke].addStorageUse[storageId] = {}
@@ -597,20 +768,31 @@ module.exports = function(s,config,lang){
                     }
                     readStorageArray()
                     ///
-                    d.form.details = JSON.stringify(s.mergeDeep(d.d,d.form.details))
+                    formDetails = JSON.stringify(s.mergeDeep(details,formDetails))
                     ///
-                    d.set=[],d.ar=[];
-                    if(d.form.pass&&d.form.pass!==''){d.form.pass=s.createHash(d.form.pass);}else{delete(d.form.pass)};
-                    delete(d.form.password_again);
-                    d.for=Object.keys(d.form);
-                    d.for.forEach(function(v){
-                        d.set.push(v+'=?'),d.ar.push(d.form[v]);
-                    });
-                    d.ar.push(d.ke),d.ar.push(d.uid);
-                    s.sqlQuery('UPDATE Users SET '+d.set.join(',')+' WHERE ke=? AND uid=?',d.ar,function(err,r){
-                        if(!d.d.sub){
-                            var user = Object.assign(d.form,{ke : d.ke})
-                            var userDetails = JSON.parse(d.form.details)
+                    const updateQuery = {}
+                    if(form.pass && form.pass !== ''){
+                        form.pass = s.createHash(form.pass)
+                    }else{
+                        delete(form.pass)
+                    }
+                    delete(form.password_again)
+                    Object.keys(form).forEach(function(key){
+                        const value = form[key]
+                        updateQuery[key] = value
+                    })
+                    s.knexQuery({
+                        action: "update",
+                        table: "Users",
+                        update: updateQuery,
+                        where: [
+                            ['ke','=',d.ke],
+                            ['uid','=',d.uid],
+                        ]
+                    },() => {
+                        if(!details.sub){
+                            var user = Object.assign(form,{ke : d.ke})
+                            var userDetails = JSON.parse(formDetails)
                             s.group[d.ke].sizeLimit = parseFloat(newSize)
                             if(!dontRunExtensions){
                                 s.onAccountSaveExtensions.forEach(function(extender){
@@ -622,7 +804,7 @@ module.exports = function(s,config,lang){
                                 s.loadGroupApps(d)
                             }
                         }
-                        if(d.cnid)s.tx({f:'user_settings_change',uid:d.uid,ke:d.ke,form:d.form},d.cnid)
+                        if(d.cnid)s.tx({f:'user_settings_change',uid:d.uid,ke:d.ke,form:form},d.cnid)
                     })
                 }
             }
@@ -630,7 +812,17 @@ module.exports = function(s,config,lang){
     }
     s.findPreset = function(presetQueryVals,callback){
         //presetQueryVals = [ke, type, name]
-        s.sqlQuery("SELECT * FROM Presets WHERE ke=? AND type=? AND name=? LIMIT 1",presetQueryVals,function(err,presets){
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            table: "Presets",
+            where: [
+                ['ke','=',presetQueryVals[0]],
+                ['type','=',presetQueryVals[1]],
+                ['name','=',presetQueryVals[2]],
+            ],
+            limit: 1
+        },function(err,presets) {
             var preset
             var notFound = false
             if(presets && presets[0]){
