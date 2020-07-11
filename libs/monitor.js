@@ -1410,7 +1410,7 @@ module.exports = function(s,config,lang){
                 ['ke','=',form.ke],
                 ['mid','=',form.mid],
             ]
-        },function(err,r) {
+        },(err,r) => {
             var affectMonitor = false
             var monitorQuery = {}
             var txData = {

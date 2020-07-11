@@ -452,7 +452,7 @@ module.exports = function(s,config,lang){
                 ['ke','=',e.ke],
                 ['details','NOT LIKE',`%"sub"%`],
             ]
-        },function(err,r) {
+        },(err,r) => {
             if(r && r[0]){
                 r = r[0];
                 const details = JSON.parse(r.details);
@@ -690,7 +690,7 @@ module.exports = function(s,config,lang){
                 ['ke','=',d.ke],
                 ['uid','=',d.uid],
             ]
-        },function(err,r) {
+        },(err,r) => {
             if(r && r[0]){
                 r = r[0];
                 const details = JSON.parse(r.details);

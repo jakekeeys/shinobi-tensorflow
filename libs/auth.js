@@ -16,7 +16,7 @@ module.exports = function(s,config,lang){
                 ['uid','=',params.uid],
                 ['ke','=',params.ke],
             ]
-        },function(err,r) {
+        },(err,r) => {
             if(!r)r = []
             var user = r[0]
             callback(err,user)
@@ -31,7 +31,7 @@ module.exports = function(s,config,lang){
                 ['auth','=',params.auth],
                 ['ke','=',params.ke],
             ]
-        },function(err,r) {
+        },(err,r) => {
             if(!r)r = []
             var user = r[0]
             callback(err,user)
@@ -50,7 +50,7 @@ module.exports = function(s,config,lang){
                 ['pass','=',s.createHash(params.password)],
             ],
             limit: 1
-        },function(err,r) {
+        },(err,r) => {
             if(!r)r = []
             var user = r[0]
             callback(err,user)
@@ -66,7 +66,7 @@ module.exports = function(s,config,lang){
                 ['code','=',params.auth],
                 ['ke','=',params.ke],
             ]
-        },function(err,r) {
+        },(err,r) => {
             if(!r)r = []
             var apiKey = r[0]
             callback(err,apiKey)
@@ -268,7 +268,7 @@ module.exports = function(s,config,lang){
                         where: [
                             ['details','NOT LIKE','%"sub"%'],
                         ]
-                    },function(err,r) {
+                    },(err,r) => {
                         adminUsersSelected = r
                         success()
                     })

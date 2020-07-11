@@ -53,7 +53,7 @@ module.exports = function(s,config,lang,app,io){
            where: whereQuery,
            orderBy: ['time','desc'],
            limit: frameLimit || '500'
-       },function(err,r) {
+       },(err,r) => {
            if(err){
                callback({
                    ok: false,

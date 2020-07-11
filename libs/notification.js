@@ -215,7 +215,7 @@ module.exports = function(s,config,lang){
                         ['ke','=',e.ke],
                         ['details','NOT LIKE','%"sub"%'],
                     ]
-                },function(err,r) {
+                },(err,r) => {
                     r = r[0]
                         var mailOptions = {
                             from: config.mail.from, // sender address
@@ -299,7 +299,7 @@ module.exports = function(s,config,lang){
                         ['ke','=',d.ke],
                         ['details','NOT LIKE','%"sub"%'],
                     ]
-                },function(err,r) {
+                },(err,r) => {
                     r=r[0];
                     var detector_mail_timeout
                     if(!d.mon.details.detector_mail_timeout||d.mon.details.detector_mail_timeout===''){

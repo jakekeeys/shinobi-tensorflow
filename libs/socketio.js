@@ -62,7 +62,7 @@ module.exports = function(s,config,lang,io){
                     ['auth','=',options.auth],
                     ['uid','=',options.uid],
                 ]
-            },function(err,r) {
+            },(err,r) => {
                 if(r&&r[0]){
                     resolve(r)
                 }else{
@@ -75,7 +75,7 @@ module.exports = function(s,config,lang,io){
                             ['code','=',options.auth],
                             ['uid','=',options.uid],
                         ]
-                    },function(err,r) {
+                    },(err,r) => {
                         if(r && r[0]){
                             r = r[0]
                             r.details = JSON.parse(r.details)
@@ -88,7 +88,7 @@ module.exports = function(s,config,lang,io){
                                         ['ke','=',options.ke],
                                         ['uid','=',options.uid],
                                     ]
-                                },function(err,r) {
+                                },(err,r) => {
                                     if(r && r[0]){
                                         resolve(r)
                                     }else{
@@ -382,7 +382,7 @@ module.exports = function(s,config,lang,io){
                                 where: [
                                     ['ke','=',d.ke],
                                 ]
-                            },function(err,r) {
+                            },(err,r) => {
                                 if(r && r[0]){
                                     r.forEach(function(monitor){
                                         s.cameraSendSnapshot({mid:monitor.mid,ke:monitor.ke,mon:monitor},{useIcon: true})
@@ -414,7 +414,7 @@ module.exports = function(s,config,lang,io){
                                 columns: "*",
                                 table: "Users",
                                 where: whereQuery
-                            },function(err,r) {
+                            },(err,r) => {
                                 if(r && r[0]){
                                     details = JSON.parse(r[0].details)
                                     details.monitorOrder = d.monitorOrder
@@ -437,7 +437,7 @@ module.exports = function(s,config,lang,io){
                                 columns: "*",
                                 table: "Users",
                                 where: whereQuery
-                            },function(err,r) {
+                            },(err,r) => {
                                 if(r && r[0]){
                                     details = JSON.parse(r[0].details)
                                     details.monitorListOrder = d.monitorListOrder
@@ -467,7 +467,7 @@ module.exports = function(s,config,lang,io){
                                                 ['uid','=',d.uid],
                                             ],
                                             limit: 1
-                                        },function(err,r) {
+                                        },(err,r) => {
                                             if(r && r[0]){
                                                 r = r[0];
                                                 d.d=JSON.parse(r.details);
@@ -563,7 +563,7 @@ module.exports = function(s,config,lang,io){
                                                 where: eventWhereQuery,
                                                 orderBy: ['time','desc'],
                                                 limit: d.eventLimit
-                                            },function(err,r) {
+                                            },(err,r) => {
                                                 if(err){
                                                     console.error(err)
                                                     callback([])
@@ -619,7 +619,7 @@ module.exports = function(s,config,lang,io){
                                                 where: videoWhereQuery,
                                                 orderBy: ['time','desc'],
                                                 limit: d.videoLimit || '100'
-                                            },function(err,r) {
+                                            },(err,r) => {
                                                 if(err){
                                                     console.error(err)
                                                     setTimeout(function(){
@@ -700,7 +700,7 @@ module.exports = function(s,config,lang,io){
                                         ['mid','=',d.id],
                                     ],
                                     limit: 1
-                                },function(err,r) {
+                                },(err,r) => {
                                     if(r && r[0]){
                                         r = r[0]
                                         s.camera(d.ff,{type:r.type,url:s.buildMonitorUrl(r),id:d.id,mode:d.ff,ke:cn.ke});
@@ -810,7 +810,7 @@ module.exports = function(s,config,lang,io){
                         ['uid','=',d.uid],
                     ],
                     limit: 1
-                },function(err,r) {
+                },(err,r) => {
                     if(r && r[0]){
                         r = r[0];
                         if(!s.group[d.ke]){s.group[d.ke]={users:{}}}
@@ -842,7 +842,7 @@ module.exports = function(s,config,lang,io){
                         ['uid','=',d.uid],
                     ],
                     limit: 1
-                },function(err,r) {
+                },(err,r) => {
                     if(r && r[0]){
                         r = r[0]
                         cn.ke=d.ke,cn.uid=d.uid,cn.auth=d.auth;
