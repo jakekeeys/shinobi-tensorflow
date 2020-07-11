@@ -14,11 +14,14 @@ module.exports = function(s,config,lang,io){
             case's.tx':
                 s.tx(d.data,d.to)
             break;
+            case'log':
+                s.systemLog('PLUGIN : '+d.plug+' : ',d)
+            break;
             case's.sqlQuery':
                 s.sqlQuery(d.query,d.values)
             break;
-            case'log':
-                s.systemLog('PLUGIN : '+d.plug+' : ',d)
+            case's.knexQuery':
+                s.sqlQuery(d.options)
             break;
         }
     }

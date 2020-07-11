@@ -66,6 +66,11 @@ module.exports = function(s,config,lang,app,io){
                                     cn.emit('c',{f:'sqlCallback',rows:rows,err:err,callbackId:d.callbackId});
                                 });
                             break;
+                            case'knex':
+                                s.knexQuery(d.options,function(err,rows){
+                                    cn.emit('c',{f:'sqlCallback',rows:rows,err:err,callbackId:d.callbackId});
+                                });
+                            break;
                             case'clearCameraFromActiveList':
                                 if(s.childNodes[ipAddress])delete(s.childNodes[ipAddress].activeCameras[d.ke + d.id])
                             break;
@@ -212,6 +217,12 @@ module.exports = function(s,config,lang,app,io){
             if(typeof onMoveOn !== 'function'){onMoveOn=function(){}}
             s.queuedSqlCallbacks[callbackId] = onMoveOn
             s.cx({f:'sql',query:query,values:values,callbackId:callbackId});
+        }
+        s.knexQuery = function(options,onMoveOn){
+            var callbackId = s.gid()
+            if(typeof onMoveOn !== 'function'){onMoveOn=function(){}}
+            s.queuedSqlCallbacks[callbackId] = onMoveOn
+            s.cx({f:'knex',options:options,callbackId:callbackId});
         }
         setInterval(function(){
             s.cpuUsage(function(cpu){
