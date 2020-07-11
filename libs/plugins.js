@@ -21,7 +21,7 @@ module.exports = function(s,config,lang,io){
                 s.sqlQuery(d.query,d.values)
             break;
             case's.knexQuery':
-                s.sqlQuery(d.options)
+                s.knexQuery(d.options)
             break;
         }
     }
