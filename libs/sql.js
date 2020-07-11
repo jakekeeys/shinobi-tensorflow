@@ -140,7 +140,81 @@ module.exports = function(s,config){
         }
         return dbQuery
     }
+    const getDatabaseRows = function(options,callback){
+        //current cant handle `end` time
+       var whereQuery = [
+           ['ke','=',options.groupKey],
+       ]
+       const monitorRestrictions = options.monitorRestrictions
+       var frameLimit = parseInt(options.limit) || 500
+       const chosenDate = options.date
+       const startDate = options.startDate ? s.stringToSqlTime(options.startDate) : null
+       const endDate = options.endDate ? s.stringToSqlTime(options.endDate) : null
+       const startOperator = options.startOperator || '>='
+       const endOperator = options.endOperator || '<='
+       if(chosenDate){
+           if(chosenDate.indexOf('-') === -1 && !isNaN(chosenDate)){
+               chosenDate = parseInt(chosenDate)
+           }
+           var selectedDate = chosenDate
+           if(typeof chosenDate === 'string' && chosenDate.indexOf('.') > -1){
+               selectedDate = chosenDate.split('.')[0]
+           }
+           selectedDate = new Date(selectedDate)
+           var utcSelectedDate = new Date(selectedDate.getTime() + selectedDate.getTimezoneOffset() * 60000)
+           startDate = moment(utcSelectedDate).format('YYYY-MM-DD HH:mm:ss')
+           var dayAfter = utcSelectedDate
+           dayAfter.setDate(dayAfter.getDate() + 1)
+           endDate = moment(dayAfter).format('YYYY-MM-DD HH:mm:ss')
+       }
+       if(startDate){
+           if(endDate){
+               whereQuery.push(['time',startOperator,startDate])
+               whereQuery.push(['time',endOperator,endDate])
+           }else{
+               whereQuery.push(['time',startOperator,startDate])
+           }
+       }
+       if(monitorRestrictions && monitorRestrictions.length > 0){
+           whereQuery.push(monitorRestrictions)
+       }
+       if(options.archived){
+           whereQuery.push(['details','LIKE',`%"archived":"1"%`])
+       }
+       if(options.filename){
+           whereQuery.push(['filename','=',options.filename])
+           frameLimit = "1";
+       }
+       s.knexQuery({
+           action: "select",
+           columns: options.columns || "*",
+           table: options.table,
+           where: whereQuery,
+           orderBy: options.orderBy || ['time','desc'],
+           limit: frameLimit || '500'
+       },(err,r) => {
+           if(err){
+               callback({
+                   ok: false,
+                   total: 0,
+                   limit: frameLimit,
+                   [options.rowType || 'rows']: []
+               })
+           }else{
+               r.forEach(function(file){
+                   file.details = s.parseJSON(file.details)
+               })
+               callback({
+                   ok: true,
+                   total: r.length,
+                   limit: frameLimit,
+                   [options.rowType || 'rows']: r
+               })
+           }
+       })
+    }
     s.knexQuery = knexQuery
+    s.getDatabaseRows = getDatabaseRows
     s.sqlQuery = function(query,values,onMoveOn,hideLog){
         if(!values){values=[]}
         if(typeof values === 'function'){
