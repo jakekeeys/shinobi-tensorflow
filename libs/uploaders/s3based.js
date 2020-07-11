@@ -117,20 +117,23 @@ module.exports = function(s,config,lang){
                 if(s.group[e.ke].init.whcs_log === '1' && data && data.Location){
                     var cloudLink = data.Location
                     cloudLink = fixCloudianUrl(e,cloudLink)
-                    var save = [
-                        e.mid,
-                        e.ke,
-                        k.startTime,
-                        1,
-                        s.s({
-                            type : 'whcs',
-                            location : saveLocation
-                        }),
-                        k.filesize,
-                        k.endTime,
-                        cloudLink
-                    ]
-                    s.sqlQuery('INSERT INTO `Cloud Videos` (mid,ke,time,status,details,size,end,href) VALUES (?,?,?,?,?,?,?,?)',save)
+                    s.knexQuery({
+                        action: "insert",
+                        table: "Cloud Videos",
+                        insert: {
+                            mid: e.mid,
+                            ke: e.ke,
+                            time: k.startTime,
+                            status: 1,
+                            details: s.s({
+                                type : 'whcs',
+                                location : saveLocation
+                            }),
+                            size: k.filesize,
+                            end: k.endTime,
+                            href: cloudLink
+                        }
+                    })
                     s.setCloudDiskUsedForGroup(e,{
                         amount : k.filesizeMB,
                         storageType : 'whcs'
@@ -159,18 +162,21 @@ module.exports = function(s,config,lang){
                     s.userLog(e,{type:lang['Wasabi Hot Cloud Storage Upload Error'],msg:err})
                 }
                 if(s.group[e.ke].init.whcs_log === '1' && data && data.Location){
-                    var save = [
-                        queryInfo.mid,
-                        queryInfo.ke,
-                        queryInfo.time,
-                        s.s({
-                            type : 'whcs',
-                            location : saveLocation,
-                        }),
-                        queryInfo.size,
-                        data.Location
-                    ]
-                    s.sqlQuery('INSERT INTO `Cloud Timelapse Frames` (mid,ke,time,details,size,href) VALUES (?,?,?,?,?,?)',save)
+                    s.knexQuery({
+                        action: "insert",
+                        table: "Cloud Timelapse Frames",
+                        insert: {
+                            mid: queryInfo.mid,
+                            ke: queryInfo.ke,
+                            time: queryInfo.time,
+                            details: s.s({
+                                type : 'whcs',
+                                location : saveLocation
+                            }),
+                            size: queryInfo.size,
+                            href: data.Location
+                        }
+                    })
                     s.setCloudDiskUsedForGroup(e,{
                         amount : s.kilobyteToMegabyte(queryInfo.size),
                         storageType : 'whcs'

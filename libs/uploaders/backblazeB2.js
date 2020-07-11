@@ -129,22 +129,25 @@ module.exports = function(s,config,lang){
                     }).then(function(resp){
                         if(s.group[e.ke].init.bb_b2_log === '1' && resp.data.fileId){
                             var backblazeDownloadUrl = s.group[e.ke].bb_b2_downloadUrl + '/file/' + s.group[e.ke].init.bb_b2_bucket + '/' + backblazeSavePath
-                            var save = [
-                                e.mid,
-                                e.ke,
-                                k.startTime,
-                                1,
-                                s.s({
-                                    type : 'b2',
-                                    bucketId : resp.data.bucketId,
-                                    fileId : resp.data.fileId,
-                                    fileName : resp.data.fileName
-                                }),
-                                k.filesize,
-                                k.endTime,
-                                backblazeDownloadUrl
-                            ]
-                            s.sqlQuery('INSERT INTO `Cloud Videos` (mid,ke,time,status,details,size,end,href) VALUES (?,?,?,?,?,?,?,?)',save)
+                            s.knexQuery({
+                                action: "insert",
+                                table: "Cloud Videos",
+                                insert: {
+                                    mid: e.mid,
+                                    ke: e.ke,
+                                    time: k.startTime,
+                                    status: 1,
+                                    details: s.s({
+                                        type : 'b2',
+                                        bucketId : resp.data.bucketId,
+                                        fileId : resp.data.fileId,
+                                        fileName : resp.data.fileName
+                                    }),
+                                    size: k.filesize,
+                                    end: k.endTime,
+                                    href: backblazeDownloadUrl
+                                }
+                            })
                             s.setCloudDiskUsedForGroup(e,{
                                 amount : k.filesizeMB,
                                 storageType : 'b2'

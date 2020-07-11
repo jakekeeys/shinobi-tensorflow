@@ -81,23 +81,26 @@ module.exports = function(s,config,lang){
                fs.createReadStream(k.dir + k.filename).pipe(wfs.createWriteStream(webdavUploadDir + k.filename))
                if(s.group[e.ke].init.webdav_log === '1'){
                    var webdavRemoteUrl = s.addUserPassToUrl(s.checkCorrectPathEnding(s.group[e.ke].init.webdav_url),s.group[e.ke].init.webdav_user,s.group[e.ke].init.webdav_pass) + s.group[e.ke].init.webdav_dir + e.ke + '/'+e.mid+'/'+k.filename
-                   var save = [
-                       e.mid,
-                       e.ke,
-                       k.startTime,
-                       1,
-                       s.s({
-                           type : 'webdav',
-                           location : webdavUploadDir + k.filename
-                       }),
-                       k.filesize,
-                       k.endTime,
-                       webdavRemoteUrl
-                   ]
-                   s.sqlQuery('INSERT INTO `Cloud Videos` (mid,ke,time,status,details,size,end,href) VALUES (?,?,?,?,?,?,?,?)',save)
+                   s.knexQuery({
+                       action: "insert",
+                       table: "Cloud Videos",
+                       insert: {
+                           mid: e.mid,
+                           ke: e.ke,
+                           time: k.startTime,
+                           status: 1,
+                           details: s.s({
+                               type : 'webdav',
+                               location : webdavUploadDir + k.filename
+                           }),
+                           size: k.filesize,
+                           end: k.endTime,
+                           href: webdavRemoteUrl
+                       }
+                   })
                    s.setCloudDiskUsedForGroup(e,{
-                       amount : k.filesizeMB,
-                       storageType : 'webdav'
+                       amount: k.filesizeMB,
+                       storageType: 'webdav'
                    })
                    s.purgeCloudDiskForGroup(e,'webdav')
                }
