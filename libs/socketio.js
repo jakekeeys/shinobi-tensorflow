@@ -553,9 +553,7 @@ module.exports = function(s,config,lang,io){
                                                 }
                                             }
                                             if(monitorRestrictions.length > 0){
-                                                eventWhereQuery = eventWhereQuery.concat([
-                                                    monitorRestrictions
-                                                ])
+                                                eventWhereQuery.push(monitorRestrictions)
                                             }
                                             console.log(eventWhereQuery)
                                             s.knexQuery({
@@ -612,9 +610,7 @@ module.exports = function(s,config,lang,io){
                                                 }
                                             }
                                             if(monitorRestrictions.length > 0){
-                                                videoWhereQuery = videoWhereQuery.concat([
-                                                    monitorRestrictions
-                                                ])
+                                                videoWhereQuery.push(monitorRestrictions)
                                             }
                                             s.knexQuery({
                                                 action: "select",
