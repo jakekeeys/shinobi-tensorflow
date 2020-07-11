@@ -64,17 +64,20 @@ module.exports = function(s,config,lang){
             k.details.dir = e.details.dir
         }
         if(config.useUTC === true)k.details.isUTC = config.useUTC;
-        var save = [
-            e.mid,
-            e.ke,
-            k.startTime,
-            e.ext,
-            1,
-            s.s(k.details),
-            k.filesize,
-            k.endTime,
-        ]
-        s.sqlQuery('INSERT INTO Videos (mid,ke,time,ext,status,details,size,end) VALUES (?,?,?,?,?,?,?,?)',save,function(err){
+        s.knexQuery({
+            action: "insert",
+            table: "Videos",
+            insert: {
+                ke: e.ke,
+                mid: e.mid,
+                time: k.startTime,
+                ext: e.ext,
+                status: 1,
+                details: s.s(k.details),
+                size: k.filesize,
+                end: k.endTime,
+            }
+        },(err) => {
             if(callback)callback(err)
             fs.chmod(k.dir+k.file,0o777,function(err){
 
@@ -211,8 +214,17 @@ module.exports = function(s,config,lang){
             time = e.time
         }
         time = new Date(time)
-        var queryValues = [e.id,e.ke,time];
-        s.sqlQuery('SELECT * FROM Videos WHERE `mid`=? AND `ke`=? AND `time`=?',queryValues,function(err,r){
+        const whereQuery = [
+            ['ke','=',e.ke],
+            ['mid','=',e.id],
+            ['time','=',time],
+        ]
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            table: "Videos",
+            where: whereQuery
+        },function(err,r) {
             if(r && r[0]){
                 r = r[0]
                 fs.chmod(e.dir+filename,0o777,function(err){
@@ -233,7 +245,11 @@ module.exports = function(s,config,lang){
                     }else{
                         s.setDiskUsedForGroup(e,-(r.size / 1048576))
                     }
-                    s.sqlQuery('DELETE FROM Videos WHERE `mid`=? AND `ke`=? AND `time`=?',queryValues,function(err){
+                    s.knexQuery({
+                        action: "delete",
+                        table: "Videos",
+                        where: whereQuery
+                    },function(err) {
                         if(err){
                             s.systemLog(lang['File Delete Error'] + ' : '+e.ke+' : '+' : '+e.id,err)
                         }
@@ -254,9 +270,8 @@ module.exports = function(s,config,lang){
     }
     s.deleteListOfVideos = function(videos){
         var deleteSetOfVideos = function(videos){
-            var query = 'DELETE FROM Videos WHERE '
-            var videoQuery = []
-            var queryValues = []
+            const whereQuery = []
+            var didOne = false;
             videos.forEach(function(video){
                 s.checkDetails(video)
                 //e = video object
@@ -277,7 +292,7 @@ module.exports = function(s,config,lang){
                     time = video.time
                 }
                 time = new Date(time)
-                fs.chmod(video.dir+filename,0o777,function(err){
+                fs.chmod(video.dir + filename,0o777,function(err){
                     s.tx({
                         f: 'video_delete',
                         filename: filename,
@@ -295,19 +310,30 @@ module.exports = function(s,config,lang){
                     }else{
                         s.setDiskUsedForGroup(video,-(video.size / 1048576))
                     }
-                    fs.unlink(video.dir+filename,function(err){
-                        fs.stat(video.dir+filename,function(err){
+                    fs.unlink(video.dir + filename,function(err){
+                        fs.stat(video.dir + filename,function(err){
                             if(!err){
-                                s.file('delete',video.dir+filename)
+                                s.file('delete',video.dir + filename)
                             }
                         })
                     })
                 })
-                videoQuery.push('(`mid`=? AND `ke`=? AND `time`=?)')
-                queryValues = queryValues.concat([video.id,video.ke,time])
+                if(!didOne){
+                    didOne = true
+                    whereQuery.push(['mid','=',video.id])
+                }else{
+                    whereQuery.push(['or','mid','=',video.id])
+                }
+                whereQuery.push(
+                    ['ke','=',video.ke],
+                    ['time','=',time],
+                )
             })
-            query += videoQuery.join(' OR ')
-            s.sqlQuery(query,queryValues,function(err){
+            s.knexQuery({
+                action: "delete",
+                table: "Videos",
+                where: whereQuery
+            },(err) => {
                 if(err){
                     s.systemLog(lang['List of Videos Delete Error'],err)
                 }
@@ -339,11 +365,24 @@ module.exports = function(s,config,lang){
     s.deleteVideoFromCloud = function(e){
         // e = video object
         s.checkDetails(e)
-        var videoSelector = [e.id,e.ke,new Date(e.time)]
-        s.sqlQuery('SELECT * FROM `Cloud Videos` WHERE `mid`=? AND `ke`=? AND `time`=?',videoSelector,function(err,r){
+        const whereQuery = [
+            ['ke','=',e.ke],
+            ['mid','=',e.id],
+            ['time','=',new Date(e.time)],
+        ]
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            table: "Cloud Videos",
+            where: whereQuery
+        },function(err,r) {
             if(r&&r[0]){
                 r = r[0]
-                s.sqlQuery('DELETE FROM `Cloud Videos` WHERE `mid`=? AND `ke`=? AND `time`=?',videoSelector,function(){
+                s.knexQuery({
+                    action: "delete",
+                    table: "Cloud Videos",
+                    where: whereQuery
+                },function(err,r) {
                     s.deleteVideoFromCloudExtensionsRunner(e,r)
                 })
             }else{
@@ -375,12 +414,17 @@ module.exports = function(s,config,lang){
                     }
                     fiveRecentFiles.forEach(function(filename){
                         if(/T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]./.test(filename)){
-                            var queryValues = [
-                                monitor.ke,
-                                monitor.mid,
-                                s.nameToTime(filename)
-                            ]
-                            s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND mid=? AND time=? LIMIT 1',queryValues,function(err,rows){
+                            s.knexQuery({
+                                action: "select",
+                                columns: "*",
+                                table: "Videos",
+                                where: [
+                                    ['ke','=',monitor.ke],
+                                    ['mid','=',monitor.mid],
+                                    ['time','=',s.nameToTime(filename)],
+                                ],
+                                limit: 1
+                            },function(err,rows) {
                                 if(!err && (!rows || !rows[0])){
                                     ++orphanedFilesCount
                                     var video = rows[0]
@@ -487,7 +531,18 @@ module.exports = function(s,config,lang){
                         var timeNow = new Date()
                         var fileStats = fs.statSync(finalMp4OutputLocation)
                         var details = {}
-                        s.sqlQuery('INSERT INTO `Files` (ke,mid,details,name,size,time) VALUES (?,?,?,?,?,?)',[ke,mid,s.s(details),finalFileName + '.mp4',fileStats.size,timeNow])
+                        s.knexQuery({
+                            action: "insert",
+                            table: "Files",
+                            insert: {
+                                ke: ke,
+                                mid: mid,
+                                details: s.s(details),
+                                name: finalFileName + '.mp4',
+                                size: fileStats.size,
+                                time: timeNow,
+                            }
+                        })
                         s.setDiskUsedForGroup({ke: ke},fileStats.size / 1048576,'fileBin')
                         fs.unlink(commandTempLocation,function(){
 
