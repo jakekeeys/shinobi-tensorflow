@@ -950,7 +950,7 @@ module.exports = function(s,config,lang,app,io){
     app.get([config.webPaths.apiPrefix+':auth/monitor/:ke',config.webPaths.apiPrefix+':auth/monitor/:ke/:id'], function (req,res){
         req.ret={ok:false};
         res.setHeader('Content-Type', 'application/json');
-        s.auth(req.params,(user){
+        s.auth(req.params,(user) => {
             if(user.permissions.get_monitors==="0"){
                 res.end(s.prettyPrint([]))
                 return
