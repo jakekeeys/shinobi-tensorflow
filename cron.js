@@ -136,6 +136,86 @@ s.sqlQuery = function(query,values,onMoveOn){
     })
 }
 
+const processWhereCondition = (dbQuery,where,didOne) => {
+    var whereIsArray = where instanceof Array;
+    if(where[0] && where[0] instanceof Array){
+        dbQuery.where(function() {
+            var _this = this
+            var didOneInsideGroup = false
+            where.forEach((whereInsideGroup) => {
+                console.log('LINE',whereInsideGroup)
+                processWhereCondition(_this,whereInsideGroup,didOneInsideGroup)
+            })
+        })
+    }else if(!didOne){
+        didOne = true
+        whereIsArray ? dbQuery.where(...where) : dbQuery.where(where)
+    }else if(where.length === 4){
+        const separator = where[0] + ''
+        where.shift()
+        switch(separator){
+            case'and':
+                whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
+            break;
+            case'or':
+                whereIsArray ? dbQuery.orWhere(...where) : dbQuery.orWhere(where)
+            break;
+        }
+    }else{
+        whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
+    }
+
+}
+const knexQuery = (options,callback) => {
+    if(!s.databaseEngine)return// console.log('Database Not Set');
+    if(config.debugLogVerbose && config.debugLog === true){
+        s.debugLog('s.knexQuery QUERY',options)
+    }
+    // options = {
+    //     action: "",
+    //     columns: "",
+    //     table: ""
+    // }
+    var dbQuery
+    switch(options.action){
+        case'select':
+            options.columns = options.columns.indexOf(',') === -1 ? [options.columns] : options.columns.split(',');
+            dbQuery = s.databaseEngine.select(...options.columns).from(options.table)
+        break;
+        case'update':
+            dbQuery = s.databaseEngine(options.table).update(options.update)
+        break;
+        case'delete':
+            dbQuery = s.databaseEngine(options.table).del()
+        break;
+        case'insert':
+            dbQuery = s.databaseEngine(options.table).insert(options.insert)
+        break;
+    }
+    if(options.where){
+        var didOne = false;
+        options.where.forEach((where) => {
+            processWhereCondition(dbQuery,where,didOne)
+        })
+    }
+    if(options.orderBy){
+        dbQuery.orderBy(...options.orderBy)
+    }
+    if(options.limit){
+        dbQuery.limit(options.limit)
+    }
+    if(config.debugLog === true){
+        console.log(dbQuery.toString())
+    }
+    if(callback || options.update || options.insert){
+        dbQuery.asCallback(function(err,r) {
+            if(err)console.log(err)
+            if(callback)callback(err,r)
+        })
+    }
+    return dbQuery
+}
+
 s.debugLog = function(arg1,arg2){
     if(config.debugLog === true){
         if(!arg2)arg2 = ''
@@ -236,29 +316,24 @@ const checkFilterRules = function(v,callback){
             var b = v.d.filters[m];
             s.debugLog(b)
             if(b.enabled==="1"){
-                b.ar=[v.ke];
-                b.sql=[];
-                b.where.forEach(function(j,k){
-                    if(j.p1==='ke'){j.p3=v.ke}
-                    switch(j.p3_type){
-                        case'function':
-                            b.sql.push(j.p1+' '+j.p2+' '+j.p3)
-                        break;
-                        default:
-                            b.sql.push(j.p1+' '+j.p2+' ?')
-                            b.ar.push(j.p3)
-                        break;
-                    }
+                const whereQuery = [
+                    ['ke','=',v.ke],
+                    ['status','!=',"0"],
+                    ['details','NOT LIKE','%"archived":"1"%'],
+                ]
+                b.where.forEach(function(condition){
+                    if(condition.p1 === 'ke'){condition.p3 = v.ke}
+                    whereQuery.push(condition.p1,condition.p2 || '=',condition.p3)
                 })
-                b.sql='WHERE ke=? AND status != 0 AND details NOT LIKE \'%"archived":"1"%\' AND ('+b.sql.join(' AND ')+')';
-                if(b.sort_by&&b.sort_by!==''){
-                    b.sql+=' ORDER BY `'+b.sort_by+'` '+b.sort_by_direction
-                }
-                if(b.limit&&b.limit!==''){
-                    b.sql+=' LIMIT '+b.limit
-                }
-                s.sqlQuery('SELECT * FROM Videos '+b.sql,b.ar,function(err,r){
-                     if(r&&r[0]){
+                s.knexQuery({
+                    action: "select",
+                    columns: "*",
+                    table: "Videos",
+                    where: whereQuery,
+                    orderBy: [b.sort_by,b.sort_by_direction.toLowerCase()],
+                    limit: b.limit
+                },(err,r) => {
+                     if(r && r[0]){
                         if(r.length > 0 || config.debugLog === true){
                             s.cx({f:'filterMatch',msg:r.length+' SQL rows match "'+m+'"',ke:v.ke,time:moment()})
                         }
@@ -309,10 +384,19 @@ const deleteRowsWithNoVideo = function(v,callback){
         )
     ){
         s.alreadyDeletedRowsWithNoVideosOnStart[v.ke]=true;
-        es={};
-        s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND status!=0 AND details NOT LIKE \'%"archived":"1"%\' AND time < ?',[v.ke,s.sqlDate('10 MINUTE')],function(err,evs){
-            if(evs&&evs[0]){
-                es.del=[];es.ar=[v.ke];
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            table: "Videos",
+            where: [
+                ['ke','=',v.ke],
+                ['status','!=','0'],
+                ['details','NOT LIKE','%"archived":"1"%'],
+                ['time','<',s.sqlDate('10 MINUTE')],
+            ]
+        },(err,evs) => {
+            if(evs && evs[0]){
+                const videosToDelete = [];
                 evs.forEach(function(ev){
                     var filename
                     var details
@@ -337,8 +421,8 @@ const deleteRowsWithNoVideo = function(v,callback){
                         s.tx({f:'video_delete',filename:filename+'.'+ev.ext,mid:ev.mid,ke:ev.ke,time:ev.time,end:s.moment(new Date,'YYYY-MM-DD HH:mm:ss')},'GRP_'+ev.ke);
                     }
                 });
-                if(es.del.length>0 || config.debugLog === true){
-                    s.cx({f:'deleteNoVideo',msg:es.del.length+' SQL rows with no file deleted',ke:v.ke,time:moment()})
+                if(videosToDelete.length>0 || config.debugLog === true){
+                    s.cx({f:'deleteNoVideo',msg:videosToDelete.length+' SQL rows with no file deleted',ke:v.ke,time:moment()})
                 }
             }
             setTimeout(function(){
@@ -353,7 +437,14 @@ const deleteRowsWithNoVideo = function(v,callback){
 const deleteOldLogs = function(v,callback){
     if(!v.d.log_days||v.d.log_days==''){v.d.log_days=10}else{v.d.log_days=parseFloat(v.d.log_days)};
     if(config.cron.deleteLogs===true&&v.d.log_days!==0){
-        s.sqlQuery("DELETE FROM Logs WHERE ke=? AND `time` < ?",[v.ke,s.sqlDate(v.d.log_days+' DAY')],function(err,rrr){
+        s.knexQuery({
+            action: "delete",
+            table: "Logs",
+            where: [
+                ['ke','=',v.ke],
+                ['time','<',s.sqlDate(v.d.log_days+' DAY')],
+            ]
+        },(err,rrr) => {
             callback()
             if(err)return console.error(err);
             if(rrr.affectedRows && rrr.affectedRows.length>0 || config.debugLog === true){
@@ -368,7 +459,14 @@ const deleteOldLogs = function(v,callback){
 const deleteOldEvents = function(v,callback){
     if(!v.d.event_days||v.d.event_days==''){v.d.event_days=10}else{v.d.event_days=parseFloat(v.d.event_days)};
     if(config.cron.deleteEvents===true&&v.d.event_days!==0){
-        s.sqlQuery("DELETE FROM Events WHERE ke=? AND `time` < ?",[v.ke,s.sqlDate(v.d.event_days+' DAY')],function(err,rrr){
+        s.knexQuery({
+            action: "delete",
+            table: "Events",
+            where: [
+                ['ke','=',v.ke],
+                ['time','<',s.sqlDate(v.d.event_days+' DAY')],
+            ]
+        },(err,rrr) => {
             callback()
             if(err)return console.error(err);
             if(rrr.affectedRows && rrr.affectedRows.length > 0 || config.debugLog === true){
@@ -383,7 +481,14 @@ const deleteOldEvents = function(v,callback){
 const deleteOldEventCounts = function(v,callback){
     if(!v.d.event_days||v.d.event_days==''){v.d.event_days=10}else{v.d.event_days=parseFloat(v.d.event_days)};
     if(config.cron.deleteEvents===true&&v.d.event_days!==0){
-        s.sqlQuery("DELETE FROM `Events Counts` WHERE ke=? AND `time` < ?",[v.ke,s.sqlDate(v.d.event_days+' DAY')],function(err,rrr){
+        s.knexQuery({
+            action: "delete",
+            table: "Events Counts",
+            where: [
+                ['ke','=',v.ke],
+                ['time','<',s.sqlDate(v.d.event_days+' DAY')],
+            ]
+        },(err,rrr) => {
             callback()
             if(err && err.code !== 'ER_NO_SUCH_TABLE')return console.error(err);
             if(rrr.affectedRows && rrr.affectedRows.length > 0 || config.debugLog === true){
@@ -399,7 +504,15 @@ const deleteOldFileBins = function(v,callback){
     if(!v.d.fileBin_days||v.d.fileBin_days==''){v.d.fileBin_days=10}else{v.d.fileBin_days=parseFloat(v.d.fileBin_days)};
     if(config.cron.deleteFileBins===true&&v.d.fileBin_days!==0){
         var fileBinQuery = " FROM Files WHERE ke=? AND `time` < ?";
-        s.sqlQuery("SELECT *"+fileBinQuery,[v.ke,s.sqlDate(v.d.fileBin_days+' DAY')],function(err,files){
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            table: "Files",
+            where: [
+                ['ke','=',v.ke],
+                ['time','<',s.sqlDate(v.d.fileBin_days+' DAY')],
+            ]
+        },(err,rrr) => {
             if(files&&files[0]){
                 //delete the files
                 files.forEach(function(file){
@@ -408,7 +521,14 @@ const deleteOldFileBins = function(v,callback){
                     })
                 })
                 //delete the database rows
-                s.sqlQuery("DELETE"+fileBinQuery,[v.ke,v.d.fileBin_days],function(err,rrr){
+                s.knexQuery({
+                    action: "delete",
+                    table: "Files",
+                    where: [
+                        ['ke','=',v.ke],
+                        ['time','<',s.sqlDate(v.d.fileBin_days+' DAY')],
+                    ]
+                },(err,rrr) => {
                     callback()
                     if(err)return console.error(err);
                     if(rrr.affectedRows && rrr.affectedRows.length>0 || config.debugLog === true){
@@ -451,7 +571,14 @@ const processUser = function(number,rows){
         if(!v.d.size||v.d.size==''){v.d.size=10000}else{v.d.size=parseFloat(v.d.size)};
         //days to keep videos
         if(!v.d.days||v.d.days==''){v.d.days=5}else{v.d.days=parseFloat(v.d.days)};
-        s.sqlQuery('SELECT * FROM Monitors WHERE ke=?', [v.ke], function(err,rr) {
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            table: "Monitors",
+            where: [
+                ['ke','=',v.ke],
+            ]
+        },(err,rr) => {
             if(!v.d.filters||v.d.filters==''){
                 v.d.filters={};
             }
@@ -522,7 +649,14 @@ const clearCronInterval = function(){
 }
 const doCronJobs = function(){
     s.cx({f:'start',time:moment()})
-    s.sqlQuery('SELECT ke,uid,details,mail FROM Users WHERE details NOT LIKE \'%"sub"%\'', function(err,rows) {
+    s.knexQuery({
+        action: "select",
+        columns: "ke,uid,details,mail",
+        table: "Users",
+        where: [
+            ['details','NOT LIKE','%"sub"%'],
+        ]
+    },(err,rows) => {
         if(err){
             console.error(err)
         }
