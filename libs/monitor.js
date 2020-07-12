@@ -1743,7 +1743,8 @@ module.exports = function(s,config,lang){
             permissions.allmonitors !== '1'
         ){
             try{
-                permissions.monitors = JSON.parse(permissions.monitors)
+                console.log(permissions)
+                permissions.monitors = s.parseJSON(permissions.monitors)
                 permissions.monitors.forEach(function(v,n){
                     if(n === 0){
                         monitorRestrictions.push(['mid','=',v])
@@ -1755,9 +1756,11 @@ module.exports = function(s,config,lang){
                 console.log(er)
             }
         }else if(
-            !permissions.sub ||
-            permissions.allmonitors !== '0' ||
-            permissions.monitors.indexOf(monitorId) >- 1
+            monitorId && (
+                !permissions.sub ||
+                permissions.allmonitors !== '0' ||
+                permissions.monitors.indexOf(monitorId) >- 1
+            )
         ){
             monitorRestrictions.push(['mid','=',monitorId])
         }

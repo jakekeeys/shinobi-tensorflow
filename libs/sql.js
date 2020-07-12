@@ -72,9 +72,6 @@ module.exports = function(s,config){
                     processWhereCondition(_this,whereInsideGroup,didOneInsideGroup)
                 })
             })
-        }else if(!didOne){
-            didOne = true
-            whereIsArray ? dbQuery.where(...where) : dbQuery.where(where)
         }else if(where.length === 4){
             const separator = where[0] + ''
             where.shift()
@@ -86,6 +83,9 @@ module.exports = function(s,config){
                     whereIsArray ? dbQuery.orWhere(...where) : dbQuery.orWhere(where)
                 break;
             }
+        }else if(!didOne){
+            didOne = true
+            whereIsArray ? dbQuery.where(...where) : dbQuery.where(where)
         }else{
             whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
         }
@@ -443,7 +443,15 @@ module.exports = function(s,config){
                 queryStringCount += ' and mid=?'
                 queryCountValues.push(monitorId)
             }else{
-                res.end('[]');
+                if(options.noFormat){
+                    callback([])
+                }else{
+                    callback({
+                        ok: true,
+                        [rowName]: [],
+                        endIsStartTo: endIsStartTo
+                    })
+                }
                 return;
             }
         }
