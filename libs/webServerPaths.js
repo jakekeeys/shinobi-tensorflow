@@ -844,13 +844,13 @@ module.exports = function(s,config,lang,app,io){
         }
         const isM3u8 = req.query.type === 'm3u8' || req.query.type === 'm3u_plus'
         s.auth(req.params,function(user){
-            if(user.permissions.get_monitors==="0"){
-                res.end(s.prettyPrint([]))
-                return
-            }
             const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+            if(user.permissions.get_monitors === "0" || monitorRestrictions.length === 0){
+                s.closeJsonResponse(res,[]);
+                return
+            }
             s.knexQuery({
                 action: "select",
                 columns: "*",
@@ -858,9 +858,7 @@ module.exports = function(s,config,lang,app,io){
                 where: [
                     ['ke','=',groupKey],
                     ['mode','!=','stop'],
-                    [
-                        monitorRestrictions
-                    ]
+                    monitorRestrictions
                 ]
             },(err,r) => {
                 var tvChannelMonitors = [];
@@ -951,13 +949,13 @@ module.exports = function(s,config,lang,app,io){
         req.ret={ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,(user) => {
-            if(user.permissions.get_monitors==="0"){
-                res.end(s.prettyPrint([]))
-                return
-            }
             const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+            if(user.permissions.get_monitors === "0" || monitorRestrictions.length === 0){
+                s.closeJsonResponse(res,[]);
+                return
+            }
             s.knexQuery({
                 action: "select",
                 columns: "*",
@@ -967,6 +965,7 @@ module.exports = function(s,config,lang,app,io){
                     monitorRestrictions
                 ]
             },(err,r) => {
+                console.log(r)
                 r.forEach(function(v,n){
                     if(s.group[v.ke] && s.group[v.ke].activeMonitors[v.mid]){
                         r[n].currentlyWatching = Object.keys(s.group[v.ke].activeMonitors[v.mid].watch).length
@@ -1017,8 +1016,8 @@ module.exports = function(s,config,lang,app,io){
                         })
                     }
                 })
-                if(r.length===1){r=r[0];}
-                res.end(s.prettyPrint(r));
+                if(r.length === 1)r = r[0]
+                s.closeJsonResponse(res,r);
             })
         },res,req);
     });
@@ -1124,11 +1123,13 @@ module.exports = function(s,config,lang,app,io){
                 )
             },(response) => {
                 console.log(response)
-                s.buildVideoLinks(response.videos,{
-                    auth : req.params.auth,
-                    videoParam : videoParam,
-                    hideRemote : config.hideCloudSaveUrls,
-                })
+                if(response && response.videos){
+                    s.buildVideoLinks(response.videos,{
+                        auth : req.params.auth,
+                        videoParam : videoParam,
+                        hideRemote : config.hideCloudSaveUrls,
+                    })
+                }
                 res.end(s.prettyPrint(response))
             })
         },res,req);
@@ -1216,22 +1217,20 @@ module.exports = function(s,config,lang,app,io){
         req.ret={ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,(user) => {
-            if(user.permissions.get_monitors==="0"){
-                res.end(s.prettyPrint([]))
-                return
-            }
             const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+            if(user.permissions.get_monitors === "0" || monitorRestrictions.length === 0){
+                s.closeJsonResponse(res,[]);
+                return
+            }
             s.knexQuery({
                 action: "select",
                 columns: "*",
                 table: "Monitors",
                 where: [
                     ['ke','=',groupKey],
-                    [
-                        monitorRestrictions
-                    ]
+                    monitorRestrictions
                 ]
             },(err,r) => {
                 const startedMonitors = []
@@ -1381,15 +1380,17 @@ module.exports = function(s,config,lang,app,io){
             const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+            if(user.permissions.get_monitors === "0" || monitorRestrictions.length === 0){
+                s.closeJsonResponse(res,[]);
+                return
+            }
             s.knexQuery({
                 action: "select",
                 columns: "*",
                 table: "Files",
                 where: [
                     ['ke','=',groupKey],
-                    [
-                        monitorRestrictions
-                    ]
+                    monitorRestrictions
                 ]
             },(err,r) => {
                 r.forEach(function(v){
@@ -1412,6 +1413,13 @@ module.exports = function(s,config,lang,app,io){
                 const groupKey = req.params.ke
                 const monitorId = req.params.id
                 const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+                if(user.permissions.get_monitors === "0" || monitorRestrictions.length === 0){
+                    s.closeJsonResponse(res,{
+                        ok: false,
+                        msg: lang['Not Permitted']
+                    })
+                    return
+                }
                 s.knexQuery({
                     action: "select",
                     columns: "*",
@@ -1420,9 +1428,7 @@ module.exports = function(s,config,lang,app,io){
                         ['ke','=',groupKey],
                         ['mid','=',req.params.id],
                         ['name','=',req.params.file],
-                        [
-                            monitorRestrictions
-                        ]
+                        monitorRestrictions
                     ]
                 },(err,r) => {
                     if(r && r[0]){
@@ -1451,8 +1457,14 @@ module.exports = function(s,config,lang,app,io){
      */
     app.get(config.webPaths.apiPrefix+':auth/cloudVideos/:ke/:id/:file', function (req,res){
         s.auth(req.params,function(user){
-            if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
-                res.end(user.lang['Not Permitted'])
+            const groupKey = req.params.ke
+            const monitorId = req.params.id
+            const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+            if(user.permissions.watch_videos === "0" || monitorRestrictions.length === 0){
+                s.closeJsonResponse(res,{
+                    ok: false,
+                    msg: lang['Not Permitted']
+                })
                 return
             }
             var time = s.nameToTime(req.params.file)
@@ -1496,8 +1508,14 @@ module.exports = function(s,config,lang,app,io){
      */
     app.get(config.webPaths.apiPrefix+':auth/videos/:ke/:id/:file', function (req,res){
         s.auth(req.params,function(user){
-            if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
-                res.end(user.lang['Not Permitted'])
+            const groupKey = req.params.ke
+            const monitorId = req.params.id
+            const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+            if(user.permissions.watch_videos === "0" || monitorRestrictions.length === 0){
+                s.closeJsonResponse(res,{
+                    ok: false,
+                    msg: lang['Not Permitted']
+                })
                 return
             }
             var time = s.nameToTime(req.params.file)
@@ -1538,6 +1556,16 @@ module.exports = function(s,config,lang,app,io){
      */
      app.get(config.webPaths.apiPrefix+':auth/motion/:ke/:id', function (req,res){
          s.auth(req.params,function(user){
+             const groupKey = req.params.ke
+             const monitorId = req.params.id
+             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+             if(monitorRestrictions.length === 0){
+                 s.closeJsonResponse(res,{
+                     ok: false,
+                     msg: lang['Not Permitted']
+                 })
+                 return
+             }
              if(req.query.data){
                  try{
                      var d = {
