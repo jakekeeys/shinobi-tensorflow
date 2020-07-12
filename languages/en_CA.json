@@ -767,7 +767,7 @@
    "Event": "Event",
    "CPU used by this stream": "CPU used by this stream",
    "Detector Buffer": "Detector Buffer",
-   "EventText1": "Triggered a motion event at",
+   "EventText1": "Triggered an event at",
    "EventText2": "Could not email image, file was not accessible",
    "MailError": "MAIL ERROR : Could not send email, Check conf.json. Skipping any features relying on mailing.",
    "updateKeyText1": "\"updateKey\" is missing from \"conf.json\", cannot do updates this way until you add it.",
