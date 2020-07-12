@@ -63,12 +63,12 @@ module.exports = function(s,config){
     }, 4);
     const processWhereCondition = (dbQuery,where,didOne) => {
         var whereIsArray = where instanceof Array;
+        if(!where[0])return;
         if(where[0] && where[0] instanceof Array){
             dbQuery.where(function() {
                 var _this = this
                 var didOneInsideGroup = false
                 where.forEach((whereInsideGroup) => {
-                    console.log('LINE',whereInsideGroup)
                     processWhereCondition(_this,whereInsideGroup,didOneInsideGroup)
                 })
             })
@@ -91,54 +91,68 @@ module.exports = function(s,config){
         }
 
     }
-    const knexQuery = (options,callback) => {
-        if(!s.databaseEngine)return// console.log('Database Not Set');
+    const knexError = (dbQuery,options,err) => {
+        console.error('knexError----------------------------------- START')
         if(config.debugLogVerbose && config.debugLog === true){
-            s.debugLog('s.knexQuery QUERY',options)
+            s.debugLog('s.knexQuery QUERY',JSON.stringify(options,null,3))
+            s.debugLog('STACK TRACE, NOT AN ',new Error())
         }
-        // options = {
-        //     action: "",
-        //     columns: "",
-        //     table: ""
-        // }
-        var dbQuery
-        switch(options.action){
-            case'select':
-                options.columns = options.columns.indexOf(',') === -1 ? [options.columns] : options.columns.split(',');
-                dbQuery = s.databaseEngine.select(...options.columns).from(options.table)
-            break;
-            case'update':
-                dbQuery = s.databaseEngine(options.table).update(options.update)
-            break;
-            case'delete':
-                dbQuery = s.databaseEngine(options.table).del()
-            break;
-            case'insert':
-                dbQuery = s.databaseEngine(options.table).insert(options.insert)
-            break;
+        console.error(err)
+        console.error(dbQuery.toString())
+        console.error('knexError----------------------------------- END')
+    }
+    const knexQuery = (options,callback) => {
+        try{
+            if(!s.databaseEngine)return// console.log('Database Not Set');
+            // options = {
+            //     action: "",
+            //     columns: "",
+            //     table: ""
+            // }
+            var dbQuery
+            switch(options.action){
+                case'select':
+                    options.columns = options.columns.indexOf(',') === -1 ? [options.columns] : options.columns.split(',');
+                    dbQuery = s.databaseEngine.select(...options.columns).from(options.table)
+                break;
+                case'update':
+                    dbQuery = s.databaseEngine(options.table).update(options.update)
+                break;
+                case'delete':
+                    dbQuery = s.databaseEngine(options.table).del()
+                break;
+                case'insert':
+                    dbQuery = s.databaseEngine(options.table).insert(options.insert)
+                break;
+            }
+            if(options.where){
+                var didOne = false;
+                options.where.forEach((where) => {
+                    processWhereCondition(dbQuery,where,didOne)
+                })
+            }
+            if(options.orderBy){
+                dbQuery.orderBy(...options.orderBy)
+            }
+            if(options.limit){
+                dbQuery.limit(options.limit)
+            }
+            if(config.debugLog === true){
+                console.log(dbQuery.toString())
+            }
+            if(callback || options.update || options.insert){
+                dbQuery.asCallback(function(err,r) {
+                    if(err){
+                        knexError(dbQuery,options,err)
+                    }
+                    if(callback)callback(err,r)
+                })
+            }
+            return dbQuery
+        }catch(err){
+            if(callback)callback(err,[])
+            knexError(dbQuery,options,err)
         }
-        if(options.where){
-            var didOne = false;
-            options.where.forEach((where) => {
-                processWhereCondition(dbQuery,where,didOne)
-            })
-        }
-        if(options.orderBy){
-            dbQuery.orderBy(...options.orderBy)
-        }
-        if(options.limit){
-            dbQuery.limit(options.limit)
-        }
-        if(config.debugLog === true){
-            console.log(dbQuery.toString())
-        }
-        if(callback || options.update || options.insert){
-            dbQuery.asCallback(function(err,r) {
-                if(err)console.log(err)
-                if(callback)callback(err,r)
-            })
-        }
-        return dbQuery
     }
     const getDatabaseRows = function(options,callback){
         //current cant handle `end` time

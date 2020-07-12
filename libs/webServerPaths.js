@@ -848,7 +848,7 @@ module.exports = function(s,config,lang,app,io){
                 res.end(s.prettyPrint([]))
                 return
             }
-            const groupKey = user.ke
+            const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
             s.knexQuery({
@@ -955,7 +955,7 @@ module.exports = function(s,config,lang,app,io){
                 res.end(s.prettyPrint([]))
                 return
             }
-            const groupKey = user.ke
+            const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
             s.knexQuery({
@@ -964,9 +964,7 @@ module.exports = function(s,config,lang,app,io){
                 table: "Monitors",
                 where: [
                     ['ke','=',groupKey],
-                    [
-                        monitorRestrictions
-                    ]
+                    monitorRestrictions
                 ]
             },(err,r) => {
                 r.forEach(function(v,n){
@@ -1222,7 +1220,7 @@ module.exports = function(s,config,lang,app,io){
                 res.end(s.prettyPrint([]))
                 return
             }
-            const groupKey = user.ke
+            const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
             s.knexQuery({
@@ -1380,7 +1378,7 @@ module.exports = function(s,config,lang,app,io){
     app.get([config.webPaths.apiPrefix+':auth/fileBin/:ke',config.webPaths.apiPrefix+':auth/fileBin/:ke/:id'],function (req,res){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,(user) => {
-            const groupKey = user.ke
+            const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
             s.knexQuery({
@@ -1411,7 +1409,7 @@ module.exports = function(s,config,lang,app,io){
                 res.end(user.lang['File Not Found'])
             }
             if (!s.group[req.params.ke].fileBin[req.params.id+'/'+req.params.file]){
-                const groupKey = user.ke
+                const groupKey = req.params.ke
                 const monitorId = req.params.id
                 const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
                 s.knexQuery({
@@ -1462,7 +1460,7 @@ module.exports = function(s,config,lang,app,io){
                 time = s.utcToLocal(time)
             }
             time = new Date(time)
-            const groupKey = user.ke
+            const groupKey = req.params.ke
             const monitorId = req.params.id
             s.knexQuery({
                 action: "select",
@@ -1507,7 +1505,7 @@ module.exports = function(s,config,lang,app,io){
                 time = s.utcToLocal(time)
             }
             time = new Date(time)
-            const groupKey = user.ke
+            const groupKey = req.params.ke
             const monitorId = req.params.id
             s.knexQuery({
                 action: "select",
@@ -1808,7 +1806,7 @@ module.exports = function(s,config,lang,app,io){
                     videoSet = 'Cloud Videos'
                 break;
             }
-            const groupKey = user.ke
+            const groupKey = req.params.ke
             const monitorId = req.params.id
             s.knexQuery({
                 action: "select",
