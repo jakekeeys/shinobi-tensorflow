@@ -95,7 +95,7 @@ module.exports = function(s,config,lang,io){
         })
         app.use(function(req, res, next) {
           if(!req.secure) {
-            return res.redirect(['https://', req.get('Host'), req.url].join(''));
+              return res.redirect(['https://', req.hostname,":",config.ssl.port, req.url].join(''));
           }
           next();
         })
