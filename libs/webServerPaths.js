@@ -1521,8 +1521,6 @@ module.exports = function(s,config,lang,app,io){
                 time = s.utcToLocal(time)
             }
             time = new Date(time)
-            const groupKey = req.params.ke
-            const monitorId = req.params.id
             s.knexQuery({
                 action: "select",
                 columns: "*",
