@@ -15,8 +15,6 @@ any sort of super user access.
 Prerequisites
 =============
 
-> To get all of Shinobi at once you can use the Ninja Way. Learn more about that here
-https://shinobi.video/docs/start#content-the-ninja-way
 
 - *Node.js* :
 You'll need Node and NPM, and for this guide we recommend you set up a user-local install of
@@ -33,6 +31,11 @@ instance you're working with by copying it. It is recommended to use at least ve
 - *FFmpeg* :
 You'll also need FFmpeg. This is the video processing engine at the core of Shinobi. You will
 need at least version 3.3.3.
+
+### Installing prerequisites automatically
+To get all of Shinobi at once you can use the Ninja Way. Learn more about that here
+https://shinobi.video/docs/start#content-the-ninja-way
+However this will download the repository to /home/Shinobi and start Shinobi. Once you have finished the installation using the ninja way, ensure that you stop Shinobi othewise it will confilict with your dev instance. To stop Shinobi run `sudo pm2 stop camera.js` and `sudo pm2 stop cron.js`
 
 Development
 ===========
@@ -56,6 +59,8 @@ git clone https://gitlab.com/Shinobi-Systems/ShinobiCE.git
 ```
 Then cd into either the "Shinobi" or "ShinobiCE" directory.
 
+Make sure to add your fork as a remote so you can send Merge requests
+
 Grabbing packages
 -----------------
 To install the required Node packages you need to install them with NPM:
@@ -73,27 +78,7 @@ instances of Shinobi whenever someone updated.
 ```sh
 cp conf.sample.json conf.json
 ```
-Generally for development SQLite is going to be easier with SQLite, as we don't have to maintain
-a MariaDB/MySQL installation and we may need to reset the database often. To set the DB to SQLite:
-```sh
-node tools/modifyConfiguration.js databaseType=sqlite
-```
-You can confirm this worked by checking conf.json for the following line
-\[near the end of the file\]:
-```json
-"databaseType": "sqlite"
-```
 
-Currently Shinobi doesn't use a model framework or seeding system, so setting up the database
-basically involves copying the pre-set instance bundled with the repository:
-```sh
-cp sql/shinobi.sample.sqlite shinobi.sqlite
-```
-
-### Resetting the DB
-If you need to reset the database, you can now do so by deleting the shiobi.sqlite file and
-copying the sql/shinobi.sample.sqlite file again. Just be sure to stop any running Shinobi
-instances before you do so.
 
 Enabling the Super User Interface
 ---------------------------------
@@ -113,4 +98,8 @@ and "cron" processes directy. To monitor output, we recommend you use a terminal
 byobu, tmux, or screen. In one terminal window, run ```node cron.js``` and in another run
 ```node camera.js```. Shinobi should now be running on port 8080 on your local machine (you can
 change the port in conf.json) and accessable at http://localhost:8080 in your browser. Any source
-code changes you make will require restarting either the camera or cron process [or both].
+code changes you make will require restarting either the camera or cron process [or both]. To avoid manually restarting, use the npm package `nodemon`. Run these commands in two separate terminals.
+```sh  
+npx nodemon server.js
+npx nodemon cron.js
+```
