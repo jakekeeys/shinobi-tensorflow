@@ -822,18 +822,7 @@ $user.ws.on('f',function (d){
 //            }
 //        break;
         case'onvif':
-            var tempID = $.ccio.gid();
-            $.oB.foundMonitors[tempID] = Object.assign({},d);
-            $.oB.e.find('._loading').hide()
-            $.oB.e.find('._notfound').remove()
-            $.oB.e.find('[type="submit"]').prop('disabled',false)
-            d.info=$.ccio.init('jsontoblock',d.info)
-            if(d.uri){
-                d.stream=d.uri
-            }else{
-                d.stream='URL not Found'
-            }
-            $('#onvif_probe .output_data').append('<tr onvif_row="'+tempID+'"><td><a class="btn btn-sm btn-primary copy">&nbsp;<i class="fa fa-copy"></i>&nbsp;</a></td><td class="ip">'+d.ip+'</td><td class="port">'+d.port+'</td><td>'+$.ccio.init('jsontoblock',d.info)+'</td><td class="url">'+d.stream+'</td></tr>')
+            $.oB.drawProbeResult(d)
         break;
     }
     delete(d);

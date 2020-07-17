@@ -165,7 +165,7 @@ CREATE TABLE IF NOT EXISTS `Events Counts` (
   `ke` varchar(50) NOT NULL,
   `mid` varchar(50) NOT NULL,
   `details` longtext NOT NULL,
-  `end` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `end` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `count` int(10) NOT NULL DEFAULT 1,
   `tag` varchar(30) DEFAULT NULL

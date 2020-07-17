@@ -8,7 +8,6 @@ var execSync = require('child_process').execSync;
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var httpProxy = require('http-proxy');
-var onvif = require('node-onvif');
 var proxy = httpProxy.createProxyServer({})
 var ejs = require('ejs');
 var fileupload = require("express-fileupload");
@@ -1524,7 +1523,16 @@ module.exports = function(s,config,lang,app,io){
             s.sqlQuery('SELECT * FROM `Cloud Videos` WHERE ke=? AND mid=? AND `time`=? LIMIT 1',[req.params.ke,req.params.id,time],function(err,r){
                 if(r&&r[0]){
                     r = r[0]
-                    req.pipe(request(r.href)).pipe(res)
+                    if(JSON.parse(r.details).type === 'googd' && s.cloudDiskUseOnGetVideoDataExtensions['googd']){
+                        s.cloudDiskUseOnGetVideoDataExtensions['googd'](r).then((dataPipe) => {
+                            dataPipe.pipe(res)
+                        }).catch((err) => {
+                            console.log(err)
+                            res.end(user.lang['File Not Found in Database'])
+                        })
+                    }else{
+                        req.pipe(request(r.href)).pipe(res)
+                    }
                 }else{
                     res.end(user.lang['File Not Found in Database'])
                 }
@@ -1710,8 +1718,9 @@ module.exports = function(s,config,lang,app,io){
     app.get(config.webPaths.apiPrefix+':auth/control/:ke/:id/:direction', function (req,res){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            s.cameraControl(req.params,function(resp){
-                res.end(s.prettyPrint(resp))
+            s.cameraControl(req.params,function(msg){
+                s.userLog(d,msg)
+                res.end(s.prettyPrint(msg))
             });
         },res,req);
     })
@@ -1909,183 +1918,6 @@ module.exports = function(s,config,lang,app,io){
         }else{
             res.end('Local connection is only allowed.')
         }
-    })
-    /**
-    * API : FFprobe
-     */
-    app.get(config.webPaths.apiPrefix+':auth/probe/:ke',function (req,res){
-        req.ret={ok:false};
-        res.setHeader('Content-Type', 'application/json');
-        s.auth(req.params,function(user){
-            switch(req.query.action){
-    //            case'stop':
-    //                exec('kill -9 '+user.ffprobe.pid,{detatched: true})
-    //            break;
-                default:
-                    if(!req.query.url){
-                        req.ret.error = 'Missing URL'
-                        res.end(s.prettyPrint(req.ret));
-                        return
-                    }
-                    if(user.ffprobe){
-                        req.ret.error = 'Account is already probing'
-                        res.end(s.prettyPrint(req.ret));
-                        return
-                    }
-                    user.ffprobe=1;
-                    if(req.query.flags==='default'){
-                        req.query.flags = '-v quiet -print_format json -show_format -show_streams'
-                    }else{
-                        if(!req.query.flags){
-                            req.query.flags = ''
-                        }
-                    }
-                    req.probeCommand = s.splitForFFPMEG(req.query.flags+' -i '+req.query.url).join(' ')
-                    exec('ffprobe '+req.probeCommand+' | echo ',function(err,stdout,stderr){
-                        delete(user.ffprobe)
-                        if(err){
-                           req.ret.error=(err)
-                        }else{
-                            req.ret.ok=true
-                            req.ret.result = stdout+stderr
-                        }
-                        req.ret.probe = req.probeCommand
-                        res.end(s.prettyPrint(req.ret));
-                    })
-                break;
-            }
-        },res,req);
-    })
-    /**
-    * API : ONVIF Method Controller
-     */
-    app.all([
-        config.webPaths.apiPrefix+':auth/onvif/:ke/:id/:action',
-        config.webPaths.apiPrefix+':auth/onvif/:ke/:id/:service/:action'
-    ],function (req,res){
-        var response = {ok:false};
-        res.setHeader('Content-Type', 'application/json');
-        s.auth(req.params,function(user){
-            var errorMessage = function(msg,error){
-                response.ok = false
-                response.msg = msg
-                response.error = error
-                res.end(s.prettyPrint(response))
-            }
-            var actionCallback = function(onvifActionResponse){
-                response.ok = true
-                if(onvifActionResponse.data){
-                    response.responseFromDevice = onvifActionResponse.data
-                }else{
-                    response.responseFromDevice = onvifActionResponse
-                }
-                if(onvifActionResponse.soap)response.soap = onvifActionResponse.soap
-                res.end(s.prettyPrint(response))
-            }
-            var isEmpty = function(obj) {
-                for(var key in obj) {
-                    if(obj.hasOwnProperty(key))
-                        return false;
-                }
-                return true;
-            }
-            var doAction = function(Camera){
-                var completeAction = function(command){
-                    if(command.then){
-                        command.then(actionCallback).catch(function(error){
-                            errorMessage('Device Action responded with an error',error)
-                        })
-                    }else if(command){
-                        response.ok = true
-                        response.repsonseFromDevice = command
-                        res.end(s.prettyPrint(response))
-                    }else{
-                        response.error = 'Big Errors, Please report it to Shinobi Development'
-                        res.end(s.prettyPrint(response))
-                    }
-                }
-                var action
-                if(req.params.service){
-                    if(Camera.services[req.params.service] === undefined){
-                        return errorMessage('This is not an available service. Please use one of the following : '+Object.keys(Camera.services).join(', '))
-                    }
-                    if(Camera.services[req.params.service] === null){
-                        return errorMessage('This service is not activated. Maybe you are not connected through ONVIF. You can test by attempting to use the "Control" feature with ONVIF in Shinobi.')
-                    }
-                    action = Camera.services[req.params.service][req.params.action]
-                }else{
-                    action = Camera[req.params.action]
-                }
-                // console.log(s.parseJSON(req.query.options))
-                if(!action || typeof action !== 'function'){
-                    errorMessage(req.params.action+' is not an available ONVIF function. See https://github.com/futomi/node-onvif for functions.')
-                }else{
-                    var argNames = s.getFunctionParamNames(action)
-                    var options
-                    var command
-                    if(argNames[0] === 'options' || argNames[0] === 'params'){
-                        options = {}
-                        if(req.query.options){
-                            var jsonRevokedText = 'JSON not formated correctly'
-                            try{
-                                options = JSON.parse(req.query.options)
-                            }catch(err){
-                                return errorMessage(jsonRevokedText,err)
-                            }
-                        }else if(req.body.options){
-                            try{
-                                options = JSON.parse(req.body.options)
-                            }catch(err){
-                                return errorMessage(jsonRevokedText,err)
-                            }
-                        }else if(req.query.params){
-                            try{
-                                options = JSON.parse(req.query.params)
-                            }catch(err){
-                                return errorMessage(jsonRevokedText,err)
-                            }
-                        }else if(req.body.params){
-                            try{
-                                options = JSON.parse(req.body.params)
-                            }catch(err){
-                                return errorMessage(jsonRevokedText,err)
-                            }
-                        }
-                    }
-                    if(req.params.service){
-                        command = Camera.services[req.params.service][req.params.action](options)
-                    }else{
-                        command = Camera[req.params.action](options)
-                    }
-                    completeAction(command)
-                }
-            }
-            if(!s.group[req.params.ke].activeMonitors[req.params.id].onvifConnection){
-                //prepeare onvif connection
-                var controlURL
-                var monitorConfig = s.group[req.params.ke].rawMonitorConfigurations[req.params.id]
-                if(!monitorConfig.details.control_base_url||monitorConfig.details.control_base_url===''){
-                    controlURL = s.buildMonitorUrl(monitorConfig, true)
-                }else{
-                    controlURL = monitorConfig.details.control_base_url
-                }
-                var controlURLOptions = s.cameraControlOptionsFromUrl(controlURL,monitorConfig)
-                //create onvif connection
-                s.group[req.params.ke].activeMonitors[req.params.id].onvifConnection = new onvif.OnvifDevice({
-                    xaddr : 'http://' + controlURLOptions.host + ':' + controlURLOptions.port + '/onvif/device_service',
-                    user : controlURLOptions.username,
-                    pass : controlURLOptions.password
-                })
-                var device = s.group[req.params.ke].activeMonitors[req.params.id].onvifConnection
-                device.init().then((info) => {
-                    if(info)doAction(device)
-                }).catch(function(error){
-                    return errorMessage('Device responded with an error',error)
-                })
-            }else{
-                doAction(s.group[req.params.ke].activeMonitors[req.params.id].onvifConnection)
-            }
-        },res,req);
     })
     /**
     * API : Account Edit from Dashboard

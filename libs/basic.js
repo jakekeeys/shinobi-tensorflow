@@ -52,6 +52,11 @@ module.exports = function(s,config){
         }
         return json
     }
+    s.stringContains = function(find,string,toLowerCase){
+        var newString = string + ''
+        if(toLowerCase)newString = newString.toLowerCase()
+        return newString.indexOf(find) > -1
+    }
     s.addUserPassToUrl = function(url,user,pass){
         var splitted = url.split('://')
         splitted[1] = user + ':' + pass + '@' + splitted[1]
@@ -63,6 +68,28 @@ module.exports = function(s,config){
             x=x+'/'
         }
         return x.replace('__DIR__',s.mainDirectory)
+    }
+    s.mergeDeep = function(...objects) {
+      const isObject = obj => obj && typeof obj === 'object';
+
+      return objects.reduce((prev, obj) => {
+        Object.keys(obj).forEach(key => {
+          const pVal = prev[key];
+          const oVal = obj[key];
+
+          if (Array.isArray(pVal) && Array.isArray(oVal)) {
+            prev[key] = pVal.concat(...oVal);
+          }
+          else if (isObject(pVal) && isObject(oVal)) {
+            prev[key] = s.mergeDeep(pVal, oVal);
+          }
+          else {
+            prev[key] = oVal;
+          }
+        });
+
+        return prev;
+      }, {});
     }
     s.md5 = function(x){return crypto.createHash('md5').update(x).digest("hex")}
     s.createHash = s.md5

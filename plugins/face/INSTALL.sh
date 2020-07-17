@@ -96,7 +96,8 @@ node $DIR/../../tools/modifyConfigurationForPlugin.js face key=$(head -c 64 < /d
 echo "-----------------------------------"
 echo "Updating Node Package Manager"
 sudo npm install npm -g --unsafe-perm
-echo "-----------------------------------"echo "Getting node-gyp to build C++ modules"
+echo "-----------------------------------"
+echo "Getting node-gyp to build C++ modules"
 if [ ! -x "$(command -v node-gyp)" ]; then
   # Check if Ubuntu
   if [ -x "$(command -v apt)" ]; then
@@ -126,7 +127,7 @@ if [ "$INSTALL_WITH_GPU" = "1" ]; then
 else
     echo "CPU version of tjfs : https://github.com/tensorflow/tfjs-node"
 fi
-sudo npm install @tensorflow/tfjs-node$TFJS_SUFFIX@1.7.0 --unsafe-perm --force
+sudo npm install @tensorflow/tfjs-node$TFJS_SUFFIX@1.7.3 --unsafe-perm --force
 if [ "$INSTALL_FOR_ARM" = "1" ]; then
     cd node_modules/@tensorflow/tfjs-node$TFJS_SUFFIX
     if [ "$INSTALL_FOR_ARM64" = "1" ]; then

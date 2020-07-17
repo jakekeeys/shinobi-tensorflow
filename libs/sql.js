@@ -135,13 +135,48 @@ module.exports = function(s,config){
         s.sqlQuery("CREATE TABLE IF NOT EXISTS `Timelapse Frames` (`ke` varchar(50) NOT NULL,`mid` varchar(50) NOT NULL,`details` longtext,`filename` varchar(50) NOT NULL,`time` timestamp NULL DEFAULT NULL,`size` int(11) NOT NULL)" + mySQLtail + ';',[],function(err){
             if(err)console.error(err)
         },true)
+        //Add index to Videos table
+        s.sqlQuery('CREATE INDEX `videos_index` ON Videos(`time`);',[],function(err){
+            if(err && err.code !== 'ER_DUP_KEYNAME'){
+                console.error(err)
+            }
+        },true)
+        //Add index to Events table
+        s.sqlQuery('CREATE INDEX `events_index` ON Events(`ke`, `mid`, `time`);',[],function(err){
+            if(err && err.code !== 'ER_DUP_KEYNAME'){
+                console.error(err)
+            }
+        },true)
+        //Add index to Logs table
+        s.sqlQuery('CREATE INDEX `logs_index` ON Logs(`ke`, `mid`, `time`);',[],function(err){
+            if(err && err.code !== 'ER_DUP_KEYNAME'){
+                console.error(err)
+            }
+        },true)
+        //Add index to Monitors table
+        s.sqlQuery('CREATE INDEX `monitors_index` ON Monitors(`ke`, `mode`, `type`, `ext`);',[],function(err){
+            if(err && err.code !== 'ER_DUP_KEYNAME'){
+                console.error(err)
+            }
+        },true)
+        //Add index to Timelapse Frames table
+        s.sqlQuery('CREATE INDEX `timelapseframes_index` ON `Timelapse Frames`(`ke`, `mid`, `time`);',[],function(err){
+            if(err && err.code !== 'ER_DUP_KEYNAME'){
+                console.error(err)
+            }
+        },true)
         //add Cloud Videos table, will remove in future
         s.sqlQuery('CREATE TABLE IF NOT EXISTS `Cloud Videos` (`mid` varchar(50) NOT NULL,`ke` varchar(50) DEFAULT NULL,`href` text NOT NULL,`size` float DEFAULT NULL,`time` timestamp NULL DEFAULT NULL,`end` timestamp NULL DEFAULT NULL,`status` int(1) DEFAULT \'0\',`details` text)' + mySQLtail + ';',[],function(err){
             if(err)console.error(err)
         },true)
         //add Events Counts table, will remove in future
         s.sqlQuery('CREATE TABLE IF NOT EXISTS `Events Counts` (`ke` varchar(50) NOT NULL,`mid` varchar(50) NOT NULL,`details` longtext NOT NULL,`time` timestamp NOT NULL DEFAULT current_timestamp(),`end` timestamp NOT NULL DEFAULT current_timestamp(),`count` int(10) NOT NULL DEFAULT 1,`tag` varchar(30) DEFAULT NULL)' + mySQLtail + ';',[],function(err){
-            if(err && err.code !== 'ER_TABLE_EXISTS_ERROR')console.error(err)
+            if(err && err.code !== 'ER_TABLE_EXISTS_ERROR'){
+                console.error(err)
+            }
+            s.sqlQuery('ALTER TABLE `Events Counts`	ADD COLUMN `time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `details`;',[],function(err){
+                // console.error(err)
+            },true)
         },true)
         //add Cloud Timelapse Frames table, will remove in future
         s.sqlQuery('CREATE TABLE IF NOT EXISTS `Cloud Timelapse Frames` (`ke` varchar(50) NOT NULL,`mid` varchar(50) NOT NULL,`href` text NOT NULL,`details` longtext,`filename` varchar(50) NOT NULL,`time` timestamp NULL DEFAULT NULL,`size` int(11) NOT NULL)' + mySQLtail + ';',[],function(err){

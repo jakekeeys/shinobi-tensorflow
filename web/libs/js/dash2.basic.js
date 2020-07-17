@@ -22,6 +22,16 @@ $.parseJSON = function(string){
     if(!parsed)parsed = string
     return parsed
 }
+$.stringJSON = function(json){
+    try{
+        if(json instanceof Object){
+            json = JSON.stringify(json)
+        }
+    }catch(err){
+
+    }
+    return json
+}
 $.ccio.op = function(r,rr,rrr){
     if(!rrr){rrr={};};if(typeof rrr === 'string'){rrr={n:rrr}};if(!rrr.n){rrr.n='ShinobiOptions_'+location.host}
     ii={o:localStorage.getItem(rrr.n)};try{ii.o=JSON.parse(ii.o)}catch(e){ii.o={}}

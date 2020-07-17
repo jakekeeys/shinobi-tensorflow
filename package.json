@@ -31,7 +31,7 @@
     "moment": "^2.17.0",
     "mp4frag": "^0.2.0",
     "mysql": "^2.16.0",
-    "node-onvif": "^0.1.4",
+    "node-onvif": "^0.1.7",
     "node-ssh": "^5.1.2",
     "nodemailer": "^4.0.1",
     "pam-diff": "^1.0.0",
@@ -45,6 +45,7 @@
     "socket.io-client": "^2.2.0",
     "webdav-fs": "^1.11.0",
     "express-fileupload": "^1.1.6-alpha.6",
+    "googleapis": "^39.2.0",
     "tree-kill":"1.2.2"
   },
   "devDependencies": {},

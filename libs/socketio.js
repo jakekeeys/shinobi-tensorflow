@@ -1,10 +1,8 @@
-var os = require('os');
 var moment = require('moment');
 var execSync = require('child_process').execSync;
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var jsonfile = require("jsonfile");
-var onvif = require("node-onvif");
 module.exports = function(s,config,lang,io){
     s.clientSocketConnection = {}
     //send data to socket client function
@@ -735,8 +733,9 @@ module.exports = function(s,config,lang,io){
                                 }
                             break;
                             case'control':
-                                s.cameraControl(d,function(resp){
-                                    tx({f:'control',response:resp})
+                                s.cameraControl(d,function(msg){
+                                    s.userLog(d,msg)
+                                    tx({f:'control',response:msg})
                                 })
                             break;
                             case'jpeg_off':
@@ -786,134 +785,6 @@ module.exports = function(s,config,lang,io){
                                 })
                             break;
                         }
-                    break;
-    //                case'video':
-    //                    switch(d.ff){
-    //                        case'fix':
-    //                            s.video('fix',d)
-    //                        break;
-    //                    }
-    //                break;
-                    case'ffprobe':
-                        if(s.group[cn.ke].users[cn.auth]){
-                            switch(d.ff){
-                                case'stop':
-                                    exec('kill -9 '+s.group[cn.ke].users[cn.auth].ffprobe.pid,{detatched: true})
-                                break;
-                                default:
-                                    if(s.group[cn.ke].users[cn.auth].ffprobe){
-                                        return
-                                    }
-                                    s.group[cn.ke].users[cn.auth].ffprobe=1;
-                                    tx({f:'ffprobe_start'})
-                                    exec('ffprobe '+('-v quiet -print_format json -show_format -show_streams '+d.query),function(err,data){
-                                        tx({f:'ffprobe_data',data:data.toString('utf8')})
-                                        delete(s.group[cn.ke].users[cn.auth].ffprobe)
-                                        tx({f:'ffprobe_stop'})
-                                    })
-                                    //auto kill in 30 seconds
-                                    setTimeout(function(){
-                                        exec('kill -9 '+d.pid,{detached: true})
-                                    },30000)
-                                break;
-                            }
-                        }
-                    break;
-                    case'onvif':
-                        d.ip=d.ip.replace(/ /g,'');
-                        d.port=d.port.replace(/ /g,'');
-                        if(d.ip===''){
-                            var interfaces = os.networkInterfaces();
-                            var addresses = [];
-                            for (var k in interfaces) {
-                                for (var k2 in interfaces[k]) {
-                                    var address = interfaces[k][k2];
-                                    if (address.family === 'IPv4' && !address.internal) {
-                                        addresses.push(address.address);
-                                    }
-                                }
-                            }
-                            d.arr=[]
-                            addresses.forEach(function(v){
-                                if(v.indexOf('0.0.0')>-1){return false}
-                                v=v.split('.');
-                                delete(v[3]);
-                                v=v.join('.');
-                                d.arr.push(v+'1-'+v+'254')
-                            })
-                            d.ip=d.arr.join(',')
-                        }
-                        if(d.port===''){
-                            d.port='80,8080,8000,7575,8081,554'
-                        }
-                        d.ip.split(',').forEach(function(v){
-                            if(v.indexOf('-')>-1){
-                                v=v.split('-');
-                                d.IP_RANGE_START = v[0],
-                                d.IP_RANGE_END = v[1];
-                            }else{
-                                d.IP_RANGE_START = v;
-                                d.IP_RANGE_END = v;
-                            }
-                            if(!d.IP_LIST){
-                                d.IP_LIST = s.ipRange(d.IP_RANGE_START,d.IP_RANGE_END);
-                            }else{
-                                d.IP_LIST=d.IP_LIST.concat(s.ipRange(d.IP_RANGE_START,d.IP_RANGE_END))
-                            }
-                            //check port
-                            if(d.port.indexOf('-')>-1){
-                                d.port=d.port.split('-');
-                                d.PORT_RANGE_START = d.port[0];
-                                d.PORT_RANGE_END = d.port[1];
-                                d.PORT_LIST = s.portRange(d.PORT_RANGE_START,d.PORT_RANGE_END);
-                            }else{
-                                d.PORT_LIST=d.port.split(',')
-                            }
-                            //check user name and pass
-                            d.USERNAME='';
-                            if(d.user){
-                                d.USERNAME = d.user
-                            }
-                            d.PASSWORD='';
-                            if(d.pass){
-                                d.PASSWORD = d.pass
-                            }
-                        })
-                        d.cams=[]
-                        d.IP_LIST.forEach(function(ip_entry,n) {
-                            d.PORT_LIST.forEach(function(port_entry,nn) {
-                                var device = new onvif.OnvifDevice({
-                                    xaddr : 'http://' + ip_entry + ':' + port_entry + '/onvif/device_service',
-                                    user : d.USERNAME,
-                                    pass : d.PASSWORD
-                                })
-                                device.init().then((info) => {
-                                    var data = {
-                                        f : 'onvif',
-                                        ip : ip_entry,
-                                        port : port_entry,
-                                        info : info
-                                    }
-                                    device.services.device.getSystemDateAndTime().then((date) => {
-                                        data.date = date
-                                        device.services.media.getStreamUri({
-                                            ProfileToken : device.current_profile.token,
-                                            Protocol : 'RTSP'
-                                        }).then((stream) => {
-                                            data.uri = stream.data.GetStreamUriResponse.MediaUri.Uri
-                                            tx(data)
-                                        }).catch((error) => {
-    //                                        console.log(error)
-                                        });
-                                    }).catch((error) => {
-    //                                    console.log(error)
-                                    });
-                                }).catch(function(error){
-    //                                console.log(error)
-                                })
-                            });
-                        });
-    //                    tx({f:'onvif_end'})
                     break;
                 }
             }catch(er){

@@ -66,7 +66,7 @@ require('./libs/ffmpeg.js')(s,config,lang,function(ffmpeg){
     //cluster module
     require('./libs/childNode.js')(s,config,lang,app,io)
     //cloud uploaders : amazon s3, webdav, backblaze b2..
-    require('./libs/uploaders.js')(s,config,lang)
+    require('./libs/uploaders.js')(s,config,lang,app,io)
     //notifiers : discord..
     require('./libs/notification.js')(s,config,lang)
     //notifiers : discord..
@@ -81,6 +81,10 @@ require('./libs/ffmpeg.js')(s,config,lang,function(ffmpeg){
     require('./libs/customAutoLoad.js')(s,config,lang,app,io)
     //scheduling engine
     require('./libs/shinobiHub.js')(s,config,lang,app,io)
+    //onvif, ptz engine
+    require('./libs/control.js')(s,config,lang,app,io)
+    //ffprobe, onvif engine
+    require('./libs/scanners.js')(s,config,lang,app,io)
     //scheduling engine
     require('./libs/scheduler.js')(s,config,lang,app,io)
     //on-start actions, daemon(s) starter

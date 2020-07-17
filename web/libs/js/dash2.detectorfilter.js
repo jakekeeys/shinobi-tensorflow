@@ -74,6 +74,7 @@ $(document).ready(function(e){
                        <option value="plug">${lang['Detection Engine']}</option>
                        <optgroup label="Matrix">
                           <option value="tag">${lang['Object Tag']}</option>
+			  <option value="count">${lang['Object Count']}</option>
                           <option value="confidence">${lang['Confidence']}</option>
                           <option value="x">${lang['X Point']}</option>
                           <option value="y">${lang['Y Point']}</option>

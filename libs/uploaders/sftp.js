@@ -2,9 +2,8 @@ var fs = require('fs');
 var ssh2SftpClient = require('node-ssh')
 module.exports = function(s,config,lang){
     //SFTP
-    var sftpErr = function(err){
-        // console.log(err)
-        s.userLog({mid:'$USER',ke:e.ke},{type:lang['SFTP Error'],msg:err.data || err})
+    var sftpErr = function(groupKey,err){
+        s.userLog({mid:'$USER',ke:groupKey},{type:lang['SFTP Error'],msg:err.data || err})
     }
     var beforeAccountSaveForSftp = function(d){
         //d = save event
@@ -37,7 +36,9 @@ module.exports = function(s,config,lang){
             if(userDetails.sftp_username && userDetails.sftp_username !== '')connectionDetails.username = userDetails.sftp_username
             if(userDetails.sftp_password && userDetails.sftp_password !== '')connectionDetails.password = userDetails.sftp_password
             if(userDetails.sftp_privateKey && userDetails.sftp_privateKey !== '')connectionDetails.privateKey = userDetails.sftp_privateKey
-            sftp.connect(connectionDetails).catch(sftpErr)
+            sftp.connect(connectionDetails).catch((err) => {
+                sftpErr(e.ke,err)
+            })
             s.group[e.ke].sftp = sftp
         }
     }
@@ -54,14 +55,16 @@ module.exports = function(s,config,lang){
         if(s.group[e.ke].sftp && s.group[e.ke].init.use_sftp !== '0' && s.group[e.ke].init.sftp_save === '1'){
             var localPath = k.dir + k.filename
             var saveLocation = s.group[e.ke].init.sftp_dir + e.ke + '/' + e.mid + '/' + k.filename
-            s.group[e.ke].sftp.putFile(localPath, saveLocation).catch(sftpErr)
+            s.group[e.ke].sftp.putFile(localPath, saveLocation).catch((err) => {
+                sftpErr(e.ke,err)
+            })
         }
     }
     var createSftpDirectory = function(monitorConfig){
         var monitorSaveDirectory = s.group[monitorConfig.ke].init.sftp_dir + monitorConfig.ke + '/' + monitorConfig.mid
         s.group[monitorConfig.ke].sftp.mkdir(monitorSaveDirectory, true).catch(function(err){
             if(err.code !== 'ERR_ASSERTION'){
-                sftpErr(err)
+                sftpErr(monitorConfig.ke,err)
             }
         })
     }

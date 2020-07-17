@@ -93,6 +93,12 @@ module.exports = function(s,config,lang,io){
             path:s.checkCorrectPathEnding(config.webPaths.super)+'socket.io',
             transports: ['websocket']
         })
+        app.use(function(req, res, next) {
+          if(!req.secure) {
+              return res.redirect(['https://', req.hostname,":",config.ssl.port, req.url].join(''));
+          }
+          next();
+        })
     }
     //start HTTP
     var server = http.createServer(app);

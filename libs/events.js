@@ -10,6 +10,7 @@ var P = SAT.Polygon;
 var B = SAT.Box;
 // Matrix In Region Libs />
 module.exports = function(s,config,lang){
+    const ptz = require('./control/ptz.js')(s,config,lang)
     const countObjects = async (event) => {
         const matrices = event.details.matrices
         const eventsCounted = s.group[event.ke].activeMonitors[event.id].eventsCounted || {}
@@ -51,6 +52,79 @@ module.exports = function(s,config,lang){
         })
         if(callback)callback(foundInRegion,collisions)
         return foundInRegion
+    }
+    const scanMatricesforCollisions = function(region,matrices){
+        var matrixPoints = []
+        var collisions = []
+        if (!region || !matrices){
+            if(callback)callback(collisions)
+            return collisions
+        }
+        var polyPoints = []
+        region.points.forEach(function(point){
+            polyPoints.push(new V(parseInt(point[0]),parseInt(point[1])))
+        })
+        var regionPoly = new P(new V(0,0), polyPoints)
+        matrices.forEach(function(matrix){
+            if (matrix){
+                var matrixPoly = new B(new V(matrix.x, matrix.y), matrix.width, matrix.height).toPolygon()
+                var response = new SAT.Response()
+                var collided = SAT.testPolygonPolygon(matrixPoly, regionPoly, response)
+                if(collided === true){
+                    collisions.push(matrix)
+                }
+            }
+        })
+        return collisions
+    }
+    const nonEmpty = (element) => element.length !== 0;
+    const moveLock = {}
+    const getLargestMatrix = (matrices) => {
+        var largestMatrix = {width: 0, height: 0}
+        matrices.forEach((matrix) => {
+            if(matrix.width > largestMatrix.width && matrix.height > largestMatrix.height)largestMatrix = matrix
+        })
+        return largestMatrix.x ? largestMatrix : null
+    }
+    const moveCameraPtzToMatrix = function(event,trackingTarget){
+        if(moveLock[event.ke + event.id])return;
+        clearTimeout(moveLock[event.ke + event.id])
+        moveLock[event.ke + event.id] = setTimeout(() => {
+            delete(moveLock[event.ke + event.id])
+        },1000)
+        const imgHeight = event.details.imgHeight
+        const imgWidth = event.details.imgWidth
+        const thresholdX = imgWidth * 0.125
+        const thresholdY = imgHeight * 0.125
+        const imageCenterX = imgWidth / 2
+        const imageCenterY = imgHeight / 2
+        const matrices = event.details.matrices
+        const largestMatrix = getLargestMatrix(matrices.filter(matrix => matrix.tag === (trackingTarget || 'person')))
+        // console.log(matrices.find(matrix => matrix.tag === 'person'))
+        if(!largestMatrix)return;
+        const matrixCenterX = largestMatrix.x + (largestMatrix.width / 2)
+        const matrixCenterY = largestMatrix.y + (largestMatrix.height / 2)
+        const rawDistanceX = (matrixCenterX - imageCenterX)
+        const rawDistanceY = (matrixCenterY - imageCenterY)
+        const distanceX = imgWidth / rawDistanceX
+        const distanceY = imgHeight / rawDistanceY
+        const axisX = rawDistanceX > thresholdX || rawDistanceX < -thresholdX ? distanceX : 0
+        const axisY = largestMatrix.y < 30 && largestMatrix.height > imgHeight * 0.8 ? 0.5 : rawDistanceY > thresholdY || rawDistanceY < -thresholdY ? -distanceY : 0
+        if(axisX !== 0 || axisY !== 0){
+            ptz.control({
+                axis: [
+                    {direction: 'x', amount: axisX === 0 ? 0 : axisX > 0 ? 0.01 : -0.01},
+                    {direction: 'y', amount: axisY === 0 ? 0 : axisY > 0 ? 0.01 : -0.01},
+                    {direction: 'z', amount: 0},
+                ],
+                // axis: [{direction: 'x', amount: 1.0}],
+                id: event.id,
+                ke: event.ke
+            },(msg) => {
+                s.userLog(event,msg)
+                // console.log(msg)
+            })
+        }
     }
     s.addEventDetailsToString = function(eventData,string,addOps){
         //d = event data
@@ -109,15 +183,15 @@ module.exports = function(s,config,lang){
             indifference : false,
             countObjects : true
         }
-        s.onEventTriggerBeforeFilterExtensions.forEach(function(extender){
-            extender(d,filter)
-        })
         var detailString = JSON.stringify(d.details);
         if(!s.group[d.ke]||!s.group[d.ke].activeMonitors[d.id]){
             return s.systemLog(lang['No Monitor Found, Ignoring Request'])
         }
         d.mon=s.group[d.ke].rawMonitorConfigurations[d.id];
         var currentConfig = s.group[d.ke].rawMonitorConfigurations[d.id].details
+        s.onEventTriggerBeforeFilterExtensions.forEach(function(extender){
+            extender(d,filter)
+        })
         var hasMatrices = (d.details.matrices && d.details.matrices.length > 0)
         //read filters
         if(
@@ -183,6 +257,7 @@ module.exports = function(s,config,lang){
                         case'y':
                         case'height':
                         case'width':
+		                case'confidence':
                             if(d.details.matrices){
                                 d.details.matrices.forEach(function(matrix,position){
                                     modifyFilters(matrix,position)
@@ -250,6 +325,9 @@ module.exports = function(s,config,lang){
         if(filter.countObjects && currentConfig.detector_obj_count === '1' && currentConfig.detector_obj_count_in_region !== '1'){
             didCountingAlready = true
             countObjects(d)
+        }
+        if(currentConfig.detector_ptz_follow === '1'){
+            moveCameraPtzToMatrix(d,currentConfig.detector_ptz_follow_target)
         }
         if(filter.useLock){
             if(s.group[d.ke].activeMonitors[d.id].motion_lock){

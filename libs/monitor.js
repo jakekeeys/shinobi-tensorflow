@@ -402,6 +402,7 @@ module.exports = function(s,config,lang){
             clearTimeout(activeMonitor.recordingSnapper);
             clearInterval(activeMonitor.getMonitorCpuUsage);
             clearInterval(activeMonitor.objectCountIntervals);
+            delete(activeMonitor.onvifConnection)
             if(activeMonitor.onChildNodeExit){
                 activeMonitor.onChildNodeExit()
             }
@@ -478,184 +479,7 @@ module.exports = function(s,config,lang){
             }
         });
     }
-    s.cameraControl = function(e,callback){
-        s.checkDetails(e)
-        if(!s.group[e.ke]||!s.group[e.ke].activeMonitors[e.id]){return}
-        var monitorConfig = s.group[e.ke].rawMonitorConfigurations[e.id];
-        if(monitorConfig.details.control!=="1"){s.userLog(e,{type:lang['Control Error'],msg:lang.ControlErrorText1});return}
-        if(!monitorConfig.details.control_base_url||monitorConfig.details.control_base_url===''){
-            e.base = s.buildMonitorUrl(monitorConfig, true);
-        }else{
-            e.base = monitorConfig.details.control_base_url;
-        }
-        if(!monitorConfig.details.control_url_stop_timeout || monitorConfig.details.control_url_stop_timeout === ''){
-            monitorConfig.details.control_url_stop_timeout = 1000
-        }
-        if(!monitorConfig.details.control_url_method||monitorConfig.details.control_url_method===''){monitorConfig.details.control_url_method="GET"}
-        var controlURL = e.base+monitorConfig.details['control_url_'+e.direction]
-        var controlURLOptions = s.cameraControlOptionsFromUrl(controlURL,monitorConfig)
-        if(monitorConfig.details.control_url_stop_timeout === '0' && monitorConfig.details.control_stop === '1' && s.group[e.ke].activeMonitors[e.id].ptzMoving === true){
-            e.direction = 'stopMove'
-            s.group[e.ke].activeMonitors[e.id].ptzMoving = false
-        }else{
-            s.group[e.ke].activeMonitors[e.id].ptzMoving = true
-        }
-        if(monitorConfig.details.control_url_method === 'ONVIF'){
-            try{
-                var move = function(device){
-                    var stopOptions = {ProfileToken : device.current_profile.token,'PanTilt': true,'Zoom': true}
-                    switch(e.direction){
-                        case'center':
-//                                device.services.ptz.gotoHomePosition()
-                            msg = {type:'Center button inactive'}
-                            s.userLog(e,msg)
-                            callback(msg)
-                        break;
-                        case'stopMove':
-                            msg = {type:'Control Trigger Ended'}
-                            s.userLog(e,msg)
-                            callback(msg)
-                            device.services.ptz.stop(stopOptions).then((result) => {
-//                                    console.log(JSON.stringify(result['data'], null, '  '));
-                            }).catch((error) => {
-//                                    console.error(error);
-                            });
-                        break;
-                        default:
-                            var controlOptions = {
-                                ProfileToken : device.current_profile.token,
-                                Velocity : {}
-                            }
-                            var onvifDirections = {
-                                "left" : [-1.0,'x'],
-                                "right" : [1.0,'x'],
-                                "down" : [-1.0,'y'],
-                                "up" : [1.0,'y'],
-                                "zoom_in" : [1.0,'z'],
-                                "zoom_out" : [-1.0,'z']
-                            }
-                            var direction = onvifDirections[e.direction]
-                            controlOptions.Velocity[direction[1]] = direction[0];
-                            (['x','y','z']).forEach(function(axis){
-                                if(!controlOptions.Velocity[axis])
-                                    controlOptions.Velocity[axis] = 0
-                            })
-                            if(monitorConfig.details.control_stop=='1'){
-                                device.services.ptz.continuousMove(controlOptions).then(function(err){
-                                    s.userLog(e,{type:'Control Trigger Started'});
-                                    if(monitorConfig.details.control_url_stop_timeout !== '0'){
-                                        setTimeout(function(){
-                                            msg = {type:'Control Trigger Ended'}
-                                            s.userLog(e,msg)
-                                            callback(msg)
-                                            device.services.ptz.stop(stopOptions).then((result) => {
-//                                                    console.log(JSON.stringify(result['data'], null, '  '));
-                                            }).catch((error) => {
-                                                console.log(error);
-                                            });
-                                        },monitorConfig.details.control_url_stop_timeout)
-                                    }
-                                }).catch(function(err){
-                                    console.log(err)
-                                });
-                            }else{
-                                device.services.ptz.absoluteMove(controlOptions).then(function(err){
-                                    msg = {type:'Control Triggered'}
-                                    s.userLog(e,msg);
-                                    callback(msg)
-                                }).catch(function(err){
-                                    console.log(err)
-                                });
-                            }
-                        break;
-                    }
-                }
-                //create onvif connection
-                if(!s.group[e.ke].activeMonitors[e.id].onvifConnection || !s.group[e.ke].activeMonitors[e.id].onvifConnection.current_profile || !s.group[e.ke].activeMonitors[e.id].onvifConnection.current_profile.token){
-                    s.group[e.ke].activeMonitors[e.id].onvifConnection = new onvif.OnvifDevice({
-                        xaddr : 'http://' + controlURLOptions.host + ':' + controlURLOptions.port + '/onvif/device_service',
-                        user : controlURLOptions.username,
-                        pass : controlURLOptions.password
-                    })
-                    s.group[e.ke].activeMonitors[e.id].onvifConnection.init().then((info) => {
-                        move(s.group[e.ke].activeMonitors[e.id].onvifConnection)
-                    }).catch(function(error){
-                        console.log(error)
-                        s.userLog(e,{type:lang['Control Error'],msg:error})
-                    })
-                }else{
-                    move(s.group[e.ke].activeMonitors[e.id].onvifConnection)
-                }
-            }catch(err){
-                console.log(err)
-                msg = {type:lang['Control Error'],msg:{msg:lang.ControlErrorText2,error:err,options:controlURLOptions,direction:e.direction}}
-                s.userLog(e,msg)
-                callback(msg)
-            }
-        }else{
-            var stopCamera = function(){
-                var stopURL = e.base+monitorConfig.details['control_url_'+e.direction+'_stop']
-                var options = s.cameraControlOptionsFromUrl(stopURL,monitorConfig)
-                var requestOptions = {
-                    url : stopURL,
-                    method : options.method,
-                    auth : {
-                        user : options.username,
-                        pass : options.password
-                    }
-                }
-                if(monitorConfig.details.control_digest_auth === '1'){
-                    requestOptions.sendImmediately = true
-                }
-                request(requestOptions,function(err,data){
-                    if(err){
-                        msg = {ok:false,type:'Control Error',msg:err}
-                    }else{
-                        msg = {ok:true,type:'Control Trigger Ended'}
-                    }
-                    callback(msg)
-                    s.userLog(e,msg);
-                })
-            }
-            if(e.direction === 'stopMove'){
-                stopCamera()
-            }else{
-                var requestOptions = {
-                    url: controlURL,
-                    method: controlURLOptions.method,
-                    auth: {
-                        user: controlURLOptions.username,
-                        pass: controlURLOptions.password
-                    }
-                }
-                if(monitorConfig.details.control_digest_auth === '1'){
-                    requestOptions.sendImmediately = true
-                }
-                request(requestOptions,function(err,data){
-                    if(err){
-                        msg = {ok:false,type:'Control Error',msg:err};
-                        callback(msg)
-                        s.userLog(e,msg);
-                        return
-                    }
-                    if(monitorConfig.details.control_stop=='1'&&e.direction!=='center'){
-                        s.userLog(e,{type:'Control Triggered Started'});
-                        if(monitorConfig.details.control_url_stop_timeout > 0){
-                            setTimeout(function(){
-                                stopCamera()
-                            },monitorConfig.details.control_url_stop_timeout)
-                        }
-                    }else{
-                        msg = {ok:true,type:'Control Triggered'};
-                        callback(msg)
-                        s.userLog(e,msg);
-                    }
-                })
-            }
-        }
-    }
     s.cameraControlOptionsFromUrl = function(e,monitorConfig){
-        s.checkDetails(e)
         URLobject = URL.parse(e)
         if(monitorConfig.details.control_url_method === 'ONVIF' && monitorConfig.details.control_base_url === ''){
             if(monitorConfig.details.onvif_port === ''){
@@ -837,96 +661,6 @@ module.exports = function(s,config,lang){
             }
         },60000*1);
     }
-    const cameraPullJpegStream = function(e){
-        if(!e.details.sfps||e.details.sfps===''){
-            e.details.sfps = 1
-        }
-        var capture_fps = parseFloat(e.details.sfps);
-        if(isNaN(capture_fps)){capture_fps = 1}
-        if(s.group[e.ke].activeMonitors[e.id].spawn){
-            s.group[e.ke].activeMonitors[e.id].spawn.stdin.on('error',function(err){
-                if(err&&e.details.loglevel!=='quiet'){
-                    s.userLog(e,{type:'STDIN ERROR',msg:err});
-                }
-            })
-        }else{
-            if(e.functionMode === 'record'){
-                s.userLog(e,{type:lang.FFmpegCantStart,msg:lang.FFmpegCantStartText});
-                return
-            }
-        }
-        e.captureOne = function(f){
-            s.group[e.ke].activeMonitors[e.id].recordingSnapRequest = request({
-                url: s.buildMonitorUrl(e),
-                method: 'GET',
-                encoding: null,
-                timeout: 15000
-            },function(err,data){
-                if(err){
-                    return;
-                }
-            }).on('data',function(d){
-                if(!e.buffer0){
-                    e.buffer0 = [d]
-                }else{
-                    e.buffer0.push(d)
-                }
-                if((d[d.length-2] === 0xFF && d[d.length-1] === 0xD9)){
-                    e.buffer0 = Buffer.concat(e.buffer0);
-                  if(s.group[e.ke].activeMonitors[e.id].spawn&&s.group[e.ke].activeMonitors[e.id].spawn.stdin){
-                      s.group[e.ke].activeMonitors[e.id].spawn.stdin.write(e.buffer0);
-                  }
-                  if(s.group[e.ke].activeMonitors[e.id].isStarted === true){
-                      s.group[e.ke].activeMonitors[e.id].recordingSnapper = setTimeout(function(){
-                          e.captureOne()
-                      },1000/capture_fps)
-                  }
-                  e.buffer0 = null
-                }
-                if(!e.timeOut){
-                    e.timeOut = setTimeout(function(){
-                        e.errorCount = 0;
-                        delete(e.timeOut)
-                    },3000)
-                }
-            }).on('error', function(err){
-                ++e.errorCount
-                clearTimeout(e.timeOut)
-                delete(e.timeOut)
-                if(e.details.loglevel !== 'quiet'){
-                    s.userLog(e,{
-                        type: lang['JPEG Error'],
-                        msg: {
-                            msg: lang.JPEGErrorText,
-                            info: err
-                        }
-                    });
-                    switch(err.code){
-                        case'ESOCKETTIMEDOUT':
-                        case'ETIMEDOUT':
-                            ++s.group[e.ke].activeMonitors[e.id].errorSocketTimeoutCount
-                            if(
-                                e.details.fatal_max !== 0 &&
-                                s.group[e.ke].activeMonitors[e.id].errorSocketTimeoutCount > e.details.fatal_max
-                            ){
-                                s.userLog(e,{type:lang['Fatal Maximum Reached'],msg:{code:'ESOCKETTIMEDOUT',msg:lang.FatalMaximumReachedText}});
-                                s.camera('stop',e)
-                            }else{
-                                s.userLog(e,{type:lang['Restarting Process'],msg:{code:'ESOCKETTIMEDOUT',msg:lang.FatalMaximumReachedText}});
-                                s.camera('restart',e)
-                            }
-                            return;
-                        break;
-                    }
-                }
-                if(e.details.fatal_max !== 0 && e.errorCount > e.details.fatal_max){
-                    clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingSnapper)
-                    launchMonitorProcesses(s.cleanMonitorObject(e))
-                }
-            })
-        }
-        e.captureOne()
-    }
     const onDetectorJpegOutputAlone = (e,d) => {
         s.ocvTx({
             f: 'frame',
@@ -1053,9 +787,6 @@ module.exports = function(s,config,lang){
         //emitter for mjpeg
         if(!e.details.stream_mjpeg_clients||e.details.stream_mjpeg_clients===''||isNaN(e.details.stream_mjpeg_clients)===false){e.details.stream_mjpeg_clients=20;}else{e.details.stream_mjpeg_clients=parseInt(e.details.stream_mjpeg_clients)}
         s.group[e.ke].activeMonitors[e.id].emitter = new events.EventEmitter().setMaxListeners(e.details.stream_mjpeg_clients);
-        if(e.type==='jpeg'){
-            cameraPullJpegStream(e)
-        }
         if(e.details.detector_audio === '1'){
             if(s.group[e.ke].activeMonitors[e.id].audioDetector){
               s.group[e.ke].activeMonitors[e.id].audioDetector.stop()
@@ -1466,8 +1197,6 @@ module.exports = function(s,config,lang){
                 //check host to see if has password and user in it
                 clearTimeout(activeMonitor.recordingChecker)
                 if(activeMonitor.isStarted === true){
-                    e.errorCount = 0;
-                    activeMonitor.errorSocketTimeoutCount = 0;
                     try{
                         cameraDestroy(e)
                     }catch(err){

@@ -519,14 +519,14 @@ module.exports = function(s,config,lang){
             }
         })
     }
-    s.accountSettingsEdit = function(d){
+    s.accountSettingsEdit = function(d,dontRunExtensions){
         s.sqlQuery('SELECT details FROM Users WHERE ke=? AND uid=?',[d.ke,d.uid],function(err,r){
             if(r&&r[0]){
                 r=r[0];
                 d.d=JSON.parse(r.details);
                 if(!d.d.sub || d.d.user_change !== "0"){
                     if(d.cnid){
-                        if(d.d.get_server_log==='1'){
+                        if(d.d.get_server_log === '1'){
                             s.clientSocketConnection[d.cnid].join('GRPLOG_'+d.ke)
                         }else{
                             s.clientSocketConnection[d.cnid].leave('GRPLOG_'+d.ke)
@@ -534,9 +534,11 @@ module.exports = function(s,config,lang){
                     }
                     ///unchangeable from client side, so reset them in case they did.
                     d.form.details=JSON.parse(d.form.details)
-                    s.beforeAccountSaveExtensions.forEach(function(extender){
-                        extender(d)
-                    })
+                    if(!dontRunExtensions){
+                        s.beforeAccountSaveExtensions.forEach(function(extender){
+                            extender(d)
+                        })
+                    }
                     //admin permissions
                     d.form.details.permissions=d.d.permissions
                     d.form.details.edit_size=d.d.edit_size
@@ -595,7 +597,7 @@ module.exports = function(s,config,lang){
                     }
                     readStorageArray()
                     ///
-                    d.form.details = JSON.stringify(d.form.details)
+                    d.form.details = JSON.stringify(s.mergeDeep(d.d,d.form.details))
                     ///
                     d.set=[],d.ar=[];
                     if(d.form.pass&&d.form.pass!==''){d.form.pass=s.createHash(d.form.pass);}else{delete(d.form.pass)};
@@ -610,13 +612,15 @@ module.exports = function(s,config,lang){
                             var user = Object.assign(d.form,{ke : d.ke})
                             var userDetails = JSON.parse(d.form.details)
                             s.group[d.ke].sizeLimit = parseFloat(newSize)
-                            s.onAccountSaveExtensions.forEach(function(extender){
-                                extender(s.group[d.ke],userDetails,user)
-                            })
-                            s.unloadGroupAppExtensions.forEach(function(extender){
-                                extender(user)
-                            })
-                            s.loadGroupApps(d)
+                            if(!dontRunExtensions){
+                                s.onAccountSaveExtensions.forEach(function(extender){
+                                    extender(s.group[d.ke],userDetails,user)
+                                })
+                                s.unloadGroupAppExtensions.forEach(function(extender){
+                                    extender(user)
+                                })
+                                s.loadGroupApps(d)
+                            }
                         }
                         if(d.cnid)s.tx({f:'user_settings_change',uid:d.uid,ke:d.ke,form:d.form},d.cnid)
                     })

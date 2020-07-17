@@ -429,6 +429,11 @@ module.exports = function(s,config,lang){
                        "example": "",
                        "form-group-class": "h_onvif_input h_onvif_1",
                     },
+                    {
+                       "fieldType": "btn",
+                       "class": `btn-success probe_config`,
+                       "btnContent": `<i class="fa fa-search"></i> &nbsp; ${lang.FFprobe}`,
+                    },
                 ]
             },
              "Input": {
@@ -2508,7 +2513,6 @@ module.exports = function(s,config,lang){
                       "description": "The amount of time until a trigger is allowed to send another email with motion details and another image.",
                       "default": "10",
                       "example": "",
-                      "form-group-class": "h_det_email_input h_det_email_1",
                       "form-group-class-pre-layer": "h_det_input h_det_1",
                       "possible": ""
                    },
@@ -3014,25 +3018,6 @@ module.exports = function(s,config,lang){
                             ]
                          },
                          {
-                            "name": "detail=detector_obj_count",
-                            "field": lang["Count Objects"],
-                            "description": "Count detected objects.",
-                            "default": "0",
-                            "example": "",
-                            "selector": "h_det_count",
-                            "fieldType": "select",
-                            "possible": [
-                               {
-                                  "name": lang.No,
-                                  "value": "0"
-                               },
-                               {
-                                  "name": lang.Yes,
-                                  "value": "1"
-                               }
-                            ]
-                         },
-                         {
                              hidden: true,
                             "name": "detail=detector_obj_count_in_region",
                             "field": lang["Count Objects only inside Regions"],
@@ -3434,6 +3419,53 @@ module.exports = function(s,config,lang){
                        "example": "",
                        "form-group-class": "h_cs_input h_cs_1",
                        "possible": ""
+                    },
+                    {
+                       "name": "detail=detector_ptz_follow",
+                       "field": lang['PTZ Tracking'],
+                       "description": "Follow the largest detected object with PTZ? Requires an Object Detector running or matrices provided with events.",
+                       "default": "0",
+                       "example": "",
+                       "selector": "h_det_tracking",
+                       "fieldType": "select",
+                       "possible": [
+                           {
+                              "name": lang.No,
+                              "value": "0"
+                           },
+                           {
+                              "name": lang.Yes,
+                              "value": "1"
+                           }
+                       ]
+                    },
+                    {
+                       "name": "detail=detector_ptz_follow_target",
+                       "field": lang['PTZ Tracking Target'],
+                       "description": "",
+                       "default": "person",
+                       "example": "",
+                       "form-group-class": "h_det_tracking_input h_det_tracking_1",
+                       "possible": ""
+                    },
+                    {
+                       "name": "detail=detector_obj_count",
+                       "field": lang["Count Objects"],
+                       "description": "Count detected objects.",
+                       "default": "0",
+                       "example": "",
+                       "selector": "h_det_count",
+                       "fieldType": "select",
+                       "possible": [
+                          {
+                             "name": lang.No,
+                             "value": "0"
+                          },
+                          {
+                             "name": lang.Yes,
+                             "value": "1"
+                          }
+                       ]
                     },
                     {
                        "name": "detail=control_url_center",
