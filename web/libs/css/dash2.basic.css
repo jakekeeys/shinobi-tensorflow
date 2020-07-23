@@ -182,9 +182,6 @@ img{max-width:100%}
 .dot-orange {background:#c49a68}
 .dot-grey {background:#777}
 
-
-
-
 .os_bars{width:600px;display:inline-block;padding:5px 0 0 10px}
 @media screen and (max-width: 600px){
     .os_bars{width:200px;}
