@@ -438,7 +438,7 @@ module.exports = function(s,config,lang){
             }
             d.currentTime = new Date()
             d.currentTimestamp = s.timeObject(d.currentTime).format()
-            d.screenshotName = 'Motion_'+(d.mon.name.replace(/[^\w\s]/gi,''))+'_'+d.id+'_'+d.ke+'_'+s.formattedTime()
+            d.screenshotName =  d.details.reason + '_'+(d.mon.name.replace(/[^\w\s]/gi,''))+'_'+d.id+'_'+d.ke+'_'+s.formattedTime()
             d.screenshotBuffer = null
 
             s.onEventTriggerExtensions.forEach(function(extender){
