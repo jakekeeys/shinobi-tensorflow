@@ -1209,7 +1209,7 @@ module.exports = function(s,config,lang){
                                 createCameraFfmpegProcess(e)
                                 createCameraStreamHandlers(e)
                                 createEventCounter(e)
-                                if(e.type === 'dashcam'){
+                                if(e.type === 'dashcam' || e.type === 'socket'){
                                     setTimeout(function(){
                                         activeMonitor.allowStdinWrite = true
                                         s.txToDashcamUsers({

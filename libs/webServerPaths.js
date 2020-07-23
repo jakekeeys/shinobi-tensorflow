@@ -1756,54 +1756,28 @@ module.exports = function(s,config,lang,app,io){
                                 });
                             } else {
                                 let video = req.files.video;
-                                if(req.query.streamIn === '1'){
-                                    var tempLocation = s.getStreamsDirectory(monitor) +  video.name;
-                                    video.mv(tempLocation,function(){
-                                        var fileStream = fs.createReadStream(tempLocation)
-                                        fileStream.on('close',function(){
-
-                                        })
-                                        fileStream.on('data',function(data){
-                                            try{
-                                                s.group[groupKey].activeMonitors[monitorId].spawn.stdin.write(data);
-                                            }catch(err){
-                                                console.log(err)
-                                            }
-                                        })
-                                        // s.group[groupKey].activeMonitors[monitorId].spawn.stdin.write(fs.readFileSync(tempLocation,'binary'));
+                                var time = new Date(parseInt(video.name.split('.')[0]))
+                                time = req.body.startTime ? !time.getTime() ? new Date(parseInt(req.body.startTime)) : time : new Date()
+                                var filename = s.formattedTime(time) + '.' + monitor.ext
+                                video.mv(s.getVideoDirectory(monitor) +  filename,function(){
+                                    s.insertCompletedVideo(monitor,{
+                                        file: filename,
+                                        events: s.group[groupKey].activeMonitors[monitorId].detector_motion_count,
+                                        endTime: req.body.endTime.indexOf('-') > -1 ? s.nameToTime(req.body.endTime) : parseInt(req.body.endTime) || null,
+                                    },function(){
+                                        response.ok = true
+                                        response.filename = filename
                                         res.end(s.prettyPrint({
                                             ok: true,
-                                            message: 'File is transcoding',
+                                            message: 'File is uploaded',
                                             data: {
                                                 name: video.name,
                                                 mimetype: video.mimetype,
                                                 size: video.size
                                             }
                                         }))
-                                    });
-                                }else{
-                                    var time = new Date(parseInt(video.name.split('.')[0]))
-                                    var filename = s.formattedTime(time) + '.' + monitor.ext
-                                    video.mv(s.getVideoDirectory(monitor) +  filename,function(){
-                                        s.insertCompletedVideo(monitor,{
-                                            file: filename,
-                                            events: s.group[groupKey].activeMonitors[monitorId].detector_motion_count,
-                                            endTime: req.body.endTime.indexOf('-') > -1 ? s.nameToTime(req.body.endTime) : parseInt(req.body.endTime) || null,
-                                        },function(){
-                                            response.ok = true
-                                            response.filename = filename
-                                            res.end(s.prettyPrint({
-                                                ok: true,
-                                                message: 'File is uploaded',
-                                                data: {
-                                                    name: video.name,
-                                                    mimetype: video.mimetype,
-                                                    size: video.size
-                                                }
-                                            }))
-                                        })
-                                    });
-                                }
+                                    })
+                                });
                             }
                         } catch (err) {
                             response.err = err
@@ -1900,24 +1874,38 @@ module.exports = function(s,config,lang,app,io){
     /**
     * API : Stream In to push data to ffmpeg by HTTP
      */
-    app.all(['/streamIn/:ke/:id','/streamIn/:ke/:id/:feed'], function (req, res) {
-        var checkOrigin = function(search){return req.headers.host.indexOf(search)>-1}
-        if(checkOrigin('127.0.0.1')){
-            if(!req.params.feed){req.params.feed='1'}
-            if(!s.group[req.params.ke].activeMonitors[req.params.id].streamIn[req.params.feed]){
-                s.group[req.params.ke].activeMonitors[req.params.id].streamIn[req.params.feed] = new events.EventEmitter().setMaxListeners(0)
-            }
-            //req.params.feed = Feed Number
+    app.all('/:auth/streamIn/:ke/:id', function (req, res) {
+        s.auth(req.params,function(user){
+            const ipAddress = s.getClientIp(req)
+            const groupKey = req.params.ke
+            const monitorId = req.params.id
+            const timeStartedConnection = new Date();
+            s.userLog({
+                ke: groupKey,
+                mid: monitorId,
+            },{
+                type: "HTTP streamIn Started",
+                msg: {
+                    ipAddress: ipAddress,
+                }
+            })
             res.connection.setTimeout(0);
             req.on('data', function(buffer){
-                s.group[req.params.ke].activeMonitors[req.params.id].streamIn[req.params.feed].emit('data',buffer)
+                s.group[groupKey].activeMonitors[monitorId].spawn.stdin.write(buffer)
             });
             req.on('end',function(){
-    //            console.log('streamIn closed',req.params);
+                s.userLog({
+                    ke: groupKey,
+                    mid: monitorId,
+                },{
+                    type: "HTTP streamIn Closed",
+                    msg: {
+                        timeStartedConnection: timeStartedConnection,
+                        ipAddress: ipAddress,
+                    }
+                })
             });
-        }else{
-            res.end('Local connection is only allowed.')
-        }
+        },res,req)
     })
     /**
     * API : Account Edit from Dashboard
