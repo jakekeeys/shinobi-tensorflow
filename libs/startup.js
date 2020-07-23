@@ -181,20 +181,24 @@ module.exports = function(s,config,lang,io){
         })
         var loadCloudVideos = function(callback){
             s.sqlQuery('SELECT * FROM `Cloud Videos` WHERE ke=? AND status!=?',[user.ke,0],function(err,videos){
-                if(videos && videos[0]){
-                    videos.forEach(function(video){
-                        var storageType = JSON.parse(video.details).type
-                        if(!storageType)storageType = 's3'
-                        var videoSize = video.size / 1048576
-                        user.cloudDiskUse[storageType].usedSpace += videoSize
-                        user.cloudDiskUse[storageType].usedSpaceVideos += videoSize
-                        ++user.cloudDiskUse[storageType].firstCount
-                    })
-                    s.cloudDisksLoaded.forEach(function(storageType){
-                        var firstCount = user.cloudDiskUse[storageType].firstCount
-                        s.systemLog(user.mail+' : '+lang.startUpText1+' : '+firstCount,storageType,user.cloudDiskUse[storageType].usedSpace)
-                        delete(user.cloudDiskUse[storageType].firstCount)
-                    })
+                try{
+                    if(videos && videos[0]){
+                        videos.forEach(function(video){
+                            var storageType = JSON.parse(video.details).type
+                            if(!storageType)storageType = 's3'
+                            var videoSize = video.size / 1048576
+                            user.cloudDiskUse[storageType].usedSpace += videoSize
+                            user.cloudDiskUse[storageType].usedSpaceVideos += videoSize
+                            ++user.cloudDiskUse[storageType].firstCount
+                        })
+                        s.cloudDisksLoaded.forEach(function(storageType){
+                            var firstCount = user.cloudDiskUse[storageType].firstCount
+                            s.systemLog(user.mail+' : '+lang.startUpText1+' : '+firstCount,storageType,user.cloudDiskUse[storageType].usedSpace)
+                            delete(user.cloudDiskUse[storageType].firstCount)
+                        })
+                    }
+                }catch(err){
+                    s.systemLog(err)
                 }
                 callback()
             })
