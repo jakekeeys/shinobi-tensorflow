@@ -293,7 +293,7 @@ module.exports = function(s,config,lang){
                         detector_mail_timeout = parseFloat(d.mon.details.detector_mail_timeout)*1000*60;
                     }
                     //lock mailer so you don't get emailed on EVERY trigger event.
-                    s.group[d.ke].activeMonitors[d.id].detector_mail=setTimeout(function(){
+                    s.group[d.ke].activeMonitors[d.id].detector_mail = setTimeout(function(){
                         //unlock so you can mail again.
                         clearTimeout(s.group[d.ke].activeMonitors[d.id].detector_mail);
                         delete(s.group[d.ke].activeMonitors[d.id].detector_mail);
