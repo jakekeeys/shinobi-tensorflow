@@ -412,7 +412,7 @@ $(document).ready(function(e){
                 }
             break;
             case'trigger-event':
-                $.getJSON(getApiPrefix() + '/motion/'+e.ke+'/'+e.mid+'/?data={"plug":"camera1","name":"stairs","reason":"motion","confidence":197.4755859375}',function(d){
+                $.getJSON(getApiPrefix() + '/motion/'+e.ke+'/'+e.mid+'/?data={"plug":"camera1","name":"stairs","reason":"motion","confidence":100}',function(d){
                     $.ccio.log(d)
                 })
             break;
