@@ -1756,12 +1756,14 @@ module.exports = function(s,config,lang,app,io){
                                 });
                             } else {
                                 let video = req.files.video;
+                                var details = s.getPostData(req,'details',true) || {}
                                 var time = new Date(parseInt(video.name.split('.')[0]))
                                 time = req.body.startTime ? !time.getTime() ? new Date(parseInt(req.body.startTime)) : time : new Date()
                                 var filename = s.formattedTime(time) + '.' + monitor.ext
                                 video.mv(s.getVideoDirectory(monitor) +  filename,function(){
                                     s.insertCompletedVideo(monitor,{
                                         file: filename,
+                                        details: details,
                                         events: s.group[groupKey].activeMonitors[monitorId].detector_motion_count,
                                         endTime: req.body.endTime.indexOf('-') > -1 ? s.nameToTime(req.body.endTime) : parseInt(req.body.endTime) || null,
                                     },function(){

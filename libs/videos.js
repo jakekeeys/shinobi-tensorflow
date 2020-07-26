@@ -108,7 +108,7 @@ module.exports = function(s,config,lang){
             }
             if(k.fileExists===true){
                 //close video row
-                k.details = {}
+                k.details = k.details && k.details instanceof Object ? k.details : {}
                 k.stat = fs.statSync(k.dir+k.file)
                 k.filesize = k.stat.size
                 k.filesizeMB = parseFloat((k.filesize/1048576).toFixed(2))
