@@ -375,7 +375,9 @@ module.exports = function(s,config,lang){
                 time : s.formattedTime(),
                 frame : s.group[d.ke].activeMonitors[d.id].lastJpegDetectorFrame
             })
-        }else{
+        }
+        //
+        if(currentConfig.detector_always_record === '1' || d.doObjectDetection !== true ){
             if(currentConfig.det_multi_trig === '1'){
                 s.getCamerasForMultiTrigger(d.mon).forEach(function(monitor){
                     if(monitor.mid !== d.id){
