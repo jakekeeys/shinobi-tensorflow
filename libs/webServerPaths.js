@@ -847,7 +847,7 @@ module.exports = function(s,config,lang,app,io){
             const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
-            if(user.permissions.get_monitors === "0" || monitorRestrictions.length === 0){
+            if(user.details.sub && (user.permissions.get_monitors === "0" || monitorRestrictions.length === 0)){
                 s.closeJsonResponse(res,[]);
                 return
             }
@@ -952,7 +952,7 @@ module.exports = function(s,config,lang,app,io){
             const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
-            if(user.permissions.get_monitors === "0" || monitorRestrictions.length === 0){
+            if(user.details.sub && (user.permissions.get_monitors === "0" || monitorRestrictions.length === 0)){
                 s.closeJsonResponse(res,[]);
                 return
             }
@@ -965,7 +965,6 @@ module.exports = function(s,config,lang,app,io){
                     monitorRestrictions
                 ]
             },(err,r) => {
-                console.log(r)
                 r.forEach(function(v,n){
                     if(s.group[v.ke] && s.group[v.ke].activeMonitors[v.mid]){
                         r[n].currentlyWatching = Object.keys(s.group[v.ke].activeMonitors[v.mid].watch).length
@@ -1220,7 +1219,7 @@ module.exports = function(s,config,lang,app,io){
             const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
-            if(user.permissions.get_monitors === "0" || monitorRestrictions.length === 0){
+            if(user.details.sub && (user.permissions.get_monitors === "0" || monitorRestrictions.length === 0)){
                 s.closeJsonResponse(res,[]);
                 return
             }
@@ -1380,7 +1379,7 @@ module.exports = function(s,config,lang,app,io){
             const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
-            if(user.permissions.get_monitors === "0" || monitorRestrictions.length === 0){
+            if(user.details.sub && (user.permissions.get_monitors === "0" || monitorRestrictions.length === 0)){
                 s.closeJsonResponse(res,[]);
                 return
             }
@@ -1413,7 +1412,7 @@ module.exports = function(s,config,lang,app,io){
                 const groupKey = req.params.ke
                 const monitorId = req.params.id
                 const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
-                if(user.permissions.get_monitors === "0" || monitorRestrictions.length === 0){
+                if(user.details.sub && (user.permissions.get_monitors === "0" || monitorRestrictions.length === 0)){
                     s.closeJsonResponse(res,{
                         ok: false,
                         msg: lang['Not Permitted']
@@ -1460,7 +1459,7 @@ module.exports = function(s,config,lang,app,io){
             const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
-            if(user.permissions.watch_videos === "0" || monitorRestrictions.length === 0){
+            if(user.details.sub && (user.permissions.watch_videos === "0" || monitorRestrictions.length === 0)){
                 s.closeJsonResponse(res,{
                     ok: false,
                     msg: lang['Not Permitted']
@@ -1509,7 +1508,7 @@ module.exports = function(s,config,lang,app,io){
             const groupKey = req.params.ke
             const monitorId = req.params.id
             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
-            if(user.permissions.watch_videos === "0" || monitorRestrictions.length === 0){
+            if(user.details.sub && (user.permissions.watch_videos === "0" || monitorRestrictions.length === 0)){
                 s.closeJsonResponse(res,{
                     ok: false,
                     msg: lang['Not Permitted']
