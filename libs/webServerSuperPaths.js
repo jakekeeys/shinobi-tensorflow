@@ -26,6 +26,7 @@ module.exports = function(s,config,lang,app){
                 endOperator: req.query.endOperator,
                 limit: req.query.limit,
                 archived: req.query.archived,
+                endIsStartTo: true
             },(response) => {
                 response.rows.forEach(function(v,n){
                     r[n].info = JSON.parse(v.info)

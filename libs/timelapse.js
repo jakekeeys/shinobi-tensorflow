@@ -169,7 +169,8 @@ module.exports = function(s,config,lang,app,io){
                 endOperator: req.query.endOperator,
                 limit: req.query.limit,
                 archived: req.query.archived,
-                type: 'frames'
+                rowType: 'frames',
+                endIsStartTo: true
             },(response) => {
                 var isMp4Call = !!(req.query.mp4 || (req.params.date && typeof req.params.date === 'string' && req.params.date.indexOf('.') > -1))
                 if(isMp4Call && response.frames[0]){
