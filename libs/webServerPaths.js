@@ -1558,7 +1558,11 @@ module.exports = function(s,config,lang,app,io){
                     req.dir=s.getVideoDirectory(r[0])+req.params.file
                     fs.stat(req.dir,function(err,stats){
                         if (!err){
-                            s.streamMp4FileOverHttp(req.dir,req,res)
+                            if(req.query.json === 'true'){
+                                s.closeJsonResponse(res,r[0])
+                            }else{
+                                s.streamMp4FileOverHttp(req.dir,req,res)
+                            }
                         }else{
                             res.end(user.lang['File Not Found in Filesystem'])
                         }
