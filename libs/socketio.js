@@ -1073,7 +1073,7 @@ module.exports = function(s,config,lang,io){
                         if(!s.group[d.ke].users)s.group[d.ke].users={};
                         if(!s.group[d.ke].dashcamUsers)s.group[d.ke].dashcamUsers={};
                         s.group[d.ke].users[d.auth]={
-                            cnid:cn.id,
+                            cnid: cn.id,
                             ke : d.ke,
                             uid:r.uid,
                             mail:r.mail,
@@ -1126,6 +1126,13 @@ module.exports = function(s,config,lang,io){
                     s.tx({error:'Non Existant Monitor'},cn.id)
                 }
             }
+        })
+        cn.on('gps',(d) => {
+            s.tx({
+                f: 'gps',
+                gps: d.data,
+                mid: d.mid
+            },`MON_STREAM_${cn.ke}${d.mid}`)
         })
         //embed functions
         cn.on('e', function (d) {

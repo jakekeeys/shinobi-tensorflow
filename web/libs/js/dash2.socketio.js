@@ -656,6 +656,27 @@ $.ccio.globalWebsocket=function(d,user){
             $.ccio.init('jpegModeAll');
             $('body').addClass('jpegMode')
         break;
+        case'gps':
+            var gps = d.gps
+            var mapBoxMarker = $.ccio.mon[user.ke + d.mid + user.auth_token].mapBoxMarker
+            $(`#gps-map-${d.mid}`).removeClass('hidden')
+            if(!mapBoxMarker){
+                var mapBox = L.map(`gps-map-${d.mid}`).setView([gps.lat, gps.lng], 5);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: 'OpenStreet Map'
+                }).addTo(mapBox);
+
+                var mapBoxMarker = L.marker([gps.lat, gps.lng]).addTo(mapBox);
+                $.ccio.mon[user.ke + d.mid + user.auth_token].mapBoxMarker = mapBoxMarker
+            }else{
+                mapBoxMarker.setLatLng([gps.lat, gps.lng]).update()
+            }
+            clearTimeout($.ccio.mon[user.ke + d.mid + user.auth_token].mapBoxTimeout)
+            $.ccio.mon[user.ke + d.mid + user.auth_token].mapBoxTimeout = setTimeout(function(){
+                $(`#gps-map-${d.mid}`).addClass('hidden')
+            },30000)
+        break;
     }
 }
 if(location.search === '?assemble=1'){

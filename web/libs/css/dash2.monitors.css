@@ -101,3 +101,14 @@ img.circle-img,div.circle-img{border-radius:50%;height:50px;width:50px}
 .stream-objects .stream-detected-object{position:absolute;top:0;left:0;border:3px solid red;background:transparent;border-radius:5px}
 .stream-objects .stream-detected-point{position:absolute;top:0;left:0;border:3px solid yellow;background:transparent;border-radius:5px}
 .stream-objects .point{position:absolute;top:0;left:0;border:3px solid red;border-radius:50%}
+
+.monitor_item .gps-map {
+    position: absolute;
+    width: 190px;
+    height: 190px;
+    border-radius: 5px;
+    border: 1px solid #333;
+    z-index: 9;
+    bottom: 10px;
+    right: 10px;
+}
