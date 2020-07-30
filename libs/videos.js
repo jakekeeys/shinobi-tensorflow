@@ -471,7 +471,7 @@ module.exports = function(s,config,lang){
                 if(!fs.existsSync(finalMp4OutputLocation)){
                     var currentFile = 0
                     var completionTimeout
-                    var commandString = `ffmpeg -y -pattern_type glob -f image2pipe -vcodec mjpeg -r ${framesPerSecond} -analyzeduration 10 -i - -q:v 1 -c:v libx264 -r ${framesPerSecond} "${finalMp4OutputLocation}"`
+                    var commandString = `ffmpeg -y -f image2pipe -vcodec mjpeg -r ${framesPerSecond} -analyzeduration 10 -i - -q:v 1 -c:v libx264 -r ${framesPerSecond} "${finalMp4OutputLocation}"`
                     fs.writeFileSync(commandTempLocation,commandString)
                     var videoBuildProcess = spawn('sh',[commandTempLocation])
                     videoBuildProcess.stderr.on('data',function(data){
