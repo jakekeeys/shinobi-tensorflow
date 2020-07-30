@@ -423,7 +423,10 @@ module.exports = function(s,config,lang,io){
                                         update: {
                                             details: s.s(details)
                                         },
-                                        where: whereQuery
+                                        where: [
+                                            ['ke','=',cn.ke],
+                                            ['uid','=',cn.uid],
+                                        ]
                                     })
                                 }
                             })
@@ -449,7 +452,10 @@ module.exports = function(s,config,lang,io){
                                         update: {
                                             details: s.s(details)
                                         },
-                                        where: whereQuery
+                                        where: [
+                                            ['ke','=',cn.ke],
+                                            ['uid','=',cn.uid],
+                                        ]
                                     })
                                 }
                             })
