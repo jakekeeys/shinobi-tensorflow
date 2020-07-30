@@ -65,6 +65,7 @@ module.exports = function(s,config){
         var whereIsArray = where instanceof Array;
         if(!where[0])return;
         if(where[0] && where[0] instanceof Array){
+            // didOne = true
             dbQuery.where(function() {
                 var _this = this
                 var didOneInsideGroup = false

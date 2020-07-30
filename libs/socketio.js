@@ -405,15 +405,14 @@ module.exports = function(s,config,lang,io){
                 switch(d.f){
                     case'monitorOrder':
                         if(d.monitorOrder && d.monitorOrder instanceof Object){
-                            const whereQuery = [
-                                ['ke','=',cn.ke],
-                                ['uid','=',cn.uid],
-                            ]
                             s.knexQuery({
                                 action: "details",
                                 columns: "*",
                                 table: "Users",
-                                where: whereQuery
+                                where: [
+                                    ['ke','=',cn.ke],
+                                    ['uid','=',cn.uid],
+                                ]
                             },(err,r) => {
                                 if(r && r[0]){
                                     details = JSON.parse(r[0].details)
@@ -436,7 +435,10 @@ module.exports = function(s,config,lang,io){
                                 action: "details",
                                 columns: "*",
                                 table: "Users",
-                                where: whereQuery
+                                where: [
+                                    ['ke','=',cn.ke],
+                                    ['uid','=',cn.uid],
+                                ]
                             },(err,r) => {
                                 if(r && r[0]){
                                     details = JSON.parse(r[0].details)
@@ -463,8 +465,8 @@ module.exports = function(s,config,lang,io){
                                             columns: "details",
                                             table: "Users",
                                             where: [
-                                                ['ke','=',d.ke],
-                                                ['uid','=',d.uid],
+                                                ['ke','=',cn.ke],
+                                                ['uid','=',cn.uid],
                                             ],
                                             limit: 1
                                         },(err,r) => {
@@ -486,8 +488,8 @@ module.exports = function(s,config,lang,io){
                                                         details: JSON.stringify(d.d)
                                                     },
                                                     where: [
-                                                        ['ke','=',d.ke],
-                                                        ['uid','=',d.uid],
+                                                        ['ke','=',cn.ke],
+                                                        ['uid','=',cn.uid],
                                                     ]
                                                 },(err) => {
                                                     tx({f:'filters_change',uid:d.uid,ke:d.ke,filters:d.d.filters});
