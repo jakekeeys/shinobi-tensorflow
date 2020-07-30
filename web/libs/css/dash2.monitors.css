@@ -106,7 +106,7 @@ img.circle-img,div.circle-img{border-radius:50%;height:50px;width:50px}
     position: absolute;
     width: 190px;
     height: 190px;
-    border-radius: 5px;
+    border-radius: 50%;
     border: 1px solid #333;
     z-index: 9;
     bottom: 10px;
