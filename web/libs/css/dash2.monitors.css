@@ -117,7 +117,7 @@ img.circle-img,div.circle-img{border-radius:50%;height:50px;width:50px}
     padding: 5px 7px;
     border-radius: 25px;
     background:rgba(0,0,0,0.5);
-    z-index: 9;
+    z-index: 11;
     top: 10px;
     right: 10px;
 }
