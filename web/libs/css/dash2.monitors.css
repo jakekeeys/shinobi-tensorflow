@@ -112,3 +112,12 @@ img.circle-img,div.circle-img{border-radius:50%;height:50px;width:50px}
     bottom: 10px;
     right: 10px;
 }
+.monitor_item .gps-map-details {
+    position: absolute;
+    padding: 5px 7px;
+    border-radius: 25px;
+    background:rgba(0,0,0,0.5);
+    z-index: 9;
+    top: 10px;
+    right: 10px;
+}

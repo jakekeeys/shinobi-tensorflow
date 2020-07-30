@@ -100,7 +100,12 @@ $.ccio.tm=function(x,d,z,user){
             k.mode=$.ccio.init('humanReadMode',d.mode);
             var dataTarget = '.monitor_item[mid=\''+d.mid+'\'][ke=\''+d.ke+'\'][auth=\''+user.auth_token+'\']';
             tmp+='<div id="monitor_live_'+d.mid+user.auth_token+'" auth="'+user.auth_token+'" mid="'+d.mid+'" ke="'+d.ke+'" mode="'+k.mode+'" class="grid-stack-item monitor_item glM'+d.mid+user.auth_token+'"><div class="grid-stack-item-content">';
-            tmp+='<div class="gps-map hidden" id="gps-map-' + d.mid + '"></div>';
+            tmp+=`<div class="gps-map-info gps-map-details hidden">
+                    <div><i class="fa fa-compass fa-3x gps-info-bearing"></i></div>
+                    <div><i class="fa fa-compass fa-3x gps-info-speed"></i></div>
+                <div></div>
+            </div>`;
+            tmp+='<div class="gps-map gps-map-info hidden" id="gps-map-' + d.mid + '"></div>';
             tmp+='<div class="stream-block no-padding mdl-card__media mdl-color-text--grey-50">';
             tmp+='<div class="stream-objects"></div>';
             tmp+='<div class="stream-hud">'

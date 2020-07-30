@@ -658,8 +658,10 @@ $.ccio.globalWebsocket=function(d,user){
         break;
         case'gps':
             var gps = d.gps
-            var mapBoxMarker = $.ccio.mon[user.ke + d.mid + user.auth_token].mapBoxMarker
-            $(`#gps-map-${d.mid}`).removeClass('hidden')
+            var activeMonitor = $.ccio.mon[user.ke + d.mid + user.auth_token]
+            var mapBoxMarker = activeMonitor.mapBoxMarker
+            var monitorElement = $(`.monitor_item[mid="${d.mid}"]`)
+            monitorElement.find(`.gps-map-info`).removeClass('hidden')
             if(!mapBoxMarker){
                 var mapBox = L.map(`gps-map-${d.mid}`).setView([gps.lat, gps.lng], 5);
 
@@ -668,13 +670,21 @@ $.ccio.globalWebsocket=function(d,user){
                 }).addTo(mapBox);
 
                 var mapBoxMarker = L.marker([gps.lat, gps.lng]).addTo(mapBox);
-                $.ccio.mon[user.ke + d.mid + user.auth_token].mapBoxMarker = mapBoxMarker
+                activeMonitor.mapBoxMarker = mapBoxMarker
+                activeMonitor.mapBoxBearingElement = monitorElement.find(`.gps-info-bearing`)
+                activeMonitor.mapBoxSpeedElement = monitorElement.find(`.gps-info-speed`)
             }else{
                 mapBoxMarker.setLatLng([gps.lat, gps.lng]).update()
             }
-            clearTimeout($.ccio.mon[user.ke + d.mid + user.auth_token].mapBoxTimeout)
-            $.ccio.mon[user.ke + d.mid + user.auth_token].mapBoxTimeout = setTimeout(function(){
-                $(`#gps-map-${d.mid}`).addClass('hidden')
+            if(gps.bearing){
+                setRadialBearing(activeMonitor.mapBoxBearingElement,gps.bearing,'Bearing : ')
+            }
+            if(gps.speed){
+                setRadialBearing(activeMonitor.mapBoxSpeedElement,gps.speed,'Speed (meters/second) : ')
+            }
+            clearTimeout(activeMonitor.mapBoxTimeout)
+            activeMonitor.mapBoxTimeout = setTimeout(function(){
+                monitorElement.find(`.gps-map-info`).addClass('hidden')
             },30000)
         break;
     }
