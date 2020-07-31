@@ -140,6 +140,9 @@ module.exports = function(s,config){
             if(options.orderBy){
                 dbQuery.orderBy(...options.orderBy)
             }
+            if(options.groupBy){
+                dbQuery.groupBy(options.groupBy)
+            }
             if(options.limit){
                 if(`${options.limit}`.indexOf(',') === -1){
                     dbQuery.limit(options.limit)
@@ -217,12 +220,15 @@ module.exports = function(s,config){
            whereQuery.push(['filename','=',options.filename])
            frameLimit = "1";
        }
+       options.orderBy = options.orderBy ? options.orderBy : ['time','desc']
+       options.groupBy = options.groupBy ? options.groupBy : options.orderBy[0]
        s.knexQuery({
            action: options.count ? "count" : "select",
            columns: options.columns || "*",
            table: options.table,
            where: whereQuery,
-           orderBy: options.orderBy || ['time','desc'],
+           orderBy: options.orderBy,
+           groupBy: options.groupBy,
            limit: frameLimit || '500'
        },(err,r) => {
            if(err){
