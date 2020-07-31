@@ -63,7 +63,7 @@ module.exports = function(s,config){
     }, 4);
     const processWhereCondition = (dbQuery,where,didOne) => {
         var whereIsArray = where instanceof Array;
-        if(!where[0])return;
+        if(!where || !where[0])return s.systemLog(new Error('No WHERE conditions'));
         if(where[0] && where[0] instanceof Array){
             // didOne = true
             dbQuery.where(function() {

@@ -406,12 +406,12 @@ module.exports = function(s,config,lang,io){
                     case'monitorOrder':
                         if(d.monitorOrder && d.monitorOrder instanceof Object){
                             s.knexQuery({
-                                action: "details",
+                                action: "select",
                                 columns: "*",
                                 table: "Users",
                                 where: [
                                     ['ke','=',cn.ke],
-                                    ['uid','=',cn.uid],
+                                    ['uid','=',cn.uid]
                                 ]
                             },(err,r) => {
                                 if(r && r[0]){
@@ -425,7 +425,7 @@ module.exports = function(s,config,lang,io){
                                         },
                                         where: [
                                             ['ke','=',cn.ke],
-                                            ['uid','=',cn.uid],
+                                            ['uid','=',cn.uid]
                                         ]
                                     })
                                 }
@@ -435,7 +435,7 @@ module.exports = function(s,config,lang,io){
                     case'monitorListOrder':
                         if(d.monitorListOrder && d.monitorListOrder instanceof Object){
                             s.knexQuery({
-                                action: "details",
+                                action: "select",
                                 columns: "*",
                                 table: "Users",
                                 where: [
