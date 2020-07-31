@@ -221,7 +221,7 @@ module.exports = function(s,config){
            frameLimit = "1";
        }
        options.orderBy = options.orderBy ? options.orderBy : ['time','desc']
-       options.groupBy = options.groupBy ? options.groupBy : options.orderBy[0]
+       if(options.count)options.groupBy = options.groupBy ? options.groupBy : options.orderBy[0]
        knexQuery({
            action: options.count ? "count" : "select",
            columns: options.columns || "*",
