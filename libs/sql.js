@@ -222,7 +222,7 @@ module.exports = function(s,config){
        }
        options.orderBy = options.orderBy ? options.orderBy : ['time','desc']
        options.groupBy = options.groupBy ? options.groupBy : options.orderBy[0]
-       s.knexQuery({
+       knexQuery({
            action: options.count ? "count" : "select",
            columns: options.columns || "*",
            table: options.table,
