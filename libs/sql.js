@@ -469,7 +469,7 @@ module.exports = function(s,config){
             }else{
                 getDatabaseRows({
                     monitorRestrictions: monitorRestrictions,
-                    columns: '*',
+                    columns: 'time',
                     count: true,
                     table: theTableSelected,
                     groupKey: groupKey,
