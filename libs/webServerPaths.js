@@ -1015,7 +1015,6 @@ module.exports = function(s,config,lang,app,io){
                         })
                     }
                 })
-                if(r.length === 1)r = r[0]
                 s.closeJsonResponse(res,r);
             })
         },res,req);
