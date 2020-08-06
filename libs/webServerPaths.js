@@ -128,12 +128,12 @@ module.exports = function(s,config,lang,app,io){
     * API : Get User Info
     */
     app.get(config.webPaths.apiPrefix+':auth/userInfo/:ke',function (req,res){
-        req.ret={ok:false};
+        var response = {ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            req.ret.ok=true
-            req.ret.user=user
-            res.end(s.prettyPrint(req.ret));
+            response.ok = true
+            response.user = user
+            res.end(s.prettyPrint(response));
         },res,req);
     })
     //login function
@@ -197,7 +197,7 @@ module.exports = function(s,config,lang,app,io){
             }
             if(req.query.json=='true'){
                 delete(data.config)
-                data.ok=true;
+                data.ok = true;
                 res.setHeader('Content-Type', 'application/json');
                 res.end(s.prettyPrint(data))
             }else{
@@ -282,10 +282,10 @@ module.exports = function(s,config,lang,app,io){
                             ['type','=','dashcam'],
                         ]
                     },(err,rr) => {
-                        req.resp.mons = rr
+                        response.mons = rr
                         renderPage(config.renderPaths.dashcam,{
                             // config: s.getConfigWithBranding(req.hostname),
-                            $user: req.resp,
+                            $user: response,
                             lang: r.lang,
                             define: s.getDefinitonFile(r.details.lang),
                             customAutoLoad: s.customAutoLoadTree
@@ -302,10 +302,10 @@ module.exports = function(s,config,lang,app,io){
                             ['type','=','socket'],
                         ]
                     },(err,rr) => {
-                        req.resp.mons=rr;
+                        response.mons=rr;
                         renderPage(config.renderPaths.streamer,{
                             // config: s.getConfigWithBranding(req.hostname),
-                            $user: req.resp,
+                            $user: response,
                             lang: r.lang,
                             define: s.getDefinitonFile(r.details.lang),
                             customAutoLoad: s.customAutoLoadTree
@@ -333,7 +333,7 @@ module.exports = function(s,config,lang,app,io){
                             },(err,rrr) => {
                                 renderPage(config.renderPaths.admin,{
                                     config: s.getConfigWithBranding(req.hostname),
-                                    $user: req.resp,
+                                    $user: response,
                                     $subs: rr,
                                     $mons: rrr,
                                     lang: r.lang,
@@ -349,7 +349,7 @@ module.exports = function(s,config,lang,app,io){
                             chosenRender = r.details.landing_page
                         }
                         renderPage(config.renderPaths[chosenRender],{
-                            $user:req.resp,
+                            $user:response,
                             config: s.getConfigWithBranding(req.hostname),
                             lang:r.lang,
                             define:s.getDefinitonFile(r.details.lang),
@@ -366,7 +366,7 @@ module.exports = function(s,config,lang,app,io){
                         chosenRender = r.details.landing_page
                     }
                     renderPage(config.renderPaths[chosenRender],{
-                        $user:req.resp,
+                        $user:response,
                         config: s.getConfigWithBranding(req.hostname),
                         lang:r.lang,
                         define:s.getDefinitonFile(r.details.lang),
@@ -392,8 +392,8 @@ module.exports = function(s,config,lang,app,io){
                     ],
                     limit: 1
                 },(err,r) => {
-                    req.resp={ok:false};
-                    if(!err&&r&&r[0]){
+                    var response = {ok: false};
+                    if(!err && r && r[0]){
                         r=r[0];r.auth=s.md5(s.gid());
                         s.knexQuery({
                             action: "update",
@@ -406,10 +406,17 @@ module.exports = function(s,config,lang,app,io){
                                 ['uid','=',r.uid],
                             ]
                         })
-                        req.resp={ok:true,auth_token:r.auth,ke:r.ke,uid:r.uid,mail:r.mail,details:r.details};
-                        r.details=JSON.parse(r.details);
-                        r.lang=s.getLanguageFile(r.details.lang)
-                        req.factorAuth=function(cb){
+                        var response = {
+                            ok: true,
+                            auth_token: r.auth,
+                            ke: r.ke,
+                            uid: r.uid,
+                            mail: r.mail,
+                            details: r.details
+                        };
+                        r.details = JSON.parse(r.details);
+                        r.lang = s.getLanguageFile(r.details.lang)
+                        const factorAuth = function(cb){
                             req.params.auth = r.auth
                             req.params.ke = r.ke
                             if(r.details.factorAuth === "1"){
@@ -419,7 +426,7 @@ module.exports = function(s,config,lang,app,io){
                                 if(!r.details.acceptedMachines[req.body.machineID]){
                                     req.complete=function(){
                                         s.factorAuth[r.ke][r.uid].function = req.body.function
-                                        s.factorAuth[r.ke][r.uid].info = req.resp
+                                        s.factorAuth[r.ke][r.uid].info = response
                                         clearTimeout(s.factorAuth[r.ke][r.uid].expireAuth)
                                         s.factorAuth[r.ke][r.uid].expireAuth = setTimeout(function(){
                                             s.deleteFactorAuth(r)
@@ -461,14 +468,14 @@ module.exports = function(s,config,lang,app,io){
                                     rr=rr[0];
                                     rr.details=JSON.parse(rr.details);
                                     r.details.mon_groups=rr.details.mon_groups;
-                                    req.resp.details=JSON.stringify(r.details);
-                                    req.factorAuth()
+                                    response.details=JSON.stringify(r.details);
+                                    factorAuth()
                                 }else{
                                     failedAuthentication(req.body.function)
                                 }
                             })
                         }else{
-                            req.factorAuth()
+                            factorAuth()
                         }
                     }else{
                         failedAuthentication(req.body.function)
@@ -533,7 +540,7 @@ module.exports = function(s,config,lang,app,io){
                                     if(!user.uid){
                                         user.uid=s.gid()
                                     }
-                                    req.resp = {
+                                    var response = {
                                         ke:req.body.key,
                                         uid:user.uid,
                                         auth:s.createHash(s.gid()),
@@ -559,35 +566,35 @@ module.exports = function(s,config,lang,app,io){
                                         if(rr&&rr[0]){
                                             //already registered
                                             rr=rr[0]
-                                            req.resp=rr;
+                                            var response = rr;
                                             rr.details=JSON.parse(rr.details)
-                                            req.resp.lang=s.getLanguageFile(rr.details.lang)
+                                            response.lang=s.getLanguageFile(rr.details.lang)
                                             s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP User Authenticated'],msg:{user:user,shinobiUID:rr.uid}})
                                             s.knexQuery({
                                                 action: "update",
                                                 table: "Users",
                                                 update: {
-                                                    auth: req.resp.auth
+                                                    auth: response.auth
                                                 },
                                                 where: [
-                                                    ['ke','=',req.resp.ke],
+                                                    ['ke','=',response.ke],
                                                     ['uid','=',rr.uid],
                                                 ]
                                             })
                                         }else{
                                             //new ldap login
                                             s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP User is New'],msg:{info:r.lang['Creating New Account'],user:user}})
-                                            req.resp.lang=r.lang
+                                            response.lang=r.lang
                                             s.knexQuery({
                                                 action: "insert",
                                                 table: "Users",
-                                                insert: req.resp,
+                                                insert: response,
                                             })
                                         }
-                                        req.resp.details = JSON.stringify(req.resp.details)
-                                        req.resp.auth_token = req.resp.auth
-                                        req.resp.ok=true
-                                        checkRoute(req.resp)
+                                        response.details = JSON.stringify(response.details)
+                                        response.auth_token = response.auth
+                                        response.ok = true
+                                        checkRoute(response)
                                     })
                                     return
                                 }
@@ -673,7 +680,7 @@ module.exports = function(s,config,lang,app,io){
                             }
                         }
                         req.body.function = s.factorAuth[req.body.ke][req.body.id].function
-                        req.resp = s.factorAuth[req.body.ke][req.body.id].info
+                        var response = s.factorAuth[req.body.ke][req.body.id].info
                         checkRoute(s.factorAuth[req.body.ke][req.body.id].user)
                         clearTimeout(s.factorAuth[req.body.ke][req.body.id].expireAuth)
                         s.deleteFactorAuth({
@@ -822,7 +829,7 @@ module.exports = function(s,config,lang,app,io){
     * API : Get TV Channels (Monitor Streams) json
      */
     app.get([config.webPaths.apiPrefix+':auth/tvChannels/:ke',config.webPaths.apiPrefix+':auth/tvChannels/:ke/:id','/get.php'], function (req,res){
-        req.ret={ok:false};
+        var response = {ok:false};
         if(req.query.username&&req.query.password){
             req.params.username = req.query.username
             req.params.password = req.query.password
@@ -946,7 +953,7 @@ module.exports = function(s,config,lang,app,io){
     * API : Get Monitors
      */
     app.get([config.webPaths.apiPrefix+':auth/monitor/:ke',config.webPaths.apiPrefix+':auth/monitor/:ke/:id'], function (req,res){
-        req.ret={ok:false};
+        var response = {ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,(user) => {
             const groupKey = req.params.ke
@@ -1212,7 +1219,7 @@ module.exports = function(s,config,lang,app,io){
     * API : Get Monitors Online
      */
     app.get(config.webPaths.apiPrefix+':auth/smonitor/:ke', function (req,res){
-        req.ret={ok:false};
+        var response = {ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,(user) => {
             const groupKey = req.params.ke
@@ -1249,17 +1256,17 @@ module.exports = function(s,config,lang,app,io){
     * API : Monitor Mode Controller
      */
     app.get([config.webPaths.apiPrefix+':auth/monitor/:ke/:id/:f',config.webPaths.apiPrefix+':auth/monitor/:ke/:id/:f/:ff',config.webPaths.apiPrefix+':auth/monitor/:ke/:id/:f/:ff/:fff'], function (req,res){
-        req.ret={ok:false};
+        var response = {ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
             if(user.permissions.control_monitors==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitor_edit.indexOf(req.params.id)===-1){
                 res.end(user.lang['Not Permitted'])
                 return
             }
-            if(req.params.f===''){req.ret.msg=user.lang.monitorGetText1;res.end(s.prettyPrint(req.ret));return}
+            if(req.params.f===''){response.msg = user.lang.monitorGetText1;res.end(s.prettyPrint(response));return}
             if(req.params.f!=='stop'&&req.params.f!=='start'&&req.params.f!=='record'){
-                req.ret.msg='Mode not recognized.';
-                res.end(s.prettyPrint(req.ret));
+                response.msg = 'Mode not recognized.';
+                res.end(s.prettyPrint(response));
                 return;
             }
             s.knexQuery({
@@ -1309,12 +1316,12 @@ module.exports = function(s,config,lang,app,io){
                             if(req.params.f!=='stop'){
                                 s.camera(req.params.f,s.cleanMonitorObject(r));
                             }
-                            req.ret.msg=user.lang['Monitor mode changed']+' : '+req.params.f;
+                            response.msg = user.lang['Monitor mode changed']+' : '+req.params.f;
                         }else{
-                            req.ret.msg=user.lang['Reset Timer'];
+                            response.msg = user.lang['Reset Timer'];
                         }
-                        req.ret.cmd_at=s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss');
-                        req.ret.ok=true;
+                        response.cmd_at=s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss');
+                        response.ok = true;
                         if(req.params.ff&&req.params.f!=='stop'){
                             req.params.ff=parseFloat(req.params.ff);
                             clearTimeout(s.group[r.ke].activeMonitors[r.mid].trigger_timer)
@@ -1357,15 +1364,15 @@ module.exports = function(s,config,lang,app,io){
                                 s.tx({f:'monitor_edit',mid:r.mid,ke:r.ke,mon:r},'GRP_'+r.ke);
                                 s.tx({f:'monitor_edit',mid:r.mid,ke:r.ke,mon:r},'STR_'+r.ke);
                             },req.timeout);
-    //                        req.ret.end_at=s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss').add(req.timeout,'milliseconds');
+    //                        response.end_at=s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss').add(req.timeout,'milliseconds');
                         }
                      }else{
-                        req.ret.msg=user.lang['Monitor mode is already']+' : '+req.params.f;
+                        response.msg = user.lang['Monitor mode is already']+' : '+req.params.f;
                     }
                 }else{
-                    req.ret.msg=user.lang['Monitor or Key does not exist.'];
+                    response.msg = user.lang['Monitor or Key does not exist.'];
                 }
-                res.end(s.prettyPrint(req.ret));
+                res.end(s.prettyPrint(response));
             })
         },res,req);
     })
@@ -1808,7 +1815,7 @@ module.exports = function(s,config,lang,app,io){
         config.webPaths.apiPrefix+':auth/cloudVideos/:ke/:id/:file/:mode',
         config.webPaths.apiPrefix+':auth/cloudVideos/:ke/:id/:file/:mode/:f'
     ], function (req,res){
-        req.ret={ok:false};
+        var response = {ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
             if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.video_delete.indexOf(req.params.id)===-1){
@@ -1845,7 +1852,7 @@ module.exports = function(s,config,lang,app,io){
                     r=r[0];r.filename=s.formattedTime(r.time)+'.'+r.ext;
                     switch(req.params.mode){
                         case'fix':
-                            req.ret.ok=true;
+                            response.ok = true;
                             s.video('fix',r)
                         break;
                         case'status':
@@ -1857,9 +1864,9 @@ module.exports = function(s,config,lang,app,io){
                             }
                             r.status = parseInt(req.params.f)
                             if(isNaN(req.params.f)||req.params.f===0){
-                                req.ret.msg='Not a valid value.';
+                                response.msg = 'Not a valid value.';
                             }else{
-                                req.ret.ok=true;
+                                response.ok = true;
                                 s.knexQuery({
                                     action: "update",
                                     table: videoSet,
@@ -1876,7 +1883,7 @@ module.exports = function(s,config,lang,app,io){
                             }
                         break;
                         case'delete':
-                            req.ret.ok=true;
+                            response.ok = true;
                             switch(videoParam){
                                 case'cloudVideos':
                                     s.deleteVideoFromCloud(r)
@@ -1887,13 +1894,13 @@ module.exports = function(s,config,lang,app,io){
                             }
                         break;
                         default:
-                            req.ret.msg=user.lang.modifyVideoText1;
+                            response.msg = user.lang.modifyVideoText1;
                         break;
                     }
                 }else{
-                    req.ret.msg=user.lang['No such file'];
+                    response.msg = user.lang['No such file'];
                 }
-                res.end(s.prettyPrint(req.ret));
+                res.end(s.prettyPrint(response));
             })
         },res,req);
     })
