@@ -33,14 +33,15 @@ module.exports = function(s,config,lang){
                             var didOne = false
                             videos.forEach(function(video){
                                 video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
+                                var whereGroup
                                 if(didOne){
-                                    const whereGroup = [
+                                    whereGroup = [
                                         ['or','mid','=',video.mid],
                                         ['time','=',video.time]
                                     ]
                                 }else{
                                     didOne = false
-                                    const whereGroup = [
+                                    whereGroup = [
                                         ['mid','=',video.mid],
                                         ['time','=',video.time]
                                     ]
