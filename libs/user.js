@@ -104,14 +104,15 @@ module.exports = function(s,config,lang){
                                 var selectedDate = frame.filename.split('T')[0]
                                 var dir = s.getTimelapseFrameDirectory(frame)
                                 var fileLocationMid = `${dir}` + frame.filename
+                                var whereGroup
                                 if(didOne){
-                                    const whereGroup = [
+                                    whereGroup = [
                                         ['or','mid','=',frame.mid],
                                         ['time','=',frame.time]
                                     ]
                                 }else{
                                     didOne = false
-                                    const whereGroup = [
+                                    whereGroup = [
                                         ['mid','=',frame.mid],
                                         ['time','=',frame.time]
                                     ]
@@ -171,14 +172,15 @@ module.exports = function(s,config,lang){
                             files.forEach(function(file){
                                 var dir = s.getFileBinDirectory(file)
                                 var fileLocationMid = `${dir}` + file.name
+                                var whereGroup
                                 if(didOne){
-                                    const whereGroup = [
+                                    whereGroup = [
                                         ['or','mid','=',file.mid],
                                         ['name','=',file.name]
                                     ]
                                 }else{
                                     didOne = false
-                                    const whereGroup = [
+                                    whereGroup = [
                                         ['mid','=',file.mid],
                                         ['name','=',file.name]
                                     ]
@@ -520,14 +522,15 @@ module.exports = function(s,config,lang){
                                         var didOne = false
                                         videos.forEach(function(video){
                                             video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
+                                            var whereGroup
                                             if(didOne){
-                                                const whereGroup = [
+                                                whereGroup = [
                                                     ['or','mid','=',video.mid],
                                                     ['time','=',video.time]
                                                 ]
                                             }else{
                                                 didOne = false
-                                                const whereGroup = [
+                                                whereGroup = [
                                                     ['mid','=',video.mid],
                                                     ['time','=',video.time]
                                                 ]
@@ -579,14 +582,15 @@ module.exports = function(s,config,lang){
                                         ]
                                         frames.forEach(function(frame){
                                             frame.dir = s.getVideoDirectory(frame) + s.formattedTime(frame.time) + '.' + frame.ext
+                                            var whereGroup
                                             if(didOne){
-                                                const whereGroup = [
+                                                whereGroup = [
                                                     ['or','mid','=',frame.mid],
                                                     ['time','=',frame.time]
                                                 ]
                                             }else{
                                                 didOne = false
-                                                const whereGroup = [
+                                                whereGroup = [
                                                     ['mid','=',frame.mid],
                                                     ['time','=',frame.time]
                                                 ]
@@ -707,7 +711,11 @@ module.exports = function(s,config,lang){
                     var formDetails = JSON.parse(form.details)
                     if(!dontRunExtensions){
                         s.beforeAccountSaveExtensions.forEach(function(extender){
-                            extender(d)
+                            extender({
+                                form: form,
+                                formDetails: formDetails,
+                                d: details
+                            })
                         })
                     }
                     //admin permissions

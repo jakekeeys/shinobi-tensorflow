@@ -405,7 +405,6 @@ module.exports = function(s,config,lang,app){
                     table: "Monitors",
                     where: [
                         ['ke','=',account.ke],
-                        ['mid','=',form.mid],
                     ]
                 },(err,monitors) => {
                     if(monitors && monitors[0]){

@@ -3,8 +3,8 @@ module.exports = function(s,config,lang){
     //Backblaze B2
     var beforeAccountSaveForBackblazeB2 = function(d){
         //d = save event
-        d.form.details.b2_use_global=d.d.b2_use_global
-        d.form.details.use_bb_b2=d.d.use_bb_b2
+        d.formDetails.b2_use_global=d.d.b2_use_global
+        d.formDetails.use_bb_b2=d.d.use_bb_b2
     }
     var cloudDiskUseStartupForBackblazeB2 = function(group,userDetails){
         group.cloudDiskUse['b2'].name = 'Backblaze B2'

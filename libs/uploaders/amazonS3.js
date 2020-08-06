@@ -3,8 +3,8 @@ module.exports = function(s,config,lang){
     //Amazon S3
     var beforeAccountSaveForAmazonS3 = function(d){
         //d = save event
-        d.form.details.aws_use_global=d.d.aws_use_global
-        d.form.details.use_aws_s3=d.d.use_aws_s3
+        d.formDetails.aws_use_global=d.d.aws_use_global
+        d.formDetails.use_aws_s3=d.d.use_aws_s3
     }
     var cloudDiskUseStartupForAmazonS3 = function(group,userDetails){
         group.cloudDiskUse['s3'].name = 'Amazon S3'

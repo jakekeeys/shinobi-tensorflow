@@ -4,8 +4,8 @@ module.exports = function(s,config,lang){
     // WebDAV
     var beforeAccountSaveForWebDav = function(d){
         //d = save event
-        d.form.details.webdav_use_global=d.d.webdav_use_global
-        d.form.details.use_webdav=d.d.use_webdav
+        d.formDetails.webdav_use_global=d.d.webdav_use_global
+        d.formDetails.use_webdav=d.d.use_webdav
     }
     var cloudDiskUseStartupForWebDav = function(group,userDetails){
         group.cloudDiskUse['webdav'].name = 'WebDAV'

@@ -3,8 +3,8 @@ module.exports = function(s,config,lang){
     //Wasabi Hot Cloud Storage
     var beforeAccountSaveForWasabiHotCloudStorage = function(d){
         //d = save event
-        d.form.details.whcs_use_global=d.d.whcs_use_global
-        d.form.details.use_whcs=d.d.use_whcs
+        d.formDetails.whcs_use_global=d.d.whcs_use_global
+        d.formDetails.use_whcs=d.d.use_whcs
     }
     var cloudDiskUseStartupForWasabiHotCloudStorage = function(group,userDetails){
         group.cloudDiskUse['whcs'].name = 'Wasabi Hot Cloud Storage'

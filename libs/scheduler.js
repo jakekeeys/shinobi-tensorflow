@@ -279,7 +279,7 @@ module.exports = function(s,config,lang,app,io){
                             }
                             s.knexQuery({
                                 action: "update",
-                                table: "Monitors",
+                                table: "Schedules",
                                 update: insertData,
                                 where: [
                                     ['ke','=',req.params.ke],

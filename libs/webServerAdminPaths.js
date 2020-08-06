@@ -511,7 +511,7 @@ module.exports = function(s,config,lang,app){
                             }
                             s.knexQuery({
                                 action: "insert",
-                                table: "Monitors",
+                                table: "Presets",
                                 insert: insertData
                             })
                             s.tx({

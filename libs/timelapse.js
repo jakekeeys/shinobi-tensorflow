@@ -116,14 +116,16 @@ module.exports = function(s,config,lang,app,io){
             action: "select",
             columns: "*",
             table: "Cloud Timelapse Frames",
-            where: frameSelector
+            where: frameSelector,
+            limit: 1
         },function(err,r){
             if(r && r[0]){
                 r = r[0]
                 s.knexQuery({
                     action: "delete",
                     table: "Cloud Timelapse Frames",
-                    where: frameSelector
+                    where: frameSelector,
+                    limit: 1
                 },function(){
                     s.onDeleteTimelapseFrameFromCloudExtensionsRunner(e,r)
                 })

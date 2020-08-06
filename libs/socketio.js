@@ -547,7 +547,6 @@ module.exports = function(s,config,lang,io){
                                         }else if(!permissions.sub||permissions.allmonitors!=='0'||permissions.monitors.indexOf(d.mid)>-1){
                                             monitorRestrictions.push(['mid','=',d.mid])
                                         }
-                                        console.log('monitorRestrictions',monitorRestrictions,monitorRestrictions.length)
                                         var getEvents = function(callback){
                                             var eventWhereQuery = [
                                                 ['ke','=',cn.ke],
@@ -563,7 +562,6 @@ module.exports = function(s,config,lang,io){
                                             if(monitorRestrictions.length > 0){
                                                 eventWhereQuery.push(monitorRestrictions)
                                             }
-                                            console.log(eventWhereQuery)
                                             s.knexQuery({
                                                 action: "select",
                                                 columns: "*",

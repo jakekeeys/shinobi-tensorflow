@@ -54,8 +54,8 @@ module.exports = (s,config,lang,app,io) => {
     //Google Drive Storage
     var beforeAccountSaveForGoogleDrive = function(d){
         //d = save event
-        d.form.details.googd_use_global = d.d.googd_use_global
-        d.form.details.use_googd = d.d.use_googd
+        d.formDetails.googd_use_global = d.d.googd_use_global
+        d.formDetails.use_googd = d.d.use_googd
     }
     var cloudDiskUseStartupForGoogleDrive = function(group,userDetails){
         group.cloudDiskUse['googd'].name = 'Google Drive Storage'
