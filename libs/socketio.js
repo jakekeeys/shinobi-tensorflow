@@ -117,7 +117,7 @@ module.exports = function(s,config,lang,io){
         cn.socketVideoStream = d.id;
     }
 
-    const createStreamEmitter = (d) => {
+    const createStreamEmitter = (d,cn) => {
         var Emitter,chunkChannel
         if(!d.channel){
             Emitter = s.group[d.ke].activeMonitors[d.id].emitter
@@ -151,7 +151,7 @@ module.exports = function(s,config,lang,io){
             }
             const onSuccess = (r) => {
                 r = r[0];
-                const Emitter = createStreamEmitter(d)
+                const Emitter = createStreamEmitter(d,cn)
                 validatedAndBindAuthenticationToSocketConnection(cn,d,true)
                 var contentWriter
                 cn.closeSocketVideoStream = function(){
@@ -184,7 +184,7 @@ module.exports = function(s,config,lang,io){
             }
             const onSuccess = (r) => {
                 r = r[0];
-                const Emitter = createStreamEmitter(d)
+                const Emitter = createStreamEmitter(d,cn)
                 validatedAndBindAuthenticationToSocketConnection(cn,d,true)
                 var contentWriter
                 cn.closeSocketVideoStream = function(){
@@ -217,7 +217,7 @@ module.exports = function(s,config,lang,io){
             }
             const onSuccess = (r) => {
                 r=r[0];
-                const Emitter = createStreamEmitter(d)
+                const Emitter = createStreamEmitter(d,cn)
                 validatedAndBindAuthenticationToSocketConnection(cn,d,true)
                 var contentWriter
                 cn.closeSocketVideoStream = function(){

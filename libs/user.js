@@ -25,28 +25,26 @@ module.exports = function(s,config,lang){
                     var reRunCheck = function(){}
                     var deleteSetOfVideos = function(err,videos,storageIndex,callback){
                         var completedCheck = 0
+                        var whereGroup = []
                         var whereQuery = [
                             ['ke','=',e.ke],
-                            []
                         ]
                         if(videos){
                             var didOne = false
                             videos.forEach(function(video){
                                 video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
-                                var whereGroup
                                 if(didOne){
-                                    whereGroup = [
+                                    whereGroup.push(
                                         ['or','mid','=',video.mid],
                                         ['time','=',video.time]
-                                    ]
+                                    )
                                 }else{
-                                    didOne = false
-                                    whereGroup = [
+                                    didOne = true
+                                    whereGroup.push(
                                         ['mid','=',video.mid],
                                         ['time','=',video.time]
-                                    ]
+                                    )
                                 }
-                                whereQuery[1].push(whereGroup)
                                 fs.chmod(video.dir,0o777,function(err){
                                     fs.unlink(video.dir,function(err){
                                         ++completedCheck
@@ -57,12 +55,15 @@ module.exports = function(s,config,lang){
                                                 }
                                             })
                                         }
-                                        if(whereQuery[1].length > 0 && whereQuery[1].length === completedCheck){
+                                        const whereGroupLength = whereGroup.length / 2
+                                        if(whereGroupLength > 0 && whereGroupLength === completedCheck){
+                                            whereQuery[1] = whereGroup
                                             s.knexQuery({
                                                 action: "delete",
                                                 table: "Videos",
                                                 where: whereQuery
-                                            },() => {
+                                            },(err) => {
+                                                console.log(err)
                                                 reRunCheck()
                                             })
                                         }
@@ -89,11 +90,12 @@ module.exports = function(s,config,lang){
                         }else{
                             console.log(err)
                         }
-                        if(whereQuery[1].length === 0){
+                        if(whereGroup.length === 0){
                             if(callback)callback()
                         }
                     }
                     var deleteSetOfTimelapseFrames = function(err,frames,storageIndex,callback){
+                        var whereGroup = []
                         var whereQuery = [
                             ['ke','=',e.ke],
                             []
@@ -105,20 +107,18 @@ module.exports = function(s,config,lang){
                                 var selectedDate = frame.filename.split('T')[0]
                                 var dir = s.getTimelapseFrameDirectory(frame)
                                 var fileLocationMid = `${dir}` + frame.filename
-                                var whereGroup
                                 if(didOne){
-                                    whereGroup = [
+                                    whereGroup.push(
                                         ['or','mid','=',frame.mid],
                                         ['time','=',frame.time]
-                                    ]
+                                    )
                                 }else{
-                                    didOne = false
-                                    whereGroup = [
+                                    didOne = true
+                                    whereGroup.push(
                                         ['mid','=',frame.mid],
                                         ['time','=',frame.time]
-                                    ]
+                                    )
                                 }
-                                whereQuery[1].push(whereGroup)
                                 fs.unlink(fileLocationMid,function(err){
                                     ++completedCheck
                                     if(err){
@@ -128,7 +128,9 @@ module.exports = function(s,config,lang){
                                             }
                                         })
                                     }
-                                    if(whereQuery[1].length > 0 && whereQuery[1].length === completedCheck){
+                                    const whereGroupLength = whereGroup.length / 2
+                                    if(whereGroupLength > 0 && whereGroupLength === completedCheck){
+                                        whereQuery[1] = whereGroup
                                         s.knexQuery({
                                             action: "delete",
                                             table: "Timelapse Frames",
@@ -159,11 +161,12 @@ module.exports = function(s,config,lang){
                         }else{
                             console.log(err)
                         }
-                        if(whereQuery[1].length === 0){
+                        if(whereGroup.length === 0){
                             if(callback)callback()
                         }
                     }
                     var deleteSetOfFileBinFiles = function(err,files,storageIndex,callback){
+                        var whereGroup = []
                         var whereQuery = [
                             ['ke','=',e.ke],
                             []
@@ -173,20 +176,18 @@ module.exports = function(s,config,lang){
                             files.forEach(function(file){
                                 var dir = s.getFileBinDirectory(file)
                                 var fileLocationMid = `${dir}` + file.name
-                                var whereGroup
                                 if(didOne){
-                                    whereGroup = [
+                                    whereGroup.push(
                                         ['or','mid','=',file.mid],
                                         ['name','=',file.name]
-                                    ]
+                                    )
                                 }else{
-                                    didOne = false
-                                    whereGroup = [
+                                    didOne = true
+                                    whereGroup.push(
                                         ['mid','=',file.mid],
                                         ['name','=',file.name]
-                                    ]
+                                    )
                                 }
-                                whereQuery[1].push(whereGroup)
                                 fs.unlink(fileLocationMid,function(err){
                                     ++completedCheck
                                     if(err){
@@ -196,7 +197,9 @@ module.exports = function(s,config,lang){
                                             }
                                         })
                                     }
-                                    if(whereQuery[1].length > 0 && whereQuery[1].length === completedCheck){
+                                    const whereGroupLength = whereGroup.length / 2
+                                    if(whereGroupLength > 0 && whereGroupLength === completedCheck){
+                                        whereQuery[1] = whereGroup
                                         s.knexQuery({
                                             action: "delete",
                                             table: "Files",
@@ -218,7 +221,7 @@ module.exports = function(s,config,lang){
                         }else{
                             console.log(err)
                         }
-                        if(whereQuery[1].length === 0){
+                        if(whereGroup.length === 0){
                             if(callback)callback()
                         }
                     }
@@ -531,7 +534,7 @@ module.exports = function(s,config,lang){
                                                     ['time','=',video.time]
                                                 ]
                                             }else{
-                                                didOne = false
+                                                didOne = true
                                                 whereGroup = [
                                                     ['mid','=',video.mid],
                                                     ['time','=',video.time]
@@ -591,7 +594,7 @@ module.exports = function(s,config,lang){
                                                     ['time','=',frame.time]
                                                 ]
                                             }else{
-                                                didOne = false
+                                                didOne = true
                                                 whereGroup = [
                                                     ['mid','=',frame.mid],
                                                     ['time','=',frame.time]

@@ -1040,7 +1040,7 @@ module.exports = function(s,config,lang,app,io){
                      if(didOne){
                          whereQuery.push(['or','ke','=',req.params.ke])
                      }else{
-                         didOne = false
+                         didOne = true
                          whereQuery.push(['ke','=',req.params.ke])
                      }
                      whereQuery.push(
