@@ -214,7 +214,7 @@ module.exports = function(s,config){
            whereQuery.push(monitorRestrictions)
        }
        if(options.archived){
-           whereQuery.push(['details','LIKE',`%"archived":"1"%`])
+           whereQuery.push(['archived','=','1'])
        }
        if(options.filename){
            whereQuery.push(['filename','=',options.filename])
@@ -388,6 +388,16 @@ module.exports = function(s,config){
                     },true)
                 }
             },true)
+            s.sqlQuery('ALTER TABLE `Videos` ADD COLUMN `archived` int(1) DEFAULT \'0\' AFTER `status`;',[],function(err){
+                if(!err){
+                    s.sqlQuery('UPDATE Videos SET archived=1 WHERE details LIKE \'%"archived":"1"%\';',[],function(err){})
+                }
+            })
+            s.sqlQuery('ALTER TABLE `Users` ADD COLUMN `accountType` int(1) DEFAULT \'0\' AFTER `pass`;',[],function(err){
+                if(!err){
+                    s.sqlQuery('UPDATE Users SET accountType=2 WHERE details LIKE \'%"sub"%\';',[],function(err){})
+                }
+            })
         }
         delete(s.preQueries)
     }

@@ -320,7 +320,7 @@ module.exports = function(s,config,lang,app,io){
                             table: "Users",
                             where: [
                                 ['ke','=',r.ke],
-                                ['details','LIKE','%"sub"%'],
+                                ['accountType','=','2'],
                             ]
                         },(err,rr) => {
                             s.knexQuery({
@@ -454,7 +454,7 @@ module.exports = function(s,config,lang,app,io){
                                 table: "Users",
                                 where: [
                                     ['ke','=',r.ke],
-                                    ['details','NOT LIKE','%"sub"%'],
+                                    ['accountType','!=','2'],
                                 ],
                             },function(err,rr) {
                                 if(rr && rr[0]){
@@ -482,7 +482,7 @@ module.exports = function(s,config,lang,app,io){
                     table: "Users",
                     where: [
                         ['ke','=',req.body.key],
-                        ['details','NOT LIKE','%"sub"%'],
+                        ['accountType','!=','2'],
                     ],
                 },(err,r) => {
                     if(r&&r[0]){

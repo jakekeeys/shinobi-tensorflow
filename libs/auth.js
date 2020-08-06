@@ -266,7 +266,7 @@ module.exports = function(s,config,lang){
                         columns: columns,
                         table: "Users",
                         where: [
-                            ['details','NOT LIKE','%"sub"%'],
+                            ['accountType','!=','2'],
                         ]
                     },(err,r) => {
                         adminUsersSelected = r

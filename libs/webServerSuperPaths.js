@@ -140,10 +140,10 @@ module.exports = function(s,config,lang,app){
             const whereQuery = []
             switch(req.params.type){
                 case'admin':case'administrator':
-                    whereQuery.push(['details','NOT LIKE','%"sub"%'])
+                    whereQuery.push(['accountType','!=','2'])
                 break;
                 case'sub':case'subaccount':
-                    whereQuery.push(['details','LIKE','%"sub"%'])
+                    whereQuery.push(['accountType','=','2'])
                 break;
             }
             s.knexQuery({

@@ -213,7 +213,7 @@ module.exports = function(s,config,lang){
                     table: "Users",
                     where: [
                         ['ke','=',e.ke],
-                        ['details','NOT LIKE','%"sub"%'],
+                        ['accountType','!=','2'],
                     ]
                 },(err,r) => {
                     r = r[0]
@@ -297,7 +297,7 @@ module.exports = function(s,config,lang){
                     table: "Users",
                     where: [
                         ['ke','=',d.ke],
-                        ['details','NOT LIKE','%"sub"%'],
+                        ['accountType','!=','2'],
                     ]
                 },(err,r) => {
                     r=r[0];

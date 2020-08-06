@@ -330,7 +330,7 @@ module.exports = function(s,config,lang,io){
             columns: "*",
             table: "Users",
             where: [
-                ['details','NOT LIKE','%"sub"%']
+                ['accountType','!=','2']
             ]
         },function(err,users) {
             if(users && users[0]){
