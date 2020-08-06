@@ -1,4 +1,4 @@
--- Dumping database structure for ccio
+-- Aug 5,2020 Rewrite of framework.sql for Postgres
 CREATE DATABASE "ccio";
 \c "ccio";
 
