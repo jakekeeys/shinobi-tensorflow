@@ -454,7 +454,8 @@ module.exports = function(s,config,lang){
             where: [
                 ['ke','=',e.ke],
                 ['details','NOT LIKE',`%"sub"%`],
-            ]
+            ],
+            limit: 1
         },(err,r) => {
             if(r && r[0]){
                 r = r[0];
