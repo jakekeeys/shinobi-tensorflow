@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS "Users" (
   "auth" varchar(50) DEFAULT NULL,
   "mail" varchar(100) UNIQUE,
   "pass" varchar(100) DEFAULT NULL,
+  "accountType" integer DEFAULT 0,
   "details" text
 ) ;
 
@@ -96,6 +97,7 @@ CREATE TABLE IF NOT EXISTS "Videos" (
   "frames" integer DEFAULT NULL,
   "end" timestamp NULL DEFAULT NULL,
   "status" integer DEFAULT 0,
+  "archived" integer DEFAULT 0,
   "details" text
 ) ;
 
