@@ -1127,7 +1127,6 @@ module.exports = function(s,config,lang,app,io){
                     (!userDetails.video_view || userDetails.video_view.indexOf(monitorId)===-1)
                 )
             },(response) => {
-                console.log(response)
                 if(response && response.videos){
                     s.buildVideoLinks(response.videos,{
                         auth : req.params.auth,
@@ -1721,7 +1720,7 @@ module.exports = function(s,config,lang,app,io){
     * API : Upload Video File
     * API : Add "streamIn" query string to Push to "Dashcam (Streamer v2)" FFMPEG Process
      */
-    app.post(config.webPaths.apiPrefix+':auth/videos/:ke/:id',fileupload(), (req,res) => {
+    app.post(config.webPaths.apiPrefix+':auth/videos/:ke/:id',fileupload(), async (req,res) => {
         var response = {ok:false}
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
@@ -1742,59 +1741,27 @@ module.exports = function(s,config,lang,app,io){
                         });
                     } else {
                         let video = req.files.video;
-                        console.log('come here 1')
-                        if(req.query.streamIn === '1'){
-                            console.log('come here 2',video.name)
-                            var tempLocation = s.getStreamsDirectory(monitor) +  video.name;
-                            console.log('come here 3',tempLocation)
-                            video.mv(tempLocation,function(){
-                                console.log('come here 4')
-                                // var fileStream = fs.createReadStream(tempLocation)
-                                // fileStream.on('close',function(){
-                                //     s.file('delete',tempLocation)
-                                // })
-                                // fileStream.on('data',function(data){
-                                //     try{
-                                //         // s.group[groupKey].activeMonitors[monitorId].spawn.stdin.write(data);
-                                //     }catch(err){
-                                //         console.log(err)
-                                //     }
-                                // })
-                                s.group[groupKey].activeMonitors[monitorId].spawn.stdin.write(fs.readFileSync(tempLocation,'binary'));
-                                s.file('delete',tempLocation)
+                        var time = new Date(parseInt(video.name.split('.')[0]))
+                        var filename = s.formattedTime(time) + '.' + monitor.ext
+                        video.mv(s.getVideoDirectory(monitor) +  filename,function(){
+                            s.insertCompletedVideo(monitor,{
+                                file: filename,
+                                events: s.group[groupKey].activeMonitors[monitorId].detector_motion_count,
+                                endTime: req.body.endTime.indexOf('-') > -1 ? s.nameToTime(req.body.endTime) : parseInt(req.body.endTime) || null,
+                            },function(){
+                                response.ok = true
+                                response.filename = filename
                                 res.end(s.prettyPrint({
                                     ok: true,
-                                    message: 'File is transcoding',
+                                    message: 'File is uploaded',
                                     data: {
                                         name: video.name,
                                         mimetype: video.mimetype,
                                         size: video.size
                                     }
                                 }))
-                            });
-                        }else{
-                            var time = new Date(parseInt(video.name.split('.')[0]))
-                            var filename = s.formattedTime(time) + '.' + monitor.ext
-                            video.mv(s.getVideoDirectory(monitor) +  filename,function(){
-                                s.insertCompletedVideo(monitor,{
-                                    file: filename,
-                                    events: s.group[groupKey].activeMonitors[monitorId].detector_motion_count,
-                                    endTime: req.body.endTime.indexOf('-') > -1 ? s.nameToTime(req.body.endTime) : parseInt(req.body.endTime) || null,
-                                },function(){
-                                    response.ok = true
-                                    response.filename = filename
-                                    res.end(s.prettyPrint({
-                                        ok: true,
-                                        message: 'File is uploaded',
-                                        data: {
-                                            name: video.name,
-                                            mimetype: video.mimetype,
-                                            size: video.size
-                                        }
-                                    }))
-                                })
-                            });
-                        }
+                            })
+                        });
                     }
                 } catch (err) {
                     response.err = err
