@@ -138,18 +138,16 @@ s.sqlQuery = function(query,values,onMoveOn){
 
 const processWhereCondition = (dbQuery,where,didOne) => {
     var whereIsArray = where instanceof Array;
+    if(!where[0])return;
     if(where[0] && where[0] instanceof Array){
+        // didOne = true
         dbQuery.where(function() {
             var _this = this
             var didOneInsideGroup = false
             where.forEach((whereInsideGroup) => {
-                console.log('LINE',whereInsideGroup)
                 processWhereCondition(_this,whereInsideGroup,didOneInsideGroup)
             })
         })
-    }else if(!didOne){
-        didOne = true
-        whereIsArray ? dbQuery.where(...where) : dbQuery.where(where)
     }else if(where.length === 4){
         const separator = where[0] + ''
         where.shift()
@@ -161,59 +159,95 @@ const processWhereCondition = (dbQuery,where,didOne) => {
                 whereIsArray ? dbQuery.orWhere(...where) : dbQuery.orWhere(where)
             break;
         }
+    }else if(!didOne){
+        didOne = true
+        whereIsArray ? dbQuery.where(...where) : dbQuery.where(where)
     }else{
         whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
     }
 
 }
-const knexQuery = (options,callback) => {
-    if(!s.databaseEngine)return// console.log('Database Not Set');
+const knexError = (dbQuery,options,err) => {
+    console.error('knexError CRON----------------------------------- START')
     if(config.debugLogVerbose && config.debugLog === true){
-        s.debugLog('s.knexQuery QUERY',options)
+        s.debugLog('s.knexQuery QUERY',JSON.stringify(options,null,3))
+        s.debugLog('STACK TRACE, NOT AN ',new Error())
     }
-    // options = {
-    //     action: "",
-    //     columns: "",
-    //     table: ""
-    // }
-    var dbQuery
-    switch(options.action){
-        case'select':
-            options.columns = options.columns.indexOf(',') === -1 ? [options.columns] : options.columns.split(',');
-            dbQuery = s.databaseEngine.select(...options.columns).from(options.table)
-        break;
-        case'update':
-            dbQuery = s.databaseEngine(options.table).update(options.update)
-        break;
-        case'delete':
-            dbQuery = s.databaseEngine(options.table).del()
-        break;
-        case'insert':
-            dbQuery = s.databaseEngine(options.table).insert(options.insert)
-        break;
+    console.error(err)
+    console.error(dbQuery.toString())
+    console.error('knexError CRON----------------------------------- END')
+}
+const knexQuery = (options,callback) => {
+    try{
+        if(!s.databaseEngine)return// console.log('Database Not Set');
+        // options = {
+        //     action: "",
+        //     columns: "",
+        //     table: ""
+        // }
+        var dbQuery
+        switch(options.action){
+            case'select':
+                options.columns = options.columns.indexOf(',') === -1 ? [options.columns] : options.columns.split(',');
+                dbQuery = s.databaseEngine.select(...options.columns).from(options.table)
+            break;
+            case'count':
+                options.columns = options.columns.indexOf(',') === -1 ? [options.columns] : options.columns.split(',');
+                dbQuery = s.databaseEngine(options.table)
+                dbQuery.count(options.columns)
+            break;
+            case'update':
+                dbQuery = s.databaseEngine(options.table).update(options.update)
+            break;
+            case'delete':
+                dbQuery = s.databaseEngine(options.table).del()
+            break;
+            case'insert':
+                dbQuery = s.databaseEngine(options.table).insert(options.insert)
+            break;
+        }
+        if(options.where){
+            var didOne = false;
+            options.where.forEach((where) => {
+                processWhereCondition(dbQuery,where,didOne)
+            })
+        }
+        if(options.orderBy){
+            dbQuery.orderBy(...options.orderBy)
+        }
+        if(options.groupBy){
+            dbQuery.groupBy(options.groupBy)
+        }
+        if(options.limit){
+            if(`${options.limit}`.indexOf(',') === -1){
+                dbQuery.limit(options.limit)
+            }else{
+                const limitParts = `${options.limit}`.split(',')
+                dbQuery.limit(limitParts[0]).offset(limitParts[1])
+            }
+        }
+        if(config.debugLog === true){
+            console.log(options)
+            console.log(dbQuery.toString())
+        }
+        if(callback || options.update || options.insert){
+            dbQuery.asCallback(function(err,r) {
+                if(err){
+                    knexError(dbQuery,options,err)
+                }
+                if(callback)callback(err,r)
+                if(config.debugLogVerbose && config.debugLog === true){
+                    s.debugLog('s.knexQuery QUERY',JSON.stringify(options,null,3))
+                    s.debugLog('s.knexQuery RESPONSE',JSON.stringify(r,null,3))
+                    s.debugLog('STACK TRACE, NOT AN ',new Error())
+                }
+            })
+        }
+        return dbQuery
+    }catch(err){
+        if(callback)callback(err,[])
+        knexError(dbQuery,options,err)
     }
-    if(options.where){
-        var didOne = false;
-        options.where.forEach((where) => {
-            processWhereCondition(dbQuery,where,didOne)
-        })
-    }
-    if(options.orderBy){
-        dbQuery.orderBy(...options.orderBy)
-    }
-    if(options.limit){
-        dbQuery.limit(options.limit)
-    }
-    if(config.debugLog === true){
-        console.log(dbQuery.toString())
-    }
-    if(callback || options.update || options.insert){
-        dbQuery.asCallback(function(err,r) {
-            if(err)console.log(err)
-            if(callback)callback(err,r)
-        })
-    }
-    return dbQuery
 }
 
 s.debugLog = function(arg1,arg2){
@@ -323,9 +357,9 @@ const checkFilterRules = function(v,callback){
                 ]
                 b.where.forEach(function(condition){
                     if(condition.p1 === 'ke'){condition.p3 = v.ke}
-                    whereQuery.push(condition.p1,condition.p2 || '=',condition.p3)
+                    whereQuery.push([condition.p1,condition.p2 || '=',condition.p3])
                 })
-                s.knexQuery({
+                knexQuery({
                     action: "select",
                     columns: "*",
                     table: "Videos",
@@ -384,7 +418,7 @@ const deleteRowsWithNoVideo = function(v,callback){
         )
     ){
         s.alreadyDeletedRowsWithNoVideosOnStart[v.ke]=true;
-        s.knexQuery({
+        knexQuery({
             action: "select",
             columns: "*",
             table: "Videos",
@@ -437,7 +471,7 @@ const deleteRowsWithNoVideo = function(v,callback){
 const deleteOldLogs = function(v,callback){
     if(!v.d.log_days||v.d.log_days==''){v.d.log_days=10}else{v.d.log_days=parseFloat(v.d.log_days)};
     if(config.cron.deleteLogs===true&&v.d.log_days!==0){
-        s.knexQuery({
+        knexQuery({
             action: "delete",
             table: "Logs",
             where: [
@@ -459,7 +493,7 @@ const deleteOldLogs = function(v,callback){
 const deleteOldEvents = function(v,callback){
     if(!v.d.event_days||v.d.event_days==''){v.d.event_days=10}else{v.d.event_days=parseFloat(v.d.event_days)};
     if(config.cron.deleteEvents===true&&v.d.event_days!==0){
-        s.knexQuery({
+        knexQuery({
             action: "delete",
             table: "Events",
             where: [
@@ -481,7 +515,7 @@ const deleteOldEvents = function(v,callback){
 const deleteOldEventCounts = function(v,callback){
     if(!v.d.event_days||v.d.event_days==''){v.d.event_days=10}else{v.d.event_days=parseFloat(v.d.event_days)};
     if(config.cron.deleteEvents===true&&v.d.event_days!==0){
-        s.knexQuery({
+        knexQuery({
             action: "delete",
             table: "Events Counts",
             where: [
@@ -504,7 +538,7 @@ const deleteOldFileBins = function(v,callback){
     if(!v.d.fileBin_days||v.d.fileBin_days==''){v.d.fileBin_days=10}else{v.d.fileBin_days=parseFloat(v.d.fileBin_days)};
     if(config.cron.deleteFileBins===true&&v.d.fileBin_days!==0){
         var fileBinQuery = " FROM Files WHERE ke=? AND `time` < ?";
-        s.knexQuery({
+        knexQuery({
             action: "select",
             columns: "*",
             table: "Files",
@@ -512,7 +546,7 @@ const deleteOldFileBins = function(v,callback){
                 ['ke','=',v.ke],
                 ['time','<',s.sqlDate(v.d.fileBin_days+' DAY')],
             ]
-        },(err,rrr) => {
+        },(err,files) => {
             if(files&&files[0]){
                 //delete the files
                 files.forEach(function(file){
@@ -521,7 +555,7 @@ const deleteOldFileBins = function(v,callback){
                     })
                 })
                 //delete the database rows
-                s.knexQuery({
+                knexQuery({
                     action: "delete",
                     table: "Files",
                     where: [
@@ -571,7 +605,7 @@ const processUser = function(number,rows){
         if(!v.d.size||v.d.size==''){v.d.size=10000}else{v.d.size=parseFloat(v.d.size)};
         //days to keep videos
         if(!v.d.days||v.d.days==''){v.d.days=5}else{v.d.days=parseFloat(v.d.days)};
-        s.knexQuery({
+        knexQuery({
             action: "select",
             columns: "*",
             table: "Monitors",
@@ -649,7 +683,7 @@ const clearCronInterval = function(){
 }
 const doCronJobs = function(){
     s.cx({f:'start',time:moment()})
-    s.knexQuery({
+    knexQuery({
         action: "select",
         columns: "ke,uid,details,mail",
         table: "Users",
