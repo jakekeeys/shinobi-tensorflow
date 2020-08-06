@@ -63,7 +63,6 @@ module.exports = function(s,config,lang){
                                                 table: "Videos",
                                                 where: whereQuery
                                             },(err) => {
-                                                console.log(err)
                                                 reRunCheck()
                                             })
                                         }
