@@ -436,7 +436,7 @@ module.exports = function(s,config,lang,io){
                         if(d.monitorListOrder && d.monitorListOrder instanceof Object){
                             s.knexQuery({
                                 action: "select",
-                                columns: "*",
+                                columns: "details",
                                 table: "Users",
                                 where: [
                                     ['ke','=',cn.ke],
