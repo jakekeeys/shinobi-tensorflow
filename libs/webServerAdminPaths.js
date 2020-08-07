@@ -85,12 +85,11 @@ module.exports = function(s,config,lang,app){
             s.knexQuery({
                 action: "delete",
                 table: "Users",
-                update: monitorQuery,
-                where: [
-                    ['uid','=',uid],
-                    ['ke','=',req.params.ke],
-                    ['mail','=',mail],
-                ]
+                where: {
+                    ke: req.params.ke,
+                    uid: uid,
+                    mail: mail,
+                }
             })
             s.knexQuery({
                 action: "select",
@@ -108,10 +107,10 @@ module.exports = function(s,config,lang,app){
                     s.knexQuery({
                         action: "delete",
                         table: "API",
-                        where: [
-                            ['uid','=',uid],
-                            ['ke','=',req.params.ke],
-                        ]
+                        where: {
+                            ke: req.params.ke,
+                            uid: uid,
+                        }
                     })
                 }
             })
@@ -254,18 +253,18 @@ module.exports = function(s,config,lang,app){
                     s.knexQuery({
                         action: "delete",
                         table: "Monitors",
-                        where: [
-                            ['ke','=',req.params.ke],
-                            ['mid','=',req.params.id],
-                        ]
+                        where: {
+                            ke: req.params.ke,
+                            mid: req.params.id,
+                        }
                     })
                     // s.knexQuery({
                     //     action: "delete",
                     //     table: "Files",
-                    //     where: [
-                    //         ['ke','=',req.params.ke],
-                    //         ['mid','=',req.params.id],
-                    //     ]
+                    //     where: {
+                    //         ke: req.params.ke,
+                    //         mid: req.params.id,
+                    //     }
                     // })
                     if(req.query.deleteFiles === 'true'){
                         //videos
@@ -374,11 +373,11 @@ module.exports = function(s,config,lang,app){
                 s.knexQuery({
                     action: "delete",
                     table: "API",
-                    where: [
-                        ['ke','=',req.params.ke],
-                        ['uid','=',user.uid],
-                        ['code','=',form.code],
-                    ]
+                    where: {
+                        ke: req.params.ke,
+                        uid: user.uid,
+                        code: form.code,
+                    }
                 },(err,r) => {
                     if(!err){
                         s.tx({
@@ -557,10 +556,10 @@ module.exports = function(s,config,lang,app){
                                 action: "delete",
                                 table: "Presets",
                                 update: monitorQuery,
-                                where: [
-                                    ['ke','=',req.params.ke],
-                                    ['name','=',req.params.stateName],
-                                ]
+                                where: {
+                                    ke: req.params.ke,
+                                    name: req.params.stateName,
+                                }
                             },(err) => {
                                 if(!err){
                                     endData.msg = lang["Deleted State Configuration"]

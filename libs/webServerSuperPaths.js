@@ -43,9 +43,9 @@ module.exports = function(s,config,lang,app){
             s.knexQuery({
                 action: "delete",
                 table: "Logs",
-                where: [
-                    ['ke','=','$'],
-                ]
+                where: {
+                    ke: '$'
+                }
             },() => {
                 s.closeJsonResponse(res,{
                     ok : true
@@ -375,27 +375,27 @@ module.exports = function(s,config,lang,app){
             s.knexQuery({
                 action: "delete",
                 table: "Users",
-                where: [
-                    ['ke','=',account.ke],
-                    ['uid','=',account.uid],
-                    ['mail','=',account.mail],
-                ]
+                where: {
+                    ke: account.ke,
+                    uid: account.uid,
+                    mail: account.mail,
+                }
             })
             s.knexQuery({
                 action: "delete",
                 table: "API",
-                where: [
-                    ['ke','=',account.ke],
-                    ['uid','=',account.uid],
-                ]
+                where:  {
+                    ke: account.ke,
+                    uid: account.uid,
+                }
             })
             if(s.getPostData(req,'deleteSubAccounts',false) === '1'){
                 s.knexQuery({
                     action: "delete",
                     table: "Users",
-                    where: [
-                        ['ke','=',account.ke],
-                    ]
+                    where:  {
+                        ke: account.ke,
+                    }
                 })
             }
             if(s.getPostData(req,'deleteMonitors',false) == '1'){
@@ -403,9 +403,9 @@ module.exports = function(s,config,lang,app){
                     action: "select",
                     columns: "*",
                     table: "Monitors",
-                    where: [
-                        ['ke','=',account.ke],
-                    ]
+                    where:  {
+                        ke: account.ke,
+                    }
                 },(err,monitors) => {
                     if(monitors && monitors[0]){
                         monitors.forEach(function(monitor){
@@ -414,9 +414,9 @@ module.exports = function(s,config,lang,app){
                         s.knexQuery({
                             action: "delete",
                             table: "Monitors",
-                            where: [
-                                ['ke','=',account.ke],
-                            ]
+                            where:  {
+                                ke: account.ke,
+                            }
                         })
                     }
                 })
@@ -425,9 +425,9 @@ module.exports = function(s,config,lang,app){
                 s.knexQuery({
                     action: "delete",
                     table: "Videos",
-                    where: [
-                        ['ke','=',account.ke],
-                    ]
+                    where:  {
+                        ke: account.ke,
+                    }
                 })
                 fs.chmod(s.dir.videos+account.ke,0o777,function(err){
                     fs.unlink(s.dir.videos+account.ke,function(err){})
@@ -437,9 +437,9 @@ module.exports = function(s,config,lang,app){
                 s.knexQuery({
                     action: "delete",
                     table: "Events",
-                    where: [
-                        ['ke','=',account.ke],
-                    ]
+                    where:  {
+                        ke: account.ke,
+                    }
                 })
             }
             s.tx({f:'delete_account',ke:account.ke,uid:account.uid,mail:account.mail},'$')

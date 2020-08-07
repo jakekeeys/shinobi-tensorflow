@@ -12,7 +12,6 @@ module.exports = (s,config,lang) => {
             ['ke','=',groupKey],
         ]
         if(videos){
-            var didOne = false
             videos.forEach(function(video){
                 video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
                 const queryGroup = {
@@ -81,23 +80,16 @@ module.exports = (s,config,lang) => {
         ]
         var completedCheck = 0
         if(frames){
-            var didOne = false
             frames.forEach(function(frame){
                 var selectedDate = frame.filename.split('T')[0]
                 var dir = s.getTimelapseFrameDirectory(frame)
                 var fileLocationMid = `${dir}` + frame.filename
-                if(didOne){
-                    whereGroup.push(
-                        ['or','mid','=',frame.mid],
-                        ['time','=',frame.time]
-                    )
-                }else{
-                    didOne = true
-                    whereGroup.push(
-                        ['mid','=',frame.mid],
-                        ['time','=',frame.time]
-                    )
+                const queryGroup = {
+                    mid: video.mid,
+                    time: video.time,
                 }
+                if(whereGroup.length > 0)queryGroup.__separator = 'or'
+                whereGroup.push(queryGroup)
                 fs.unlink(fileLocationMid,function(err){
                     ++completedCheck
                     if(err){
@@ -107,7 +99,7 @@ module.exports = (s,config,lang) => {
                             }
                         })
                     }
-                    const whereGroupLength = whereGroup.length / 2
+                    const whereGroupLength = whereGroup.length
                     if(whereGroupLength > 0 && whereGroupLength === completedCheck){
                         whereQuery[1] = whereGroup
                         s.knexQuery({
@@ -159,17 +151,12 @@ module.exports = (s,config,lang) => {
             files.forEach(function(file){
                 var dir = s.getFileBinDirectory(file)
                 var fileLocationMid = `${dir}` + file.name
-                if(whereGroup.length !== 0){
-                    whereGroup.push(
-                        ['or','mid','=',file.mid],
-                        ['name','=',file.name]
-                    )
-                }else{
-                    whereGroup.push(
-                        ['mid','=',file.mid],
-                        ['name','=',file.name]
-                    )
+                const queryGroup = {
+                    mid: file.mid,
+                    name: file.name,
                 }
+                if(whereGroup.length > 0)queryGroup.__separator = 'or'
+                whereGroup.push(queryGroup)
                 fs.unlink(fileLocationMid,function(err){
                     ++completedCheck
                     if(err){
@@ -179,7 +166,7 @@ module.exports = (s,config,lang) => {
                             }
                         })
                     }
-                    const whereGroupLength = whereGroup.length / 2
+                    const whereGroupLength = whereGroup.length
                     if(whereGroupLength > 0 && whereGroupLength === completedCheck){
                         whereQuery[1] = whereGroup
                         s.knexQuery({

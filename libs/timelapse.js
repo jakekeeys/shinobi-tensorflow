@@ -107,11 +107,11 @@ module.exports = function(s,config,lang,app,io){
     s.deleteTimelapseFrameFromCloud = function(e){
         // e = video object
         s.checkDetails(e)
-        var frameSelector = [
-            ['ke','=',e.ke],
-            ['mid','=',e.id],
-            ['time','=',new Date(e.time)],
-        ]
+        var frameSelector = {
+            ke: e.ke,
+            mid: e.id,
+            time: new Date(e.time),
+        }
         s.knexQuery({
             action: "select",
             columns: "*",

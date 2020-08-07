@@ -214,11 +214,11 @@ module.exports = function(s,config,lang){
             time = e.time
         }
         time = new Date(time)
-        const whereQuery = [
-            ['ke','=',e.ke],
-            ['mid','=',e.id],
-            ['time','=',time],
-        ]
+        const whereQuery = {
+            ke: e.ke,
+            mid: e.id,
+            time: time,
+        }
         s.knexQuery({
             action: "select",
             columns: "*",
@@ -296,7 +296,7 @@ module.exports = function(s,config,lang){
                     s.tx({
                         f: 'video_delete',
                         filename: filename,
-                        mid: video.id,
+                        mid: video.mid,
                         ke: video.ke,
                         time: s.nameToTime(filename),
                         end: s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss')
@@ -318,16 +318,13 @@ module.exports = function(s,config,lang){
                         })
                     })
                 })
-                if(!didOne){
-                    didOne = true
-                    whereQuery.push(['mid','=',video.id])
-                }else{
-                    whereQuery.push(['or','mid','=',video.id])
+                const queryGroup = {
+                    ke: video.ke,
+                    mid: video.mid,
+                    time: time,
                 }
-                whereQuery.push(
-                    ['ke','=',video.ke],
-                    ['time','=',time],
-                )
+                if(whereQuery.length > 0)queryGroup.__separator = 'or'
+                whereQuery.push(queryGroup)
             })
             s.knexQuery({
                 action: "delete",
@@ -365,11 +362,11 @@ module.exports = function(s,config,lang){
     s.deleteVideoFromCloud = function(e){
         // e = video object
         s.checkDetails(e)
-        const whereQuery = [
-            ['ke','=',e.ke],
-            ['mid','=',e.id],
-            ['time','=',new Date(e.time)],
-        ]
+        const whereQuery = {
+            ke: e.ke,
+            mid: e.mid,
+            time: new Date(e.time),
+        }
         s.knexQuery({
             action: "select",
             columns: "*",
