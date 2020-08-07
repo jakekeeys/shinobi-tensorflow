@@ -172,7 +172,7 @@ module.exports = function(s,config,lang){
                         events: k.events && k.events.length > 0 ? k.events : null
                     },'GRP_'+e.ke,'video_view')
                     //purge over max
-                    s.purgeDiskForGroup(e)
+                    s.purgeDiskForGroup(e.ke)
                     //send new diskUsage values
                     var storageIndex = s.getVideoStorageIndex(e)
                     if(storageIndex){

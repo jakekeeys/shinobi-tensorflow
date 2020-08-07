@@ -1043,7 +1043,7 @@ module.exports = function(s,config,lang){
             switch(true){
                 case checkLog(d,'No space left on device'):
                     s.checkUserPurgeLock(e.ke)
-                    s.purgeDiskForGroup(e)
+                    s.purgeDiskForGroup(e.ke)
                 break;
                 case checkLog(d,'error while decoding'):
                     s.userLog(e,{type:lang['Error While Decoding'],msg:lang.ErrorWhileDecodingText});
