@@ -117,7 +117,7 @@ module.exports = function(s,config,lang){
                             href: data.Location
                         }
                     })
-                    s.setCloudDiskUsedForGroup(e,{
+                    s.setCloudDiskUsedForGroup(e.ke,{
                         amount: k.filesizeMB,
                         storageType: 's3'
                     })
@@ -160,7 +160,7 @@ module.exports = function(s,config,lang){
                             href: data.Location
                         }
                     })
-                    s.setCloudDiskUsedForGroup(e,{
+                    s.setCloudDiskUsedForGroup(e.ke,{
                         amount : s.kilobyteToMegabyte(queryInfo.size),
                         storageType : 's3'
                     },'timelapseFrames')

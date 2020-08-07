@@ -12,6 +12,8 @@ module.exports = function(s,config,lang){
         deleteMainVideos,
         deleteTimelapseFrames,
         deleteFileBinFiles,
+        deleteCloudVideos,
+        deleteCloudTimelapseFrames,
     } = require("./user/utils.js")(s,config,lang);
     let purgeDiskGroup = () => {}
     const runQuery = async.queue(function(groupKey, callback) {
@@ -64,10 +66,10 @@ module.exports = function(s,config,lang){
             s.group[e.ke].diskUsedEmitter.emit('purgeCloud',storageType,storagePoint)
         }
     }
-    s.setCloudDiskUsedForGroup = function(e,usage,storagePoint){
+    s.setCloudDiskUsedForGroup = function(groupKey,usage,storagePoint){
         //`usage` will be used as the value to add or substract
-        if(s.group[e.ke].diskUsedEmitter){
-            s.group[e.ke].diskUsedEmitter.emit('setCloud',usage,storagePoint)
+        if(s.group[groupKey].diskUsedEmitter){
+            s.group[groupKey].diskUsedEmitter.emit('setCloud',usage,storagePoint)
         }
     }
     s.sendDiskUsedAmountToClients = function(groupKey){
@@ -184,137 +186,15 @@ module.exports = function(s,config,lang){
                             break;
                         }
                     })
-                    s.group[e.ke].diskUsedEmitter.on('purgeCloud',function(storageType,storagePoint){
-                        if(config.cron.deleteOverMax === true){
-                            var cloudDisk = s.group[e.ke].cloudDiskUse[storageType]
-                            //set queue processor
-                            var finish=function(){
-                                // s.sendDiskUsedAmountToClients(e.ke)
-                            }
-                            var deleteVideos = function(){
-                                //run purge command
-                                if(cloudDisk.sizeLimitCheck && cloudDisk.usedSpace > (cloudDisk.sizeLimit*config.cron.deleteOverMaxOffset)){
-                                    s.knexQuery({
-                                        action: "select",
-                                        columns: "*",
-                                        table: "Cloud Videos",
-                                        where: [
-                                            ['status','!=','0'],
-                                            ['ke','=',e.ke],
-                                            ['details','LIKE',`%"type":"${storageType}"%`],
-                                        ],
-                                        orderBy: ['time','asc'],
-                                        limit: 2
-                                    },function(err,videos) {
-                                        if(!videos)return console.log(err)
-                                        var whereQuery = [
-                                            ['ke','=',e.ke],
-                                            []
-                                        ]
-                                        var didOne = false
-                                        videos.forEach(function(video){
-                                            video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
-                                            var whereGroup
-                                            if(didOne){
-                                                whereGroup = [
-                                                    ['or','mid','=',video.mid],
-                                                    ['time','=',video.time]
-                                                ]
-                                            }else{
-                                                didOne = true
-                                                whereGroup = [
-                                                    ['mid','=',video.mid],
-                                                    ['time','=',video.time]
-                                                ]
-                                            }
-                                            whereQuery[1].push(whereGroup)
-                                            s.setCloudDiskUsedForGroup(e,{
-                                                amount : -(video.size/1048576),
-                                                storageType : storageType
-                                            })
-                                            s.deleteVideoFromCloudExtensionsRunner(e,storageType,video)
-                                        })
-                                        if(whereQuery[1].length > 0){
-                                            s.knexQuery({
-                                                action: "delete",
-                                                table: "Cloud Videos",
-                                                where: whereQuery
-                                            },() => {
-                                                deleteVideos()
-                                            })
-                                        }else{
-                                            finish()
-                                        }
-                                    })
-                                }else{
-                                    finish()
-                                }
-                            }
-                            var deleteTimelapseFrames = function(callback){
-                                reRunCheck = function(){
-                                    return deleteTimelapseFrames(callback)
-                                }
-                                //run purge command
-                                if(cloudDisk.usedSpaceTimelapseFrames > (cloudDisk.sizeLimit * (s.group[e.ke].sizeLimitTimelapseFramesPercent / 100) * config.cron.deleteOverMaxOffset)){
-                                    s.knexQuery({
-                                        action: "select",
-                                        columns: "*",
-                                        table: "Cloud Timelapse Frames",
-                                        where: [
-                                            ['ke','=',e.ke],
-                                            ['details','NOT LIKE',`%"archived":"1"%`],
-                                        ],
-                                        orderBy: ['time','asc'],
-                                        limit: 3
-                                    },(err,frames) => {
-                                        if(!frames)return console.log(err)
-                                        var whereQuery = [
-                                            ['ke','=',e.ke],
-                                            []
-                                        ]
-                                        frames.forEach(function(frame){
-                                            frame.dir = s.getVideoDirectory(frame) + s.formattedTime(frame.time) + '.' + frame.ext
-                                            var whereGroup
-                                            if(didOne){
-                                                whereGroup = [
-                                                    ['or','mid','=',frame.mid],
-                                                    ['time','=',frame.time]
-                                                ]
-                                            }else{
-                                                didOne = true
-                                                whereGroup = [
-                                                    ['mid','=',frame.mid],
-                                                    ['time','=',frame.time]
-                                                ]
-                                            }
-                                            whereQuery[1].push(whereGroup)
-                                            s.setCloudDiskUsedForGroup(e,{
-                                                amount : -(frame.size/1048576),
-                                                storageType : storageType
-                                            })
-                                            s.deleteVideoFromCloudExtensionsRunner(e,storageType,frame)
-                                        })
-                                        s.knexQuery({
-                                            action: "delete",
-                                            table: "Cloud Timelapse Frames",
-                                            where: whereQuery
-                                        },() => {
-                                            deleteTimelapseFrames(callback)
-                                        })
-                                    })
-                                }else{
-                                    callback()
-                                }
-                            }
-                            deleteVideos(function(){
-                                deleteTimelapseFrames(function(){
+                    if(config.cron.deleteOverMax === true){
+                        s.group[e.ke].diskUsedEmitter.on('purgeCloud',function(storageType,storagePoint){
+                            deleteCloudVideos(storageType,storagePoint,function(){
+                                deleteCloudTimelapseFrames(storageType,storagePoint,function(){
 
                                 })
                             })
-                        }else{
-                            // s.sendDiskUsedAmountToClients(e.ke)
-                        }
-                    })
+                        })
+                    }
                     //s.setDiskUsedForGroup
                     s.group[e.ke].diskUsedEmitter.on('set',function(currentChange,storageType){
                         //validate current values

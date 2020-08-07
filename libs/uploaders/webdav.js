@@ -98,7 +98,7 @@ module.exports = function(s,config,lang){
                            href: webdavRemoteUrl
                        }
                    })
-                   s.setCloudDiskUsedForGroup(e,{
+                   s.setCloudDiskUsedForGroup(e.ke,{
                        amount: k.filesizeMB,
                        storageType: 'webdav'
                    })

@@ -148,7 +148,7 @@ module.exports = function(s,config,lang){
                                     href: backblazeDownloadUrl
                                 }
                             })
-                            s.setCloudDiskUsedForGroup(e,{
+                            s.setCloudDiskUsedForGroup(e.ke,{
                                 amount : k.filesizeMB,
                                 storageType : 'b2'
                             })

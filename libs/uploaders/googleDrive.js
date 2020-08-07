@@ -174,7 +174,7 @@ module.exports = (s,config,lang,app,io) => {
                                 href: ''
                             }
                         })
-                        s.setCloudDiskUsedForGroup(e,{
+                        s.setCloudDiskUsedForGroup(e.ke,{
                             amount : k.filesizeMB,
                             storageType : 'googd'
                         })
@@ -226,7 +226,7 @@ module.exports = (s,config,lang,app,io) => {
                             href: ''
                         }
                     })
-                    s.setCloudDiskUsedForGroup(e,{
+                    s.setCloudDiskUsedForGroup(e.ke,{
                         amount : s.kilobyteToMegabyte(queryInfo.size),
                         storageType : 'googd'
                     },'timelapseFrames')

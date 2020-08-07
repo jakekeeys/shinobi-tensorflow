@@ -61,28 +61,25 @@ module.exports = function(s,config){
         .raw(data.query,data.values)
         .asCallback(callback)
     }, 4);
-    const processWhereCondition = (dbQuery,where,didOne) => {
+    const cleanSqlWhereObject = (where) => {
+        const newWhere = {}
+        Object.keys(where).forEach((key) => {
+            if(key !== '__separator'){
+                const value = where[key]
+                newWhere[key] = value
+            }
+        })
+        return newWhere
+    }
+    const processSimpleWhereCondition = (dbQuery,where,didOne) => {
         var whereIsArray = where instanceof Array;
-        if(!where[0])return;
-        if(where[0] && where[0] instanceof Array){
-            // didOne = true
-            dbQuery.where(function() {
-                var _this = this
-                var didOneInsideGroup = false
-                where.forEach((whereInsideGroup) => {
-                    processWhereCondition(_this,whereInsideGroup,didOneInsideGroup)
-                })
-            })
-        }else if(where.length === 4){
-            const separator = where[0] + ''
-            where.shift()
-            switch(separator){
-                case'and':
-                    whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
-                break;
-                case'or':
-                    whereIsArray ? dbQuery.orWhere(...where) : dbQuery.orWhere(where)
-                break;
+        if(where[0] === 'or' || where.__separator === 'or'){
+            if(whereIsArray){
+                where.shift()
+                dbQuery.orWhere(...where)
+            }else{
+                where = cleanSqlWhereObject(where)
+                dbQuery.orWhere(where)
             }
         }else if(!didOne){
             didOne = true
@@ -90,7 +87,29 @@ module.exports = function(s,config){
         }else{
             whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
         }
-
+    }
+    const processWhereCondition = (dbQuery,where,didOne) => {
+        var whereIsArray = where instanceof Array;
+        if(!where[0])return;
+        if(where[0] && where[0] instanceof Array){
+            dbQuery.where(function() {
+                var _this = this
+                var didOneInsideGroup = false
+                where.forEach((whereInsideGroup) => {
+                    processWhereCondition(_this,whereInsideGroup,didOneInsideGroup)
+                })
+            })
+        }else if(where[0] && where[0] instanceof Object){
+            dbQuery.where(function() {
+                var _this = this
+                var didOneInsideGroup = false
+                where.forEach((whereInsideGroup) => {
+                    processSimpleWhereCondition(_this,whereInsideGroup,didOneInsideGroup)
+                })
+            })
+        }else{
+            processSimpleWhereCondition(dbQuery,where,didOne)
+        }
     }
     const knexError = (dbQuery,options,err) => {
         console.error('knexError----------------------------------- START')
@@ -125,7 +144,7 @@ module.exports = function(s,config){
                     dbQuery = s.databaseEngine(options.table).update(options.update)
                 break;
                 case'delete':
-                    dbQuery = s.databaseEngine(options.table).del()
+                    dbQuery = s.databaseEngine(options.table)
                 break;
                 case'insert':
                     dbQuery = s.databaseEngine(options.table).insert(options.insert)
@@ -136,6 +155,9 @@ module.exports = function(s,config){
                 options.where.forEach((where) => {
                     processWhereCondition(dbQuery,where,didOne)
                 })
+            }
+            if(options.action === 'delete'){
+                dbQuery.del()
             }
             if(options.orderBy){
                 dbQuery.orderBy(...options.orderBy)

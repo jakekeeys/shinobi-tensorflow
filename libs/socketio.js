@@ -752,9 +752,9 @@ module.exports = function(s,config,lang,io){
                                     s.knexQuery({
                                         action: "delete",
                                         table: "Logs",
-                                        where: [
-                                            ['ke','=',d.ke],
-                                        ]
+                                        where: {
+                                            ke: d.ke,
+                                        }
                                     })
                                 break;
                             }

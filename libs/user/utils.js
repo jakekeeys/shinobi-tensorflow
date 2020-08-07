@@ -15,13 +15,12 @@ module.exports = (s,config,lang) => {
             var didOne = false
             videos.forEach(function(video){
                 video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
-                if(didOne){
-                    whereGroup.push(['or','mid','=',video.mid])
-                }else{
-                    didOne = true
-                    whereGroup.push(['mid','=',video.mid])
+                const queryGroup = {
+                    mid: video.mid,
+                    time: video.time,
                 }
-                whereGroup.push(['time','=',video.time])
+                if(whereGroup.length > 0)queryGroup.__separator = 'or'
+                whereGroup.push(queryGroup)
                 fs.chmod(video.dir,0o777,function(err){
                     fs.unlink(video.dir,function(err){
                         ++completedCheck
@@ -32,7 +31,7 @@ module.exports = (s,config,lang) => {
                                 }
                             })
                         }
-                        const whereGroupLength = whereGroup.length / 2
+                        const whereGroupLength = whereGroup.length
                         if(whereGroupLength > 0 && whereGroupLength === completedCheck){
                             whereQuery[1] = whereGroup
                             s.knexQuery({
@@ -357,6 +356,112 @@ module.exports = (s,config,lang) => {
             callback()
         }
     }
+    const deleteCloudVideos = function(groupKey,storageType,storagePoint,callback){
+        const whereGroup = []
+        const cloudDisk = s.group[groupKey].cloudDiskUse[storageType]
+        //run purge command
+        if(cloudDisk.sizeLimitCheck && cloudDisk.usedSpace > (cloudDisk.sizeLimit * config.cron.deleteOverMaxOffset)){
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "Cloud Videos",
+                where: [
+                    ['status','!=','0'],
+                    ['ke','=',groupKey],
+                    ['details','LIKE',`%"type":"${storageType}"%`],
+                ],
+                orderBy: ['time','asc'],
+                limit: 2
+            },function(err,videos) {
+                if(!videos)return console.log(err)
+                var whereQuery = [
+                    ['ke','=',groupKey],
+                ]
+                var didOne = false
+                videos.forEach(function(video){
+                    video.dir = s.getVideoDirectory(video) + s.formattedTime(video.time) + '.' + video.ext
+                    const queryGroup = {
+                        mid: video.mid,
+                        time: video.time,
+                    }
+                    if(whereGroup.length > 0)queryGroup.__separator = 'or'
+                    whereGroup.push(queryGroup)
+                    s.setCloudDiskUsedForGroup(e.ke,{
+                        amount : -(video.size/1048576),
+                        storageType : storageType
+                    })
+                    s.deleteVideoFromCloudExtensionsRunner(e,storageType,video)
+                })
+                const whereGroupLength = whereGroup.length
+                if(whereGroupLength > 0){
+                    whereQuery[1] = whereGroup
+                    s.knexQuery({
+                        action: "delete",
+                        table: "Cloud Videos",
+                        where: whereQuery
+                    },() => {
+                        deleteCloudVideos(groupKey,storageType,storagePoint,callback)
+                    })
+                }else{
+                    callback()
+                }
+            })
+        }else{
+            callback()
+        }
+    }
+    const deleteCloudTimelapseFrames = function(groupKey,storageType,storagePoint,callback){
+        const whereGroup = []
+        var cloudDisk = s.group[e.ke].cloudDiskUse[storageType]
+        //run purge command
+        if(cloudDisk.usedSpaceTimelapseFrames > (cloudDisk.sizeLimit * (s.group[e.ke].sizeLimitTimelapseFramesPercent / 100) * config.cron.deleteOverMaxOffset)){
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "Cloud Timelapse Frames",
+                where: [
+                    ['ke','=',e.ke],
+                    ['details','NOT LIKE',`%"archived":"1"%`],
+                ],
+                orderBy: ['time','asc'],
+                limit: 3
+            },(err,frames) => {
+                if(!frames)return console.log(err)
+                var whereQuery = [
+                    ['ke','=',e.ke],
+                ]
+                frames.forEach(function(frame){
+                    frame.dir = s.getVideoDirectory(frame) + s.formattedTime(frame.time) + '.' + frame.ext
+                    const queryGroup = {
+                        mid: frame.mid,
+                        time: frame.time,
+                    }
+                    if(whereGroup.length > 0)queryGroup.__separator = 'or'
+                    whereGroup.push(queryGroup)
+                    s.setCloudDiskUsedForGroup(e.ke,{
+                        amount : -(frame.size/1048576),
+                        storageType : storageType
+                    })
+                    s.deleteVideoFromCloudExtensionsRunner(e,storageType,frame)
+                })
+                const whereGroupLength = whereGroup.length
+                if(whereGroupLength > 0){
+                    whereQuery[1] = whereGroup
+                    s.knexQuery({
+                        action: "delete",
+                        table: "Cloud Timelapse Frames",
+                        where: whereQuery
+                    },() => {
+                        deleteCloudTimelapseFrames(groupKey,storageType,storagePoint,callback)
+                    })
+                }else{
+                    callback()
+                }
+            })
+        }else{
+            callback()
+        }
+    }
     return {
         deleteSetOfVideos: deleteSetOfVideos,
         deleteSetOfTimelapseFrames: deleteSetOfTimelapseFrames,
@@ -365,5 +470,7 @@ module.exports = (s,config,lang) => {
         deleteMainVideos: deleteMainVideos,
         deleteTimelapseFrames: deleteTimelapseFrames,
         deleteFileBinFiles: deleteFileBinFiles,
+        deleteCloudVideos: deleteCloudVideos,
+        deleteCloudTimelapseFrames: deleteCloudTimelapseFrames,
     }
 }

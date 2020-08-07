@@ -134,7 +134,7 @@ module.exports = function(s,config,lang){
                             href: cloudLink
                         }
                     })
-                    s.setCloudDiskUsedForGroup(e,{
+                    s.setCloudDiskUsedForGroup(e.ke,{
                         amount : k.filesizeMB,
                         storageType : 'whcs'
                     })
@@ -177,7 +177,7 @@ module.exports = function(s,config,lang){
                             href: data.Location
                         }
                     })
-                    s.setCloudDiskUsedForGroup(e,{
+                    s.setCloudDiskUsedForGroup(e.ke,{
                         amount : s.kilobyteToMegabyte(queryInfo.size),
                         storageType : 'whcs'
                     },'timelapseFrames')

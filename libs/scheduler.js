@@ -317,10 +317,10 @@ module.exports = function(s,config,lang,app,io){
                             s.knexQuery({
                                 action: "delete",
                                 table: "Schedules",
-                                where: [
-                                    ['ke','=',req.params.ke],
-                                    ['name','=',req.params.name],
-                                ]
+                                where : {
+                                    ke: req.params.ke,
+                                    name: req.params.name,
+                                }
                             },function(err){
                                 if(!err){
                                     endData.msg = lang["Deleted Schedule Configuration"]
