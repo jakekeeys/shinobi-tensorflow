@@ -154,6 +154,7 @@ module.exports = function(s,config,lang,app,io){
         s.checkCorrectPathEnding(config.webPaths.admin)+':screen',
         s.checkCorrectPathEnding(config.webPaths.super)+':screen',
     ],function (req,res){
+        var response = {ok: false};
         req.ip = s.getClientIp(req)
         var screenChooser = function(screen){
             var search = function(screen){
@@ -366,7 +367,7 @@ module.exports = function(s,config,lang,app,io){
                         chosenRender = r.details.landing_page
                     }
                     renderPage(config.renderPaths[chosenRender],{
-                        $user:response,
+                        $user: response,
                         config: s.getConfigWithBranding(req.hostname),
                         lang:r.lang,
                         define:s.getDefinitonFile(r.details.lang),
@@ -392,7 +393,6 @@ module.exports = function(s,config,lang,app,io){
                     ],
                     limit: 1
                 },(err,r) => {
-                    var response = {ok: false};
                     if(!err && r && r[0]){
                         r=r[0];r.auth=s.md5(s.gid());
                         s.knexQuery({
@@ -406,7 +406,7 @@ module.exports = function(s,config,lang,app,io){
                                 ['uid','=',r.uid],
                             ]
                         })
-                        var response = {
+                        response = {
                             ok: true,
                             auth_token: r.auth,
                             ke: r.ke,
@@ -466,9 +466,9 @@ module.exports = function(s,config,lang,app,io){
                             },function(err,rr) {
                                 if(rr && rr[0]){
                                     rr=rr[0];
-                                    rr.details=JSON.parse(rr.details);
-                                    r.details.mon_groups=rr.details.mon_groups;
-                                    response.details=JSON.stringify(r.details);
+                                    rr.details = JSON.parse(rr.details);
+                                    r.details.mon_groups = rr.details.mon_groups;
+                                    response.details = JSON.stringify(r.details);
                                     factorAuth()
                                 }else{
                                     failedAuthentication(req.body.function)
@@ -540,7 +540,7 @@ module.exports = function(s,config,lang,app,io){
                                     if(!user.uid){
                                         user.uid=s.gid()
                                     }
-                                    var response = {
+                                    response = {
                                         ke:req.body.key,
                                         uid:user.uid,
                                         auth:s.createHash(s.gid()),
@@ -565,10 +565,10 @@ module.exports = function(s,config,lang,app,io){
                                     },function(err,rr) {
                                         if(rr&&rr[0]){
                                             //already registered
-                                            rr=rr[0]
-                                            var response = rr;
-                                            rr.details=JSON.parse(rr.details)
-                                            response.lang=s.getLanguageFile(rr.details.lang)
+                                            rr = rr[0]
+                                            response = rr;
+                                            rr.details = JSON.parse(rr.details)
+                                            response.lang = s.getLanguageFile(rr.details.lang)
                                             s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP User Authenticated'],msg:{user:user,shinobiUID:rr.uid}})
                                             s.knexQuery({
                                                 action: "update",
@@ -680,7 +680,6 @@ module.exports = function(s,config,lang,app,io){
                             }
                         }
                         req.body.function = s.factorAuth[req.body.ke][req.body.id].function
-                        var response = s.factorAuth[req.body.ke][req.body.id].info
                         checkRoute(s.factorAuth[req.body.ke][req.body.id].user)
                         clearTimeout(s.factorAuth[req.body.ke][req.body.id].expireAuth)
                         s.deleteFactorAuth({
@@ -1110,6 +1109,7 @@ module.exports = function(s,config,lang,app,io){
             s.sqlQueryBetweenTimesWithPermissions({
                 table: videoSet,
                 user: user,
+                noCount: true,
                 groupKey: req.params.ke,
                 monitorId: req.params.id,
                 startTime: req.query.start,
@@ -1683,6 +1683,7 @@ module.exports = function(s,config,lang,app,io){
             s.sqlQueryBetweenTimesWithPermissions({
                 table: 'Events Counts',
                 user: user,
+                noCount: true,
                 groupKey: req.params.ke,
                 monitorId: req.params.id,
                 startTime: req.query.start,

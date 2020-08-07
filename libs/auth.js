@@ -263,7 +263,7 @@ module.exports = function(s,config,lang){
                 if(params.users === true){
                     s.knexQuery({
                         action: "select",
-                        columns: columns,
+                        columns: "*",
                         table: "Users",
                         where: [
                             ['details','NOT LIKE','%"sub"%'],

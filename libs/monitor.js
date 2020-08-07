@@ -104,6 +104,12 @@ module.exports = function(s,config,lang){
         });
         return x.ar;
     }
+    s.getFileBinDirectory = (monitor) => {
+        return s.dir.fileBin + monitor.ke + '/' + monitor.mid + '/'
+    }
+    s.getStreamsDirectory = (monitor) => {
+        return s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
+    }
     s.getRawSnapshotFromMonitor = function(monitor,options,callback){
         if(!callback){
             callback = options
@@ -538,9 +544,6 @@ module.exports = function(s,config,lang){
         }else{
             s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
         }
-    }
-    s.getStreamsDirectory = (monitor) => {
-        return s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
     }
     const createRecordingDirectory = function(e,callback){
         var directory
@@ -1658,11 +1661,9 @@ module.exports = function(s,config,lang){
                 var sqlQuery = 'SELECT * FROM Monitors WHERE ke=? AND '
                 var monitorQuery = []
                 var monitorPresets = {}
-                var didOne = false;
                 preset.details.monitors.forEach(function(monitor){
                     const whereConditions = {}
-                    if(!didOne){
-                        didOne = true
+                    if(monitorQuery.length === 0){
                         whereConditions.ke = groupKey
                         monitorQuery.push(['ke','=',groupKey])
                     }else{

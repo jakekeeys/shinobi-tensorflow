@@ -176,12 +176,12 @@ module.exports = function(s,config,lang){
                     //send new diskUsage values
                     var storageIndex = s.getVideoStorageIndex(e)
                     if(storageIndex){
-                        s.setDiskUsedForGroupAddStorage(e,{
+                        s.setDiskUsedForGroupAddStorage(e.ke,{
                             size: k.filesizeMB,
                             storageIndex: storageIndex
                         })
                     }else{
-                        s.setDiskUsedForGroup(e,k.filesizeMB)
+                        s.setDiskUsedForGroup(e.ke,k.filesizeMB)
                     }
                     s.onBeforeInsertCompletedVideoExtensions.forEach(function(extender){
                         extender(e,k)
@@ -238,12 +238,12 @@ module.exports = function(s,config,lang){
                     },'GRP_'+e.ke);
                     var storageIndex = s.getVideoStorageIndex(e)
                     if(storageIndex){
-                        s.setDiskUsedForGroupAddStorage(e,{
+                        s.setDiskUsedForGroupAddStorage(e.ke,{
                             size: -(r.size / 1048576),
                             storageIndex: storageIndex
                         })
                     }else{
-                        s.setDiskUsedForGroup(e,-(r.size / 1048576))
+                        s.setDiskUsedForGroup(e.ke,-(r.size / 1048576))
                     }
                     s.knexQuery({
                         action: "delete",
@@ -303,12 +303,12 @@ module.exports = function(s,config,lang){
                     },'GRP_'+video.ke);
                     var storageIndex = s.getVideoStorageIndex(video)
                     if(storageIndex){
-                        s.setDiskUsedForGroupAddStorage(video,{
+                        s.setDiskUsedForGroupAddStorage(video.ke,{
                             size: -(video.size / 1048576),
                             storageIndex: storageIndex
                         })
                     }else{
-                        s.setDiskUsedForGroup(video,-(video.size / 1048576))
+                        s.setDiskUsedForGroup(video.ke,-(video.size / 1048576))
                     }
                     fs.unlink(video.dir + filename,function(err){
                         fs.stat(video.dir + filename,function(err){
@@ -543,7 +543,7 @@ module.exports = function(s,config,lang){
                                 time: timeNow,
                             }
                         })
-                        s.setDiskUsedForGroup({ke: ke},fileStats.size / 1048576,'fileBin')
+                        s.setDiskUsedForGroup(ke,fileStats.size / 1048576,'fileBin')
                         fs.unlink(commandTempLocation,function(){
 
                         })

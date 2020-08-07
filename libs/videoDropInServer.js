@@ -43,7 +43,7 @@ module.exports = function(s,config,lang,app,io){
                                             time: timeNow,
                                         }
                                     })
-                                    s.setDiskUsedForGroup(monitor,fileStats.size / 1048576)
+                                    s.setDiskUsedForGroup(monitor.ke,fileStats.size / 1048576)
                                 }
                                 // else{
                                 //     s.insertDatabaseRow(

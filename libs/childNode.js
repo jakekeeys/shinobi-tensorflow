@@ -159,7 +159,7 @@ module.exports = function(s,config,lang,app,io){
                                 //purge over max
                                 s.purgeDiskForGroup(d)
                                 //send new diskUsage values
-                                s.setDiskUsedForGroup(d,insert.filesizeMB)
+                                s.setDiskUsedForGroup(d.ke,insert.filesizeMB)
                                 clearTimeout(s.group[d.ke].activeMonitors[d.mid].recordingChecker)
                                 clearTimeout(s.group[d.ke].activeMonitors[d.mid].streamChecker)
                             break;

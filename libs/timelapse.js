@@ -79,7 +79,7 @@ module.exports = function(s,config,lang,app,io){
             table: "Timelapse Frames",
             insert: queryInfo
         })
-        s.setDiskUsedForGroup(e,queryInfo.size / 1048576,'timelapeFrames')
+        s.setDiskUsedForGroup(e.ke,queryInfo.size / 1048576,'timelapeFrames')
         s.purgeDiskForGroup(e)
         s.onInsertTimelapseFrameExtensions.forEach(function(extender){
             extender(e,queryInfo,filePath)

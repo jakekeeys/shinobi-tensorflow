@@ -353,7 +353,7 @@ module.exports = function(s,config,lang,io){
                     }
                     tx({f:'users_online',users:s.group[d.ke].users})
                     s.tx({f:'user_status_change',ke:d.ke,uid:cn.uid,status:1,user:s.group[d.ke].users[d.auth]},'GRP_'+d.ke)
-                    s.sendDiskUsedAmountToClients(d)
+                    s.sendDiskUsedAmountToClients(d.ke)
                     s.loadGroupApps(d)
                     s.knexQuery({
                         action: "select",
