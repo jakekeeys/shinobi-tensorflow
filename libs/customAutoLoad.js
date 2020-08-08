@@ -76,6 +76,21 @@ module.exports = function(s,config,lang,app,io){
             })
         }
     }
+    const disableModule = (name,status) => {
+        // set status to `false` to enable
+        const modulePath = getModulePath(name)
+        const properties = getModuleProperties(name);
+        const propertiesPath = modulePath + 'package.json'
+        var packageJson = JSON.parse(fs.readFileSync(propertiesPath))
+        packageJson.disabled = status;
+        fs.writeFileSync(propertiesPath,s.prettyPrint(packageJson))
+    }
+    const deleteModule = (name,status) => {
+        // requires restart for changes to take effect
+        const modulePath = getModulePath(name)
+        fs.unlink(modulePath)
+        s.file('delete',modulePath)
+    }
     const loadModule = (shinobiModule) => {
         const moduleName = shinobiModule.name
         s.customAutoLoadModules[moduleName] = {}
@@ -216,7 +231,6 @@ module.exports = function(s,config,lang,app,io){
             superLibsJs: [],
             superLibsCss: []
         }
-
         fs.readdir(modulesBasePath,function(err,folderContents){
             if(!err && folderContents.length > 0){
                 getModules().forEach((shinobiModule) => {
