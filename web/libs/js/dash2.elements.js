@@ -157,12 +157,12 @@ $(document).ready(function(e){
                 e.preventDefault();
                 e.href=$(this).attr('href')
                 var el = $('#video_viewer')
-                var modalBody = el.find('.modal-body')
+                var videoContainer = el.find('.video-container')
                 el.find('.modal-title span').html(e.mon.name+' - '+e.file)
                 var html = '<video class="video_video" video="'+e.href+'" autoplay loop controls><source src="'+e.href+'" type="video/'+e.mon.ext+'"></video><br><small class="msg"></small>'
-                modalBody.html(html)
+                videoContainer.html(html)
                 el.find('video')[0].onerror = function(){
-                    modalBody.find('.msg').text(lang.h265BrowserText1)
+                    videoContainer.find('.msg').text(lang.h265BrowserText1)
                 }
                 el.attr('mid',e.mid);
                 footer = el.find('.modal-footer');
@@ -178,6 +178,28 @@ $(document).ready(function(e){
                         if(d.ok !== true)console.log(d,new Error())
                     })
                 }
+                setTimeout(function(){
+                    destroyGpsHandlerForVideoFile(`video_viewer_gps_map_map`)
+                    var videoElement = videoContainer.find('.video_video')
+                    var gpsContainer = videoContainer.next()
+                    var fullWidth = 'col-md-12'
+                    var partialWidth = 'col-md-8'
+                    createGpsHandlerForVideoFile({
+                        ke: e.ke,
+                        mid: e.mid,
+                        file: e.file,
+                        targetVideoElement: videoElement,
+                        targetMapElement: `video_viewer_gps_map`,
+                    },function(response){
+                        if(response.ok){
+                            videoContainer.addClass(partialWidth).removeClass(fullWidth)
+                            gpsContainer.show()
+                        }else{
+                            videoContainer.addClass(fullWidth).removeClass(partialWidth)
+                            gpsContainer.hide()
+                        }
+                    })
+                },2000)
             break;
             case'delete':
                 e.preventDefault();
@@ -412,7 +434,7 @@ $(document).ready(function(e){
                 }
             break;
             case'trigger-event':
-                $.getJSON(getApiPrefix() + '/motion/'+e.ke+'/'+e.mid+'/?data={"plug":"camera1","name":"stairs","reason":"motion","confidence":197.4755859375}',function(d){
+                $.getJSON(getApiPrefix() + '/motion/'+e.ke+'/'+e.mid+'/?data={"plug":"camera1","name":"stairs","reason":"motion","confidence":100}',function(d){
                     $.ccio.log(d)
                 })
             break;
@@ -766,8 +788,10 @@ $(document).ready(function(e){
     })
 
     $('.modal').on('hidden.bs.modal',function(){
-        $(this).find('video').remove();
-        $(this).find('iframe').attr('src','about:blank');
+        var el = $(this)
+        el.find('video').remove();
+        el.find('iframe').attr('src','about:blank');
+        if(el.attr('id') === 'video_viewer')destroyGpsHandlerForVideoFile(`video_viewer_gps_map_map`)
     });
     $('.modal').on('shown.bs.modal',function(){
         e={e:$(this).find('.flex-container-modal-body')}

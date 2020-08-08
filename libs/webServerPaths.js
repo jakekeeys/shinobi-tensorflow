@@ -1540,7 +1540,11 @@ module.exports = function(s,config,lang,app,io){
                     req.dir=s.getVideoDirectory(r[0])+req.params.file
                     fs.stat(req.dir,function(err,stats){
                         if (!err){
-                            s.streamMp4FileOverHttp(req.dir,req,res)
+                            if(req.query.json === 'true'){
+                                s.closeJsonResponse(res,r[0])
+                            }else{
+                                s.streamMp4FileOverHttp(req.dir,req,res)
+                            }
                         }else{
                             res.end(user.lang['File Not Found in Filesystem'])
                         }
@@ -1875,24 +1879,38 @@ module.exports = function(s,config,lang,app,io){
     /**
     * API : Stream In to push data to ffmpeg by HTTP
      */
-    app.all(['/streamIn/:ke/:id','/streamIn/:ke/:id/:feed'], function (req, res) {
-        var checkOrigin = function(search){return req.headers.host.indexOf(search)>-1}
-        if(checkOrigin('127.0.0.1')){
-            if(!req.params.feed){req.params.feed='1'}
-            if(!s.group[req.params.ke].activeMonitors[req.params.id].streamIn[req.params.feed]){
-                s.group[req.params.ke].activeMonitors[req.params.id].streamIn[req.params.feed] = new events.EventEmitter().setMaxListeners(0)
-            }
-            //req.params.feed = Feed Number
+    app.all('/:auth/streamIn/:ke/:id', function (req, res) {
+        s.auth(req.params,function(user){
+            const ipAddress = s.getClientIp(req)
+            const groupKey = req.params.ke
+            const monitorId = req.params.id
+            const timeStartedConnection = new Date();
+            s.userLog({
+                ke: groupKey,
+                mid: monitorId,
+            },{
+                type: "HTTP streamIn Started",
+                msg: {
+                    ipAddress: ipAddress,
+                }
+            })
             res.connection.setTimeout(0);
             req.on('data', function(buffer){
-                s.group[req.params.ke].activeMonitors[req.params.id].streamIn[req.params.feed].emit('data',buffer)
+                s.group[groupKey].activeMonitors[monitorId].spawn.stdin.write(buffer)
             });
             req.on('end',function(){
-    //            console.log('streamIn closed',req.params);
+                s.userLog({
+                    ke: groupKey,
+                    mid: monitorId,
+                },{
+                    type: "HTTP streamIn Closed",
+                    msg: {
+                        timeStartedConnection: timeStartedConnection,
+                        ipAddress: ipAddress,
+                    }
+                })
             });
-        }else{
-            res.end('Local connection is only allowed.')
-        }
+        },res,req)
     })
     /**
     * API : Account Edit from Dashboard

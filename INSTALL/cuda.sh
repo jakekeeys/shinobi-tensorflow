@@ -12,7 +12,7 @@ if [ -x "$(command -v apt)" ]; then
 
     sudo apt-get update -y
 
-    sudo apt-get -o Dpkg::Options::="--force-overwrite" install cuda -y --no-install-recommends
+    sudo apt-get -o Dpkg::Options::="--force-overwrite" install cuda-toolkit-10-2 -y --no-install-recommends
     sudo apt-get -o Dpkg::Options::="--force-overwrite" install --fix-broken -y
 
     # Install CUDA DNN

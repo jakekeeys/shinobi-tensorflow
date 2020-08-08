@@ -18,7 +18,7 @@ var stdioWriters = [];
 
 var writeToStderr = function(text){
   try{
-    stdioWriters[2].write(Buffer.from(`${text}`, 'utf8' ))
+    process.stderr.write(Buffer.from(`${text}`, 'utf8' ))
       // stdioWriters[2].write(Buffer.from(`${new Error('writeToStderr').stack}`, 'utf8' ))
   }catch(err){
     // fs.appendFileSync('/home/Shinobi/test.log',text + '\n','utf8')
@@ -45,10 +45,14 @@ process.on('uncaughtException', function (err) {
     writeToStderr(err.stack);
 });
 const exitAction = function(){
-    if(isWindows){
-        spawn("taskkill", ["/pid", cameraProcess.pid, '/f', '/t'])
-    }else{
-        process.kill(-cameraProcess.pid)
+    try{
+        if(isWindows){
+            spawn("taskkill", ["/pid", cameraProcess.pid, '/f', '/t'])
+        }else{
+            process.kill(-cameraProcess.pid)
+        }
+    }catch(err){
+
     }
 }
 process.on('SIGTERM', exitAction);
@@ -58,7 +62,7 @@ process.on('exit', exitAction);
 for(var i=0; i < stdioPipes; i++){
     switch(i){
       case 0:
-        newPipes[i] = null
+        newPipes[i] = 'pipe'
       break;
       case 1:
         newPipes[i] = 1
@@ -115,7 +119,7 @@ if(rawMonitorConfig.details.detector === '1' && rawMonitorConfig.details.detecto
     writeToStderr(err.stack)
   }
 }
- 
+
 if(rawMonitorConfig.type === 'jpeg'){
     var recordingSnapRequest
     var recordingSnapper
@@ -196,4 +200,14 @@ if(rawMonitorConfig.type === 'jpeg'){
         }
         captureOne()
     },5000)
+}
+
+if(
+    rawMonitorConfig.type === 'dashcam' ||
+    rawMonitorConfig.type === 'socket'
+){
+    process.stdin.on('data',(data) => {
+        //confirmed receiving data this way.
+        cameraProcess.stdin.write(data)
+    })
 }

@@ -1,5 +1,6 @@
 var fs = require("fs")
 var Discord = require("discord.js")
+var template = require("./notifications/emailTemplate.js")
 module.exports = function(s,config,lang){
     //discord bot
     if(config.discordBot === true){
@@ -308,24 +309,36 @@ module.exports = function(s,config,lang){
                         detector_mail_timeout = parseFloat(d.mon.details.detector_mail_timeout)*1000*60;
                     }
                     //lock mailer so you don't get emailed on EVERY trigger event.
-                    s.group[d.ke].activeMonitors[d.id].detector_mail=setTimeout(function(){
+                    s.group[d.ke].activeMonitors[d.id].detector_mail = setTimeout(function(){
                         //unlock so you can mail again.
                         clearTimeout(s.group[d.ke].activeMonitors[d.id].detector_mail);
                         delete(s.group[d.ke].activeMonitors[d.id].detector_mail);
                     },detector_mail_timeout);
                     var files = []
-                    var mailOptions = {
-                        from: config.mail.from, // sender address
-                        to: r.mail, // list of receivers
-                        subject: lang.Event+' - '+d.screenshotName, // Subject line
-                        html: '<i>'+lang.EventText1+' '+d.currentTimestamp+'.</i>',
-                        attachments: files
-                    }
                     var sendMail = function(){
-                        Object.keys(d.details).forEach(function(v,n){
-                            mailOptions.html+='<div><b>'+v+'</b> : '+d.details[v]+'</div>'
+                        const infoRows = []
+                        Object.keys(d.details).forEach(function(key){
+                            var value = d.details[key]
+                            var text = value
+                            if(value instanceof Object){
+                                text = JSON.stringify(value,null,3)
+                            }
+                            infoRows.push(template.createRow({
+                                title: key,
+                                text: text
+                            }))
                         })
-                        s.nodemailer.sendMail(mailOptions, (error, info) => {
+                        s.nodemailer.sendMail({
+                            from: config.mail.from,
+                            to: r.mail,
+                            subject: lang.Event+' - '+d.screenshotName,
+                            html: template.createFramework({
+                                title: lang.EventText1 + ' ' + d.currentTimestamp,
+                                subtitle: 'Shinobi Event',
+                                body: infoRows.join(''),
+                            }),
+                            attachments: files
+                        }, (error, info) => {
                             if (error) {
                                 s.systemLog(lang.MailError,error)
                                 return false;

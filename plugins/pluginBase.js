@@ -237,7 +237,7 @@ module.exports = function(__dirname, config){
                 }
                 processImage(buffer,d,tx,d.frameLocation)
             break;
-            case'frame':''
+            case'frame':
                 try{
                     if(!s.group[d.ke]){
                         s.group[d.ke]={}

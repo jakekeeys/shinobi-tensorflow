@@ -656,6 +656,37 @@ $.ccio.globalWebsocket=function(d,user){
             $.ccio.init('jpegModeAll');
             $('body').addClass('jpegMode')
         break;
+        case'gps':
+            var gps = d.gps
+            var activeMonitor = $.ccio.mon[user.ke + d.mid + user.auth_token]
+            var mapBoxMarker = activeMonitor.mapBoxMarker
+            var monitorElement = $(`.monitor_item[mid="${d.mid}"]`)
+            monitorElement.find(`.gps-map-info`).removeClass('hidden')
+            if(!mapBoxMarker){
+                var mapBox = L.map(`gps-map-${d.mid}`).setView([gps.lat, gps.lng], 5);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: 'OpenStreet Map'
+                }).addTo(mapBox);
+
+                var mapBoxMarker = L.marker([gps.lat, gps.lng]).addTo(mapBox);
+                activeMonitor.mapBoxMarker = mapBoxMarker
+                activeMonitor.mapBoxBearingElement = monitorElement.find(`.gps-info-bearing`)
+                activeMonitor.mapBoxSpeedElement = monitorElement.find(`.gps-info-speed`)
+            }else{
+                mapBoxMarker.setLatLng([gps.lat, gps.lng]).update()
+            }
+            if(gps.bearing){
+                setRadialBearing(activeMonitor.mapBoxBearingElement,gps.bearing,'Bearing : ')
+            }
+            if(gps.speed){
+                setRadialBearing(activeMonitor.mapBoxSpeedElement,gps.speed,'Speed (meters/second) : ')
+            }
+            clearTimeout(activeMonitor.mapBoxTimeout)
+            activeMonitor.mapBoxTimeout = setTimeout(function(){
+                monitorElement.find(`.gps-map-info`).addClass('hidden')
+            },30000)
+        break;
     }
 }
 if(location.search === '?assemble=1'){

@@ -375,7 +375,9 @@ module.exports = function(s,config,lang){
                 time : s.formattedTime(),
                 frame : s.group[d.ke].activeMonitors[d.id].lastJpegDetectorFrame
             })
-        }else{
+        }
+        //
+        if(currentConfig.detector_always_record === '1' || d.doObjectDetection !== true ){
             if(currentConfig.det_multi_trig === '1'){
                 s.getCamerasForMultiTrigger(d.mon).forEach(function(monitor){
                     if(monitor.mid !== d.id){
@@ -447,7 +449,7 @@ module.exports = function(s,config,lang){
             }
             d.currentTime = new Date()
             d.currentTimestamp = s.timeObject(d.currentTime).format()
-            d.screenshotName = 'Motion_'+(d.mon.name.replace(/[^\w\s]/gi,''))+'_'+d.id+'_'+d.ke+'_'+s.formattedTime()
+            d.screenshotName =  d.details.reason + '_'+(d.mon.name.replace(/[^\w\s]/gi,''))+'_'+d.id+'_'+d.ke+'_'+s.formattedTime()
             d.screenshotBuffer = null
 
             s.onEventTriggerExtensions.forEach(function(extender){
