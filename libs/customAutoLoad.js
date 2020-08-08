@@ -76,11 +76,11 @@ module.exports = function(s,config,lang,app,io){
             })
         }
     }
-    const loadModule = (module) => {
-        const moduleName = module.name
+    const loadModule = (shinobiModule) => {
+        const moduleName = shinobiModule.name
         s.customAutoLoadModules[moduleName] = {}
         var customModulePath = modulesBasePath + '/' + moduleName
-        if(module.isIgnitor){
+        if(shinobiModule.isIgnitor){
             s.customAutoLoadModules[moduleName].type = 'file'
             try{
                 require(customModulePath)(s,config,lang,app,io)
@@ -88,7 +88,7 @@ module.exports = function(s,config,lang,app,io){
                 s.systemLog('Failed to Load Module : ' + moduleName)
                 s.systemLog(err)
             }
-        }else if(module.isDirectory){
+        }else if(shinobiModule.isDirectory){
             s.customAutoLoadModules[moduleName].type = 'folder'
             try{
                 require(customModulePath)(s,config,lang,app,io)
@@ -219,11 +219,11 @@ module.exports = function(s,config,lang,app,io){
 
         fs.readdir(modulesBasePath,function(err,folderContents){
             if(!err && folderContents.length > 0){
-                getModules().forEach((module) => {
-                    if(module.properties.disabled){
+                getModules().forEach((shinobiModule) => {
+                    if(shinobiModule.properties.disabled){
                         return;
                     }
-                    loadModule(module)
+                    loadModule(shinobiModule)
                 })
             }else{
                 fs.mkdirSync(modulesBasePath)
