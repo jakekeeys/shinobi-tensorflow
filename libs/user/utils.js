@@ -1,5 +1,8 @@
 var fs = require('fs');
 module.exports = (s,config,lang) => {
+    const {
+        getFileBinDirectory: getFileBinDirectory
+    } = require("../monitor/utils.js")(s,config,lang);
     const deleteSetOfVideos = function(options,callback){
         const groupKey = options.groupKey
         const err = options.err
@@ -149,7 +152,7 @@ module.exports = (s,config,lang) => {
         var completedCheck = 0
         if(files){
             files.forEach(function(file){
-                var dir = s.getFileBinDirectory(file)
+                var dir = getFileBinDirectory(file)
                 var fileLocationMid = `${dir}` + file.name
                 const queryGroup = {
                     mid: file.mid,

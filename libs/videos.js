@@ -2,6 +2,9 @@ var fs = require('fs');
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 module.exports = function(s,config,lang){
+    const {
+
+    } = require("./videos/utils.js")(s,config,lang);
     /**
      * Gets the video directory of the supplied video or monitor database row.
      * @constructor
