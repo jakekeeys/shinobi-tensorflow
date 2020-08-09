@@ -12,7 +12,7 @@ var proxy = httpProxy.createProxyServer({})
 var ejs = require('ejs');
 var fileupload = require("express-fileupload");
 module.exports = function(s,config,lang,app,io){
-    if(config.productType==='Pro'){
+    if(config.productType === 'Pro'){
         var LdapAuth = require('ldapauth-fork');
     }
     s.renderPage = function(req,res,paths,passables,callback){
