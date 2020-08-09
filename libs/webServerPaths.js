@@ -584,7 +584,7 @@ module.exports = function(s,config,lang,app,io){
                                         }else{
                                             //new ldap login
                                             s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP User is New'],msg:{info:r.lang['Creating New Account'],user:user}})
-                                            response.lang=r.lang
+                                            response.lang = r.lang
                                             s.knexQuery({
                                                 action: "insert",
                                                 table: "Users",
