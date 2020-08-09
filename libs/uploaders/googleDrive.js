@@ -54,8 +54,8 @@ module.exports = (s,config,lang,app,io) => {
     //Google Drive Storage
     var beforeAccountSaveForGoogleDrive = function(d){
         //d = save event
-        d.form.details.googd_use_global = d.d.googd_use_global
-        d.form.details.use_googd = d.d.use_googd
+        d.formDetails.googd_use_global = d.d.googd_use_global
+        d.formDetails.use_googd = d.d.use_googd
     }
     var cloudDiskUseStartupForGoogleDrive = function(group,userDetails){
         group.cloudDiskUse['googd'].name = 'Google Drive Storage'
@@ -157,21 +157,24 @@ module.exports = (s,config,lang,app,io) => {
                   const data = response.data
 
                     if(s.group[e.ke].init.googd_log === '1' && data && data.id){
-                        var save = [
-                            e.mid,
-                            e.ke,
-                            k.startTime,
-                            1,
-                            s.s({
-                                type : 'googd',
-                                id : data.id
-                            }),
-                            k.filesize,
-                            k.endTime,
-                            ''
-                        ]
-                        s.sqlQuery('INSERT INTO `Cloud Videos` (mid,ke,time,status,details,size,end,href) VALUES (?,?,?,?,?,?,?,?)',save)
-                        s.setCloudDiskUsedForGroup(e,{
+                        s.knexQuery({
+                            action: "insert",
+                            table: "Cloud Videos",
+                            insert: {
+                                mid: e.mid,
+                                ke: e.ke,
+                                time: k.startTime,
+                                status: 1,
+                                details: s.s({
+                                    type: 'googd',
+                                    id: data.id
+                                }),
+                                size: k.filesize,
+                                end: k.endTime,
+                                href: ''
+                            }
+                        })
+                        s.setCloudDiskUsedForGroup(e.ke,{
                             amount : k.filesizeMB,
                             storageType : 'googd'
                         })
@@ -208,19 +211,22 @@ module.exports = (s,config,lang,app,io) => {
                     s.userLog(e,{type:lang['Google Drive Storage Upload Error'],msg:err})
                 }
                 if(s.group[e.ke].init.googd_log === '1' && data && data.id){
-                    var save = [
-                        queryInfo.mid,
-                        queryInfo.ke,
-                        queryInfo.time,
-                        s.s({
-                            type : 'googd',
-                            id : data.id,
-                        }),
-                        queryInfo.size,
-                        ''
-                    ]
-                    s.sqlQuery('INSERT INTO `Cloud Timelapse Frames` (mid,ke,time,details,size,href) VALUES (?,?,?,?,?,?)',save)
-                    s.setCloudDiskUsedForGroup(e,{
+                    s.knexQuery({
+                        action: "insert",
+                        table: "Cloud Timelapse Frames",
+                        insert: {
+                            mid: queryInfo.mid,
+                            ke: queryInfo.ke,
+                            time: queryInfo.time,
+                            details: s.s({
+                                type : 'googd',
+                                id : data.id,
+                            }),
+                            size: queryInfo.size,
+                            href: ''
+                        }
+                    })
+                    s.setCloudDiskUsedForGroup(e.ke,{
                         amount : s.kilobyteToMegabyte(queryInfo.size),
                         storageType : 'googd'
                     },'timelapseFrames')

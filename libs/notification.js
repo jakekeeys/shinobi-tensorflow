@@ -208,7 +208,15 @@ module.exports = function(s,config,lang){
         var onDetectorNoTriggerTimeoutForEmail = function(e){
             //e = monitor object
             if(config.mail && e.details.detector_notrigger_mail === '1'){
-                s.sqlQuery('SELECT mail FROM Users WHERE ke=? AND details NOT LIKE ?',[e.ke,'%"sub"%'],function(err,r){
+                s.knexQuery({
+                    action: "select",
+                    columns: "mail",
+                    table: "Users",
+                    where: [
+                        ['ke','=',e.ke],
+                        ['details','NOT LIKE','%"sub"%'],
+                    ]
+                },(err,r) => {
                     r = r[0]
                         var mailOptions = {
                             from: config.mail.from, // sender address
@@ -284,7 +292,15 @@ module.exports = function(s,config,lang){
         }
         var onEventTriggerForEmail = function(d,filter){
             if(filter.mail && config.mail && !s.group[d.ke].activeMonitors[d.id].detector_mail){
-                s.sqlQuery('SELECT mail FROM Users WHERE ke=? AND details NOT LIKE ?',[d.ke,'%"sub"%'],function(err,r){
+                s.knexQuery({
+                    action: "select",
+                    columns: "mail",
+                    table: "Users",
+                    where: [
+                        ['ke','=',d.ke],
+                        ['details','NOT LIKE','%"sub"%'],
+                    ]
+                },(err,r) => {
                     r=r[0];
                     var detector_mail_timeout
                     if(!d.mon.details.detector_mail_timeout||d.mon.details.detector_mail_timeout===''){

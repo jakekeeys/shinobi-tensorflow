@@ -3,8 +3,8 @@ module.exports = function(s,config,lang){
     //Wasabi Hot Cloud Storage
     var beforeAccountSaveForWasabiHotCloudStorage = function(d){
         //d = save event
-        d.form.details.whcs_use_global=d.d.whcs_use_global
-        d.form.details.use_whcs=d.d.use_whcs
+        d.formDetails.whcs_use_global=d.d.whcs_use_global
+        d.formDetails.use_whcs=d.d.use_whcs
     }
     var cloudDiskUseStartupForWasabiHotCloudStorage = function(group,userDetails){
         group.cloudDiskUse['whcs'].name = 'Wasabi Hot Cloud Storage'
@@ -117,21 +117,24 @@ module.exports = function(s,config,lang){
                 if(s.group[e.ke].init.whcs_log === '1' && data && data.Location){
                     var cloudLink = data.Location
                     cloudLink = fixCloudianUrl(e,cloudLink)
-                    var save = [
-                        e.mid,
-                        e.ke,
-                        k.startTime,
-                        1,
-                        s.s({
-                            type : 'whcs',
-                            location : saveLocation
-                        }),
-                        k.filesize,
-                        k.endTime,
-                        cloudLink
-                    ]
-                    s.sqlQuery('INSERT INTO `Cloud Videos` (mid,ke,time,status,details,size,end,href) VALUES (?,?,?,?,?,?,?,?)',save)
-                    s.setCloudDiskUsedForGroup(e,{
+                    s.knexQuery({
+                        action: "insert",
+                        table: "Cloud Videos",
+                        insert: {
+                            mid: e.mid,
+                            ke: e.ke,
+                            time: k.startTime,
+                            status: 1,
+                            details: s.s({
+                                type : 'whcs',
+                                location : saveLocation
+                            }),
+                            size: k.filesize,
+                            end: k.endTime,
+                            href: cloudLink
+                        }
+                    })
+                    s.setCloudDiskUsedForGroup(e.ke,{
                         amount : k.filesizeMB,
                         storageType : 'whcs'
                     })
@@ -159,19 +162,22 @@ module.exports = function(s,config,lang){
                     s.userLog(e,{type:lang['Wasabi Hot Cloud Storage Upload Error'],msg:err})
                 }
                 if(s.group[e.ke].init.whcs_log === '1' && data && data.Location){
-                    var save = [
-                        queryInfo.mid,
-                        queryInfo.ke,
-                        queryInfo.time,
-                        s.s({
-                            type : 'whcs',
-                            location : saveLocation,
-                        }),
-                        queryInfo.size,
-                        data.Location
-                    ]
-                    s.sqlQuery('INSERT INTO `Cloud Timelapse Frames` (mid,ke,time,details,size,href) VALUES (?,?,?,?,?,?)',save)
-                    s.setCloudDiskUsedForGroup(e,{
+                    s.knexQuery({
+                        action: "insert",
+                        table: "Cloud Timelapse Frames",
+                        insert: {
+                            mid: queryInfo.mid,
+                            ke: queryInfo.ke,
+                            time: queryInfo.time,
+                            details: s.s({
+                                type : 'whcs',
+                                location : saveLocation
+                            }),
+                            size: queryInfo.size,
+                            href: data.Location
+                        }
+                    })
+                    s.setCloudDiskUsedForGroup(e.ke,{
                         amount : s.kilobyteToMegabyte(queryInfo.size),
                         storageType : 'whcs'
                     },'timelapseFrames')

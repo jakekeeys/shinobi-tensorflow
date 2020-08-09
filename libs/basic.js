@@ -214,7 +214,15 @@ module.exports = function(s,config){
         if(!e){e=''}
         if(config.systemLog===true){
             if(typeof q==='string'&&s.databaseEngine){
-                s.sqlQuery('INSERT INTO Logs (ke,mid,info) VALUES (?,?,?)',['$','$SYSTEM',s.s({type:q,msg:w})]);
+                s.knexQuery({
+                    action: "insert",
+                    table: "Logs",
+                    insert: {
+                        ke: '$',
+                        mid: '$SYSTEM',
+                        info: s.s({type:q,msg:w}),
+                    }
+                })
                 s.tx({f:'log',log:{time:s.timeObject(),ke:'$',mid:'$SYSTEM',time:s.timeObject(),info:s.s({type:q,msg:w})}},'$');
             }
             return console.log(s.timeObject().format(),q,w,e)

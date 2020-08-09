@@ -7,7 +7,7 @@ module.exports = function(s,config,lang){
     }
     var beforeAccountSaveForSftp = function(d){
         //d = save event
-        d.form.details.use_sftp = d.d.use_sftp
+        d.formDetails.use_sftp = d.d.use_sftp
     }
     var loadSftpForUser = function(e){
         // e = user
