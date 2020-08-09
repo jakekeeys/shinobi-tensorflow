@@ -1,4 +1,5 @@
 const fs = require('fs')
+const express = require('express')
 const request = require('request')
 const unzipper = require('unzipper')
 const fetch = require("node-fetch")
@@ -16,21 +17,21 @@ module.exports = async (s,config,lang,app,io) => {
     const getModulePath = (name) => {
         return modulesBasePath + name + '/'
     }
-    const getModules = () => {
+    const getModules = (asArray) => {
         const foundModules = {}
         fs.readdirSync(modulesBasePath).forEach((moduleName) => {
-            const modulePath = getModulePath(moduleName)
+            const modulePath = modulesBasePath + moduleName
             const isDirectory = fs.lstatSync(modulePath).isDirectory()
             foundModules[moduleName] = {
-                moduleName: moduleName,
-                path: modulePath,
+                name: moduleName,
+                path: modulePath + '/',
                 isDirectory: isDirectory,
             }
             if(isDirectory){
-                if(!fs.existsSync(modulePath + 'index.js')){
+                if(!fs.existsSync(modulePath + '/index.js')){
                     foundModules[moduleName].noIndex = true
                 }
-                if(!fs.existsSync(modulePath + 'package.json')){
+                if(!fs.existsSync(modulePath + '/package.json')){
                     foundModules[moduleName].properties = getModuleProperties(moduleName)
                 }
             }else{
@@ -40,12 +41,12 @@ module.exports = async (s,config,lang,app,io) => {
                 }
             }
         })
-        return foundModules
+        return asArray ? Object.values(foundModules) : foundModules
     }
     const downloadModule = (downloadUrl,packageName) => {
         const downloadPath = modulesBasePath + packageName
         fs.mkdirSync(downloadPath)
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             var completed = 0
             const directory = await unzipper.Open.url(request,downloadUrl);
             if(directory.files.length > 0){
@@ -263,7 +264,7 @@ module.exports = async (s,config,lang,app,io) => {
         }
         fs.readdir(modulesBasePath,function(err,folderContents){
             if(!err && folderContents.length > 0){
-                getModules().forEach((shinobiModule) => {
+                getModules(true).forEach((shinobiModule) => {
                     if(shinobiModule.properties.disabled){
                         return;
                     }
@@ -278,7 +279,7 @@ module.exports = async (s,config,lang,app,io) => {
     * API : Superuser : Custom Auto Load Package Download.
     */
     app.post(config.webPaths.superApiPrefix+':auth/package/download', async (req,res) => {
-        s.superAuth(req.params,function(resp){
+        s.superAuth(req.params, async (resp) => {
             const url = req.body.downloadUrl
             const packageRoot = req.body.packageRoot || ''
             const packageName = req.body.packageName || extractNameFromPackage(url)
