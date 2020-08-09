@@ -323,7 +323,7 @@ module.exports = async (s,config,lang,app,io) => {
         },res,req)
     })
     /**
-    * API : Superuser : Custom Auto Load Package Delete
+    * API : Superuser : Custom Auto Load Package Reload All
     */
     app.post(config.webPaths.superApiPrefix+':auth/package/reloadAll', async (req,res) => {
         s.superAuth(req.params, async (resp) => {
