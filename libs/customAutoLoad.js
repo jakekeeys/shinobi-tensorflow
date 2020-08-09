@@ -1,6 +1,9 @@
-var fs = require('fs')
-var spawn = require('child_process').spawn
-module.exports = function(s,config,lang,app,io){
+const fs = require('fs')
+const request = require('request')
+const unzipper = require('unzipper')
+const fetch = require("node-fetch")
+const spawn = require('child_process').spawn
+module.exports = async (s,config,lang,app,io) => {
     const modulesBasePath = s.mainDirectory + '/libs/customAutoLoad/'
     const searchText = function(searchFor,searchIn){
         return searchIn.indexOf(searchFor) > -1
@@ -39,8 +42,27 @@ module.exports = function(s,config,lang,app,io){
         })
         return foundModules
     }
-    const downloadModule = (downloadUrl,packageRoot,packageName) => {
-         return fetch(downloadUrl).pipe(fs.createWriteStream(modulesBasePath + (packageName ? packageName : extractNameFromPackage(downloadUrl))))
+    const downloadModule = (downloadUrl,packageName) => {
+        const downloadPath = modulesBasePath + packageName
+        fs.mkdirSync(downloadPath)
+        return new Promise((resolve, reject) => {
+            var completed = 0
+            const directory = await unzipper.Open.url(request,downloadUrl);
+            if(directory.files.length > 0){
+                directory.files.forEach(async (file) => {
+                    const content = await file.buffer();
+                    fs.writeFile(downloadPath + '/' + file.path,content,(err) => {
+                        if(err)console.log(err)
+                        ++completed
+                        if(directory.files.length === completed){
+                            resolve()
+                        }
+                    })
+                });
+            }else{
+                resolve()
+            }
+        })
     }
     const getModuleProperties = (name) => {
         const modulePath = getModulePath(name)
@@ -50,31 +72,39 @@ module.exports = function(s,config,lang,app,io){
         }
         return properties
     }
-    const installModule = async (name) => {
-        //depending on module this may only work for Ubuntu
-        const modulePath = getModulePath(name)
-        const properties = getModuleProperties(name);
-        const installerPath = modulePath + `INSTALL.sh`
-        const propertiesPath = modulePath + 'package.json'
-        // check for INSTALL.sh (ubuntu only)
-        if(fs.existsSync(installerPath)){
-            const installProcess = spawn(`sh`,installerPath)
-            installProcess.stderr.on('data',(data) => {
-                console.log(data.toString())
-            })
-            installProcess.stdout.on('data',(data) => {
-                console.log(data.toString())
-            })
-        }else if(fs.existsSync(propertiesPath)){
-            // no INSTALL.sh found, check for package.json and do `npm install --unsafe-perm`
-            const installProcess = spawn(`npm`,['install','--unsafe-perm'])
-            installProcess.stderr.on('data',(data) => {
-                console.log(data.toString())
-            })
-            installProcess.stdout.on('data',(data) => {
-                console.log(data.toString())
-            })
-        }
+    const installModule = (name) => {
+        return new Promise((resolve, reject) => {
+            //depending on module this may only work for Ubuntu
+            const modulePath = getModulePath(name)
+            const properties = getModuleProperties(name);
+            const installerPath = modulePath + `INSTALL.sh`
+            const propertiesPath = modulePath + 'package.json'
+            // check for INSTALL.sh (ubuntu only)
+            if(fs.existsSync(installerPath)){
+                const installProcess = spawn(`sh`,installerPath)
+                installProcess.stderr.on('data',(data) => {
+                    console.log(data.toString())
+                })
+                installProcess.stdout.on('data',(data) => {
+                    console.log(data.toString())
+                })
+                installProcess.on('exit',(data) => {
+                    resolve()
+                })
+            }else if(fs.existsSync(propertiesPath)){
+                // no INSTALL.sh found, check for package.json and do `npm install --unsafe-perm`
+                const installProcess = spawn(`npm`,['install','--unsafe-perm'])
+                installProcess.stderr.on('data',(data) => {
+                    console.log(data.toString())
+                })
+                installProcess.stdout.on('data',(data) => {
+                    console.log(data.toString())
+                })
+                installProcess.on('exit',(data) => {
+                    resolve()
+                })
+            }
+        })
     }
     const disableModule = (name,status) => {
         // set status to `false` to enable
@@ -85,7 +115,7 @@ module.exports = function(s,config,lang,app,io){
         packageJson.disabled = status;
         fs.writeFileSync(propertiesPath,s.prettyPrint(packageJson))
     }
-    const deleteModule = (name,status) => {
+    const deleteModule = (name) => {
         // requires restart for changes to take effect
         const modulePath = getModulePath(name)
         fs.unlink(modulePath)
@@ -244,5 +274,63 @@ module.exports = function(s,config,lang,app,io){
             }
         })
     }
-    initializeAllModules();
+    /**
+    * API : Superuser : Custom Auto Load Package Download.
+    */
+    app.post(config.webPaths.superApiPrefix+':auth/package/download', async (req,res) => {
+        s.superAuth(req.params,function(resp){
+            const url = req.body.downloadUrl
+            const packageRoot = req.body.packageRoot || ''
+            const packageName = req.body.packageName || extractNameFromPackage(url)
+            const modulePath = getModulePath(packageName)
+            await downloadModule(url,packageName)
+            const properties = getModuleProperties(packageName)
+            fs.renameSync(modulePath + packageRoot,modulesBasePath + properties.name)
+            fs.unlinkSync(modulePath)
+            s.file('delete',modulePath)
+            s.closeJsonResponse(res,{ok: true})
+        },res,req)
+    })
+    /**
+    * API : Superuser : Custom Auto Load Package Install.
+    */
+    app.post(config.webPaths.superApiPrefix+':auth/package/install', (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            const packageName = req.body.packageName
+            await installModule(packageName)
+            s.closeJsonResponse(res,{ok: true})
+        },res,req)
+    })
+    /**
+    * API : Superuser : Custom Auto Load Package set Status (Enabled or Disabled).
+    */
+    app.post(config.webPaths.superApiPrefix+':auth/package/status', (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            const status = req.body.status
+            const packageName = req.body.packageName
+            disableModule(packageName,status === 'true' ? true : false)
+            s.closeJsonResponse(res,{ok: true})
+        },res,req)
+    })
+    /**
+    * API : Superuser : Custom Auto Load Package Delete
+    */
+    app.post(config.webPaths.superApiPrefix+':auth/package/delete', async (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            const packageName = req.body.packageName
+            deleteModule(packageName)
+            s.closeJsonResponse(res,{ok: true})
+        },res,req)
+    })
+    /**
+    * API : Superuser : Custom Auto Load Package Delete
+    */
+    app.post(config.webPaths.superApiPrefix+':auth/package/reloadAll', async (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            await initializeAllModules();
+            s.closeJsonResponse(res,{ok: true})
+        },res,req)
+    })
+    // Initialize Modules on Start
+    await initializeAllModules();
 }
