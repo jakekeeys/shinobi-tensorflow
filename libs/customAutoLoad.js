@@ -295,10 +295,14 @@ module.exports = async (s,config,lang,app,io) => {
             const packageRootParts = packageRoot.split('/')
             const filename = packageRootParts[packageRootParts.length - 1]
             fs.move(modulePath + packageRoot,modulesBasePath + filename,(err) => {
-                fs.remove(modulePath, (err) => {
-                    if(err)console.log(err)
+                if(packageRoot){
+                    fs.remove(modulePath, (err) => {
+                        if(err)console.log(err)
+                        resolve(filename)
+                    })
+                }else{
                     resolve(filename)
-                })
+                }
             })
         })
     }
@@ -353,11 +357,12 @@ module.exports = async (s,config,lang,app,io) => {
                 await downloadModule(url,packageName)
                 const properties = getModuleProperties(packageName)
                 const newName = await moveModuleToNameInProperties(modulePath,packageRoot,properties)
-                disableModule(newName,true)
+                const chosenName = newName ? newName : packageName
+                disableModule(chosenName,true)
                 s.closeJsonResponse(res,{
                     ok: true,
-                    moduleName: newName,
-                    newModule: getModule(newName)
+                    moduleName: chosenName,
+                    newModule: getModule(chosenName)
                 })
             }catch(err){
                 console.log(err)
