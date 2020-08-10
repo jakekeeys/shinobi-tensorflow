@@ -1764,10 +1764,8 @@ module.exports = function(s,config,lang){
             monitorRestrictions.push(['mid','=',monitorId])
         }else if(
             !monitorId &&
-            permissions.sub && (
-                permissions.allmonitors !== '0' ||
-                permissions.monitors.indexOf(monitorId) >- 1
-            )
+            permissions.sub &&
+            permissions.allmonitors !== '0'
         ){}
         return monitorRestrictions
     }
