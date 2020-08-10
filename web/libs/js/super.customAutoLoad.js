@@ -5,18 +5,27 @@ $(document).ready(function(){
         $.get(superApiPrefix + $user.sessionKey + '/package/list',callback)
     }
     var drawModuleBlock = function(module){
-        listElement.append(`<div class="card" package-name="${module.name}">
-            <div class="card-body">
-                <div><h4>${module.properties.name ? module.properties.name : module.name}</h4></div>
-                <div>
-                    ${!module.isIgnitor ? `
-                        <a class="btn btn-sm btn-success" calm-action="install">${lang.Install}</a>
-                        <a class="btn btn-sm btn-default" calm-action="status">${module.disabled ? lang.Enable : lang.Disable}</a>
-                    ` : ''}
-                    <a class="btn btn-sm btn-danger" calm-action="delete">${lang.Delete}</a>
+        var humanName = module.properties.name ? module.properties.name : module.name
+        if(listElement.find('[package-name="${module.name}"]').length > 0){
+            var existingElement = listElement.find('[package-name="${module.name}"]')
+            existingElement.find('.title').text(humanName)
+            existingElement.find('[calm-action="status"]').text(module.disabled ? lang.Enable : lang.Disable)
+        }else{
+            listElement.append(`<div class="card" package-name="${module.name}">
+                <div class="card-body">
+                    <div><h4 class="title">${humanName}</h4></div>
+                    <div>
+                        ${!module.isIgnitor ? `
+                            ${module.hasInstaller ? `
+                                <a class="btn btn-sm btn-success" calm-action="install">${lang['Run Installer']}</a>
+                            ` : ''}
+                            <a class="btn btn-sm btn-default" calm-action="status">${module.disabled ? lang.Enable : lang.Disable}</a>
+                        ` : ''}
+                        <a class="btn btn-sm btn-danger" calm-action="delete">${lang.Delete}</a>
+                    </div>
                 </div>
-            </div>
-        </div>`)
+            </div>`)
+        }
     }
     var downloadModule = function(url,packageRoot,callback){
         $.confirm.create({
@@ -73,7 +82,8 @@ $(document).ready(function(){
     $('body').on(`click`,`[calm-action]`,function(){
         var el = $(this)
         var action = el.attr('calm-action')
-        var card = el.parent('[package-name]')
+        var card = el.parents('[package-name]')
+        console.log(card.length)
         var packageName = card.attr('package-name')
         switch(action){
             case'install':
@@ -100,7 +110,8 @@ $(document).ready(function(){
             break;
         }
     })
-    $('#downloadNewModule').submit(function(){
+    $('#downloadNewModule').submit(function(e){
+        e.preventDefault();
         var el = $(this)
         var form = el.serializeObject()
         downloadModule(form.downloadUrl,form.packageRoot,function(data){
@@ -109,6 +120,7 @@ $(document).ready(function(){
                 drawModuleBlock(data.newModule)
             }
         })
+        return false
     })
     setTimeout(function(){
         getModules(function(data){

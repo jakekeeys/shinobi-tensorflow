@@ -48,7 +48,8 @@
     "googleapis": "^39.2.0",
     "tree-kill":"1.2.2",
     "unzipper":"0.10.11",
-    "node-fetch":"2.6.0"
+    "node-fetch":"2.6.0",
+    "fs-extra": "9.0.1"
   },
   "devDependencies": {},
   "bin": "camera.js",

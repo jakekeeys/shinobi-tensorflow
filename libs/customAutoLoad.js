@@ -1,4 +1,4 @@
-const fs = require('fs')
+const fs = require('fs-extra');
 const express = require('express')
 const request = require('request')
 const unzipper = require('unzipper')
@@ -26,16 +26,20 @@ module.exports = async (s,config,lang,app,io) => {
             isDirectory: isDirectory,
         }
         if(isDirectory){
+            var hasInstaller = false
             if(!fs.existsSync(modulePath + '/index.js')){
+                hasInstaller = true
                 newModule.noIndex = true
             }
             if(fs.existsSync(modulePath + '/package.json')){
+                hasInstaller = true
                 newModule.properties = getModuleProperties(moduleName)
             }else{
                 newModule.properties = {
                     name: moduleName
                 }
             }
+            newModule.hasInstaller = hasInstaller
         }else{
             newModule.isIgnitor = (moduleName.indexOf('.js') > -1)
             newModule.properties = {
@@ -55,22 +59,32 @@ module.exports = async (s,config,lang,app,io) => {
         const downloadPath = modulesBasePath + packageName
         fs.mkdirSync(downloadPath)
         return new Promise(async (resolve, reject) => {
-            var completed = 0
-            const directory = await unzipper.Open.url(request,downloadUrl);
-            if(directory.files.length > 0){
-                directory.files.forEach(async (file) => {
-                    const content = await file.buffer();
-                    fs.writeFile(downloadPath + '/' + file.path,content,(err) => {
-                        if(err)console.log(err)
-                        ++completed
-                        if(directory.files.length === completed){
-                            resolve()
+            fs.mkdir(downloadPath, () => {
+                request(downloadUrl).pipe(fs.createWriteStream(downloadPath + '.zip'))
+                .on('finish',() => {
+                    zip = fs.createReadStream(downloadPath + '.zip')
+                    .pipe(unzipper.Parse())
+                    .on('entry', async (file) => {
+                        if(file.type === 'Directory'){
+                            try{
+                                fs.mkdirSync(modulesBasePath + file.path, { recursive: true })
+                            }catch(err){
+
+                            }
+                        }else{
+                            const content = await file.buffer();
+                            fs.writeFile(modulesBasePath + file.path,content,(err) => {
+                                if(err)console.log(err)
+                            })
                         }
                     })
-                });
-            }else{
-                resolve()
-            }
+                    .promise()
+                    .then(() => {
+                        fs.remove(downloadPath + '.zip', () => {})
+                        resolve()
+                    })
+                })
+            })
         })
     }
     const getModuleProperties = (name) => {
@@ -89,8 +103,12 @@ module.exports = async (s,config,lang,app,io) => {
             const installerPath = modulePath + `INSTALL.sh`
             const propertiesPath = modulePath + 'package.json'
             // check for INSTALL.sh (ubuntu only)
+            console.log(name)
+            console.log(modulePath)
+            console.log(installerPath)
+            console.log(propertiesPath)
             if(fs.existsSync(installerPath)){
-                const installProcess = spawn(`sh`,installerPath)
+                const installProcess = spawn(`sh`,[installerPath])
                 installProcess.stderr.on('data',(data) => {
                     console.log(data.toString())
                 })
@@ -137,8 +155,9 @@ module.exports = async (s,config,lang,app,io) => {
         // requires restart for changes to take effect
         try{
             const modulePath = modulesBasePath + name
-            fs.unlinkSync(modulePath)
-            s.file('delete',modulePath)
+            fs.remove(modulePath, (err) => {
+                console.log(err)
+            })
             return true
         }catch(err){
             console.log(err)
@@ -272,9 +291,16 @@ module.exports = async (s,config,lang,app,io) => {
         }
     }
     const moveModuleToNameInProperties = (modulePath,packageRoot,properties) => {
-        fs.renameSync(modulePath + packageRoot,modulesBasePath + properties.name)
-        fs.unlinkSync(modulePath)
-        s.file('delete',modulePath)
+        return new Promise((resolve,reject) => {
+            const packageRootParts = packageRoot.split('/')
+            const filename = packageRootParts[packageRootParts.length - 1]
+            fs.move(modulePath + packageRoot,modulesBasePath + filename,(err) => {
+                fs.remove(modulePath, (err) => {
+                    if(err)console.log(err)
+                    resolve(filename)
+                })
+            })
+        })
     }
     const initializeAllModules = async () => {
         s.customAutoLoadModules = {}
