@@ -1744,7 +1744,6 @@ module.exports = function(s,config,lang){
             permissions.allmonitors !== '1'
         ){
             try{
-                console.log(permissions)
                 permissions.monitors = s.parseJSON(permissions.monitors)
                 permissions.monitors.forEach(function(v,n){
                     if(n === 0){
@@ -1754,7 +1753,6 @@ module.exports = function(s,config,lang){
                     }
                 })
             }catch(er){
-                console.log(er)
             }
         }else if(
             monitorId && (
@@ -1764,7 +1762,13 @@ module.exports = function(s,config,lang){
             )
         ){
             monitorRestrictions.push(['mid','=',monitorId])
-        }
+        }else if(
+            !monitorId &&
+            permissions.sub && (
+                permissions.allmonitors !== '0' ||
+                permissions.monitors.indexOf(monitorId) >- 1
+            )
+        ){}
         return monitorRestrictions
     }
     // s.checkViewerConnectionsForMonitor = function(monitorObject){
