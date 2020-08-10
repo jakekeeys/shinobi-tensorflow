@@ -31,8 +31,12 @@ module.exports = async (s,config,lang,app,io) => {
                 if(!fs.existsSync(modulePath + '/index.js')){
                     foundModules[moduleName].noIndex = true
                 }
-                if(!fs.existsSync(modulePath + '/package.json')){
+                if(fs.existsSync(modulePath + '/package.json')){
                     foundModules[moduleName].properties = getModuleProperties(moduleName)
+                }else{
+                    foundModules[moduleName].properties = {
+                        name: moduleName
+                    }
                 }
             }else{
                 foundModules[moduleName].isIgnitor = (moduleName.indexOf('.js') > -1)
@@ -104,6 +108,8 @@ module.exports = async (s,config,lang,app,io) => {
                 installProcess.on('exit',(data) => {
                     resolve()
                 })
+            }else{
+                resolve()
             }
         })
     }
@@ -112,15 +118,28 @@ module.exports = async (s,config,lang,app,io) => {
         const modulePath = getModulePath(name)
         const properties = getModuleProperties(name);
         const propertiesPath = modulePath + 'package.json'
-        var packageJson = JSON.parse(fs.readFileSync(propertiesPath))
+        var packageJson = {
+            name: name
+        }
+        try{
+            packageJson = JSON.parse(fs.readFileSync(propertiesPath))
+        }catch(err){
+
+        }
         packageJson.disabled = status;
         fs.writeFileSync(propertiesPath,s.prettyPrint(packageJson))
     }
     const deleteModule = (name) => {
         // requires restart for changes to take effect
-        const modulePath = getModulePath(name)
-        fs.unlink(modulePath)
-        s.file('delete',modulePath)
+        try{
+            const modulePath = modulesBasePath + name
+            fs.unlinkSync(modulePath)
+            s.file('delete',modulePath)
+            return true
+        }catch(err){
+            console.log(err)
+            return false
+        }
     }
     const loadModule = (shinobiModule) => {
         const moduleName = shinobiModule.name
@@ -248,6 +267,11 @@ module.exports = async (s,config,lang,app,io) => {
             }
         }
     }
+    const moveModuleToNameInProperties = (modulePath,packageRoot,properties) => {
+        fs.renameSync(modulePath + packageRoot,modulesBasePath + properties.name)
+        fs.unlinkSync(modulePath)
+        s.file('delete',modulePath)
+    }
     const initializeAllModules = async () => {
         s.customAutoLoadModules = {}
         s.customAutoLoadTree = {
@@ -271,25 +295,45 @@ module.exports = async (s,config,lang,app,io) => {
                     loadModule(shinobiModule)
                 })
             }else{
-                fs.mkdirSync(modulesBasePath)
+                fs.mkdir(modulesBasePath,() => {})
             }
         })
     }
     /**
     * API : Superuser : Custom Auto Load Package Download.
     */
+    app.get(config.webPaths.superApiPrefix+':auth/package/list', async (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            s.closeJsonResponse(res,{
+                ok: true,
+                modules: getModules()
+            })
+        },res,req)
+    })
+    /**
+    * API : Superuser : Custom Auto Load Package Download.
+    */
     app.post(config.webPaths.superApiPrefix+':auth/package/download', async (req,res) => {
         s.superAuth(req.params, async (resp) => {
-            const url = req.body.downloadUrl
-            const packageRoot = req.body.packageRoot || ''
-            const packageName = req.body.packageName || extractNameFromPackage(url)
-            const modulePath = getModulePath(packageName)
-            await downloadModule(url,packageName)
-            const properties = getModuleProperties(packageName)
-            fs.renameSync(modulePath + packageRoot,modulesBasePath + properties.name)
-            fs.unlinkSync(modulePath)
-            s.file('delete',modulePath)
-            s.closeJsonResponse(res,{ok: true})
+            try{
+                const url = req.body.downloadUrl
+                const packageRoot = req.body.packageRoot || ''
+                const packageName = req.body.packageName || extractNameFromPackage(url)
+                const modulePath = getModulePath(packageName)
+                await downloadModule(url,packageName)
+                const properties = getModuleProperties(packageName)
+                const newName = await moveModuleToNameInProperties(modulePath,packageRoot,properties)
+                disableModule(newName,true)
+                s.closeJsonResponse(res,{
+                    ok: true,
+                    moduleName: newName
+                })
+            }catch(err){
+                console.log(err)
+                s.closeJsonResponse(res,{
+                    ok: false
+                })
+            }
         },res,req)
     })
     /**
@@ -309,7 +353,7 @@ module.exports = async (s,config,lang,app,io) => {
         s.superAuth(req.params, async (resp) => {
             const status = req.body.status
             const packageName = req.body.packageName
-            disableModule(packageName,status === 'true' ? true : false)
+            disableModule(packageName,status == 'true' ? true : false)
             s.closeJsonResponse(res,{ok: true})
         },res,req)
     })
@@ -319,8 +363,8 @@ module.exports = async (s,config,lang,app,io) => {
     app.post(config.webPaths.superApiPrefix+':auth/package/delete', async (req,res) => {
         s.superAuth(req.params, async (resp) => {
             const packageName = req.body.packageName
-            deleteModule(packageName)
-            s.closeJsonResponse(res,{ok: true})
+            const response = deleteModule(packageName)
+            s.closeJsonResponse(res,{ok: response})
         },res,req)
     })
     /**

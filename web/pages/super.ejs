@@ -40,6 +40,7 @@
         <link rel="stylesheet" href="<%-window.libURL%>libs/css/<%-lib%>">
     <% }) %>
 </head>
+<script>$user=<%-JSON.stringify($user)%></script>
 
 <body class="index-page sidebar-collapse bg-hexagon">
     <!-- Navbar -->
@@ -87,6 +88,9 @@
                                 <li class="nav-item">
                                     <a class="nav-link" data-toggle="tab" href="#changeSuperPreferences" role="tab"><%-lang['Preferences']%></a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#customAutoLoad" role="tab"><%-lang['Custom Auto Load']%></a>
+                                </li>
                             </ul>
                             <div class="card-body">
                                 <!-- Tab panes -->
@@ -100,6 +104,9 @@
                                     </div>
                                     <div class="tab-pane text-left" id="system" role="tabpanel">
                                         <% include blocks/superSystemTab.ejs %>
+                                    </div>
+                                    <div class="tab-pane text-left" id="customAutoLoad" role="tabpanel">
+                                        <% include blocks/superCustomAutoLoadManager.ejs %>
                                     </div>
                                     <div class="tab-pane text-left" id="changeSuperPreferences" role="tabpanel">
                                         <% include blocks/changeSuperPreferences.ejs %>
@@ -151,7 +158,6 @@
     }
 </script>
 
-<script>$user=<%-JSON.stringify($user)%></script>
 <script>
 $.ccio={accounts:{}};$.ls=localStorage;
 if(!$user.lang||$user.lang==''){
