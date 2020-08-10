@@ -18,7 +18,7 @@ $(document).ready(function(){
             </div>
         </div>`)
     }
-    var downloadModule = function(url,packageRoot){
+    var downloadModule = function(url,packageRoot,callback){
         $.confirm.create({
             title: 'Module Download',
             body: `Do you want to download the module from ${url}? `,
@@ -30,9 +30,7 @@ $(document).ready(function(){
                 $.post(superApiPrefix + $user.sessionKey + '/package/download',{
                     downloadUrl: url,
                     packageRoot: packageRoot,
-                },function(data){
-
-                })
+                },callback)
             }
         })
     }
@@ -101,6 +99,16 @@ $(document).ready(function(){
                 })
             break;
         }
+    })
+    $('#downloadNewModule').submit(function(){
+        var el = $(this)
+        var form = el.serializeObject()
+        downloadModule(form.downloadUrl,form.packageRoot,function(data){
+            console.log(data)
+            if(data.ok){
+                drawModuleBlock(data.newModule)
+            }
+        })
     })
     setTimeout(function(){
         getModules(function(data){

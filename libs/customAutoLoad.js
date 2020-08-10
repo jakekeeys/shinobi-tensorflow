@@ -17,33 +17,37 @@ module.exports = async (s,config,lang,app,io) => {
     const getModulePath = (name) => {
         return modulesBasePath + name + '/'
     }
-    const getModules = (asArray) => {
-        const foundModules = {}
-        fs.readdirSync(modulesBasePath).forEach((moduleName) => {
-            const modulePath = modulesBasePath + moduleName
-            const isDirectory = fs.lstatSync(modulePath).isDirectory()
-            foundModules[moduleName] = {
-                name: moduleName,
-                path: modulePath + '/',
-                isDirectory: isDirectory,
+    const getModule = (moduleName) => {
+        const modulePath = modulesBasePath + moduleName
+        const isDirectory = fs.lstatSync(modulePath).isDirectory()
+        const newModule = {
+            name: moduleName,
+            path: modulePath + '/',
+            isDirectory: isDirectory,
+        }
+        if(isDirectory){
+            if(!fs.existsSync(modulePath + '/index.js')){
+                newModule.noIndex = true
             }
-            if(isDirectory){
-                if(!fs.existsSync(modulePath + '/index.js')){
-                    foundModules[moduleName].noIndex = true
-                }
-                if(fs.existsSync(modulePath + '/package.json')){
-                    foundModules[moduleName].properties = getModuleProperties(moduleName)
-                }else{
-                    foundModules[moduleName].properties = {
-                        name: moduleName
-                    }
-                }
+            if(fs.existsSync(modulePath + '/package.json')){
+                newModule.properties = getModuleProperties(moduleName)
             }else{
-                foundModules[moduleName].isIgnitor = (moduleName.indexOf('.js') > -1)
-                foundModules[moduleName].properties = {
+                newModule.properties = {
                     name: moduleName
                 }
             }
+        }else{
+            newModule.isIgnitor = (moduleName.indexOf('.js') > -1)
+            newModule.properties = {
+                name: moduleName
+            }
+        }
+        return newModule
+    }
+    const getModules = (asArray) => {
+        const foundModules = {}
+        fs.readdirSync(modulesBasePath).forEach((moduleName) => {
+            foundModules[moduleName] = getModule(moduleName)
         })
         return asArray ? Object.values(foundModules) : foundModules
     }
@@ -326,7 +330,8 @@ module.exports = async (s,config,lang,app,io) => {
                 disableModule(newName,true)
                 s.closeJsonResponse(res,{
                     ok: true,
-                    moduleName: newName
+                    moduleName: newName,
+                    newModule: getModule(newName)
                 })
             }catch(err){
                 console.log(err)
