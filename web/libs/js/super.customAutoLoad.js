@@ -15,7 +15,7 @@ $(document).ready(function(){
             listElement.append(`
                 <div class="col-md-6">
                     <div class="card" package-name="${module.name}">
-                        <div class="card-body" style="min-height:auto">
+                        <div class="card-body">
                             <div><h4 class="title mt-0">${humanName}</h4></div>
                             <div class="mb-2">
                                 ${!module.isIgnitor ? `
@@ -28,8 +28,8 @@ $(document).ready(function(){
                             </div>
                             <div class="pl-2 pr-2">
                                 <div class="install-output row">
-                                    <code class="col-md-6 pr-2"><pre class="install-output-stdout" style="max-height: 300px;"></pre></code>
-                                    <code class="col-md-6 pl-2"><pre class="install-output-stderr" style="max-height: 300px;"></pre></code>
+                                    <div class="col-md-6 pr-2"><pre class="install-output-stdout"></pre></div>
+                                    <div class="col-md-6 pl-2"><pre class="install-output-stderr"></pre></div>
                                 </div>
                             </div>
                         </div>
