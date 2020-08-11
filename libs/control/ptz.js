@@ -210,10 +210,14 @@ module.exports = function(s,config,lang,app,io){
                     requestOptions.sendImmediately = true
                 }
                 request(requestOptions,function(err,data){
+                    const msg =  {
+                        ok: true,
+                        type:'Control Trigger Ended'
+                    }
                     if(err){
-                        var msg =  {ok:false,type:'Control Error',msg:err}
-                    }else{
-                        var msg =  {ok:true,type:'Control Trigger Ended'}
+                        msg.ok = false
+                        msg.type = 'Control Error'
+                        msg.msg = err
                     }
                     callback(msg)
                     s.userLog(e,msg);
