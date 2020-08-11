@@ -4,6 +4,7 @@ $(document).ready(function(){
     var getModules = function(callback) {
         $.get(superApiPrefix + $user.sessionKey + '/package/list',callback)
     }
+    var loadedBlocks = {}
     var drawModuleBlock = function(module){
         var humanName = module.properties.name ? module.properties.name : module.name
         if(listElement.find('[package-name="${module.name}"]').length > 0){
@@ -17,14 +18,26 @@ $(document).ready(function(){
                     <div>
                         ${!module.isIgnitor ? `
                             ${module.hasInstaller ? `
-                                <a class="btn btn-sm btn-success" calm-action="install">${lang['Run Installer']}</a>
+                                <a href="#" class="btn btn-sm btn-info" calm-action="install">${lang['Run Installer']}</a>
                             ` : ''}
-                            <a class="btn btn-sm btn-default" calm-action="status">${module.disabled ? lang.Enable : lang.Disable}</a>
+                            <a href="#" class="btn btn-sm btn-default" calm-action="status">${module.disabled ? lang.Enable : lang.Disable}</a>
                         ` : ''}
-                        <a class="btn btn-sm btn-danger" calm-action="delete">${lang.Delete}</a>
+                        <a href="#" class="btn btn-sm btn-danger" calm-action="delete">${lang.Delete}</a>
+                    </div>
+                    <div>
+                        <div class="install-output row">
+                            <code class="col-md-6 pr-2"><pre class="install-output-stdout"></pre></code>
+                            <code class="col-md-6 pl-2"><pre class="install-output-stderr"></pre></code>
+                        </div>
                     </div>
                 </div>
             </div>`)
+            var newBlock = $(`.card[package-name="${module.name}"]`)
+            loadedBlocks[module.name] = {
+                block: newBlock,
+                stdout: newBlock.find('.install-output-stdout'),
+                stderr: newBlock.find('.install-output-stderr'),
+            }
         }
     }
     var downloadModule = function(url,packageRoot,callback){
@@ -79,7 +92,8 @@ $(document).ready(function(){
             packageName: packageName,
         },callback)
     }
-    $('body').on(`click`,`[calm-action]`,function(){
+    $('body').on(`click`,`[calm-action]`,function(e){
+        e.preventDefault()
         var el = $(this)
         var action = el.attr('calm-action')
         var card = el.parents('[package-name]')
@@ -131,4 +145,25 @@ $(document).ready(function(){
             })
         })
     },2000)
+    $.ccio.ws.on('f',function(data){
+        switch(data.f){
+            case'module-info':
+                var name = data.module
+                switch(data.process){
+                    case'install-stdout':
+                        loadedBlocks[name].stdout.append(`<div class="line">${data.data}</div>`)
+                        // if(loadedBlocks[name].stdout.find('.line').length > 10){
+                        //     loadedBlocks[name].stdout.children().first().remove()
+                        // }
+                    break;
+                    case'install-stderr':
+                        loadedBlocks[name].stderr.append(`<div class="line">${data.data}</div>`)
+                        // if(loadedBlocks[name].stderr.find('.line').length > 10){
+                        //     loadedBlocks[name].stderr.children().first().remove()
+                        // }
+                    break;
+                }
+            break;
+        }
+    })
 })

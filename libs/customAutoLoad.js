@@ -115,11 +115,21 @@ module.exports = async (s,config,lang,app,io) => {
                     resolve()
                 }
                 if(installProcess){
+                    const sendData = (data,channel) => {
+                        const clientData = {
+                            f: 'module-info',
+                            module: name,
+                            process: 'install-' + channel,
+                            data: data.toString(),
+                        }
+                        s.tx(clientData,'$')
+                        s.debugLog(clientData)
+                    }
                     installProcess.stderr.on('data',(data) => {
-                        console.log(data.toString())
+                        sendData(data,'stderr')
                     })
                     installProcess.stdout.on('data',(data) => {
-                        console.log(data.toString())
+                        sendData(data,'stdout')
                     })
                     installProcess.on('exit',(data) => {
                         runningInstallProcesses[name] = null;
