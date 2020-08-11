@@ -1719,6 +1719,12 @@ module.exports = function(s,config,lang,app,io){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
             s.cameraControl(req.params,function(msg){
+                let d = {
+                         id: req.params.id,
+                         ke: req.params.ke,
+                         direction: req.params.direction,
+                         details: s.parseJSON(req.query.data)
+                     }
                 s.userLog(d,msg)
                 res.end(s.prettyPrint(msg))
             });

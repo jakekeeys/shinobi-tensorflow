@@ -1,5 +1,6 @@
 var os = require('os');
 var exec = require('child_process').exec;
+var request = require('request')
 module.exports = function(s,config,lang,app,io){
     const moveLock = {}
     const startMove = async function(options,callback){
@@ -195,14 +196,14 @@ module.exports = function(s,config,lang,app,io){
         }else{
             const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
             var stopCamera = function(){
-                var stopURL = controlBaseUrl + monitorConfig.details[`control_url_${options.direction}_stop`]
-                var options = s.cameraControlOptionsFromUrl(stopURL,monitorConfig)
-                var requestOptions = {
+                let stopURL = controlBaseUrl + monitorConfig.details[`control_url_${options.direction}_stop`]
+                let controlOptions = s.cameraControlOptionsFromUrl(stopURL,monitorConfig)
+                let requestOptions = {
                     url : stopURL,
-                    method : options.method,
+                    method : controlOptions.method,
                     auth : {
-                        user : options.username,
-                        pass : options.password
+                        user : controlOptions.username,
+                        pass : controlOptions.password
                     }
                 }
                 if(monitorConfig.details.control_digest_auth === '1'){
@@ -221,12 +222,14 @@ module.exports = function(s,config,lang,app,io){
             if(options.direction === 'stopMove'){
                 stopCamera()
             }else{
-                var requestOptions = {
+                let controlURL = controlBaseUrl + monitorConfig.details[`control_url_${options.direction}`]
+                let controlOptions = s.cameraControlOptionsFromUrl(controlURL,monitorConfig)
+                let requestOptions = {
                     url: controlURL,
-                    method: controlURLOptions.method,
+                    method: controlOptions.method,
                     auth: {
-                        user: controlURLOptions.username,
-                        pass: controlURLOptions.password
+                        user: controlOptions.username,
+                        pass: controlOptions.password
                     }
                 }
                 if(monitorConfig.details.control_digest_auth === '1'){
