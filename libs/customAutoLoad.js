@@ -5,6 +5,7 @@ const unzipper = require('unzipper')
 const fetch = require("node-fetch")
 const spawn = require('child_process').spawn
 module.exports = async (s,config,lang,app,io) => {
+    const runningInstallProcesses = {}
     const modulesBasePath = s.mainDirectory + '/libs/customAutoLoad/'
     const searchText = function(searchFor,searchIn){
         return searchIn.indexOf(searchFor) > -1
@@ -97,41 +98,37 @@ module.exports = async (s,config,lang,app,io) => {
     }
     const installModule = (name) => {
         return new Promise((resolve, reject) => {
-            //depending on module this may only work for Ubuntu
-            const modulePath = getModulePath(name)
-            const properties = getModuleProperties(name);
-            const installerPath = modulePath + `INSTALL.sh`
-            const propertiesPath = modulePath + 'package.json'
-            // check for INSTALL.sh (ubuntu only)
-            console.log(name)
-            console.log(modulePath)
-            console.log(installerPath)
-            console.log(propertiesPath)
-            if(fs.existsSync(installerPath)){
-                const installProcess = spawn(`sh`,[installerPath])
-                installProcess.stderr.on('data',(data) => {
-                    console.log(data.toString())
-                })
-                installProcess.stdout.on('data',(data) => {
-                    console.log(data.toString())
-                })
-                installProcess.on('exit',(data) => {
+            if(!runningInstallProcesses[name]){
+                //depending on module this may only work for Ubuntu
+                const modulePath = getModulePath(name)
+                const properties = getModuleProperties(name);
+                const installerPath = modulePath + `INSTALL.sh`
+                const propertiesPath = modulePath + 'package.json'
+                var installProcess
+                // check for INSTALL.sh (ubuntu only)
+                if(fs.existsSync(installerPath)){
+                    installProcess = spawn(`sh`,[installerPath])
+                }else if(fs.existsSync(propertiesPath)){
+                    // no INSTALL.sh found, check for package.json and do `npm install --unsafe-perm`
+                    installProcess = spawn(`npm`,['install','--unsafe-perm','--prefix',modulePath])
+                }else{
                     resolve()
-                })
-            }else if(fs.existsSync(propertiesPath)){
-                // no INSTALL.sh found, check for package.json and do `npm install --unsafe-perm`
-                const installProcess = spawn(`npm`,['install','--unsafe-perm'])
-                installProcess.stderr.on('data',(data) => {
-                    console.log(data.toString())
-                })
-                installProcess.stdout.on('data',(data) => {
-                    console.log(data.toString())
-                })
-                installProcess.on('exit',(data) => {
-                    resolve()
-                })
+                }
+                if(installProcess){
+                    installProcess.stderr.on('data',(data) => {
+                        console.log(data.toString())
+                    })
+                    installProcess.stdout.on('data',(data) => {
+                        console.log(data.toString())
+                    })
+                    installProcess.on('exit',(data) => {
+                        runningInstallProcesses[name] = null;
+                        resolve()
+                    })
+                    runningInstallProcesses[name] = installProcess
+                }
             }else{
-                resolve()
+                resolve(lang['Already Installing...'])
             }
         })
     }
@@ -365,9 +362,9 @@ module.exports = async (s,config,lang,app,io) => {
                     newModule: getModule(chosenName)
                 })
             }catch(err){
-                console.log(err)
                 s.closeJsonResponse(res,{
-                    ok: false
+                    ok: false,
+                    error: err
                 })
             }
         },res,req)
@@ -378,8 +375,13 @@ module.exports = async (s,config,lang,app,io) => {
     app.post(config.webPaths.superApiPrefix+':auth/package/install', (req,res) => {
         s.superAuth(req.params, async (resp) => {
             const packageName = req.body.packageName
-            await installModule(packageName)
-            s.closeJsonResponse(res,{ok: true})
+            const response = {ok: true}
+            const error = await installModule(packageName)
+            if(error){
+                response.ok = false
+                response.msg = error
+            }
+            s.closeJsonResponse(res,response)
         },res,req)
     })
     /**
@@ -389,8 +391,9 @@ module.exports = async (s,config,lang,app,io) => {
         s.superAuth(req.params, async (resp) => {
             const status = req.body.status
             const packageName = req.body.packageName
-            disableModule(packageName,status == 'true' ? true : false)
-            s.closeJsonResponse(res,{ok: true})
+            const selection = status == 'true' ? true : false
+            disableModule(packageName,selection)
+            s.closeJsonResponse(res,{ok: true, status: selection})
         },res,req)
     })
     /**
