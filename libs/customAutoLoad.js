@@ -20,10 +20,14 @@ module.exports = async (s,config,lang,app,io) => {
     }
     const getModule = (moduleName) => {
         const modulePath = modulesBasePath + moduleName
-        const isDirectory = fs.lstatSync(modulePath).isDirectory()
+        const stats = fs.lstatSync(modulePath)
+        const isDirectory = stats.isDirectory()
         const newModule = {
             name: moduleName,
             path: modulePath + '/',
+            size: stats.size,
+            lastModified: stats.mtime,
+            created: stats.ctime,
             isDirectory: isDirectory,
         }
         if(isDirectory){

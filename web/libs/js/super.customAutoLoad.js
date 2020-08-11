@@ -13,10 +13,12 @@ $(document).ready(function(){
             existingElement.find('[calm-action="status"]').text(module.disabled ? lang.Enable : lang.Disable)
         }else{
             listElement.append(`
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <div class="card" package-name="${module.name}">
                         <div class="card-body">
                             <div><h4 class="title mt-0">${humanName}</h4></div>
+                            <div><pre><b>${lang['Time Created']} :</b> ${module.created}</pre></div>
+                            <div><pre><b>${lang['Last Modified']} :</b> ${module.lastModified}</pre></div>
                             <div class="mb-2">
                                 ${!module.isIgnitor ? `
                                     ${module.hasInstaller ? `
