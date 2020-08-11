@@ -12,26 +12,29 @@ $(document).ready(function(){
             existingElement.find('.title').text(humanName)
             existingElement.find('[calm-action="status"]').text(module.disabled ? lang.Enable : lang.Disable)
         }else{
-            listElement.append(`<div class="card" package-name="${module.name}">
-                <div class="card-body">
-                    <div><h4 class="title">${humanName}</h4></div>
-                    <div>
-                        ${!module.isIgnitor ? `
-                            ${module.hasInstaller ? `
-                                <a href="#" class="btn btn-sm btn-info" calm-action="install">${lang['Run Installer']}</a>
-                            ` : ''}
-                            <a href="#" class="btn btn-sm btn-default" calm-action="status">${module.disabled ? lang.Enable : lang.Disable}</a>
-                        ` : ''}
-                        <a href="#" class="btn btn-sm btn-danger" calm-action="delete">${lang.Delete}</a>
-                    </div>
-                    <div>
-                        <div class="install-output row">
-                            <code class="col-md-6 pr-2"><pre class="install-output-stdout"></pre></code>
-                            <code class="col-md-6 pl-2"><pre class="install-output-stderr"></pre></code>
+            listElement.append(`
+                <div class="col-md-6">
+                    <div class="card" package-name="${module.name}">
+                        <div class="card-body" style="min-height:auto">
+                            <div><h4 class="title mt-0">${humanName}</h4></div>
+                            <div class="mb-2">
+                                ${!module.isIgnitor ? `
+                                    ${module.hasInstaller ? `
+                                        <a href="#" class="btn btn-sm btn-info" calm-action="install">${lang['Run Installer']}</a>
+                                    ` : ''}
+                                    <a href="#" class="btn btn-sm btn-default" calm-action="status">${module.disabled ? lang.Enable : lang.Disable}</a>
+                                ` : ''}
+                                <a href="#" class="btn btn-sm btn-danger" calm-action="delete">${lang.Delete}</a>
+                            </div>
+                            <div class="pl-2 pr-2">
+                                <div class="install-output row">
+                                    <code class="col-md-6 pr-2"><pre class="install-output-stdout" style="max-height: 300px;"></pre></code>
+                                    <code class="col-md-6 pl-2"><pre class="install-output-stderr" style="max-height: 300px;"></pre></code>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>`)
+                </div>`)
             var newBlock = $(`.card[package-name="${module.name}"]`)
             loadedBlocks[module.name] = {
                 block: newBlock,
