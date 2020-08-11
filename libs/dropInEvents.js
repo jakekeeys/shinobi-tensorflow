@@ -234,7 +234,8 @@ module.exports = function(s,config,lang,app,io){
         if(config.smtpServerHideStartTls === undefined)config.smtpServerHideStartTls = null
         var SMTPServer = require("smtp-server").SMTPServer;
         if(!config.smtpServerPort && (config.smtpServerSsl && config.smtpServerSsl.enabled !== false || config.ssl)){config.smtpServerPort = 465}else if(!config.smtpServerPort){config.smtpServerPort = 25}
-        var smtpOptions = {
+        config.smtpServerOptions = config.smtpServerOptions ? config.smtpServerOptions : {}
+        var smtpOptions = Object.assign({
             logger: config.debugLog || config.smtpServerLog,
             hideSTARTTLS: config.smtpServerHideStartTls,
             onAuth(auth, session, callback) {
@@ -310,7 +311,7 @@ module.exports = function(s,config,lang,app,io){
                     callback()
                 }
             }
-        }
+        },config.smtpServerOptions)
         if(config.smtpServerSsl && config.smtpServerSsl.enabled !== false || config.ssl && config.ssl.cert && config.ssl.key){
             var key = config.ssl.key || fs.readFileSync(config.smtpServerSsl.key)
             var cert = config.ssl.cert || fs.readFileSync(config.smtpServerSsl.cert)
