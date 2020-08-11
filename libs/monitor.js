@@ -104,9 +104,6 @@ module.exports = function(s,config,lang){
         });
         return x.ar;
     }
-    s.getFileBinDirectory = (monitor) => {
-        return s.dir.fileBin + monitor.ke + '/' + monitor.mid + '/'
-    }
     s.getStreamsDirectory = (monitor) => {
         return s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
     }
