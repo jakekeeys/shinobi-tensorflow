@@ -68,8 +68,9 @@ window.mergeDeep = function(target, ...sources){
 
   return mergeDeep(target, ...sources);
 }
-window.getApiPrefix = function(){
-    return $.ccio.init('location',$user) + $user.auth_token
+window.getApiPrefix = function(path){
+    var mainPart = $.ccio.init('location',$user) + $user.auth_token
+    return path ? mainPart + '/' + path + '/' + $user.ke : mainPart
 }
 window.chartColors = {
     red: 'rgb(255, 99, 132)',
