@@ -93,7 +93,11 @@ module.exports = function(s,config,lang){
         e.dir = s.getVideoDirectory(e)
         k.dir = e.dir.toString()
         if(s.group[e.ke].activeMonitors[e.id].childNode){
-            s.cx({f:'insertCompleted',d:s.group[e.ke].rawMonitorConfigurations[e.id],k:k},s.group[e.ke].activeMonitors[e.id].childNodeId);
+            s.cx({
+                f: 'insertCompleted',
+                d: s.group[e.ke].rawMonitorConfigurations[e.id],
+                k: k
+            },s.group[e.ke].activeMonitors[e.id].childNodeId);
         }else{
             //get file directory
             k.fileExists = fs.existsSync(k.dir+k.file)
@@ -129,33 +133,28 @@ module.exports = function(s,config,lang){
                 if(!e.ext){e.ext = k.filename.split('.')[1]}
                 //send event for completed recording
                 if(config.childNodes.enabled === true && config.childNodes.mode === 'child' && config.childNodes.host){
+                    const response = {
+                        mid: e.mid,
+                        ke: e.ke,
+                        filename: k.filename,
+                        d: s.cleanMonitorObject(e),
+                        filesize: k.filesize,
+                        time: s.timeObject(k.startTime).format('YYYY-MM-DD HH:mm:ss'),
+                        end: s.timeObject(k.endTime).format('YYYY-MM-DD HH:mm:ss')
+                    }
                     fs.createReadStream(k.dir+k.filename,{ highWaterMark: 500 })
                     .on('data',function(data){
-                        s.cx({
+                        s.cx(Object.assign(response,{
                             f:'created_file_chunk',
-                            mid:e.mid,
-                            ke:e.ke,
-                            chunk:data,
-                            filename:k.filename,
-                            d:s.cleanMonitorObject(e),
-                            filesize:e.filesize,
-                            time:s.timeObject(k.startTime).format(),
-                            end:s.timeObject(k.endTime).format()
-                        })
+                            chunk: data,
+                        }))
                     })
                     .on('close',function(){
                         clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingChecker)
                         clearTimeout(s.group[e.ke].activeMonitors[e.id].streamChecker)
-                        s.cx({
+                        s.cx(Object.assign(response,{
                             f:'created_file',
-                            mid:e.id,
-                            ke:e.ke,
-                            filename:k.filename,
-                            d:s.cleanMonitorObject(e),
-                            filesize:k.filesize,
-                            time:s.timeObject(k.startTime).format(),
-                            end:s.timeObject(k.endTime).format()
-                        })
+                        }))
                     })
                 }else{
                     var href = '/videos/'+e.ke+'/'+e.mid+'/'+k.filename
