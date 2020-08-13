@@ -107,141 +107,149 @@ module.exports = function(s,config,lang){
     s.getStreamsDirectory = (monitor) => {
         return s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
     }
-    s.getRawSnapshotFromMonitor = function(monitor,options,callback){
-        if(!callback){
-            callback = options
+    s.getRawSnapshotFromMonitor = function(monitor,options){
+        return new Promise((resolve,reject) => {
             var options = {flags: ''}
-        }
-        s.checkDetails(monitor)
-        var inputOptions = []
-        var outputOptions = []
-        var streamDir = s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
-        var url = options.url
-        var secondsInward = options.secondsInward || '0'
-        if(secondsInward.length === 1)secondsInward = '0' + secondsInward
-        if(options.flags)outputOptions.push(options.flags)
-        const checkExists = function(streamDir,callback){
-            s.fileStats(streamDir,function(err){
-                var response = false
-                if(err){
-                    // s.debugLog(err)
-                }else{
-                    response = true
-                }
-                callback(response)
-            })
-        }
-        const noIconChecks = function(){
-            const runExtraction = function(){
-                var sendTempImage = function(){
-                  fs.readFile(temporaryImageFile,function(err,buffer){
-                     if(!err){
-                       callback(buffer,false)
-                     }
-                     fs.unlink(temporaryImageFile,function(){})
-                  })
-                }
-                try{
-                    var snapBuffer = []
-                    var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
-                    var iconImageFile = streamDir + 'icon.jpg'
-                    var ffmpegCmd = s.splitForFFPMEG(`-loglevel warning -re -probesize 100000 -analyzeduration 100000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -f image2 -an -vf "fps=1" -vframes 1 "${temporaryImageFile}"`)
-                    fs.writeFileSync(s.group[monitor.ke].activeMonitors[monitor.id].sdir + 'snapCmd.txt',JSON.stringify({
-                      cmd: ffmpegCmd,
-                      temporaryImageFile: temporaryImageFile,
-                      iconImageFile: iconImageFile,
-                      useIcon: options.useIcon,
-                      rawMonitorConfig: s.group[monitor.ke].rawMonitorConfigurations[monitor.mid],
-                    },null,3),'utf8')
-                    var cameraCommandParams = [
-                      s.mainDirectory + '/libs/cameraThread/snapshot.js',
-                      config.ffmpegDir,
-                      s.group[monitor.ke].activeMonitors[monitor.id].sdir + 'snapCmd.txt'
-                    ]
-                    var snapProcess = spawn('node',cameraCommandParams,{detached: true})
-                    snapProcess.stderr.on('data',function(data){
-                        console.log(data.toString())
-                    })
-                    snapProcess.on('close',function(data){
-                        clearTimeout(snapProcessTimeout)
-                        sendTempImage()
-                    })
-                    var snapProcessTimeout = setTimeout(function(){
-                        var pid = snapProcess.pid
-                        if(s.isWin){
-                            spawn("taskkill", ["/pid", pid, '/t'])
-                        }else{
-                            process.kill(-pid, 'SIGTERM')
-                        }
-                        setTimeout(function(){
-                            if(s.isWin === false){
-                                treekill(pid)
+            s.checkDetails(monitor)
+            var inputOptions = []
+            var outputOptions = []
+            var streamDir = s.dir.streams + monitor.ke + '/' + monitor.mid + '/'
+            var url = options.url
+            var secondsInward = options.secondsInward || '0'
+            if(secondsInward.length === 1)secondsInward = '0' + secondsInward
+            if(options.flags)outputOptions.push(options.flags)
+            const checkExists = function(streamDir,callback){
+                s.fileStats(streamDir,function(err){
+                    var response = false
+                    if(err){
+                        // s.debugLog(err)
+                    }else{
+                        response = true
+                    }
+                    callback(response)
+                })
+            }
+            const noIconChecks = function(){
+                const runExtraction = function(){
+                    var sendTempImage = function(){
+                      fs.readFile(temporaryImageFile,function(err,buffer){
+                         if(!err){
+                             resolve({
+                                 screenShot: buffer,
+                                 isStaticFile: false
+                             })
+                         }
+                         fs.unlink(temporaryImageFile,function(){})
+                      })
+                    }
+                    try{
+                        var snapBuffer = []
+                        var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
+                        var iconImageFile = streamDir + 'icon.jpg'
+                        var ffmpegCmd = s.splitForFFPMEG(`-loglevel warning -re -probesize 100000 -analyzeduration 100000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -f image2 -an -vf "fps=1" -vframes 1 "${temporaryImageFile}"`)
+                        fs.writeFileSync(s.group[monitor.ke].activeMonitors[monitor.id].sdir + 'snapCmd.txt',JSON.stringify({
+                          cmd: ffmpegCmd,
+                          temporaryImageFile: temporaryImageFile,
+                          iconImageFile: iconImageFile,
+                          useIcon: options.useIcon,
+                          rawMonitorConfig: s.group[monitor.ke].rawMonitorConfigurations[monitor.mid],
+                        },null,3),'utf8')
+                        var cameraCommandParams = [
+                          s.mainDirectory + '/libs/cameraThread/snapshot.js',
+                          config.ffmpegDir,
+                          s.group[monitor.ke].activeMonitors[monitor.id].sdir + 'snapCmd.txt'
+                        ]
+                        var snapProcess = spawn('node',cameraCommandParams,{detached: true})
+                        snapProcess.stderr.on('data',function(data){
+                            console.log(data.toString())
+                        })
+                        snapProcess.on('close',function(data){
+                            clearTimeout(snapProcessTimeout)
+                            sendTempImage()
+                        })
+                        var snapProcessTimeout = setTimeout(function(){
+                            var pid = snapProcess.pid
+                            if(s.isWin){
+                                spawn("taskkill", ["/pid", pid, '/t'])
                             }else{
-                                snapProcess.kill()
+                                process.kill(-pid, 'SIGTERM')
                             }
-                        },10000)
-                    },30000)
-                }catch(err){
-                    console.log(err)
+                            setTimeout(function(){
+                                if(s.isWin === false){
+                                    treekill(pid)
+                                }else{
+                                    snapProcess.kill()
+                                }
+                            },10000)
+                        },30000)
+                    }catch(err){
+                        console.log(err)
+                    }
+                }
+                if(url){
+                    runExtraction()
+                }else{
+                    checkExists(streamDir + 's.jpg',function(success){
+                        if(success === false){
+                            checkExists(streamDir + 'detectorStream.m3u8',function(success){
+                                if(success === false){
+                                    checkExists(streamDir + 's.m3u8',function(success){
+                                        if(success === false){
+                                            switch(monitor.type){
+                                                case'h264':
+                                                    switch(monitor.protocol){
+                                                        case'rtsp':
+                                                            if(
+                                                                monitor.details.rtsp_transport
+                                                                && monitor.details.rtsp_transport !== ''
+                                                                && monitor.details.rtsp_transport !== 'no'
+                                                            ){
+                                                                inputOptions.push('-rtsp_transport ' + monitor.details.rtsp_transport)
+                                                            }
+                                                        break;
+                                                    }
+                                                break;
+                                            }
+                                            url = s.buildMonitorUrl(monitor)
+                                        }else{
+                                            outputOptions.push(`-ss 00:00:${secondsInward}`)
+                                            url = streamDir + 's.m3u8'
+                                        }
+                                        runExtraction()
+                                    })
+                                }else{
+                                    outputOptions.push(`-ss 00:00:${secondsInward}`)
+                                    url = streamDir + 'detectorStream.m3u8'
+                                    runExtraction()
+                                }
+                            })
+                        }else{
+                            s.readFile(streamDir + 's.jpg',function(err,snapBuffer){
+                                resolve({
+                                    screenShot: snapBuffer,
+                                    isStaticFile: true
+                                })
+                            })
+                        }
+                    })
                 }
             }
-            if(url){
-                runExtraction()
-            }else{
-                checkExists(streamDir + 's.jpg',function(success){
+            if(options.useIcon === true){
+                checkExists(streamDir + 'icon.jpg',function(success){
                     if(success === false){
-                        checkExists(streamDir + 'detectorStream.m3u8',function(success){
-                            if(success === false){
-                                checkExists(streamDir + 's.m3u8',function(success){
-                                    if(success === false){
-                                        switch(monitor.type){
-                                            case'h264':
-                                                switch(monitor.protocol){
-                                                    case'rtsp':
-                                                        if(
-                                                            monitor.details.rtsp_transport
-                                                            && monitor.details.rtsp_transport !== ''
-                                                            && monitor.details.rtsp_transport !== 'no'
-                                                        ){
-                                                            inputOptions.push('-rtsp_transport ' + monitor.details.rtsp_transport)
-                                                        }
-                                                    break;
-                                                }
-                                            break;
-                                        }
-                                        url = s.buildMonitorUrl(monitor)
-                                    }else{
-                                        outputOptions.push(`-ss 00:00:${secondsInward}`)
-                                        url = streamDir + 's.m3u8'
-                                    }
-                                    runExtraction()
-                                })
-                            }else{
-                                outputOptions.push(`-ss 00:00:${secondsInward}`)
-                                url = streamDir + 'detectorStream.m3u8'
-                                runExtraction()
-                            }
-                        })
+                        noIconChecks()
                     }else{
-                        s.readFile(streamDir + 's.jpg',function(err,snapBuffer){
-                            callback(snapBuffer,true)
+                        var snapBuffer = fs.readFileSync(streamDir + 'icon.jpg')
+                        resolve({
+                            screenShot: snapBuffer,
+                            isStaticFile: false
                         })
                     }
                 })
+            }else{
+                noIconChecks()
             }
-        }
-        if(options.useIcon === true){
-            checkExists(streamDir + 'icon.jpg',function(success){
-                if(success === false){
-                    noIconChecks()
-                }else{
-                    var snapBuffer = fs.readFileSync(streamDir + 'icon.jpg')
-                    callback(snapBuffer,false)
-                }
-            })
-        }else{
-            noIconChecks()
-        }
+        })
     }
     s.mergeDetectorBufferChunks = function(monitor,callback){
         var pathDir = s.dir.streams+monitor.ke+'/'+monitor.id+'/'
@@ -513,28 +521,27 @@ module.exports = function(s,config,lang){
         }
         return options
     }
-    s.cameraSendSnapshot = function(e,options){
+    s.cameraSendSnapshot = async (e,options) => {
         if(!options)options = {}
         s.checkDetails(e)
         if(config.doSnapshot === true){
             if(s.group[e.ke] && s.group[e.ke].rawMonitorConfigurations && s.group[e.ke].rawMonitorConfigurations[e.mid] && s.group[e.ke].rawMonitorConfigurations[e.mid].mode !== 'stop'){
                 var pathDir = s.dir.streams+e.ke+'/'+e.mid+'/'
-                s.getRawSnapshotFromMonitor(s.group[e.ke].rawMonitorConfigurations[e.mid],Object.assign({
+                const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(s.group[e.ke].rawMonitorConfigurations[e.mid],Object.assign({
                     flags: '-s 200x200'
-                },options),function(data,isStaticFile){
-                    if(data && (data[data.length-2] === 0xFF && data[data.length-1] === 0xD9)){
-                        s.tx({
-                            f: 'monitor_snapshot',
-                            snapshot: data.toString('base64'),
-                            snapshot_format: 'b64',
-                            mid: e.mid,
-                            ke: e.ke
-                        },'GRP_'+e.ke)
-                    }else{
-                        console.log('not image')
-                        s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
-                   }
-                })
+                },options))
+                if(screenShot && (screenShot[screenShot.length-2] === 0xFF && screenShot[screenShot.length-1] === 0xD9)){
+                    s.tx({
+                        f: 'monitor_snapshot',
+                        snapshot: screenShot.toString('base64'),
+                        snapshot_format: 'b64',
+                        mid: e.mid,
+                        ke: e.ke
+                    },'GRP_'+e.ke)
+                }else{
+                    console.log('not image')
+                    s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
+               }
             }else{
                 s.tx({f:'monitor_snapshot',snapshot:'Disabled',snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
             }
