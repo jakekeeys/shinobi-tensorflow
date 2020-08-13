@@ -170,7 +170,7 @@ module.exports = function(s,config,lang){
             extender(x,d)
         })
     }
-    s.triggerEvent = function(d,forceSave){
+    s.triggerEvent = async (d,forceSave) => {
         var didCountingAlready = false
         var filter = {
             halt : false,
@@ -452,10 +452,6 @@ module.exports = function(s,config,lang){
             d.screenshotName =  d.details.reason + '_'+(d.mon.name.replace(/[^\w\s]/gi,''))+'_'+d.id+'_'+d.ke+'_'+s.formattedTime()
             d.screenshotBuffer = null
 
-            s.onEventTriggerExtensions.forEach(function(extender){
-                extender(d,filter)
-            })
-
             if(filter.webhook && currentConfig.detector_webhook === '1'){
                 var detector_webhook_url = s.addEventDetailsToString(d,currentConfig.detector_webhook_url)
                 var webhookMethod = currentConfig.detector_webhook_method
@@ -474,6 +470,11 @@ module.exports = function(s,config,lang){
                 exec(detector_command,{detached: true},function(err){
                     if(err)s.debugLog(err)
                 })
+            }
+
+            for (var i = 0; i < s.onEventTriggerExtensions.length; i++) {
+                const extender = s.onEventTriggerExtensions[i]
+                await extender(d,filter)
             }
         }
         //show client machines the event
