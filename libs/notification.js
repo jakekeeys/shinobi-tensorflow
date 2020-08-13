@@ -239,7 +239,7 @@ module.exports = function(s,config,lang){
                     to: r.mail,
                     subject: r.lang['2-Factor Authentication'],
                     html: r.lang['Enter this code to proceed']+' <b>'+s.factorAuth[r.ke][r.uid].key+'</b>. '+r.lang.FactorAuthText1,
-                };, (error, info) => {
+                }, (error, info) => {
                     if (error) {
                         s.systemLog(r.lang.MailError,error)
                         return
