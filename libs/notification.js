@@ -23,7 +23,7 @@ module.exports = function(s,config,lang){
                       text: "Shinobi Systems"
                     }
                 },data)
-                const discordChannel = bot.channels.get(s.group[groupKey].init.discordbot_channel)
+                const discordChannel = bot.channels.cache.get(s.group[groupKey].init.discordbot_channel)
                 if(discordChannel && discordChannel.send){
                     discordChannel.send({
                         embed: sendBody,
@@ -98,16 +98,18 @@ module.exports = function(s,config,lang){
                             },
                             title: lang.Event+' - '+d.screenshotName,
                             description: lang.EventText1+' '+d.currentTimestamp,
-                            fields: [{
-                                attachment: screenShot,
-                                name: d.screenshotName+'.jpg'
-                            }],
+                            fields: [],
                             timestamp: d.currentTime,
                             footer: {
                               icon_url: config.iconURL,
                               text: "Shinobi Systems"
                             }
-                        },files,d.ke)
+                        },[
+                            {
+                                attachment: screenShot,
+                                name: d.screenshotName+'.jpg'
+                            }
+                        ],d.ke)
                     }
                 }
             }
