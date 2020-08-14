@@ -237,24 +237,29 @@ module.exports = function(s,config,lang,app,io){
 
             ftpServer.on('client:connected', async (connection) => {
                 const response = await authenticateConnection(connection)
-                connection.cwd = s.dir.dropInEvents + connection._user.ke
-                connection.on('file:stor', async (eventType, data) => {
-                    const fileName = data.file
-                    const pathPieces = fileName.substr(1).split('/')
-                    const groupKey = connection._user.ke
-                    const monitorId = pathPieces[0]
-                    const firstDroppedPart = pathPieces[1]
-                    const monitorEventDropDir = s.dir.dropInEvents + groupKey + '/' + monitorId + '/'
-                    const deleteKey = monitorEventDropDir + firstDroppedPart
-                    onFileOrFolderFound(
-                        monitorEventDropDir + firstDroppedPart,
-                        deleteKey,
-                        {
-                            ke: groupKey,
-                            mid: monitorId
-                        }
-                    )
-                })
+                if(connection._user){
+                    connection.cwd = s.dir.dropInEvents + connection._user.ke
+                    connection.on('file:stor', async (eventType, data) => {
+                        const fileName = data.file
+                        const pathPieces = fileName.substr(1).split('/')
+                        const groupKey = connection._user.ke
+                        const monitorId = pathPieces[0]
+                        const firstDroppedPart = pathPieces[1]
+                        const monitorEventDropDir = s.dir.dropInEvents + groupKey + '/' + monitorId + '/'
+                        const deleteKey = monitorEventDropDir + firstDroppedPart
+                        onFileOrFolderFound(
+                            monitorEventDropDir + firstDroppedPart,
+                            deleteKey,
+                            {
+                                ke: groupKey,
+                                mid: monitorId
+                            }
+                        )
+                    })
+                }else{
+                    s.systemLog(`Failed FTP Login Attempt : ${response.username}/${response.password}`)
+                    throw `Failed to Authenticate FTP : ${response.username}/${response.password}`;
+                }
             })
 
             ftpServer.listen(config.ftpServerPort)
