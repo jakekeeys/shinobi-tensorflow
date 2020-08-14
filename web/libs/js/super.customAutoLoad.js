@@ -10,7 +10,7 @@ $(document).ready(function(){
         if(listElement.find('[package-name="${module.name}"]').length > 0){
             var existingElement = listElement.find('[package-name="${module.name}"]')
             existingElement.find('.title').text(humanName)
-            existingElement.find('[calm-action="status"]').text(module.disabled ? lang.Enable : lang.Disable)
+            existingElement.find('[calm-action="status"]').text(module.properties.disabled ? lang.Enable : lang.Disable)
         }else{
             listElement.append(`
                 <div class="col-md-12">
@@ -24,7 +24,7 @@ $(document).ready(function(){
                                     ${module.hasInstaller ? `
                                         <a href="#" class="btn btn-sm btn-info" calm-action="install">${lang['Run Installer']}</a>
                                     ` : ''}
-                                    <a href="#" class="btn btn-sm btn-default" calm-action="status">${module.disabled ? lang.Enable : lang.Disable}</a>
+                                    <a href="#" class="btn btn-sm btn-default" calm-action="status">${module.properties.disabled ? lang.Enable : lang.Disable}</a>
                                 ` : ''}
                                 <a href="#" class="btn btn-sm btn-danger" calm-action="delete">${lang.Delete}</a>
                             </div>
@@ -113,10 +113,10 @@ $(document).ready(function(){
                 })
             break;
             case'status':
-                setModuleStatus(packageName,!!!loadedModules[packageName].disabled,function(data){
+                setModuleStatus(packageName,!!!loadedModules[packageName].properties.disabled,function(data){
                     if(data.ok){
-                        loadedModules[packageName].disabled = !!!loadedModules[packageName].disabled
-                        el.text(loadedModules[packageName].disabled ? lang.Enable : lang.Disable)
+                        loadedModules[packageName].properties.disabled = !!!loadedModules[packageName].properties.disabled
+                        el.text(loadedModules[packageName].properties.disabled ? lang.Enable : lang.Disable)
                     }
                 })
             break;
@@ -136,6 +136,7 @@ $(document).ready(function(){
         downloadModule(form.downloadUrl,form.packageRoot,function(data){
             console.log(data)
             if(data.ok){
+                data.newModule.properties.disabled = true
                 drawModuleBlock(data.newModule)
             }
         })
