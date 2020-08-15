@@ -11,6 +11,7 @@ module.exports = function(s,config,lang){
         }else{
             config.streamDir = config.windowsTempDir
         }
+        config.shmDir = `${s.checkCorrectPathEnding(config.streamDir)}`
         if(!fs.existsSync(config.streamDir)){
             config.streamDir = s.mainDirectory+'/streams/'
         }else{
