@@ -20,6 +20,22 @@ module.exports = function(s,config,lang,app,io){
             })
         })
     }
+    const getFileBinEntries = (options) => {
+        return new Promise((resolve, reject) => {
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "Files",
+                where: options
+            },(err,rows) => {
+                if(rows){
+                    resolve(rows)
+                }else{
+                    resolve([])
+                }
+            })
+        })
+    }
     const updateFileBinEntry = (options) => {
         return new Promise((resolve, reject) => {
             const groupKey = options.ke
@@ -147,4 +163,92 @@ module.exports = function(s,config,lang,app,io){
     s.insertFileBinEntry = insertFileBinEntry
     s.updateFileBinEntry = updateFileBinEntry
     s.deleteFileBinEntry = deleteFileBinEntry
+    /**
+    * API : Get fileBin file rows
+     */
+    app.get([config.webPaths.apiPrefix+':auth/fileBin/:ke',config.webPaths.apiPrefix+':auth/fileBin/:ke/:id'],async (req,res) => {
+        s.auth(req.params,(user) => {
+            const userDetails = user.details
+            const monitorId = req.params.id
+            const groupKey = req.params.ke
+            const hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1';
+            s.sqlQueryBetweenTimesWithPermissions({
+                table: 'Files',
+                user: user,
+                groupKey: req.params.ke,
+                monitorId: req.params.id,
+                startTime: req.query.start,
+                endTime: req.query.end,
+                startTimeOperator: req.query.startOperator,
+                endTimeOperator: req.query.endOperator,
+                limit: req.query.limit,
+                endIsStartTo: true,
+                noFormat: true,
+                noCount: true,
+                preliminaryValidationFailed: (
+                    user.permissions.get_monitors === "0"
+                )
+            },(response) => {
+                response.forEach(function(v){
+                    v.details = s.parseJSON(v.details)
+                    v.href = '/'+req.params.auth+'/fileBin/'+req.params.ke+'/'+req.params.id+'/'+v.details.year+'/'+v.details.month+'/'+v.details.day+'/'+v.name;
+                })
+                s.closeJsonResponse(res,{
+                    ok: true,
+                    files: response
+                })
+            })
+        },res,req);
+    });
+    /**
+    * API : Get fileBin file
+     */
+    app.get(config.webPaths.apiPrefix+':auth/fileBin/:ke/:id/:year/:month/:day/:file', async (req,res) => {
+        s.auth(req.params,function(user){
+            var failed = function(){
+                res.end(user.lang['File Not Found'])
+            }
+            if (!s.group[req.params.ke].fileBin[req.params.id+'/'+req.params.file]){
+                const groupKey = req.params.ke
+                const monitorId = req.params.id
+                const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+                if(user.details.sub && user.details.allmonitors === '0' && (user.permissions.get_monitors === "0" || monitorRestrictions.length === 0)){
+                    s.closeJsonResponse(res,{
+                        ok: false,
+                        msg: lang['Not Permitted']
+                    })
+                    return
+                }
+                s.knexQuery({
+                    action: "select",
+                    columns: "*",
+                    table: "Files",
+                    where: [
+                        ['ke','=',groupKey],
+                        ['mid','=',req.params.id],
+                        ['name','=',req.params.file],
+                        monitorRestrictions
+                    ]
+                },(err,r) => {
+                    if(r && r[0]){
+                        r = r[0]
+                        r.details = JSON.parse(r.details)
+                        req.dir = s.dir.fileBin + req.params.ke + '/' + req.params.id + '/' + r.details.year + '/' + r.details.month + '/' + r.details.day + '/' + req.params.file;
+                        fs.stat(req.dir,function(err,stats){
+                            if(!err){
+                                res.on('finish',function(){res.end()})
+                                fs.createReadStream(req.dir).pipe(res)
+                            }else{
+                                failed()
+                            }
+                        })
+                    }else{
+                        failed()
+                    }
+                })
+            }else{
+                res.end(user.lang['Please Wait for Completion'])
+            }
+        },res,req);
+    });
 }
