@@ -229,13 +229,12 @@ module.exports = function(s,config){
         }
     }
     //system log
-    s.debugLog = function(q,w,e){
+    s.debugLog = function(...args){
         if(config.debugLog === true){
-            if(!w){w = ''}
-            if(!e){e = ''}
-            console.log(s.timeObject().format(),q,w,e)
+            var logRow = ([s.timeObject().format()]).concat(...args)
+            console.log(...logRow)
             if(config.debugLogVerbose === true){
-                console.log(new Error())
+                console.log(new Error('VERBOSE STACK TRACE, THIS IS NOT AN '))
             }
         }
     }
