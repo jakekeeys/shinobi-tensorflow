@@ -374,24 +374,15 @@ module.exports = function(s,config,lang,io){
                                 totalmem:s.totalmem
                             }
                         })
-                        try{
-                            s.knexQuery({
-                                action: "select",
-                                columns: "*",
-                                table: "Monitors",
-                                where: [
-                                    ['ke','=',d.ke],
-                                ]
-                            },(err,r) => {
-                                if(r && r[0]){
-                                    r.forEach(function(monitor){
-                                        s.cameraSendSnapshot({mid:monitor.mid,ke:monitor.ke,mon:monitor},{useIcon: true})
-                                    })
-                                }
+                        Object.values(s.group[d.ke].rawMonitorConfigurations).forEach((monitor) => {
+                            s.cameraSendSnapshot({
+                                mid: monitor.mid,
+                                ke: monitor.ke,
+                                mon: monitor
+                            },{
+                                useIcon: true
                             })
-                        }catch(err){
-                            console.log(err)
-                        }
+                        })
                     })
                     s.onSocketAuthenticationExtensions.forEach(function(extender){
                         extender(r,cn,d,tx)
