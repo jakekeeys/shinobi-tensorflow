@@ -109,7 +109,7 @@ module.exports = function(s,config,lang){
     }
     s.getRawSnapshotFromMonitor = function(monitor,options){
         return new Promise((resolve,reject) => {
-            var options = {flags: ''}
+            options = options instanceof Object ? options : {flags: ''}
             s.checkDetails(monitor)
             var inputOptions = []
             var outputOptions = []
@@ -161,7 +161,7 @@ module.exports = function(s,config,lang){
                         ]
                         var snapProcess = spawn('node',cameraCommandParams,{detached: true})
                         snapProcess.stderr.on('data',function(data){
-                            console.log(data.toString())
+                            s.debugLog(data.toString())
                         })
                         snapProcess.on('close',function(data){
                             clearTimeout(snapProcessTimeout)
@@ -522,14 +522,14 @@ module.exports = function(s,config,lang){
         return options
     }
     s.cameraSendSnapshot = async (e,options) => {
-        if(!options)options = {}
+        options = Object.assign({
+            flags: '-s 200x200'
+        },options || {})
         s.checkDetails(e)
         if(config.doSnapshot === true){
             if(s.group[e.ke] && s.group[e.ke].rawMonitorConfigurations && s.group[e.ke].rawMonitorConfigurations[e.mid] && s.group[e.ke].rawMonitorConfigurations[e.mid].mode !== 'stop'){
                 var pathDir = s.dir.streams+e.ke+'/'+e.mid+'/'
-                const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(s.group[e.ke].rawMonitorConfigurations[e.mid],Object.assign({
-                    flags: '-s 200x200'
-                },options))
+                const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(s.group[e.ke].rawMonitorConfigurations[e.mid],options)
                 if(screenShot && (screenShot[screenShot.length-2] === 0xFF && screenShot[screenShot.length-1] === 0xD9)){
                     s.tx({
                         f: 'monitor_snapshot',
@@ -553,13 +553,13 @@ module.exports = function(s,config,lang){
         const getDefaultImage = async () => {
             return await fs.promises.readFile(config.defaultMjpeg)
         }
-        if(!options)options = {}
+        options = Object.assign({
+            flags: '-s 200x200'
+        },options || {})
         if(config.doSnapshot === true){
             if(s.group[e.ke] && s.group[e.ke].rawMonitorConfigurations && s.group[e.ke].rawMonitorConfigurations[e.mid] && s.group[e.ke].rawMonitorConfigurations[e.mid].mode !== 'stop'){
                 var pathDir = s.dir.streams+e.ke+'/'+e.mid+'/'
-                const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(s.group[e.ke].rawMonitorConfigurations[e.mid],Object.assign({
-                    flags: '-s 200x200'
-                },options))
+                const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(s.group[e.ke].rawMonitorConfigurations[e.mid],options)
                 if(screenShot && (screenShot[screenShot.length-2] === 0xFF && screenShot[screenShot.length-1] === 0xD9)){
                     return screenShot
                 }else{
