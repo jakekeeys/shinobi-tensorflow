@@ -526,7 +526,7 @@ module.exports = function(s,config,lang){
             flags: '-s 200x200'
         },options || {})
         s.checkDetails(e)
-        if(config.doSnapshot === true){
+        if(e.ke && config.doSnapshot === true){
             if(s.group[e.ke] && s.group[e.ke].rawMonitorConfigurations && s.group[e.ke].rawMonitorConfigurations[e.mid] && s.group[e.ke].rawMonitorConfigurations[e.mid].mode !== 'stop'){
                 var pathDir = s.dir.streams+e.ke+'/'+e.mid+'/'
                 const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(s.group[e.ke].rawMonitorConfigurations[e.mid],options)
@@ -556,7 +556,7 @@ module.exports = function(s,config,lang){
         options = Object.assign({
             flags: '-s 200x200'
         },options || {})
-        if(config.doSnapshot === true){
+        if(e.ke && config.doSnapshot === true){
             if(s.group[e.ke] && s.group[e.ke].rawMonitorConfigurations && s.group[e.ke].rawMonitorConfigurations[e.mid] && s.group[e.ke].rawMonitorConfigurations[e.mid].mode !== 'stop'){
                 var pathDir = s.dir.streams+e.ke+'/'+e.mid+'/'
                 const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(s.group[e.ke].rawMonitorConfigurations[e.mid],options)
