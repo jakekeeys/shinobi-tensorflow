@@ -549,6 +549,29 @@ module.exports = function(s,config,lang){
             s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
         }
     }
+    s.getCameraSnapshot = async (e,options) => {
+        const getDefaultImage = async () => {
+            return await fs.promises.readFile(config.defaultMjpeg)
+        }
+        if(!options)options = {}
+        if(config.doSnapshot === true){
+            if(s.group[e.ke] && s.group[e.ke].rawMonitorConfigurations && s.group[e.ke].rawMonitorConfigurations[e.mid] && s.group[e.ke].rawMonitorConfigurations[e.mid].mode !== 'stop'){
+                var pathDir = s.dir.streams+e.ke+'/'+e.mid+'/'
+                const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(s.group[e.ke].rawMonitorConfigurations[e.mid],Object.assign({
+                    flags: '-s 200x200'
+                },options))
+                if(screenShot && (screenShot[screenShot.length-2] === 0xFF && screenShot[screenShot.length-1] === 0xD9)){
+                    return screenShot
+                }else{
+                    return await getDefaultImage()
+               }
+            }else{
+                return await getDefaultImage()
+            }
+        }else{
+            return await getDefaultImage()
+        }
+    }
     const createRecordingDirectory = function(e,callback){
         var directory
         if(e.details && e.details.dir && e.details.dir !== '' && config.childNodes.mode !== 'child'){
