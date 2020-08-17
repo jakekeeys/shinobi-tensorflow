@@ -680,7 +680,9 @@ module.exports = function(s,config,lang,app,io){
                             }
                         }
                         req.body.function = s.factorAuth[req.body.ke][req.body.id].function
-                        checkRoute(s.factorAuth[req.body.ke][req.body.id].user)
+                        response = s.factorAuth[req.body.ke][req.body.id].info
+                        response.lang = req.lang || s.getLanguageFile(JSON.parse(s.factorAuth[req.body.ke][req.body.id].info.details).lang)
+                        checkRoute(s.factorAuth[req.body.ke][req.body.id].info)
                         clearTimeout(s.factorAuth[req.body.ke][req.body.id].expireAuth)
                         s.deleteFactorAuth({
                             ke: req.body.ke,
