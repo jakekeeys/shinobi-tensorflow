@@ -374,15 +374,19 @@ module.exports = function(s,config,lang,io){
                                 totalmem:s.totalmem
                             }
                         })
-                        Object.values(s.group[d.ke].rawMonitorConfigurations).forEach((monitor) => {
-                            s.cameraSendSnapshot({
-                                mid: monitor.mid,
-                                ke: monitor.ke,
-                                mon: monitor
-                            },{
-                                useIcon: true
+                        try{
+                            Object.values(s.group[d.ke].rawMonitorConfigurations).forEach((monitor) => {
+                                s.cameraSendSnapshot({
+                                    mid: monitor.mid,
+                                    ke: monitor.ke,
+                                    mon: monitor
+                                },{
+                                    useIcon: true
+                                })
                             })
-                        })
+                        }catch(err){
+                            s.debugLog(err)
+                        }
                     })
                     s.onSocketAuthenticationExtensions.forEach(function(extender){
                         extender(r,cn,d,tx)
