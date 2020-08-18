@@ -208,7 +208,7 @@ $(document).ready(function(e){
                 console.log('videoLink',videoLink)
                 console.log(href)
                 if(!href){
-                    href = $.ccio.init('location',$.users[e.auth])+e.auth+'/videos/'+e.ke+'/'+e.mid+'/'+e.file+'/delete<% if(config.useUTC === true){%>?isUTC=true<%}%>'
+                    href = $.ccio.init('location',$.users[e.auth])+e.auth+'/videos/'+e.ke+'/'+e.mid+'/'+e.file+'/delete'
                 }
                 console.log(href)
                 $.confirm.e.modal('show');
