@@ -150,11 +150,13 @@ module.exports = function(s,config){
                     dbQuery = s.databaseEngine(options.table).insert(options.insert)
                 break;
             }
-            if(options.where){
+            if(options.where instanceof Array){
                 var didOne = false;
                 options.where.forEach((where) => {
                     processWhereCondition(dbQuery,where,didOne)
                 })
+            }else if(options.where instanceof Object){
+                dbQuery.where(options.where)
             }
             if(options.action === 'delete'){
                 dbQuery.del()
@@ -176,7 +178,7 @@ module.exports = function(s,config){
             if(config.debugLog === true){
                 console.log(dbQuery.toString())
             }
-            if(callback || options.update || options.insert){
+            if(callback || options.update || options.insert || options.action === 'delete'){
                 dbQuery.asCallback(function(err,r) {
                     if(err){
                         knexError(dbQuery,options,err)
