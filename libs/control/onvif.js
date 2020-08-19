@@ -9,7 +9,7 @@ module.exports = function(s,config,lang,app,io){
         const controlURLOptions = s.cameraControlOptionsFromUrl(controlBaseUrl,monitorConfig)
         //create onvif connection
         const device = new onvif.OnvifDevice({
-            xaddr : 'http://' + controlURLOptions.host + ':' + controlURLOptions.port + '/onvif/device_service',
+            address : controlURLOptions.host + ':' + controlURLOptions.port,
             user : controlURLOptions.username,
             pass : controlURLOptions.password
         })
