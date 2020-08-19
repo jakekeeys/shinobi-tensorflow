@@ -938,6 +938,8 @@
    "vda": "vda (Apple VDA Hardware Acceleration)",
    "videotoolbox": "videotoolbox",
    "cuvid": "cuvid (NVIDIA NVENC)",
+   "cuda": "cuda (NVIDIA NVENC)",
+   "opencl": "OpenCL",
    "Main": "Main",
    "Storage Location": "Storage Location",
    "Recommended": "Recommended",
