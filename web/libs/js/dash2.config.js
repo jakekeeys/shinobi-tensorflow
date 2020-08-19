@@ -15,6 +15,7 @@ $.ccio.HWAccelChoices = [
             auto: {label:lang['Auto'],value:'auto'},
             drm: {label:lang['drm'],value:'drm'},
             cuvid: {label:lang['cuvid'],value:'cuvid'},
+            cuda: {label:lang['cuda'],value:'cuda'},
             vaapi: {label:lang['vaapi'],value:'vaapi'},
             qsv: {label:lang['qsv'],value:'qsv'},
             vdpau: {label:lang['vdpau'],value:'vdpau'},
