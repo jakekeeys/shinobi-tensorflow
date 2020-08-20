@@ -135,29 +135,15 @@ s.sqlQuery = function(query,values,onMoveOn){
         }
     })
 }
-
-const processWhereCondition = (dbQuery,where,didOne) => {
+const processSimpleWhereCondition = (dbQuery,where,didOne) => {
     var whereIsArray = where instanceof Array;
-    if(!where[0])return;
-    if(where[0] && where[0] instanceof Array){
-        // didOne = true
-        dbQuery.where(function() {
-            var _this = this
-            var didOneInsideGroup = false
-            where.forEach((whereInsideGroup) => {
-                processWhereCondition(_this,whereInsideGroup,didOneInsideGroup)
-            })
-        })
-    }else if(where.length === 4){
-        const separator = where[0] + ''
-        where.shift()
-        switch(separator){
-            case'and':
-                whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
-            break;
-            case'or':
-                whereIsArray ? dbQuery.orWhere(...where) : dbQuery.orWhere(where)
-            break;
+    if(where[0] === 'or' || where.__separator === 'or'){
+        if(whereIsArray){
+            where.shift()
+            dbQuery.orWhere(...where)
+        }else{
+            where = cleanSqlWhereObject(where)
+            dbQuery.orWhere(where)
         }
     }else if(!didOne){
         didOne = true
@@ -165,17 +151,39 @@ const processWhereCondition = (dbQuery,where,didOne) => {
     }else{
         whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
     }
-
+}
+const processWhereCondition = (dbQuery,where,didOne) => {
+    var whereIsArray = where instanceof Array;
+    if(!where[0])return;
+    if(where[0] && where[0] instanceof Array){
+        dbQuery.where(function() {
+            var _this = this
+            var didOneInsideGroup = false
+            where.forEach((whereInsideGroup) => {
+                processWhereCondition(_this,whereInsideGroup,didOneInsideGroup)
+            })
+        })
+    }else if(where[0] && where[0] instanceof Object){
+        dbQuery.where(function() {
+            var _this = this
+            var didOneInsideGroup = false
+            where.forEach((whereInsideGroup) => {
+                processSimpleWhereCondition(_this,whereInsideGroup,didOneInsideGroup)
+            })
+        })
+    }else{
+        processSimpleWhereCondition(dbQuery,where,didOne)
+    }
 }
 const knexError = (dbQuery,options,err) => {
-    console.error('knexError CRON----------------------------------- START')
+    console.error('knexError----------------------------------- START')
     if(config.debugLogVerbose && config.debugLog === true){
         s.debugLog('s.knexQuery QUERY',JSON.stringify(options,null,3))
         s.debugLog('STACK TRACE, NOT AN ',new Error())
     }
     console.error(err)
     console.error(dbQuery.toString())
-    console.error('knexError CRON----------------------------------- END')
+    console.error('knexError----------------------------------- END')
 }
 const knexQuery = (options,callback) => {
     try{
@@ -200,17 +208,22 @@ const knexQuery = (options,callback) => {
                 dbQuery = s.databaseEngine(options.table).update(options.update)
             break;
             case'delete':
-                dbQuery = s.databaseEngine(options.table).del()
+                dbQuery = s.databaseEngine(options.table)
             break;
             case'insert':
                 dbQuery = s.databaseEngine(options.table).insert(options.insert)
             break;
         }
-        if(options.where){
+        if(options.where instanceof Array){
             var didOne = false;
             options.where.forEach((where) => {
                 processWhereCondition(dbQuery,where,didOne)
             })
+        }else if(options.where instanceof Object){
+            dbQuery.where(options.where)
+        }
+        if(options.action === 'delete'){
+            dbQuery.del()
         }
         if(options.orderBy){
             dbQuery.orderBy(...options.orderBy)
@@ -227,10 +240,9 @@ const knexQuery = (options,callback) => {
             }
         }
         if(config.debugLog === true){
-            console.log(options)
             console.log(dbQuery.toString())
         }
-        if(callback || options.update || options.insert){
+        if(callback || options.update || options.insert || options.action === 'delete'){
             dbQuery.asCallback(function(err,r) {
                 if(err){
                     knexError(dbQuery,options,err)
