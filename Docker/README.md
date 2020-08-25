@@ -3,7 +3,7 @@
 1. Download Repo
 
 ```
-git clone https://gitlab.com/Shinobi-Systems/Shinobi.git ShinobiSource
+git clone -b dev https://gitlab.com/Shinobi-Systems/Shinobi.git ShinobiSource
 ```
 
 2. Enter Repo and Build Image.
