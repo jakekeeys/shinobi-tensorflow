@@ -1,18 +1,13 @@
 FROM ubuntu:bionic
 
-ENV ADMIN_USER=admin@shinobi.video \
-    ADMIN_PASSWORD=admin \
-    CRON_KEY=fd6c7849-904d-47ea-922b-5143358ba0de \
-    PLUGINKEY_MOTION=b7502fd9-506c-4dda-9b56-8e699a6bc41c \
-    PLUGINKEY_OPENCV=f078bcfe-c39a-4eb5-bd52-9382ca828e8a \
-    PLUGINKEY_OPENALPR=dbff574e-9d4a-44c1-b578-3dc0f1944a3c \
-    #leave these ENVs alone unless you know what you are doing
-    DB_USER=majesticflame \
+ENV DB_USER=majesticflame \
     DB_PASSWORD=mizukagesbluedress \
     DB_HOST=localhost \
     DB_DATABASE=ccio \
     DB_ROOT_PASSWORD=mizukagesbluedress \
-    DB_ROOT_USER=root
+    DB_ROOT_USER=root \
+    SUBSCRIPTION_ID=sub_XXXXXXXXXXXX \
+    DB_DISABLE_INCLUDED=false
 
 RUN mkdir -p /home/Shinobi /config /var/lib/mysql
 
@@ -89,6 +84,9 @@ RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 800 --slave /u
 
 WORKDIR /home/Shinobi
 COPY . .
+RUN rm -rf /home/Shinobiplugins
+COPY ./plugins  /home/Shinobi/plugins
+RUN chmod -R 777 /home/Shinobi/plugins
 RUN npm i npm@latest -g && \
     npm install pm2 -g && \
     npm install --unsafe-perm && \
