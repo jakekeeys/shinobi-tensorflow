@@ -53,5 +53,5 @@ docker images
 
 Container Logs
 ```
-docker logs CONTAINER_ID
+docker logs /Shinobi
 ```
