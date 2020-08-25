@@ -219,11 +219,14 @@ module.exports = function(s,config,lang,app,io){
                 return
             }
             const monitorRestrictions = s.getMonitorRestrictions(user.details,req.params.id)
-            getFrameRows({
+            s.getDatabaseRows({
                 monitorRestrictions: monitorRestrictions,
+                table: 'Timelapse Frames',
                 groupKey: req.params.ke,
                 archived: req.query.archived,
                 filename: req.params.filename,
+                rowType: 'frames',
+                endIsStartTo: true
             },(response) => {
                 var frame = response.frames[0]
                 if(frame){
