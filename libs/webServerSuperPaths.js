@@ -119,6 +119,21 @@ module.exports = function(s,config,lang,app){
                     ip: resp.ip,
                     old:jsonfile.readFileSync(s.location.config)
                 })
+                try{
+                    const dockerConfigFile = '/config/conf.json'
+                    fs.stat(dockerConfigFile,(err) => {
+                        if(!err){
+                            fs.stat(s.mainDirectory + '/thisIsDocker.txt',(err) => {
+                                if(!err){
+                                    fs.writeFile(dockerConfigFile,JSON.stringify(postBody,null,3),function(){
+                                    })
+                                }
+                            })
+                        }
+                    })
+                }catch(err){
+                    console.log(err)
+                }
                 jsonfile.writeFile(s.location.config,postBody,{spaces: 2},function(){
                     s.tx({f:'save_configuration'},'$')
                 })

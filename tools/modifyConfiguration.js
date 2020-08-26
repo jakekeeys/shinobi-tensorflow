@@ -63,8 +63,6 @@ try{
             fs.stat('../thisIsDocker.txt',(err) => {
                 if(!err){
                     fs.writeFile(dockerConfigFile,JSON.stringify(config,null,3),function(){
-                        console.log('Changes Complete. Here is what it is now.')
-                        console.log(JSON.stringify(config,null,2))
                     })
                 }
             })
