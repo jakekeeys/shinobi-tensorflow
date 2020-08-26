@@ -167,7 +167,7 @@ module.exports = function(s,config,lang,app){
             }
             var form = s.getPostData(req)
             if(form){
-                var currentSuperUserList = jsonfile.readFileSync(s.location.super)
+                var currentSuperUserList = JSON.parse(fs.readFileSync(s.location.super))
                 var currentSuperUser = {}
                 var currentSuperUserPosition = -1
                 //find this user in current list
@@ -205,7 +205,22 @@ module.exports = function(s,config,lang,app){
                     currentSuperUserList.push(currentSuperUser)
                 }
                 //update master list in system
-                jsonfile.writeFile(s.location.super,currentSuperUserList,{spaces: 2},function(){
+                try{
+                    const dockerSuperFile = '/config/super.json'
+                    fs.stat(dockerSuperFile,(err) => {
+                        if(!err){
+                            fs.stat(s.mainDirectory + '/thisIsDocker.txt',(err) => {
+                                if(!err){
+                                    fs.writeFile(dockerSuperFile,JSON.stringify(currentSuperUserList,null,3),function(){
+                                    })
+                                }
+                            })
+                        }
+                    })
+                }catch(err){
+                    console.log(err)
+                }
+                fs.writeFile(s.location.super,JSON.stringify(currentSuperUserList,null,3),function(){
                     s.tx({f:'save_preferences'},'$')
                 })
             }else{
