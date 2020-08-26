@@ -66,37 +66,26 @@ cd /home/Shinobi
 mkdir -p libs/customAutoLoad
 if [ -e "/config/conf.json" ]; then
     cp /config/conf.json conf.json
-    sudo sed -i -e 's/change_this_to_something_very_random__just_anything_other_than_this/'"$cronKey"'/g' conf.json
-    node tools/modifyConfiguration.js cpuUsageMarker=CPU
-    node tools/modifyConfiguration.js subscriptionId=$SUBSCRIPTION_ID
-    cp conf.json /config/conf.json
 fi
-#create super.json
-if [ -e "/config/super.json" ]; then
-    echo "============="
-    echo "Default Superuser : admin@shinobi.video"
-    echo "Default Password : admin"
-    echo "* You can edit these settings in \"super.json\" located in the Shinobi directory."
-    cp /config/super.json super.json
-fi
-
 if [ ! -e "./conf.json" ]; then
     sudo cp conf.sample.json conf.json
-    sudo sed -i -e 's/change_this_to_something_very_random__just_anything_other_than_this/'"$cronKey"'/g' conf.json
-    node tools/modifyConfiguration.js cpuUsageMarker=CPU
-    node tools/modifyConfiguration.js subscriptionId=$SUBSCRIPTION_ID
-    sudo cp conf.json /config/conf.json
 fi
-#create super.json
+sudo sed -i -e 's/change_this_to_something_very_random__just_anything_other_than_this/'"$cronKey"'/g' conf.json
+node tools/modifyConfiguration.js cpuUsageMarker=CPU subscriptionId=$SUBSCRIPTION_ID thisIsDocker=true
+sudo cp conf.json /config/conf.json
+
+
+echo "============="
+echo "Default Superuser : admin@shinobi.video"
+echo "Default Password : admin"
+echo "Log in at http://HOST_IP:SHINOBI_PORT/super"
+if [ -e "/config/super.json" ]; then
+    cp /config/super.json super.json
+fi
 if [ ! -e "./super.json" ]; then
-    echo "============="
-    echo "Default Superuser : admin@shinobi.video"
-    echo "Default Password : admin"
-    echo "* You can edit these settings in \"super.json\" located in the Shinobi directory."
     sudo cp super.sample.json super.json
     sudo cp super.sample.json /config/super.json
 fi
-touch thisIsDocker.txt
 # Execute Command
 echo "Starting Shinobi ..."
 exec "$@"

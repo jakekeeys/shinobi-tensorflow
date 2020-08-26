@@ -57,17 +57,14 @@ processArgv.forEach(function(val) {
 });
 
 try{
-    const dockerConfigFile = '/config/conf.json'
-    fs.stat(dockerConfigFile,(err) => {
-        if(!err){
-            fs.stat('../thisIsDocker.txt',(err) => {
-                if(!err){
-                    fs.writeFile(dockerConfigFile,JSON.stringify(config,null,3),function(){
-                    })
-                }
-            })
-        }
-    })
+    if(config.thisIsDocker){
+        const dockerConfigFile = '/config/conf.json'
+        fs.stat(dockerConfigFile,(err) => {
+            if(!err){
+                fs.writeFile(dockerConfigFile,JSON.stringify(config,null,3),function(){})
+            }
+        })
+    }
 }catch(err){
     console.log(err)
 }

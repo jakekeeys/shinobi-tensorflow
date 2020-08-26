@@ -1,4 +1,4 @@
-FROM ubuntu:bionic
+FROM ubuntu:focal
 
 ENV DB_USER=majesticflame \
     DB_PASSWORD=mizukagesbluedress \
@@ -8,6 +8,7 @@ ENV DB_USER=majesticflame \
     DB_ROOT_USER=root \
     SUBSCRIPTION_ID=sub_XXXXXXXXXXXX \
     DB_DISABLE_INCLUDED=false
+ARG DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir -p /home/Shinobi /config /var/lib/mysql
 
@@ -77,9 +78,6 @@ RUN apt install -y \
                 tar \
                 sudo \
                 xz-utils
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 800 --slave /usr/bin/g++ g++ /usr/bin/g++-7
-
-####
 
 
 WORKDIR /home/Shinobi

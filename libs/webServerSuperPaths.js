@@ -120,17 +120,14 @@ module.exports = function(s,config,lang,app){
                     old:jsonfile.readFileSync(s.location.config)
                 })
                 try{
-                    const dockerConfigFile = '/config/conf.json'
-                    fs.stat(dockerConfigFile,(err) => {
-                        if(!err){
-                            fs.stat(s.mainDirectory + '/thisIsDocker.txt',(err) => {
-                                if(!err){
-                                    fs.writeFile(dockerConfigFile,JSON.stringify(postBody,null,3),function(){
-                                    })
-                                }
-                            })
-                        }
-                    })
+                    if(config.thisIsDocker){
+                        const dockerConfigFile = '/config/conf.json'
+                        fs.stat(dockerConfigFile,(err) => {
+                            if(!err){
+                                fs.writeFile(dockerConfigFile,JSON.stringify(postBody,null,3),function(){})
+                            }
+                        })
+                    }
                 }catch(err){
                     console.log(err)
                 }
@@ -221,17 +218,14 @@ module.exports = function(s,config,lang,app){
                 }
                 //update master list in system
                 try{
-                    const dockerSuperFile = '/config/super.json'
-                    fs.stat(dockerSuperFile,(err) => {
-                        if(!err){
-                            fs.stat(s.mainDirectory + '/thisIsDocker.txt',(err) => {
-                                if(!err){
-                                    fs.writeFile(dockerSuperFile,JSON.stringify(currentSuperUserList,null,3),function(){
-                                    })
-                                }
-                            })
-                        }
-                    })
+                    if(config.thisIsDocker){
+                        const dockerSuperFile = '/config/super.json'
+                        fs.stat(dockerSuperFile,(err) => {
+                            if(!err){
+                                fs.writeFile(dockerSuperFile,JSON.stringify(currentSuperUserList,null,3),function(){})
+                            }
+                        })
+                    }
                 }catch(err){
                     console.log(err)
                 }

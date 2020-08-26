@@ -433,7 +433,7 @@ module.exports = function(s,config,lang,io){
         s.databaseEngine = require('knex')(s.databaseOptions)
         //run prerequsite queries
         s.preQueries()
-        setTimeout(function(){
+        setTimeout(() => {
             //check for subscription
             checkSubscription(function(){
                 //check terminal commander
@@ -443,7 +443,7 @@ module.exports = function(s,config,lang,io){
                         //load monitors (for groups)
                         loadMonitors(function(){
                             //check for orphaned videos
-                            checkForOrphanedVideos(function(){
+                            checkForOrphanedVideos(async () => {
                                 s.processReady()
                             })
                         })
