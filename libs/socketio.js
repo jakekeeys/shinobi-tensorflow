@@ -235,7 +235,7 @@ module.exports = function(s,config,lang,io){
             }
         })
         //unique MP4 socket stream
-        cn.on('MP4',function(d){
+        cn.on('MP4',function(d, cb){
             if(!s.group[d.ke]||!s.group[d.ke].activeMonitors||!s.group[d.ke].activeMonitors[d.id]){
                 cn.disconnect();return;
             }
@@ -266,6 +266,7 @@ module.exports = function(s,config,lang,io){
                         mp4frag.removeListener('initialized', onInitialized)
                     }
                 }
+                if (cb) cb(null, true);
                 cn.on('MP4Command',function(msg){
                     switch (msg) {
                         case 'mime' ://client is requesting mime

@@ -461,11 +461,15 @@ var Poseidon = function () {
             //this._video.setAttribute('poster', 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQwIiBoZWlnaHQ9IjM0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxnPjxyZWN0IHg9Ii0xIiB5PSItMSIgd2lkdGg9IjY0MiIgaGVpZ2h0PSIzNiIgZmlsbD0ibm9uZSIvPjwvZz48Zz48dGV4dCBmaWxsPSIjMDAwIiBzdHJva2Utd2lkdGg9IjAiIHg9IjE5NiIgeT0iMjYiIGZvbnQtc2l6ZT0iMjYiIGZvbnQtZmFtaWx5PSJIZWx2ZXRpY2EsIEFyaWFsLCBzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ic3RhcnQiIHhtbDpzcGFjZT0icHJlc2VydmUiIHN0cm9rZT0iIzAwMCI+cmVxdWVzdGluZyBtaW1lIHR5cGU8L3RleHQ+PC9nPjwvc3ZnPg==');
             this.onMime = this._onMime.bind(this);
             this._socket.addEventListener('mime', this.onMime, { capture: true, passive: true, once: true });
-            this._socket.emit('MP4', this._monitor);
             this.Commander = function (cmd) {
                 this._socket.emit('MP4Command', cmd);
             };
-            this.Commander('mime');
+            let _this = this
+            this._socket.emit('MP4', this._monitor, function(err, res) {
+                if (err) _this._callback('socket error "' + err + '"')
+                else if (res === true) _this.Commander('mime');
+                else _this._callback('socket error "' + res + '"')
+            });
         }
     }, {
         key: '_onSocketDisconnect',
