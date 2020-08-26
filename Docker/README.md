@@ -18,19 +18,21 @@ docker build --tag shinobi-image:1.0 .
 3. This command only works on Linux because of the temporary directory used. This location must exist in RAM. `-v "/dev/shm/shinobiStreams":'/dev/shm/streams':'rw'`.
 
 ```
-docker run -d --name='Shinobi' -p '8080:8080/tcp' -v "/dev/shm/shinobiStreams":'/dev/shm/streams':'rw' -v "$HOME/shinobiConfig":'/config':'rw' -v "$HOME/shinobiCustomAutoLoad":'/home/Shinobi/libs/customAutoLoad':'rw' -v "$HOME/shinobiDatabase":'/var/lib/mysql':'rw' -v "$HOME/shinobiVideos":'/home/Shinobi/videos':'rw' -v "$HOME/shinobiPlugins":'/home/Shinobi/plugins':'rw' shinobi-image:1.0
+docker run -d --name='Shinobi' -p '8080:8080/tcp' -v "/dev/shm/Shinobi/streams":'/dev/shm/streams':'rw' -v "$HOME/Shinobi/config":'/config':'rw' -v "$HOME/Shinobi/customAutoLoad":'/home/Shinobi/libs/customAutoLoad':'rw' -v "$HOME/Shinobi/database":'/var/lib/mysql':'rw' -v "$HOME/Shinobi/videos":'/home/Shinobi/videos':'rw' -v "$HOME/Shinobi/plugins":'/home/Shinobi/plugins':'rw' shinobi-image:1.0
  ```
+
+ > Host mount paths have been updated in this document.
 
  ### Volumes
 
  | Volumes                     | Description                                                                                                                                         |
  |-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
- | /dev/shm/shinobiStreams     | **IMPORTANT!** This must be mapped to somewhere in the host's RAM. When running this image on Windows you will need to select a different location. |
- | $HOME/shinobiConfig         | Put `conf.json` or `super.json` files in here to override default values.                                                                           |
- | $HOME/shinobiCustomAutoLoad | Maps to the `libs/customAutoLoad` folder for loading your own modules into Shinobi.                                                                 |
- | $HOME/shinobiDatabase       | A map to `/var/lib/mysql` in the container. This is the database's core files.                                                                      |
- | $HOME/shinobiVideos         | A map to `/home/Shinobi/videos`. The storage location of your recorded videos.                                                                      |
- | $HOME/shinobiPlugins        | A map to `/home/Shinobi/plugins`. Mapped so that plugins can easily be modified or swapped.                                                         |
+ | /dev/shm/Shinobi/streams     | **IMPORTANT!** This must be mapped to somewhere in the host's RAM. When running this image on Windows you will need to select a different location. |
+ | $HOME/Shinobi/config         | Put `conf.json` or `super.json` files in here to override the default. values.                                                                           |
+ | $HOME/Shinobi/customAutoLoad | Maps to the `/home/Shinobi/libs/customAutoLoad` folder for loading your own modules into Shinobi.                                                                 |
+ | $HOME/Shinobi/database       | A map to `/var/lib/mysql` in the container. This is the database's core files.                                                                      |
+ | $HOME/Shinobi/videos         | A map to `/home/Shinobi/videos`. The storage location of your recorded videos.                                                                      |
+ | $HOME/Shinobi/plugins        | A map to `/home/Shinobi/plugins`. Mapped so that plugins can easily be modified or swapped.                                                         |
 
 ### Configurable Environment Variables
 
