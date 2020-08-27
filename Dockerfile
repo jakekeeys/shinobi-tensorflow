@@ -1,4 +1,4 @@
-FROM ubuntu:focal
+FROM node:12.18.3-buster-slim
 
 ENV DB_USER=majesticflame \
     DB_PASSWORD=mizukagesbluedress \
@@ -14,13 +14,6 @@ RUN mkdir -p /home/Shinobi /config /var/lib/mysql
 
 RUN apt update -y
 RUN apt install wget curl net-tools -y
-
-# Install Node.js
-RUN wget https://deb.nodesource.com/setup_12.x
-RUN chmod +x setup_12.x
-RUN ./setup_12.x
-RUN apt install nodejs -y
-RUN rm setup_12.x
 
 # Install MariaDB server... the debian way
 RUN set -ex; \
