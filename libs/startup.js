@@ -418,13 +418,6 @@ module.exports = function(s,config,lang,io){
     }
     if(config.childNodes.mode !== 'child'){
         //master node - startup functions
-        setInterval(function(){
-            s.cpuUsage(function(cpu){
-                s.ramUsage(function(ram){
-                    s.tx({f:'os',cpu:cpu,ram:ram},'CPU');
-                })
-            })
-        },10000)
         //hourly check to see if sizePurge has failed to unlock
         //checks to see if request count is the number of monitors + 10
         s.checkForStalePurgeLocks()
