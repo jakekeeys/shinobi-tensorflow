@@ -377,7 +377,7 @@ module.exports = function(s,config,lang){
             })
         }
         //
-        if(currentConfig.detector_always_record === '1' || d.doObjectDetection !== true ){
+        if(currentConfig.detector_use_motion === '0' || d.doObjectDetection !== true ){
             if(currentConfig.det_multi_trig === '1'){
                 s.getCamerasForMultiTrigger(d.mon).forEach(function(monitor){
                     if(monitor.mid !== d.id){
