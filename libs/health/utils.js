@@ -50,7 +50,6 @@ exports.getRamUsageOnLinux = () => {
                 const rowParts = row.split(':')
                 const label = rowParts[0].trim()
                 if(label === 'MemTotal' || label === 'MemFree' || label === 'MemAvailable'){
-                    console.log(row)
                     const memoryUsed = parseFloat(rowParts[1].trim().split(' ')[0]) / 1000
                     parsed[label] = memoryUsed
                 }

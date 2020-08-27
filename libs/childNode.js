@@ -225,11 +225,13 @@ module.exports = function(s,config,lang,app,io){
             s.queuedSqlCallbacks[callbackId] = onMoveOn
             s.cx({f:'knex',options:options,callbackId:callbackId});
         }
-        setInterval(function(){
-            s.cpuUsage(function(cpu){
-                s.cx({f:'cpu',cpu:parseFloat(cpu)})
+        setInterval(async () => {
+            const cpu = await s.cpuUsage()
+            s.cx({
+                f: 'cpu',
+                cpu: parseFloat(cpu)
             })
-        },2000)
+        },5000)
         childIO.on('connect', function(d){
             console.log('CHILD CONNECTION SUCCESS')
             s.cx({

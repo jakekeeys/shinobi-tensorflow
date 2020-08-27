@@ -116,13 +116,15 @@ module.exports = function(s,config,lang,io){
             })
         }
     }
-    setInterval(async () => {
-        const cpu = await s.cpuUsage()
-        const ram = await s.ramUsage()
-        s.tx({
-            f: 'os',
-            cpu: cpu,
-            ram: ram
-        },'CPU')
-    },10000)
+    if(config.childNodes.mode !== 'child'){
+        setInterval(async () => {
+            const cpu = await s.cpuUsage()
+            const ram = await s.ramUsage()
+            s.tx({
+                f: 'os',
+                cpu: cpu,
+                ram: ram
+            },'CPU')
+        },10000)
+    }
 }
