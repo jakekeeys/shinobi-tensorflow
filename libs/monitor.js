@@ -10,13 +10,9 @@ const connectionTester = require('connection-tester')
 const SoundDetection = require('shinobi-sound-detection')
 const async = require("async");
 const URL = require('url')
-const { copyObject } = require('./common.js')
+const { copyObject, createQueue } = require('./common.js')
 module.exports = function(s,config,lang){
-    const startMonitorInQueue = async.queue(function(action, callback) {
-        setTimeout(function(){
-            action(callback)
-        },1000)
-    }, 3)
+    const startMonitorInQueue = createQueue(1, 3)
     s.initiateMonitorObject = function(e){
         if(!s.group[e.ke]){s.group[e.ke]={}};
         if(!s.group[e.ke].activeMonitors){s.group[e.ke].activeMonitors={}}
