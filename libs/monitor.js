@@ -455,7 +455,6 @@ module.exports = function(s,config,lang){
             }
         }
     }
-
     const checkObjectsInDetails = function(e){
         //parse Objects
         (['detector_cascades','cords','detector_filters','input_map_choices']).forEach(function(v){
@@ -634,11 +633,6 @@ module.exports = function(s,config,lang){
             })
         })
     }
-    // try{
-    //   fs.unlinkSync('/home/Shinobi/test.log')
-    // }catch(err){
-    //
-    // }
     const createCameraFolders = function(e,callback){
         //set the recording directory
         var activeMonitor = s.group[e.ke].activeMonitors[e.id]

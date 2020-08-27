@@ -1,6 +1,6 @@
 //
 // Shinobi
-// Copyright (C) 2016 Moe Alam, moeiscool
+// Copyright (C) 2020 Moe Alam, moeiscool
 //
 //
 // # Donate
@@ -57,8 +57,6 @@ require('./libs/ffmpeg.js')(s,config,lang,function(ffmpeg){
     require('./libs/events.js')(s,config,lang)
     //recording functions
     require('./libs/videos.js')(s,config,lang)
-    //branding functions and config defaults
-    require('./libs/videoDropInServer.js')(s,config,lang,app,io)
     //plugins : websocket connected services..
     require('./libs/plugins.js')(s,config,lang,io)
     //health : cpu and ram trackers..
