@@ -3,6 +3,7 @@ var http = require('http');
 var https = require('https');
 var express = require('express');
 module.exports = function(s,config,lang,app,io){
+    const { cameraDestroy } = require('./monitor/utils.js')(s,config,lang)
     //setup Master for childNodes
     if(config.childNodes.enabled === true && config.childNodes.mode === 'master'){
         s.childNodes = {};
@@ -252,7 +253,7 @@ module.exports = function(s,config,lang,app,io){
                 break;
                 case'kill':
                     s.initiateMonitorObject(d.d);
-                    s.cameraDestroy(s.group[d.d.ke].activeMonitors[d.d.id].spawn,d.d)
+                    cameraDestroy(d.d)
                     var childNodeIp = s.group[d.d.ke].activeMonitors[d.d.id]
                 break;
                 case'sync':
