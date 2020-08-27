@@ -1,20 +1,21 @@
-var fs = require('fs');
-var events = require('events');
-var spawn = require('child_process').spawn;
-var exec = require('child_process').exec;
-var Mp4Frag = require('mp4frag');
-var onvif = require('node-onvif');
-var treekill = require('tree-kill');
-var request = require('request');
-var connectionTester = require('connection-tester')
-var SoundDetection = require('shinobi-sound-detection')
-var async = require("async");
-var URL = require('url')
+const fs = require('fs');
+const events = require('events');
+const spawn = require('child_process').spawn;
+const exec = require('child_process').exec;
+const Mp4Frag = require('mp4frag');
+const onvif = require('node-onvif');
+const treekill = require('tree-kill');
+const request = require('request');
+const connectionTester = require('connection-tester')
+const SoundDetection = require('shinobi-sound-detection')
+const async = require("async");
+const URL = require('url')
+const { copyObject } = require('./common.js')
 module.exports = function(s,config,lang){
     const startMonitorInQueue = async.queue(function(action, callback) {
         setTimeout(function(){
             action(callback)
-        },2000)
+        },1000)
     }, 3)
     s.initiateMonitorObject = function(e){
         if(!s.group[e.ke]){s.group[e.ke]={}};
@@ -48,26 +49,26 @@ module.exports = function(s,config,lang){
     }
     s.getMonitorCpuUsage = function(e,callback){
         if(s.group[e.ke].activeMonitors[e.mid] && s.group[e.ke].activeMonitors[e.mid].spawn){
-            var getUsage = function(callback2){
+            const getUsage = function(callback2){
                 s.readFile("/proc/" + s.group[e.ke].activeMonitors[e.mid].spawn.pid + "/stat", function(err, data){
                     if(!err){
-                        var elems = data.toString().split(' ');
-                        var utime = parseInt(elems[13]);
-                        var stime = parseInt(elems[14]);
+                        const elems = data.toString().split(' ');
+                        const utime = parseInt(elems[13]);
+                        const stime = parseInt(elems[14]);
 
                         callback2(utime + stime);
                     }else{
-                        clearInterval(s.group[e.ke].activeMonitors[e.mid].getMonitorCpuUsage)
+                        clearInterval(0)
                     }
                 })
             }
             getUsage(function(startTime){
                 setTimeout(function(){
                     getUsage(function(endTime){
-                        var delta = endTime - startTime;
-                        var percentage = 100 * (delta / 10000);
+                        const delta = endTime - startTime;
+                        const percentage = 100 * (delta / 10000);
                         callback(percentage)
-                    });
+                    })
                 }, 1000)
             })
         }else{
@@ -1161,9 +1162,6 @@ module.exports = function(s,config,lang){
                 extender(e)
             })
         },detector_notrigger_timeout)
-    }
-    copyObject = function(obj){
-      return Object.assign({},obj)
     }
     //set master based process launcher
     const launchMonitorProcesses = function(e){
