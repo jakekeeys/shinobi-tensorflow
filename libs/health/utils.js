@@ -54,7 +54,7 @@ exports.getRamUsageOnLinux = () => {
             const lines = data.split('\n');
             const total = Math.floor(getValFromLine(lines[0]) / 1024);
             const free = Math.floor(getValFromLine(lines[1]) / 1024);
-            const cached = Math.floor(getValFromLine(lines[3]) / 1024);
+            const cached = Math.floor(getValFromLine(lines[4]) / 1024);
             const used = total - free;
             const percentUsed = Math.ceil(((used - cached) / total) * 100);
             resolve({
