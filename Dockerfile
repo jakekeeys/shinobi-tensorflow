@@ -7,6 +7,7 @@ ENV DB_USER=majesticflame \
     DB_ROOT_PASSWORD=mizukagesbluedress \
     DB_ROOT_USER=root \
     SUBSCRIPTION_ID=sub_XXXXXXXXXXXX \
+    PLUGIN_KEYS='{}' \
     DB_DISABLE_INCLUDED=false
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -16,7 +17,7 @@ RUN apt update -y
 RUN apt install wget curl net-tools -y
 
 # Install MariaDB server... the debian way
-RUN set -ex; \
+RUN if [ "$DB_DISABLE_INCLUDED" = "false" ] ; then set -ex; \
 	{ \
 		echo "mariadb-server" mysql-server/root_password password '${DB_ROOT_PASSWORD}'; \
 		echo "mariadb-server" mysql-server/root_password_again password '${DB_ROOT_PASSWORD}'; \
@@ -28,9 +29,9 @@ RUN set -ex; \
 	; \
     find /etc/mysql/ -name '*.cnf' -print0 \
 		| xargs -0 grep -lZE '^(bind-address|log)' \
-		| xargs -rt -0 sed -Ei 's/^(bind-address|log)/#&/'
+		| xargs -rt -0 sed -Ei 's/^(bind-address|log)/#&/'; fi
 
-RUN sed -ie "s/^bind-address\s*=\s*127\.0\.0\.1$/#bind-address = 0.0.0.0/" /etc/mysql/my.cnf
+RUN if [ "$DB_DISABLE_INCLUDED" = "false" ] ; then sed -ie "s/^bind-address\s*=\s*127\.0\.0\.1$/#bind-address = 0.0.0.0/" /etc/mysql/my.cnf; fi
 
 # Install FFmpeg
 
