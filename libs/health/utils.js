@@ -1,3 +1,4 @@
+// This file's contents were referenced from https://gist.github.com/sidwarkd/9578213
 const fs = require('fs');
 const calculateCPUPercentage = function(oldVals, newVals){
     var totalDiff = newVals.total - oldVals.total;
@@ -29,7 +30,6 @@ exports.getCpuUsageOnLinux = () => {
                 var lines = data.split('\n');
                 var cpuTimes = lines[0].match(/[0-9]+/gi);
                 currentCPUInfo.total = 0;
-                // We'll count both idle and iowait as idle time
                 currentCPUInfo.idle = parseInt(cpuTimes[3]) + parseInt(cpuTimes[4]);
                 for (var i = 0; i < cpuTimes.length; i++){
                   currentCPUInfo.total += parseInt(cpuTimes[i]);

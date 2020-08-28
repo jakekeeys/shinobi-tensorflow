@@ -1011,6 +1011,9 @@ module.exports = function(s,config,lang){
                     s.checkUserPurgeLock(e.ke)
                     s.purgeDiskForGroup(e.ke)
                 break;
+                case checkLog(d,'error parsing AU headers'):
+                    s.userLog(e,{type:lang['Error While Decoding'],msg:lang.ErrorWhileDecodingTextAudio});
+                break;
                 case checkLog(d,'error while decoding'):
                     s.userLog(e,{type:lang['Error While Decoding'],msg:lang.ErrorWhileDecodingText});
                 break;
