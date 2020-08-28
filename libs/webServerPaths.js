@@ -28,8 +28,8 @@ module.exports = function(s,config,lang,app,io){
     //cb = callback
     //res = response, only needed for express (http server)
     //request = request, only needed for express (http server)
-    s.checkChildProxy = function(params,cb,res,req){
-        if(s.group[params.ke] && s.group[params.ke].activeMonitors[params.id] && s.group[params.ke].activeMonitors[params.id].childNode){
+    s.checkChildProxy = function(params,cb,res,req) {
+        if(s.group[params.ke] && s.group[params.ke].activeMonitors && s.group[params.ke].activeMonitors[params.id] && s.group[params.ke].activeMonitors[params.id].childNode){
             var url = 'http://' + s.group[params.ke].activeMonitors[params.id].childNode// + req.originalUrl
             proxy.web(req, res, { target: url })
         }else{
