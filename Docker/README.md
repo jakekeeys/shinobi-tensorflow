@@ -1,5 +1,14 @@
 # Install Shinobi with Docker
 
+### There are two ways!
+
+## Docker Ninja Way
+
+```
+bash <(curl -s https://gitlab.com/Shinobi-Systems/Shinobi-Installer/raw/master/shinobi-docker.sh)
+```
+
+## From Source
 > Image is based on Ubuntu Bionic (20.04). Node.js 12 is used. MariaDB and FFmpeg are included.
 
 1. Download Repo
@@ -42,13 +51,12 @@ docker run -d --name='Shinobi' -p '8080:8080/tcp' -v "/dev/shm/Shinobi/streams":
  |----------------------|----------------------------------------------------------------------|--------------------|
  | SUBSCRIPTION_ID      | **THIS IS NOT REQUIRED**. If you are a subscriber to any of the Shinobi services you may use that key as the value for this parameter. If you have donated by PayPal you may use your Transaction ID to activate the license as well. | *None*     |
  | DB_USER              | Username that the Shinobi process will connect to the database with. | majesticflame      |
- | DB_PASSWORD          | Password that the Shinobi process will connect to the database with. | mizukagesbluedress |
+ | DB_PASSWORD          | Password that the Shinobi process will connect to the database with. | *None* |
  | DB_HOST              | Address that the Shinobi process will connect to the database with.  | localhost          |
  | DB_DATABASE          | Database that the Shinobi process will interact with.                | ccio               |
- | DB_ROOT_USER         | Privileged Username for the MariaDB instance.                        | root               |
- | DB_ROOT_PASSWORD     | Privileged Password for the MariaDB instance.                        | mizukagesbluedress |
  | DB_DISABLE_INCLUDED     | Disable included database to use your own. Set to `true` to disable.| false |
 
+> For those using `DB_DISABLE_INCLUDED=true` please remember to create a user in your databse first. The Docker image will create the `DB_DATABASE` under the specified connection information.
 
 ### Tips
 

@@ -1,11 +1,10 @@
 FROM node:12.18.3-buster-slim
 
 ENV DB_USER=majesticflame \
-    DB_PASSWORD=mizukagesbluedress \
-    DB_HOST=localhost \
+    DB_PASSWORD='' \
+    DB_HOST='localhost' \
     DB_DATABASE=ccio \
-    DB_ROOT_PASSWORD=mizukagesbluedress \
-    DB_ROOT_USER=root \
+    DB_PORT=3306 \
     SUBSCRIPTION_ID=sub_XXXXXXXXXXXX \
     PLUGIN_KEYS='{}' \
     DB_DISABLE_INCLUDED=false
