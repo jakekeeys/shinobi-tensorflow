@@ -57,12 +57,12 @@ docker run -d --name='Shinobi' -p '8080:8080/tcp' -v "/dev/shm/Shinobi/streams":
  | DB_DISABLE_INCLUDED     | Disable included database to use your own. Set to `true` to disable.| false |
  | PLUGIN_KEYS     | The object containing connection keys for plugins running in client mode (non-host, default). | {} |
  | SSL_ENABLED     | Enable or disable SSL with `openssl`. | false |
- | SSL_COUNTRY     | Country Code for SSL. Ignore if `SSL_AUTO_CREATE=false`. | CA |
- | SSL_STATE     | Province/State Code for SSL. Ignore if `SSL_AUTO_CREATE=false`. | BC |
- | SSL_LOCATION     | Location of where SSL key is being used. Ignore if `SSL_AUTO_CREATE=false`. | Vancouver |
- | SSL_ORGANIZATION     | Company Name associated to key. Ignore if `SSL_AUTO_CREATE=false`. | Shinobi Systems |
- | SSL_ORGANIZATION_UNIT     | Department associated to key. Ignore if `SSL_AUTO_CREATE=false`. | IT Department |
- | SSL_COMMON_NAME     | Common Name associated to key. Ignore if `SSL_AUTO_CREATE=false`. | nvr.ninja |
+ | SSL_COUNTRY     | Country Code for SSL. | CA |
+ | SSL_STATE     | Province/State Code for SSL. | BC |
+ | SSL_LOCATION     | Location of where SSL key is being used. | Vancouver |
+ | SSL_ORGANIZATION     | Company Name associated to key. | Shinobi Systems |
+ | SSL_ORGANIZATION_UNIT     | Department associated to key. | IT Department |
+ | SSL_COMMON_NAME     | Common Name associated to key. | nvr.ninja |
 
  > You must add (to the docker container) `/config/ssl/server.key` and `/config/ssl/server.cert`. The `/config` folder is mapped to `$HOME/Shinobi/config` on the host by default with the quick run methods. Place `key` and `cert` in `$HOME/Shinobi/config/ssl`. If `SSL_ENABLED=true` and these files don't exist they will be generated with `openssl`.
 
