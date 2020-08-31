@@ -21,8 +21,8 @@ Shinobi is the Open Source CCTV Solution written in Node.JS. Designed with multi
 It's a proven fact that generosity makes you a happier person :) https://www.nature.com/articles/ncomms15964
 
 Get a Mobile License to unlock extended features on the Mobile App as well as support the development!
-Shinobi Mobile App : https://cdn.shinobi.video/installers/ShinobiMobile/
-Get a Mobile License : https://licenses.shinobi.video/subscribe?planSubscribe=plan_G31AZ9mknNCa6z
+- Shinobi Mobile App : https://cdn.shinobi.video/installers/ShinobiMobile/
+- Get a Mobile License : https://licenses.shinobi.video/subscribe?planSubscribe=plan_G31AZ9mknNCa6z
 
 # Why make this?
 
