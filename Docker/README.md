@@ -56,7 +56,7 @@ docker run -d --name='Shinobi' -p '8080:8080/tcp' -v "/dev/shm/Shinobi/streams":
  | DB_DATABASE          | Database that the Shinobi process will interact with.                | ccio               |
  | DB_DISABLE_INCLUDED     | Disable included database to use your own. Set to `true` to disable.| false |
  | PLUGIN_KEYS     | The object containing connection keys for plugins running in client mode (non-host, default). | {} |
- | SSL_ENABLED     | Enable or disable SSL with `openssl`. | false |
+ | SSL_ENABLED     | Enable or Disable SSL. | false |
  | SSL_COUNTRY     | Country Code for SSL. | CA |
  | SSL_STATE     | Province/State Code for SSL. | BC |
  | SSL_LOCATION     | Location of where SSL key is being used. | Vancouver |
