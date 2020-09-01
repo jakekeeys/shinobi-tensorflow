@@ -1,12 +1,40 @@
 # Install Shinobi with Docker
 
-### There are two ways!
+### There are three ways!
 
 ## Docker Ninja Way
+
+> This method uses `docker-compose` and has the ability to quick install the TensorFlow Object Detection plugin.
 
 ```
 bash <(curl -s https://gitlab.com/Shinobi-Systems/Shinobi-Installer/raw/master/shinobi-docker.sh)
 ```
+
+## Docker Ninja Way - Version 2
+
+> Does not require `docker-compose`. This method is recommended.
+
+#### Installing Shinobi
+
+> Please remember to check out the Environment Variables table further down this README.
+
+```
+docker run -d --name='Shinobi' -p '8080:8080/tcp' -v "/dev/shm/Shinobi/streams":'/dev/shm/streams':'rw' -v "$HOME/Shinobi/config":'/config':'rw' -v "$HOME/Shinobi/customAutoLoad":'/home/Shinobi/libs/customAutoLoad':'rw' -v "$HOME/Shinobi/database":'/var/lib/mysql':'rw' -v "$HOME/Shinobi/videos":'/home/Shinobi/videos':'rw' -v "$HOME/Shinobi/plugins":'/home/Shinobi/plugins':'rw' -v '/etc/localtime':'/etc/localtime':'ro' shinobisystems/shinobi:dev
+```
+
+#### Installing Object Detection (TensorFlow.js)
+
+- `-p '8082:8082/tcp'` is an optional flag if you decide to run the plugin in host mode.
+- `-e PLUGIN_HOST='10.1.103.113'` Set this as your Shinobi IP Address.
+- `-e PLUGIN_PORT='8080'` Set this as your Shinobi Web Port number.
+
+```
+docker run -d --name='shinobi-tensorflow' -e PLUGIN_HOST='10.1.103.113' -e PLUGIN_PORT='8080' -v "$HOME/Shinobi/docker-plugins/tensorflow":'/config':'rw' shinobisystems/shinobi-tensorflow:latest
+```
+
+- CPU : https://gitlab.com/Shinobi-Systems/docker-plugin-tensorflow.js
+- GPU : https://gitlab.com/Shinobi-Systems/docker-plugin-tensorflow.js/-/tree/gpu
+
 
 ## From Source
 > Image is based on Ubuntu Bionic (20.04). Node.js 12 is used. MariaDB and FFmpeg are included.
@@ -45,7 +73,7 @@ docker run -d --name='Shinobi' -p '8080:8080/tcp' -v "/dev/shm/Shinobi/streams":
  | $HOME/Shinobi/videos         | A map to `/home/Shinobi/videos`. The storage location of your recorded videos.                                                                      |
  | $HOME/Shinobi/plugins        | A map to `/home/Shinobi/plugins`. Mapped so that plugins can easily be modified or swapped.                                                         |
 
-### Configurable Environment Variables
+### Environment Variables
 
  | Environment Variable | Description                                                          | Default            |
  |----------------------|----------------------------------------------------------------------|--------------------|

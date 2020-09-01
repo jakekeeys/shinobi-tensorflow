@@ -6,9 +6,11 @@ Shinobi is the Open Source CCTV Solution written in Node.JS. Designed with multi
 ## Install and Use
 
 - Installation : http://shinobi.video/docs/start
-- Install with Docker : https://gitlab.com/Shinobi-Systems/Shinobi/-/tree/dev/Docker
 - Post-Installation Tutorials : http://shinobi.video/docs/configure
 - Troubleshooting Guide : https://hub.shinobi.video/articles/view/v0AFPFchfVcFGUS
+
+#### Docker
+- Install with **Docker** : https://gitlab.com/Shinobi-Systems/Shinobi/-/tree/dev/Docker
 
 ## "is my camera supported?"
 
