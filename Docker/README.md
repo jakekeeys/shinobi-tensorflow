@@ -33,7 +33,7 @@ docker run -d --name='shinobi-tensorflow' -e PLUGIN_HOST='10.1.103.113' -e PLUGI
 ```
 
 - CPU : https://gitlab.com/Shinobi-Systems/docker-plugin-tensorflow.js
-- GPU : https://gitlab.com/Shinobi-Systems/docker-plugin-tensorflow.js/-/tree/gpu
+- GPU (NVIDIA CUDA) : https://gitlab.com/Shinobi-Systems/docker-plugin-tensorflow.js/-/tree/gpu
 
 
 ## From Source
