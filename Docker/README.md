@@ -12,8 +12,6 @@ bash <(curl -s https://gitlab.com/Shinobi-Systems/Shinobi-Installer/raw/master/s
 
 ## Docker Ninja Way - Version 2
 
-> Does not require `docker-compose`. This method is recommended.
-
 #### Installing Shinobi
 
 > Please remember to check out the Environment Variables table further down this README.
