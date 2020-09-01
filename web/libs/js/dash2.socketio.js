@@ -129,7 +129,7 @@ $.ccio.globalWebsocket=function(d,user){
             $.ccio.pm(3,d.apis,null,user);
             $('.os_platform').html(d.os.platform)
             $('.os_cpuCount').html(d.os.cpuCount)
-            $('.os_totalmem').html((d.os.totalmem/1048576).toFixed(2))
+            $('.os_totalmem').attr('title',`Total : ${(d.os.totalmem/1048576).toFixed(2)}`)
             if(d.os.cpuCount>1){
                 $('.os_cpuCount_trailer').html('s')
             }
@@ -148,13 +148,14 @@ $.ccio.globalWebsocket=function(d,user){
         break;
         case'os'://indicator
             //cpu
-            d.cpu=parseFloat(d.cpu).toFixed(0)+'%';
-            $('.cpu_load .progress-bar').css('width',d.cpu);
-            $('.cpu_load .percent').html(d.cpu);
+            var cpuPercent = parseFloat(d.cpu).toFixed(1) + '%'
+            $('.cpu_load .progress-bar').css('width',cpuPercent)
+            $('.cpu_load .percent').html(cpuPercent)
             //ram
-            d.ram=(100-parseFloat(d.ram)).toFixed(0)+'%';
-            $('.ram_load .progress-bar').css('width',d.ram);
-            $('.ram_load .percent').html(d.ram);
+            var ramPercent = d.ram.percent.toFixed(1) + '%'
+            $('.ram_load .progress-bar').css('width',ramPercent)
+            $('.ram_load .percent').html(ramPercent)
+            $('.ram_load .used').html(d.ram.used.toFixed(2))
         break;
         case'diskUsed':
             if(!d.limit||d.limit===''){d.limit=10000}
@@ -655,6 +656,37 @@ $.ccio.globalWebsocket=function(d,user){
             $.ccio.op('jpeg_on',true);
             $.ccio.init('jpegModeAll');
             $('body').addClass('jpegMode')
+        break;
+        case'gps':
+            var gps = d.gps
+            var activeMonitor = $.ccio.mon[user.ke + d.mid + user.auth_token]
+            var mapBoxMarker = activeMonitor.mapBoxMarker
+            var monitorElement = $(`.monitor_item[mid="${d.mid}"]`)
+            monitorElement.find(`.gps-map-info`).removeClass('hidden')
+            if(!mapBoxMarker){
+                var mapBox = L.map(`gps-map-${d.mid}`).setView([gps.lat, gps.lng], 5);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: 'OpenStreet Map'
+                }).addTo(mapBox);
+
+                var mapBoxMarker = L.marker([gps.lat, gps.lng]).addTo(mapBox);
+                activeMonitor.mapBoxMarker = mapBoxMarker
+                activeMonitor.mapBoxBearingElement = monitorElement.find(`.gps-info-bearing`)
+                activeMonitor.mapBoxSpeedElement = monitorElement.find(`.gps-info-speed`)
+            }else{
+                mapBoxMarker.setLatLng([gps.lat, gps.lng]).update()
+            }
+            if(gps.bearing){
+                setRadialBearing(activeMonitor.mapBoxBearingElement,gps.bearing,'Bearing : ')
+            }
+            if(gps.speed){
+                setRadialBearing(activeMonitor.mapBoxSpeedElement,gps.speed,'Speed (meters/second) : ')
+            }
+            clearTimeout(activeMonitor.mapBoxTimeout)
+            activeMonitor.mapBoxTimeout = setTimeout(function(){
+                monitorElement.find(`.gps-map-info`).addClass('hidden')
+            },30000)
         break;
     }
 }

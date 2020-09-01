@@ -4,8 +4,7 @@ process.on('uncaughtException', function (err) {
 });
 var configLocation = __dirname+'/../conf.json';
 var fs = require('fs');
-var jsonfile = require("jsonfile");
-var config = jsonfile.readFileSync(configLocation);
+var config = JSON.parse(fs.readFileSync(configLocation));
 var processArgv = process.argv.splice(2,process.argv.length)
 var arguments = {};
 
@@ -57,7 +56,20 @@ processArgv.forEach(function(val) {
     console.log(index + ': ' + value);
 });
 
-jsonfile.writeFile(configLocation,config,{spaces: 2},function(){
+try{
+    if(config.thisIsDocker){
+        const dockerConfigFile = '/config/conf.json'
+        fs.stat(dockerConfigFile,(err) => {
+            if(!err){
+                fs.writeFile(dockerConfigFile,JSON.stringify(config,null,3),function(){})
+            }
+        })
+    }
+}catch(err){
+    console.log(err)
+}
+
+fs.writeFile(configLocation,JSON.stringify(config,null,3),function(){
     console.log('Changes Complete. Here is what it is now.')
     console.log(JSON.stringify(config,null,2))
 })

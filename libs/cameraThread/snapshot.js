@@ -1,7 +1,9 @@
 const fs = require('fs')
 const spawn = require('child_process').spawn
+const isWindows = process.platform === "win32";
 var writeToStderr = function(text){
   // fs.appendFileSync(rawMonitorConfig.sdir + 'errors.log',text + '\n','utf8')
+  process.stderr.write(Buffer.from(`${text}`, 'utf8' ))
 }
 if(!process.argv[2] || !process.argv[3]){
     return writeToStderr('Missing FFMPEG Command String or no command operator')
@@ -16,7 +18,11 @@ const exitAction = function(){
     if(isWindows){
         spawn("taskkill", ["/pid", snapProcess.pid, '/f', '/t'])
     }else{
-        process.kill(-snapProcess.pid)
+        try{
+            process.kill(-snapProcess.pid)
+        }catch(err){
+
+        }
     }
 }
 process.on('SIGTERM', exitAction);
@@ -31,7 +37,6 @@ const temporaryImageFile = jsonData.temporaryImageFile
 const iconImageFile = jsonData.iconImageFile
 const useIcon = jsonData.useIcon
 const rawMonitorConfig = jsonData.rawMonitorConfig
-
 // var writeToStderr = function(text){
 //   process.stderr.write(Buffer.from(text))
 // }
@@ -44,7 +49,7 @@ snapProcess.stdout.on('data',(data)=>{
   writeToStderr(data.toString())
 })
 snapProcess.on('close',function(data){
-  if(useIcon === true){
+  if(useIcon){
     var fileCopy = fs.createReadStream(temporaryImageFile).pipe(fs.createWriteStream(iconImageFile))
     fileCopy.on('close',function(){
         process.exit();

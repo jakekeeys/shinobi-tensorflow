@@ -214,20 +214,27 @@ module.exports = function(s,config){
         if(!e){e=''}
         if(config.systemLog===true){
             if(typeof q==='string'&&s.databaseEngine){
-                s.sqlQuery('INSERT INTO Logs (ke,mid,info) VALUES (?,?,?)',['$','$SYSTEM',s.s({type:q,msg:w})]);
+                s.knexQuery({
+                    action: "insert",
+                    table: "Logs",
+                    insert: {
+                        ke: '$',
+                        mid: '$SYSTEM',
+                        info: s.s({type:q,msg:w}),
+                    }
+                })
                 s.tx({f:'log',log:{time:s.timeObject(),ke:'$',mid:'$SYSTEM',time:s.timeObject(),info:s.s({type:q,msg:w})}},'$');
             }
             return console.log(s.timeObject().format(),q,w,e)
         }
     }
     //system log
-    s.debugLog = function(q,w,e){
+    s.debugLog = function(...args){
         if(config.debugLog === true){
-            if(!w){w = ''}
-            if(!e){e = ''}
-            console.log(s.timeObject().format(),q,w,e)
+            var logRow = ([s.timeObject().format()]).concat(...args)
+            console.log(...logRow)
             if(config.debugLogVerbose === true){
-                console.log(new Error())
+                console.log(new Error('VERBOSE STACK TRACE, THIS IS NOT AN '))
             }
         }
     }

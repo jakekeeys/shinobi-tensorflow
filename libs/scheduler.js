@@ -3,7 +3,11 @@ module.exports = function(s,config,lang,app,io){
     //Get all Schedules
     s.getAllSchedules = function(callback){
         s.schedules = {}
-        s.sqlQuery('SELECT * FROM Schedules',function(err,rows){
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            table: "Schedules"
+        },(err,rows) => {
             rows.forEach(function(schedule){
                 s.updateSchedule(schedule)
             })
@@ -141,7 +145,16 @@ module.exports = function(s,config,lang,app,io){
     //
     s.findSchedule = function(groupKey,name,callback){
         //presetQueryVals = [ke, type, name]
-        s.sqlQuery("SELECT * FROM Schedules WHERE ke=? AND name=? LIMIT 1",[groupKey,name],function(err,schedules){
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            table: "Schedules",
+            where: [
+                ['ke','=',groupKey],
+                ['name','=',name],
+            ],
+            limit: 1
+        },function(err,schedules) {
             var schedule
             var notFound = false
             if(schedules && schedules[0]){
@@ -184,13 +197,18 @@ module.exports = function(s,config,lang,app,io){
                 s.closeJsonResponse(res,endData)
                 return
             }
-            var theQuery = "SELECT * FROM Schedules WHERE ke=?"
-            var theQueryValues = [req.params.ke]
+            var whereQuery = [
+                ['ke','=',req.params.ke]
+            ]
             if(req.params.name){
-                theQuery += ' AND name=?'
-                theQueryValues.push(req.params.name)
+                whereQuery.push(['name','=',req.params.name])
             }
-            s.sqlQuery(theQuery,theQueryValues,function(err,schedules){
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "Schedules",
+                where: whereQuery,
+            },function(err,schedules) {
                 endData.ok = true
                 schedules = schedules || []
                 schedules.forEach(function(schedule){
@@ -240,7 +258,11 @@ module.exports = function(s,config,lang,app,io){
                                 end: form.end,
                                 enabled: form.enabled
                             }
-                            s.sqlQuery('INSERT INTO Schedules ('+Object.keys(insertData).join(',')+') VALUES (?,?,?,?,?,?)',Object.values(insertData))
+                            s.knexQuery({
+                                action: "insert",
+                                table: "Schedules",
+                                insert: insertData
+                            })
                             s.tx({
                                 f: 'add_schedule',
                                 insertData: insertData,
@@ -253,14 +275,23 @@ module.exports = function(s,config,lang,app,io){
                                 details: s.stringJSON(form.details),
                                 start: form.start,
                                 end: form.end,
-                                enabled: form.enabled,
-                                ke: req.params.ke,
-                                name: req.params.name
+                                enabled: form.enabled
                             }
-                            s.sqlQuery('UPDATE Schedules SET details=?,start=?,end=?,enabled=? WHERE ke=? AND name=?',Object.values(insertData))
+                            s.knexQuery({
+                                action: "update",
+                                table: "Schedules",
+                                update: insertData,
+                                where: [
+                                    ['ke','=',req.params.ke],
+                                    ['name','=',req.params.name],
+                                ]
+                            })
                             s.tx({
                                 f: 'edit_schedule',
-                                insertData: insertData,
+                                insertData: Object.assign(insertData,{
+                                    ke: req.params.ke,
+                                    name: req.params.name,
+                                }),
                                 ke: req.params.ke,
                                 name: req.params.name
                             },'GRP_'+req.params.ke)
@@ -283,7 +314,14 @@ module.exports = function(s,config,lang,app,io){
                             endData.msg = user.lang['Schedule Configuration Not Found']
                             s.closeJsonResponse(res,endData)
                         }else{
-                            s.sqlQuery('DELETE FROM Schedules WHERE ke=? AND name=?',[req.params.ke,req.params.name],function(err){
+                            s.knexQuery({
+                                action: "delete",
+                                table: "Schedules",
+                                where : {
+                                    ke: req.params.ke,
+                                    name: req.params.name,
+                                }
+                            },function(err){
                                 if(!err){
                                     endData.msg = lang["Deleted Schedule Configuration"]
                                     endData.ok = true

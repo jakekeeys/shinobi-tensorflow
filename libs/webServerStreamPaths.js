@@ -214,6 +214,28 @@ module.exports = function(s,config,lang,app){
         },res,req);
     });
     /**
+    * API : Get JPEG Snapshot
+    */
+    app.get(config.webPaths.apiPrefix+':auth/icon/:ke/:id', function(req,res){
+        s.auth(req.params,async (user) => {
+            if(user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors&&user.details.monitors.indexOf(req.params.id)===-1){
+                res.end(user.lang['Not Permitted'])
+                return
+            }
+            res.writeHead(200, {
+                'Content-Type': 'image/jpeg',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            });
+            res.end(await s.getCameraSnapshot({
+                ke: req.params.ke,
+                mid: req.params.id,
+            },{
+                useIcon: true
+            }))
+        },res,req);
+    });
+    /**
     * API : Get FLV Stream
     */
     app.get([config.webPaths.apiPrefix+':auth/flv/:ke/:id/s.flv',config.webPaths.apiPrefix+':auth/flv/:ke/:id/:channel/s.flv'], function(req,res) {

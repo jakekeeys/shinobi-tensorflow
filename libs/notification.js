@@ -12,7 +12,7 @@ module.exports = function(s,config,lang){
                     s.userLog({ke:groupKey,mid:'$USER'},{type:lang.DiscordFailedText,msg:lang.DiscordNotEnabledText})
                     return
                 }
-                var sendBody = Object.assign({
+                const sendBody = Object.assign({
                     color: 3447003,
                     title: 'Alert from Shinobi',
                     description: "",
@@ -23,7 +23,7 @@ module.exports = function(s,config,lang){
                       text: "Shinobi Systems"
                     }
                 },data)
-                var discordChannel = bot.channels.get(s.group[groupKey].init.discordbot_channel)
+                const discordChannel = bot.channels.cache.get(s.group[groupKey].init.discordbot_channel)
                 if(discordChannel && discordChannel.send){
                     discordChannel.send({
                         embed: sendBody,
@@ -45,10 +45,10 @@ module.exports = function(s,config,lang){
                     })
                 }
             }
-            var onEventTriggerBeforeFilterForDiscord = function(d,filter){
+            const onEventTriggerBeforeFilterForDiscord = function(d,filter){
                 filter.discord = true
             }
-            var onEventTriggerForDiscord = function(d,filter){
+            const onEventTriggerForDiscord = async (d,filter) => {
                 // d = event object
                 //discord bot
                 if(filter.discord && s.group[d.ke].discordBot && d.mon.details.detector_discordbot === '1' && !s.group[d.ke].activeMonitors[d.id].detector_discordbot){
@@ -60,28 +60,11 @@ module.exports = function(s,config,lang){
                     }
                     //lock mailer so you don't get emailed on EVERY trigger event.
                     s.group[d.ke].activeMonitors[d.id].detector_discordbot = setTimeout(function(){
-                        //unlock so you can mail again.
                         clearTimeout(s.group[d.ke].activeMonitors[d.id].detector_discordbot);
                         delete(s.group[d.ke].activeMonitors[d.id].detector_discordbot);
                     },detector_discordbot_timeout)
-                    var files = []
-                    var sendAlert = function(){
-                        s.discordMsg({
-                            author: {
-                              name: s.group[d.ke].rawMonitorConfigurations[d.id].name,
-                              icon_url: config.iconURL
-                            },
-                            title: lang.Event+' - '+d.screenshotName,
-                            description: lang.EventText1+' '+d.currentTimestamp,
-                            fields: [],
-                            timestamp: d.currentTime,
-                            footer: {
-                              icon_url: config.iconURL,
-                              text: "Shinobi Systems"
-                            }
-                        },files,d.ke)
-                    }
                     if(d.mon.details.detector_discordbot_send_video === '1'){
+                        // change to function that captures on going video capture, waits, grabs new video file, slices portion (max for transmission) and prepares for delivery
                         s.mergeDetectorBufferChunks(d,function(mergedFilepath,filename){
                             s.discordMsg({
                                 author: {
@@ -103,21 +86,34 @@ module.exports = function(s,config,lang){
                             ],d.ke)
                         })
                     }
-                    s.getRawSnapshotFromMonitor(d.mon,{
+                    const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(d.mon,{
                         secondsInward: d.mon.details.snap_seconds_inward
-                    },function(data){
-                        if(data[data.length - 2] === 0xFF && data[data.length - 1] === 0xD9){
-                            d.screenshotBuffer = data
-                            files.push({
-                                attachment: d.screenshotBuffer,
-                                name: d.screenshotName+'.jpg'
-                            })
-                        }
-                        sendAlert()
                     })
+                    if(screenShot[screenShot.length - 2] === 0xFF && screenShot[screenShot.length - 1] === 0xD9){
+                        d.screenshotBuffer = screenShot
+                        s.discordMsg({
+                            author: {
+                              name: s.group[d.ke].rawMonitorConfigurations[d.id].name,
+                              icon_url: config.iconURL
+                            },
+                            title: lang.Event+' - '+d.screenshotName,
+                            description: lang.EventText1+' '+d.currentTimestamp,
+                            fields: [],
+                            timestamp: d.currentTime,
+                            footer: {
+                              icon_url: config.iconURL,
+                              text: "Shinobi Systems"
+                            }
+                        },[
+                            {
+                                attachment: screenShot,
+                                name: d.screenshotName+'.jpg'
+                            }
+                        ],d.ke)
+                    }
                 }
             }
-            var onTwoFactorAuthCodeNotificationForDiscord = function(r){
+            const onTwoFactorAuthCodeNotificationForDiscord = function(r){
                 // r = user
                 if(r.details.factor_discord === '1'){
                     s.discordMsg({
@@ -136,13 +132,13 @@ module.exports = function(s,config,lang){
                     },[],r.ke)
                 }
             }
-            var loadDiscordBotForUser = function(user){
-                ar=JSON.parse(user.details);
+            const loadDiscordBotForUser = function(user){
+                const userDetails = s.parseJSON(user.details);
                 //discordbot
                 if(!s.group[user.ke].discordBot &&
                    config.discordBot === true &&
-                   ar.discordbot === '1' &&
-                   ar.discordbot_token !== ''
+                   userDetails.discordbot === '1' &&
+                   userDetails.discordbot_token !== ''
                   ){
                     s.group[user.ke].discordBot = new Discord.Client()
                     s.group[user.ke].discordBot.on('ready', () => {
@@ -154,16 +150,16 @@ module.exports = function(s,config,lang){
                             msg: s.group[user.ke].discordBot.user.tag
                         })
                     })
-                    s.group[user.ke].discordBot.login(ar.discordbot_token)
+                    s.group[user.ke].discordBot.login(userDetails.discordbot_token)
                 }
             }
-            var unloadDiscordBotForUser = function(user){
+            const unloadDiscordBotForUser = function(user){
                 if(s.group[user.ke].discordBot && s.group[user.ke].discordBot.destroy){
                     s.group[user.ke].discordBot.destroy()
                     delete(s.group[user.ke].discordBot)
                 }
             }
-            var onDetectorNoTriggerTimeoutForDiscord = function(e){
+            const onDetectorNoTriggerTimeoutForDiscord = function(e){
                 //e = monitor object
                 var currentTime = new Date()
                 if(e.details.detector_notrigger_discord === '1'){
@@ -205,10 +201,18 @@ module.exports = function(s,config,lang){
             if(config.mail.from === undefined){config.mail.from = '"ShinobiCCTV" <no-reply@shinobi.video>'}
             s.nodemailer = require('nodemailer').createTransport(config.mail);
         }
-        var onDetectorNoTriggerTimeoutForEmail = function(e){
+        const onDetectorNoTriggerTimeoutForEmail = function(e){
             //e = monitor object
             if(config.mail && e.details.detector_notrigger_mail === '1'){
-                s.sqlQuery('SELECT mail FROM Users WHERE ke=? AND details NOT LIKE ?',[e.ke,'%"sub"%'],function(err,r){
+                s.knexQuery({
+                    action: "select",
+                    columns: "mail",
+                    table: "Users",
+                    where: [
+                        ['ke','=',e.ke],
+                        ['details','NOT LIKE','%"sub"%'],
+                    ]
+                },(err,r) => {
                     r = r[0]
                         var mailOptions = {
                             from: config.mail.from, // sender address
@@ -229,16 +233,15 @@ module.exports = function(s,config,lang){
                 })
             }
         }
-        var onTwoFactorAuthCodeNotificationForEmail = function(r){
+        const onTwoFactorAuthCodeNotificationForEmail = function(r){
             // r = user object
             if(r.details.factor_mail !== '0'){
-                var mailOptions = {
+                s.nodemailer.sendMail({
                     from: config.mail.from,
                     to: r.mail,
                     subject: r.lang['2-Factor Authentication'],
                     html: r.lang['Enter this code to proceed']+' <b>'+s.factorAuth[r.ke][r.uid].key+'</b>. '+r.lang.FactorAuthText1,
-                };
-                s.nodemailer.sendMail(mailOptions, (error, info) => {
+                }, (error, info) => {
                     if (error) {
                         s.systemLog(r.lang.MailError,error)
                         return
@@ -246,7 +249,7 @@ module.exports = function(s,config,lang){
                 })
             }
         }
-        var onFilterEventForEmail = function(x,d){
+        const onFilterEventForEmail = function(x,d){
             // x = filter function
             // d = filter event object
             if(x === 'email'){
@@ -275,17 +278,25 @@ module.exports = function(s,config,lang){
                 }
             }
         }
-        var onEventTriggerBeforeFilterForEmail = function(d,filter){
+        const onEventTriggerBeforeFilterForEmail = function(d,filter){
             if(d.mon.details.detector_mail === '1'){
                 filter.mail = true
             }else{
                 filter.mail = false
             }
         }
-        var onEventTriggerForEmail = function(d,filter){
+        const onEventTriggerForEmail = async (d,filter) => {
             if(filter.mail && config.mail && !s.group[d.ke].activeMonitors[d.id].detector_mail){
-                s.sqlQuery('SELECT mail FROM Users WHERE ke=? AND details NOT LIKE ?',[d.ke,'%"sub"%'],function(err,r){
-                    r=r[0];
+                s.knexQuery({
+                    action: "select",
+                    columns: "mail",
+                    table: "Users",
+                    where: [
+                        ['ke','=',d.ke],
+                        ['details','NOT LIKE','%"sub"%'],
+                    ]
+                },async (err,r) => {
+                    r = r[0];
                     var detector_mail_timeout
                     if(!d.mon.details.detector_mail_timeout||d.mon.details.detector_mail_timeout===''){
                         detector_mail_timeout = 1000*60*10;
@@ -293,13 +304,12 @@ module.exports = function(s,config,lang){
                         detector_mail_timeout = parseFloat(d.mon.details.detector_mail_timeout)*1000*60;
                     }
                     //lock mailer so you don't get emailed on EVERY trigger event.
-                    s.group[d.ke].activeMonitors[d.id].detector_mail=setTimeout(function(){
+                    s.group[d.ke].activeMonitors[d.id].detector_mail = setTimeout(function(){
                         //unlock so you can mail again.
                         clearTimeout(s.group[d.ke].activeMonitors[d.id].detector_mail);
                         delete(s.group[d.ke].activeMonitors[d.id].detector_mail);
                     },detector_mail_timeout);
-                    var files = []
-                    var sendMail = function(){
+                    const sendMail = function(files){
                         const infoRows = []
                         Object.keys(d.details).forEach(function(key){
                             var value = d.details[key]
@@ -321,7 +331,7 @@ module.exports = function(s,config,lang){
                                 subtitle: 'Shinobi Event',
                                 body: infoRows.join(''),
                             }),
-                            attachments: files
+                            attachments: files || []
                         }, (error, info) => {
                             if (error) {
                                 s.systemLog(lang.MailError,error)
@@ -330,6 +340,7 @@ module.exports = function(s,config,lang){
                         })
                     }
                     if(d.mon.details.detector_mail_send_video === '1'){
+                        // change to function that captures on going video capture, waits, grabs new video file, slices portion (max for transmission) and prepares for delivery
                         s.mergeDetectorBufferChunks(d,function(mergedFilepath,filename){
                             fs.readFile(mergedFilepath,function(err,buffer){
                                 if(buffer){
@@ -354,24 +365,18 @@ module.exports = function(s,config,lang){
                             })
                         })
                     }
-                    if(d.screenshotBuffer){
-                        files.push({
+                    if(!d.screenshotBuffer){
+                        const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(d.mon,{
+                            secondsInward: d.mon.details.snap_seconds_inward
+                        })
+                        d.screenshotBuffer = screenShot
+                    }
+                    sendMail([
+                        {
                             filename: d.screenshotName + '.jpg',
                             content: d.screenshotBuffer
-                        })
-                        sendMail()
-                    }else{
-                        s.getRawSnapshotFromMonitor(d.mon,{
-                            secondsInward: d.mon.details.snap_seconds_inward
-                        },function(data){
-                            d.screenshotBuffer = data
-                            files.push({
-                                filename: d.screenshotName + '.jpg',
-                                content: data
-                            })
-                            sendMail()
-                        })
-                    }
+                        }
+                    ])
                 })
             }
         }

@@ -237,7 +237,7 @@ module.exports = function(__dirname, config){
                 }
                 processImage(buffer,d,tx,d.frameLocation)
             break;
-            case'frame':''
+            case'frame':
                 try{
                     if(!s.group[d.ke]){
                         s.group[d.ke]={}
@@ -335,7 +335,7 @@ module.exports = function(__dirname, config){
         //start plugin as client
         var retryConnection = 0
         var clearRetryConnectionTimeout
-        maxRetryConnection = config.maxRetryConnection || 5
+        maxRetryConnection = parseInt(config.maxRetryConnection) || 5
         plugLog('Plugin starting as Client, Host Address : '+'ws://'+config.host+':'+config.port)
         if(!config.host){config.host='localhost'}
         const createConnection = () => {

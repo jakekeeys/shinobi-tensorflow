@@ -15,6 +15,7 @@ $.ccio.HWAccelChoices = [
             auto: {label:lang['Auto'],value:'auto'},
             drm: {label:lang['drm'],value:'drm'},
             cuvid: {label:lang['cuvid'],value:'cuvid'},
+            cuda: {label:lang['cuda'],value:'cuda'},
             vaapi: {label:lang['vaapi'],value:'vaapi'},
             qsv: {label:lang['qsv'],value:'qsv'},
             vdpau: {label:lang['vdpau'],value:'vdpau'},
@@ -68,8 +69,9 @@ window.mergeDeep = function(target, ...sources){
 
   return mergeDeep(target, ...sources);
 }
-window.getApiPrefix = function(){
-    return $.ccio.init('location',$user) + $user.auth_token
+window.getApiPrefix = function(path){
+    var mainPart = $.ccio.init('location',$user) + $user.auth_token
+    return path ? mainPart + '/' + path + '/' + $user.ke : mainPart
 }
 window.chartColors = {
     red: 'rgb(255, 99, 132)',

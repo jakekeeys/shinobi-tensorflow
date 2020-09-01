@@ -20,6 +20,10 @@
 .btn-success {background: #1d8a70!important;border-color:#1d8a70!important;}
 .btn-danger {background: #bf7573!important;border-color:#bf7573!important;}
 .btn-warning {background: #b3a228!important;border-color:#b3a228!important;}
+
+[status="1"] .btn[video="launch"],[data-status="1"] .btn[video="launch"]{background:#337ab7!important;border-color:#337ab7!important}
+[status="2"] .btn[launch="video"],[status="2"] .btn[video="launch"],[data-status="2"] .btn[video="launch"]{background:#a59100!important;border-color:#a59100!important}
+
 ::-webkit-scrollbar-thumb:hover {
     background-color:#27b392;
 }

@@ -25,15 +25,18 @@ module.exports = function(s,config,lang,app){
             var mail = form.mail || s.getPostData(req,'mail',false)
             if(form){
                 var keys = ['details']
-                var condition = []
-                var value = []
-                keys.forEach(function(v){
-                    condition.push(v+'=?')
-                    if(form[v] instanceof Object)form[v] = JSON.stringify(form[v])
-                    value.push(form[v])
+                const updateQuery = {
+                    details: s.stringJSON(form.details)
+                }
+                s.knexQuery({
+                    action: "update",
+                    table: "Users",
+                    update: updateQuery,
+                    where: [
+                        ['ke','=',req.params.ke],
+                        ['uid','=',uid],
+                    ]
                 })
-                value = value.concat([req.params.ke,uid])
-                s.sqlQuery("UPDATE Users SET "+condition.join(',')+" WHERE ke=? AND uid=?",value)
                 s.tx({
                     f: 'edit_sub_account',
                     ke: req.params.ke,
@@ -42,7 +45,15 @@ module.exports = function(s,config,lang,app){
                     form: form
                 },'ADM_'+req.params.ke)
                 endData.ok = true
-                s.sqlQuery("SELECT * FROM API WHERE ke=? AND uid=?",[req.params.ke,uid],function(err,rows){
+                s.knexQuery({
+                    action: "select",
+                    columns: "*",
+                    table: "API",
+                    where: [
+                        ['ke','=',req.params.ke],
+                        ['uid','=',uid],
+                    ]
+                },function(err,rows){
                     if(rows && rows[0]){
                         rows.forEach(function(row){
                             delete(s.api[row.code])
@@ -71,13 +82,36 @@ module.exports = function(s,config,lang,app){
             var form = s.getPostData(req) || {}
             var uid = form.uid || s.getPostData(req,'uid',false)
             var mail = form.mail || s.getPostData(req,'mail',false)
-            s.sqlQuery('DELETE FROM Users WHERE uid=? AND ke=? AND mail=?',[uid,req.params.ke,mail])
-            s.sqlQuery("SELECT * FROM API WHERE ke=? AND uid=?",[req.params.ke,uid],function(err,rows){
+            s.knexQuery({
+                action: "delete",
+                table: "Users",
+                where: {
+                    ke: req.params.ke,
+                    uid: uid,
+                    mail: mail,
+                }
+            })
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "API",
+                where: [
+                    ['ke','=',req.params.ke],
+                    ['uid','=',uid],
+                ]
+            },function(err,rows){
                 if(rows && rows[0]){
                     rows.forEach(function(row){
                         delete(s.api[row.code])
                     })
-                    s.sqlQuery('DELETE FROM API WHERE uid=? AND ke=?',[uid,req.params.ke])
+                    s.knexQuery({
+                        action: "delete",
+                        table: "API",
+                        where: {
+                            ke: req.params.ke,
+                            uid: uid,
+                        }
+                    })
                 }
             })
             s.tx({
@@ -112,8 +146,15 @@ module.exports = function(s,config,lang,app){
             var form = s.getPostData(req)
             if(form.mail !== '' && form.pass !== ''){
                 if(form.pass === form.password_again || form.pass === form.pass_again){
-                    s.sqlQuery('SELECT * FROM Users WHERE mail=?',[form.mail],function(err,r) {
-                        if(r&&r[0]){
+                    s.knexQuery({
+                        action: "select",
+                        columns: "*",
+                        table: "Users",
+                        where: [
+                            ['mail','=',form.mail],
+                        ]
+                    },function(err,r){
+                        if(r && r[0]){
                             //found one exist
                             endData.msg = 'Email address is in use.'
                         }else{
@@ -125,7 +166,17 @@ module.exports = function(s,config,lang,app){
                                 sub: "1",
                                 allmonitors: "1"
                             })
-                            s.sqlQuery('INSERT INTO Users (ke,uid,mail,pass,details) VALUES (?,?,?,?,?)',[req.params.ke,newId,form.mail,s.createHash(form.pass),details])
+                            s.knexQuery({
+                                action: "insert",
+                                table: "Users",
+                                insert: {
+                                    ke: req.params.ke,
+                                    uid: newId,
+                                    mail: form.mail,
+                                    pass: s.createHash(form.pass),
+                                    details: details,
+                                }
+                            })
                             s.tx({
                                 f: 'add_sub_account',
                                 details: details,
@@ -199,8 +250,22 @@ module.exports = function(s,config,lang,app){
                     s.userLog(s.group[req.params.ke].rawMonitorConfigurations[req.params.id],{type:'Monitor Deleted',msg:'by user : '+user.uid});
                     req.params.delete=1;s.camera('stop',req.params);
                     s.tx({f:'monitor_delete',uid:user.uid,mid:req.params.id,ke:req.params.ke},'GRP_'+req.params.ke);
-                    s.sqlQuery('DELETE FROM Monitors WHERE ke=? AND mid=?',[req.params.ke,req.params.id])
-    //                s.sqlQuery('DELETE FROM Files WHERE ke=? AND mid=?',[req.params.ke,req.params.id])
+                    s.knexQuery({
+                        action: "delete",
+                        table: "Monitors",
+                        where: {
+                            ke: req.params.ke,
+                            mid: req.params.id,
+                        }
+                    })
+                    // s.knexQuery({
+                    //     action: "delete",
+                    //     table: "Files",
+                    //     where: {
+                    //         ke: req.params.ke,
+                    //         mid: req.params.id,
+                    //     }
+                    // })
                     if(req.query.deleteFiles === 'true'){
                         //videos
                         s.dir.addStorage.forEach(function(v,n){
@@ -250,28 +315,28 @@ module.exports = function(s,config,lang,app){
             }
             var form = s.getPostData(req)
             if(form){
-                var insert = {
+                const insertQuery = {
                     ke : req.params.ke,
                     uid : user.uid,
                     code : s.gid(30),
                     ip : form.ip,
                     details : s.stringJSON(form.details)
                 }
-                var escapes = []
-                Object.keys(insert).forEach(function(column){
-                    escapes.push('?')
-                });
-                s.sqlQuery('INSERT INTO API ('+Object.keys(insert).join(',')+') VALUES ('+escapes.join(',')+')',Object.values(insert),function(err,r){
-                    insert.time = s.formattedTime(new Date,'YYYY-DD-MM HH:mm:ss');
+                s.knexQuery({
+                    action: "insert",
+                    table: "API",
+                    insert: insertQuery
+                },(err,r) => {
+                    insertQuery.time = s.formattedTime(new Date,'YYYY-DD-MM HH:mm:ss');
                     if(!err){
                         s.tx({
                             f: 'api_key_added',
                             uid: user.uid,
-                            form: insert
+                            form: insertQuery
                         },'GRP_' + req.params.ke)
                         endData.ok = true
                     }
-                    endData.api = insert
+                    endData.api = insertQuery
                     s.closeJsonResponse(res,endData)
                 })
             }else{
@@ -305,16 +370,15 @@ module.exports = function(s,config,lang,app){
                     s.closeJsonResponse(res,endData)
                     return
                 }
-                var row = {
-                    ke : req.params.ke,
-                    uid : user.uid,
-                    code : form.code
-                }
-                var where = []
-                Object.keys(row).forEach(function(column){
-                    where.push(column+'=?')
-                })
-                s.sqlQuery('DELETE FROM API WHERE '+where.join(' AND '),Object.values(row),function(err,r){
+                s.knexQuery({
+                    action: "delete",
+                    table: "API",
+                    where: {
+                        ke: req.params.ke,
+                        uid: user.uid,
+                        code: form.code,
+                    }
+                },(err,r) => {
                     if(!err){
                         s.tx({
                             f: 'api_key_deleted',
@@ -345,15 +409,16 @@ module.exports = function(s,config,lang,app){
             var endData = {
                 ok : false
             }
-            var row = {
+            const whereQuery = {
                 ke : req.params.ke,
                 uid : user.uid
             }
-            var where = []
-            Object.keys(row).forEach(function(column){
-                where.push(column+'=?')
-            })
-            s.sqlQuery('SELECT * FROM API WHERE '+where.join(' AND '),Object.values(row),function(err,rows){
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "API",
+                where: whereQuery
+            },function(err,rows) {
                 if(rows && rows[0]){
                     rows.forEach(function(row){
                         row.details = JSON.parse(row.details)
@@ -383,7 +448,15 @@ module.exports = function(s,config,lang,app){
                 s.closeJsonResponse(res,endData)
                 return
             }
-            s.sqlQuery("SELECT * FROM Presets WHERE ke=? AND type=?",[req.params.ke,'monitorStates'],function(err,presets){
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "Presets",
+                where: [
+                    ['ke','=',req.params.ke],
+                    ['type','=','monitorStates'],
+                ]
+            },function(err,presets) {
                 if(presets && presets[0]){
                     endData.ok = true
                     presets.forEach(function(preset){
@@ -435,7 +508,11 @@ module.exports = function(s,config,lang,app){
                                 details: s.s(details),
                                 type: 'monitorStates'
                             }
-                            s.sqlQuery('INSERT INTO Presets ('+Object.keys(insertData).join(',')+') VALUES (?,?,?,?)',Object.values(insertData))
+                            s.knexQuery({
+                                action: "insert",
+                                table: "Presets",
+                                insert: insertData
+                            })
                             s.tx({
                                 f: 'add_group_state',
                                 details: details,
@@ -447,7 +524,17 @@ module.exports = function(s,config,lang,app){
                             var details = Object.assign(preset.details,{
                                 monitors : form.monitors
                             })
-                            s.sqlQuery('UPDATE Presets SET details=? WHERE ke=? AND name=?',[s.s(details),req.params.ke,req.params.stateName])
+                            s.knexQuery({
+                                action: "update",
+                                table: "Presets",
+                                update: {
+                                    details: s.s(details)
+                                },
+                                where: [
+                                    ['ke','=',req.params.ke],
+                                    ['name','=',req.params.stateName],
+                                ]
+                            })
                             s.tx({
                                 f: 'edit_group_state',
                                 details: details,
@@ -465,7 +552,15 @@ module.exports = function(s,config,lang,app){
                             endData.msg = user.lang['State Configuration Not Found']
                             s.closeJsonResponse(res,endData)
                         }else{
-                            s.sqlQuery('DELETE FROM Presets WHERE ke=? AND name=?',[req.params.ke,req.params.stateName],function(err){
+                            s.knexQuery({
+                                action: "delete",
+                                table: "Presets",
+                                update: monitorQuery,
+                                where: {
+                                    ke: req.params.ke,
+                                    name: req.params.stateName,
+                                }
+                            },(err) => {
                                 if(!err){
                                     endData.msg = lang["Deleted State Configuration"]
                                     endData.ok = true

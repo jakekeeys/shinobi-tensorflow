@@ -182,9 +182,6 @@ img{max-width:100%}
 .dot-orange {background:#c49a68}
 .dot-grey {background:#777}
 
-
-
-
 .os_bars{width:600px;display:inline-block;padding:5px 0 0 10px}
 @media screen and (max-width: 600px){
     .os_bars{width:200px;}
@@ -489,3 +486,66 @@ ul.msg_list li .message {
     margin-left: 10px;
 }
 /* End of custom table sorter */
+
+.row-flex {
+    display: flex;
+}
+
+.row-flex-full-height {
+    display: flex;
+    height: 100%;
+}
+
+.row-flex [class*="col-"]{
+    height: 100%;
+    float: none;
+    overflow: auto;
+}
+
+.row-flex .col-md-1{
+    flex: 1;
+}
+
+.row-flex .col-md-2{
+    flex: 2;
+}
+
+.row-flex .col-md-3{
+    flex: 3;
+}
+
+.row-flex .col-md-4{
+    flex: 4;
+}
+
+.row-flex .col-md-5{
+    flex: 5;
+}
+
+.row-flex .col-md-6{
+    flex: 6;
+}
+
+.row-flex .col-md-7{
+    flex: 7;
+}
+
+.row-flex .col-md-8{
+    flex: 8;
+}
+
+.row-flex .col-md-9{
+    flex: 9;
+}
+
+.row-flex .col-md-10{
+    flex: 10;
+}
+
+.row-flex .col-md-11{
+    flex: 11;
+}
+
+.row-flex .col-md-12{
+    flex: 12;
+}
