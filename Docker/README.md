@@ -24,6 +24,8 @@ docker run -d --name='Shinobi' -p '8080:8080/tcp' -v "/dev/shm/Shinobi/streams":
 
 #### Installing Object Detection (TensorFlow.js)
 
+> This requires that you add the plugin key to the Shinobi container. This key is generated and displayed in the startup logs of the Object Detection docker container.
+
 - `-p '8082:8082/tcp'` is an optional flag if you decide to run the plugin in host mode.
 - `-e PLUGIN_HOST='10.1.103.113'` Set this as your Shinobi IP Address.
 - `-e PLUGIN_PORT='8080'` Set this as your Shinobi Web Port number.
