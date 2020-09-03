@@ -154,6 +154,7 @@ $(document).ready(function(e){
     function onFullScreenChange() {
         var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
         if(!fullscreenElement){
+            $('.videoPlayer-detection-info').removeClass('hide')
             $('.fullscreen').removeClass('fullscreen')
             setTimeout(function(){
                 $('canvas.stream-element').resize();
