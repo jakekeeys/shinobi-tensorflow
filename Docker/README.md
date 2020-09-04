@@ -32,6 +32,7 @@ docker run -d --name='Shinobi' -p '8080:8080/tcp' -v "/dev/shm/Shinobi/streams":
 docker run -d --name='shinobi-tensorflow' -e PLUGIN_HOST='10.1.103.113' -e PLUGIN_PORT='8080' -v "$HOME/Shinobi/docker-plugins/tensorflow":'/config':'rw' shinobisystems/shinobi-tensorflow:latest
 ```
 
+More Information about this plugin :
 - CPU : https://gitlab.com/Shinobi-Systems/docker-plugin-tensorflow.js
 - GPU (NVIDIA CUDA) : https://gitlab.com/Shinobi-Systems/docker-plugin-tensorflow.js/-/tree/gpu
 
