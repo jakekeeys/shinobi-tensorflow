@@ -2,6 +2,15 @@ var fs = require("fs")
 var Discord = require("discord.js")
 var template = require("./notifications/emailTemplate.js")
 module.exports = function(s,config,lang){
+    const checkEmail = (email) => {
+        if(email.toLowerCase().indexOf('@shinobi') > -1 && !config.allowSpammingViaEmail){
+            console.log('CHANGE YOUR ACCOUNT EMAIL!')
+            console.log(email + ' IS NOT ALLOWED TO BE USED')
+            console.log('YOU CANNOT EMAIL TO THIS ADDRESS')
+            return 'cannot@email.com'
+        }
+        return email
+    }
     //discord bot
     if(config.discordBot === true){
         try{
@@ -216,7 +225,7 @@ module.exports = function(s,config,lang){
                     r = r[0]
                         var mailOptions = {
                             from: config.mail.from, // sender address
-                            to: r.mail, // list of receivers
+                            to: checkEmail(r.mail), // list of receivers
                             subject: lang.NoMotionEmailText1+' '+e.name+' ('+e.id+')', // Subject line
                             html: '<i>'+lang.NoMotionEmailText2+' ' + (e.details.detector_notrigger_timeout || 10) + ' '+lang.minutes+'.</i>',
                         }
@@ -238,7 +247,7 @@ module.exports = function(s,config,lang){
             if(r.details.factor_mail !== '0'){
                 s.nodemailer.sendMail({
                     from: config.mail.from,
-                    to: r.mail,
+                    to: checkEmail(r.mail),
                     subject: r.lang['2-Factor Authentication'],
                     html: r.lang['Enter this code to proceed']+' <b>'+s.factorAuth[r.ke][r.uid].key+'</b>. '+r.lang.FactorAuthText1,
                 }, (error, info) => {
@@ -256,7 +265,7 @@ module.exports = function(s,config,lang){
                 if(d.videos && d.videos.length > 0){
                     d.mailOptions = {
                         from: config.mail.from, // sender address
-                        to: d.mail, // list of receivers
+                        to: checkEmail(d.mail),
                         subject: lang['Filter Matches']+' : '+d.name, // Subject line
                         html: lang.FilterMatchesText1+' '+d.videos.length+' '+lang.FilterMatchesText2,
                     };
@@ -324,7 +333,7 @@ module.exports = function(s,config,lang){
                         })
                         s.nodemailer.sendMail({
                             from: config.mail.from,
-                            to: r.mail,
+                            to: checkEmail(r.mail),
                             subject: lang.Event+' - '+d.screenshotName,
                             html: template.createFramework({
                                 title: lang.EventText1 + ' ' + d.currentTimestamp,
@@ -346,7 +355,7 @@ module.exports = function(s,config,lang){
                                 if(buffer){
                                     s.nodemailer.sendMail({
                                         from: config.mail.from,
-                                        to: r.mail,
+                                        to: checkEmail(r.mail),
                                         subject: filename,
                                         html: '',
                                         attachments: [
