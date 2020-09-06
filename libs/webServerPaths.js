@@ -1429,6 +1429,8 @@ module.exports = function(s,config,lang,app,io){
     /**
     * API : Get Video File
      */
+     const videoRowCaches = {}
+     const videoRowCacheTimeouts = {}
     app.get(config.webPaths.apiPrefix+':auth/videos/:ke/:id/:file', function (req,res){
         s.auth(req.params,function(user){
             const groupKey = req.params.ke
@@ -1446,34 +1448,52 @@ module.exports = function(s,config,lang,app,io){
                 time = s.utcToLocal(time)
             }
             time = new Date(time)
-            s.knexQuery({
-                action: "select",
-                columns: "*",
-                table: "Videos",
-                where: [
-                    ['ke','=',groupKey],
-                    ['mid','=',req.params.id],
-                    ['time','=',time]
-                ],
-                limit: 1
-            },(err,r) => {
-                if(r&&r[0]){
-                    req.dir=s.getVideoDirectory(r[0])+req.params.file
-                    fs.stat(req.dir,function(err,stats){
-                        if (!err){
-                            if(req.query.json === 'true'){
-                                s.closeJsonResponse(res,r[0])
-                            }else{
-                                s.streamMp4FileOverHttp(req.dir,req,res)
-                            }
+            const cacheName = Object.values(req.params).join('_')
+            const cacheVideoRow = (videoRow) => {
+                videoRowCaches[cacheName] = videoRow
+                clearTimeout(videoRowCacheTimeouts[cacheName])
+                videoRowCacheTimeouts[cacheName] = setTimeout(() => {
+                    console.log('clear cache',cacheName)
+                    delete(videoRowCaches[cacheName])
+                },60000)
+            }
+            const sendVideo = (videoRow) => {
+                cacheVideoRow(videoRow)
+                const filePath = s.getVideoDirectory(videoRow) + req.params.file
+                fs.stat(filePath,function(err,stats){
+                    if (!err){
+                        if(req.query.json === 'true'){
+                            s.closeJsonResponse(res,videoRow)
                         }else{
-                            res.end(user.lang['File Not Found in Filesystem'])
+                            s.streamMp4FileOverHttp(filePath,req,res)
                         }
-                    })
-                }else{
-                    res.end(user.lang['File Not Found in Database'])
-                }
-            })
+                    }else{
+                        res.end(user.lang['File Not Found in Filesystem'])
+                    }
+                })
+            }
+            if(videoRowCaches[cacheName]){
+                sendVideo(videoRowCaches[cacheName])
+            }else{
+                s.knexQuery({
+                    action: "select",
+                    columns: "*",
+                    table: "Videos",
+                    where: [
+                        ['ke','=',groupKey],
+                        ['mid','=',req.params.id],
+                        ['time','=',time]
+                    ],
+                    limit: 1
+                },(err,r) => {
+                    const videoRow = r[0]
+                    if(videoRow){
+                        sendVideo(videoRow)
+                    }else{
+                        res.end(user.lang['File Not Found in Database'])
+                    }
+                })
+            }
         },res,req);
     });
     /**

@@ -183,87 +183,46 @@ module.exports = function(s,config,lang,app,io){
         }
         // FTP Server
         if(config.ftpServer === true){
-            const authenticateConnection = (connection) => {
-                return new Promise((resolve,reject) => {
-                    var username = null;
-                    s.debugLog('client connected: ' + connection.remoteAddress);
-                    connection.on('command:user', function(user, success, failure) {
-                      if (user) {
-                        username = user;
-                        success();
-                      } else {
-                        failure();
-                      }
-                    })
-
-                    connection.on('command:pass', function(password, success, failure) {
-                        s.basicOrApiAuthentication(username,password,function(err,user){
-                            if(user){
-                                connection._user = user
-                                success(username);
-                            } else {
-                                failure();
-                            }
-                            resolve({
-                                ok: !!user,
-                                username: username,
-                                password: password
-                            })
-                        })
-                    })
-                })
-            }
             createDropInEventsDirectory()
             if(!config.ftpServerPort)config.ftpServerPort = 21
             if(!config.ftpServerUrl)config.ftpServerUrl = `ftp://0.0.0.0:${config.ftpServerPort}`
             config.ftpServerUrl = config.ftpServerUrl.replace('{{PORT}}',config.ftpServerPort)
-            const ftpd = require('shinobi-ftpd')
-            const ftpServer = new ftpd.FtpServer(config.ftpServerUrl, Object.assign({
-                getInitialCwd: function(connection, callback) {
-                    callback(null, s.dir.dropInEvents + '/' + connection._user.ke)
-                },
-                getRoot: function() {
-                    return s.dir.dropInEvents
-                },
-                pasvPortRangeStart: 1025,
-                pasvPortRangeEnd: 1050,
-                allowUnauthorizedTls: true,
-                uploadMaxSlurpSize: 7000
-            },config.ftpServerOptions || {}))
-
-            ftpServer.on('error', function(error) {
-                s.debugLog(['FTP Server error:', error]);
+            const FtpSrv = require('ftp-srv')
+            const ftpServer = new FtpSrv({
+                url: config.ftpServerUrl,
+                log: require('bunyan').createLogger({
+                  name: 'ftp-srv',
+                  level: 100
+                }),
             })
 
-            ftpServer.on('client:connected', async (connection) => {
-                const response = await authenticateConnection(connection)
-                if(connection._user){
-                    connection.cwd = s.dir.dropInEvents + connection._user.ke
-                    connection.on('file:stor', async (eventType, data) => {
-                        const fileName = data.file
-                        const pathPieces = fileName.substr(1).split('/')
-                        const groupKey = connection._user.ke
-                        const monitorId = pathPieces[0]
-                        const firstDroppedPart = pathPieces[1]
-                        const monitorEventDropDir = s.dir.dropInEvents + groupKey + '/' + monitorId + '/'
-                        const deleteKey = monitorEventDropDir + firstDroppedPart
-                        onFileOrFolderFound(
-                            monitorEventDropDir + firstDroppedPart,
-                            deleteKey,
-                            {
-                                ke: groupKey,
-                                mid: monitorId
-                            }
-                        )
-                    })
-                }else{
-                    s.systemLog(`Failed FTP Login Attempt : ${response.username}/${response.password}`)
-                    throw `Failed to Authenticate FTP : ${response.username}/${response.password}`;
-                }
+            ftpServer.on('login', ({connection, username, password}, resolve, reject) => {
+                s.basicOrApiAuthentication(username,password,function(err,user){
+                    if(user){
+                        connection.on('STOR', (error, fileName) => {
+                            if(!fileName)return;
+                            var pathPieces = fileName.replace(s.dir.dropInEvents,'').split('/')
+                            var ke = pathPieces[0]
+                            var mid = pathPieces[1]
+                            var firstDroppedPart = pathPieces[2]
+                            var monitorEventDropDir = s.dir.dropInEvents + ke + '/' + mid + '/'
+                            var deleteKey = monitorEventDropDir + firstDroppedPart
+                            onFileOrFolderFound(monitorEventDropDir + firstDroppedPart,deleteKey,{ke: ke, mid: mid})
+                        })
+                        resolve({root: s.dir.dropInEvents + user.ke})
+                    }else{
+                        // reject(new Error('Failed Authorization'))
+                    }
+                })
             })
-
-            ftpServer.listen(config.ftpServerPort)
-            s.systemLog(`FTP Server running on port ${config.ftpServerPort}...`)
+            ftpServer.on('client-error', ({connection, context, error}) => {
+                console.log('client-error',error)
+            })
+            ftpServer.listen().then(() => {
+                s.systemLog(`FTP Server running on port ${config.ftpServerPort}...`)
+            }).catch(function(err){
+                s.systemLog(err)
+            })
         }
         //add extensions
         s.onMonitorInit(onMonitorInit)

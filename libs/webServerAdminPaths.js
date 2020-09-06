@@ -555,7 +555,6 @@ module.exports = function(s,config,lang,app){
                             s.knexQuery({
                                 action: "delete",
                                 table: "Presets",
-                                update: monitorQuery,
                                 where: {
                                     ke: req.params.ke,
                                     name: req.params.stateName,
