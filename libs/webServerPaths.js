@@ -1453,7 +1453,6 @@ module.exports = function(s,config,lang,app,io){
                 videoRowCaches[cacheName] = videoRow
                 clearTimeout(videoRowCacheTimeouts[cacheName])
                 videoRowCacheTimeouts[cacheName] = setTimeout(() => {
-                    console.log('clear cache',cacheName)
                     delete(videoRowCaches[cacheName])
                 },60000)
             }
