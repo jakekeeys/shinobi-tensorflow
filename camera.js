@@ -26,7 +26,7 @@ require('./libs/codeTester.js')(s,config,lang)
 //get version
 require('./libs/version.js')(s,config,lang)
 //video processing engine
-require('./libs/ffmpeg.js')(s,config,lang,function(ffmpeg){
+require('./libs/ffmpeg.js')(s,config,lang,async function(ffmpeg){
     //ffmpeg coProcessor
     require('./libs/ffmpegCoProcessor.js')(s,config,lang,ffmpeg)
     //database connection : mysql, sqlite3..
@@ -86,5 +86,7 @@ require('./libs/ffmpeg.js')(s,config,lang,function(ffmpeg){
     //scheduling engine
     require('./libs/scheduler.js')(s,config,lang,app,io)
     //on-start actions, daemon(s) starter
-    require('./libs/startup.js')(s,config,lang)
+    await require('./libs/startup.js')(s,config,lang)
+    //p2p, commander
+    require('./libs/commander.js')(s,config,lang)
 })
