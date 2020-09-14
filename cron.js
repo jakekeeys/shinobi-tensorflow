@@ -537,7 +537,7 @@ const deleteOldEventCounts = function(v,callback){
         },(err,rrr) => {
             callback()
             if(err && err.code !== 'ER_NO_SUCH_TABLE')return console.error(err);
-            if(rrr.affectedRows && rrr.affectedRows.length > 0 || config.debugLog === true){
+            if(rrr && rrr.affectedRows && rrr.affectedRows.length > 0 || config.debugLog === true){
                 s.cx({f:'deleteEvents',msg:(rrr.affectedRows || 0)+' SQL rows older than '+v.d.event_days+' days deleted',ke:v.ke,time:moment()})
             }
         })
