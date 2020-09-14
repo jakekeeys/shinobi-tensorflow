@@ -22,6 +22,12 @@ if [ "$disableIpv6" = "y" ] || [ "$disableIpv6" = "Y" ]; then
     sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
     sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
 fi
+echo "Creating User 'shinobicctv'"
+useradd -m -p shinobicctv -s /bin/bash shinobicctv
+usermod -aG sudo shinobicctv
+echo "Becoming User 'shinobicctv'"
+echo "Remember to use 'shinobicctv' when running commands against pm2."
+su shinobicctv
 if [ "$getubuntuversion" = "18" ] || [ "$getubuntuversion" > "18" ]; then
     apt install sudo wget -y
     sudo apt install -y software-properties-common
@@ -128,5 +134,7 @@ echo "|| Open http://$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9
 echo "||==================================="
 echo "|| Default Superuser : admin@shinobi.video"
 echo "|| Default Password : admin"
+echo "|| OS Username : shinobicctv"
+echo "|| OS User Password : *NONE*"
 echo "====================================="
 echo "====================================="
