@@ -611,6 +611,7 @@ $(document).ready(function(e){
     $('body')
         .on('dblclick','.videoPlayer',function(){
             var el = $(this)
+            $('.videoPlayer-detection-info').addClass('hide')
             $.ccio.init('fullscreen',this)
         })
         .on('click','[data-monitor]',function(){
