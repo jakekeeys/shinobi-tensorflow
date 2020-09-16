@@ -118,10 +118,11 @@ module.exports = function(s,config,lang,app,io){
             var scheduleNames = Object.keys(s.schedules[key])
             scheduleNames.forEach(function(name){
                 var schedule = s.schedules[key][name]
-                if(!schedule.active && schedule.enabled === 1 && schedule.start && schedule.details.monitorStates){
+                if(schedule.enabled === 1 && schedule.start && schedule.details.monitorStates){
                     var timePasses = checkTimeAgainstSchedule(schedule)
                     var daysPasses = checkDaysAgainstSchedule(schedule)
-                    if(timePasses && daysPasses){
+                    var passed = timePasses && daysPasses
+                    if(passed && !schedule.active){
                         schedule.active = true
                         var monitorStates = schedule.details.monitorStates
                         monitorStates.forEach(function(stateName){
@@ -135,7 +136,7 @@ module.exports = function(s,config,lang,app,io){
                                 // console.log(endData)
                             })
                         })
-                    }else{
+                    }else if(!passed && schedule.active){
                         schedule.active = false
                     }
                 }
