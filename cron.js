@@ -135,6 +135,16 @@ s.sqlQuery = function(query,values,onMoveOn){
         }
     })
 }
+const cleanSqlWhereObject = (where) => {
+    const newWhere = {}
+    Object.keys(where).forEach((key) => {
+        if(key !== '__separator'){
+            const value = where[key]
+            newWhere[key] = value
+        }
+    })
+    return newWhere
+}
 const processSimpleWhereCondition = (dbQuery,where,didOne) => {
     var whereIsArray = where instanceof Array;
     if(where[0] === 'or' || where.__separator === 'or'){
@@ -261,7 +271,6 @@ const knexQuery = (options,callback) => {
         knexError(dbQuery,options,err)
     }
 }
-
 s.debugLog = function(arg1,arg2){
     if(config.debugLog === true){
         if(!arg2)arg2 = ''
@@ -537,7 +546,7 @@ const deleteOldEventCounts = function(v,callback){
         },(err,rrr) => {
             callback()
             if(err && err.code !== 'ER_NO_SUCH_TABLE')return console.error(err);
-            if(rrr && rrr.affectedRows && rrr.affectedRows.length > 0 || config.debugLog === true){
+            if(rrr.affectedRows && rrr.affectedRows.length > 0 || config.debugLog === true){
                 s.cx({f:'deleteEvents',msg:(rrr.affectedRows || 0)+' SQL rows older than '+v.d.event_days+' days deleted',ke:v.ke,time:moment()})
             }
         })
