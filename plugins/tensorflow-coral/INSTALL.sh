@@ -10,7 +10,7 @@ echo "Coral dependencies installed."
 echo "Getting coral object detection models..."
 mkdir -p models
 wget "https://github.com/google-coral/edgetpu/raw/master/test_data/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite"
-mv ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite models/
+mv mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite models/
 wget "https://dl.google.com/coral/canned_models/coco_labels.txt"
 mv coco_labels.txt models/
 echo "Models downloaded."
