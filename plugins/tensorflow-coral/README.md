@@ -8,6 +8,16 @@ Go to the Shinobi directory. **/home/Shinobi** is the default directory.
 cd /home/Shinobi/plugins/tensorflow
 ```
 
+Install TensorFlows python version first:
+https://www.tensorflow.org/lite/guide/python
+Make sure that you are downloading the correct file for your system architecture and python version.
+
+Install other python dependencies
+```
+pip install pillow
+pip install numpy
+```
+
 Copy the config file.
 
 ```

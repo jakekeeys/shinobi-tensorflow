@@ -5,6 +5,7 @@ echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sud
 curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 sudo apt-get update
 sudo apt-get install libedgetpu1-max
+sudo apt-get install libatlas-base-dev
 echo "Coral dependencies installed."
 echo "Getting coral object detection models..."
 mkdir -p models
