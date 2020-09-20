@@ -13,6 +13,9 @@ const URL = require('url')
 const { copyObject, createQueue } = require('./common.js')
 module.exports = function(s,config,lang){
     const { cameraDestroy } = require('./monitor/utils.js')(s,config,lang)
+    const {
+        setPresetForCurrentPosition
+    } = require('./control/ptz.js')(s,config,lang)
     const startMonitorInQueue = createQueue(1, 3)
     s.initiateMonitorObject = function(e){
         if(!s.group[e.ke]){s.group[e.ke]={}};
@@ -455,7 +458,6 @@ module.exports = function(s,config,lang){
                         ke: e.ke
                     },'GRP_'+e.ke)
                 }else{
-                    console.log('not image')
                     s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
                }
             }else{
@@ -1606,6 +1608,25 @@ module.exports = function(s,config,lang){
                             e.port = '554'
                         break;
                     }
+                }
+                if(e.details.detector_ptz_follow === '1'){
+                    setTimeout(() => {
+                        setPresetForCurrentPosition({
+                            ke: e.ke,
+                            id: e.id
+                        },(endData) => {
+                            if(endData.ok === false){
+                                setTimeout(() => {
+                                    setPresetForCurrentPosition({
+                                        ke: e.ke,
+                                        id: e.id
+                                    },(endData) => {
+                                        console.log(endData)
+                                    })
+                                },5000)
+                            }
+                        })
+                    },5000)
                 }
                 launchMonitorProcesses(e)
             break;

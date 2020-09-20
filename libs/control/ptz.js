@@ -1,7 +1,7 @@
 var os = require('os');
 var exec = require('child_process').exec;
 var request = require('request')
-module.exports = function(s,config,lang,app,io){
+module.exports = function(s,config,lang){
     const moveLock = {}
     const startMove = async function(options,callback){
         const device = s.group[options.ke].activeMonitors[options.id].onvifConnection
@@ -41,6 +41,7 @@ module.exports = function(s,config,lang,app,io){
     }
     const moveOnvifCamera = function(options,callback){
         const monitorConfig = s.group[options.ke].rawMonitorConfigurations[options.id]
+        const invertedVerticalAxis = monitorConfig.control_invert_y === '1'
         const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
         switch(options.direction){
             case'center':
@@ -68,8 +69,8 @@ module.exports = function(s,config,lang,app,io){
                     var onvifDirections = {
                         "left": [-1.0,'x'],
                         "right": [1.0,'x'],
-                        "down": [-1.0,'y'],
-                        "up": [1.0,'y'],
+                        "down": [invertedVerticalAxis ? 1.0 : -1.0,'y'],
+                        "up": [invertedVerticalAxis ? -1.0 : 1.0,'y'],
                         "zoom_in": [1.0,'z'],
                         "zoom_out": [-1.0,'z']
                     }
@@ -258,10 +259,114 @@ module.exports = function(s,config,lang,app,io){
             }
         }
     }
-    s.cameraControl = ptzControl
+    const getPresetPositions = (options,callback) => {
+        const profileToken = options.ProfileToken || "__CURRENT_TOKEN"
+        return s.runOnvifMethod({
+            auth: {
+                ke: options.ke,
+                id: options.id,
+                service: 'ptz',
+                action: 'getPresets',
+            },
+            options: {
+                ProfileToken: profileToken
+            },
+        },callback)
+    }
+    const setPresetForCurrentPosition = (options,callback) => {
+        const nonStandardOnvif = s.group[options.ke].rawMonitorConfigurations[options.id].details.onvif_non_standard === '1'
+        const profileToken = options.ProfileToken || "__CURRENT_TOKEN"
+        s.runOnvifMethod({
+            auth: {
+                ke: options.ke,
+                id: options.id,
+                service: 'ptz',
+                action: 'setPreset',
+            },
+            options: {
+                ProfileToken: profileToken,
+                PresetToken: nonStandardOnvif ? null : options.PresetToken || profileToken,
+                PresetName: options.PresetName || nonStandardOnvif ? '1' : profileToken
+            },
+        },(endData) => {
+            callback(endData)
+        })
+    }
+    const moveToPresetPosition = (options,callback) => {
+        const nonStandardOnvif = s.group[options.ke].rawMonitorConfigurations[options.id].details.onvif_non_standard === '1'
+        const profileToken = options.ProfileToken || "__CURRENT_TOKEN"
+        return s.runOnvifMethod({
+            auth: {
+                ke: options.ke,
+                id: options.id,
+                service: 'ptz',
+                action: 'gotoPreset',
+            },
+            options: {
+                ProfileToken: profileToken,
+                PresetToken: options.PresetToken || nonStandardOnvif ? '1' : profileToken,
+                Speed: {
+                   "x": 1,
+                   "y": 1,
+                   "z": 1
+                },
+            },
+        },callback)
+    }
+    const getLargestMatrix = (matrices) => {
+        var largestMatrix = {width: 0, height: 0}
+        matrices.forEach((matrix) => {
+            if(matrix.width > largestMatrix.width && matrix.height > largestMatrix.height)largestMatrix = matrix
+        })
+        return largestMatrix.x ? largestMatrix : null
+    }
+    const moveCameraPtzToMatrix = function(event,trackingTarget){
+        if(moveLock[event.ke + event.id])return;
+        clearTimeout(moveLock[event.ke + event.id])
+        moveLock[event.ke + event.id] = setTimeout(() => {
+            delete(moveLock[event.ke + event.id])
+        },1000)
+        const imgHeight = event.details.imgHeight
+        const imgWidth = event.details.imgWidth
+        const thresholdX = imgWidth * 0.125
+        const thresholdY = imgHeight * 0.125
+        const imageCenterX = imgWidth / 2
+        const imageCenterY = imgHeight / 2
+        const matrices = event.details.matrices
+        const largestMatrix = getLargestMatrix(matrices.filter(matrix => matrix.tag === (trackingTarget || 'person')))
+        // console.log(matrices.find(matrix => matrix.tag === 'person'))
+        if(!largestMatrix)return;
+        const matrixCenterX = largestMatrix.x + (largestMatrix.width / 2)
+        const matrixCenterY = largestMatrix.y + (largestMatrix.height / 2)
+        const rawDistanceX = (matrixCenterX - imageCenterX)
+        const rawDistanceY = (matrixCenterY - imageCenterY)
+        const distanceX = imgWidth / rawDistanceX
+        const distanceY = imgHeight / rawDistanceY
+        const axisX = rawDistanceX > thresholdX || rawDistanceX < -thresholdX ? distanceX : 0
+        const axisY = largestMatrix.y < 30 && largestMatrix.height > imgHeight * 0.8 ? 0.5 : rawDistanceY > thresholdY || rawDistanceY < -thresholdY ? -distanceY : 0
+        if(axisX !== 0 || axisY !== 0){
+            ptzControl({
+                axis: [
+                    {direction: 'x', amount: axisX === 0 ? 0 : axisX > 0 ? 0.01 : -0.01},
+                    {direction: 'y', amount: axisY === 0 ? 0 : axisY > 0 ? 0.01 : -0.01},
+                    {direction: 'z', amount: 0},
+                ],
+                // axis: [{direction: 'x', amount: 1.0}],
+                id: event.id,
+                ke: event.ke
+            },(msg) => {
+                s.userLog(event,msg)
+                // console.log(msg)
+            })
+        }
+    }
     return {
-        control: ptzControl,
+        ptzControl: ptzControl,
         startMove: startMove,
         stopMove: stopMove,
+        getPresetPositions: getPresetPositions,
+        setPresetForCurrentPosition: setPresetForCurrentPosition,
+        moveToPresetPosition: moveToPresetPosition,
+        moveCameraPtzToMatrix: moveCameraPtzToMatrix
     }
 }

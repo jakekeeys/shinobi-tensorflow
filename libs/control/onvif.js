@@ -17,11 +17,24 @@ module.exports = function(s,config,lang,app,io){
         try{
             const info = await device.init()
             response.ok = true
+            response.device = device
         }catch(err){
             response.msg = 'Device responded with an error'
-            response.error = error
+            response.error = err
         }
         return response
+    }
+    const replaceDynamicInOptions = (Camera,options) => {
+        const newOptions = {}
+        Object.keys(options).forEach((key) => {
+            const value = options[key]
+            if(typeof value === 'string'){
+                newOptions[key] = value.replace(/__CURRENT_TOKEN/g,Camera.current_profile.token)
+            }else if(value !== undefined && value !== null){
+                newOptions[key] = value
+            }
+        })
+        return newOptions
     }
     const runOnvifMethod = (onvifOptions,callback) => {
         var onvifAuth = onvifOptions.auth
@@ -83,7 +96,8 @@ module.exports = function(s,config,lang,app,io){
                 var options
                 var command
                 if(argNames[0] === 'options' || argNames[0] === 'params'){
-                    options = onvifOptions.options || {}
+                    options = replaceDynamicInOptions(Camera,onvifOptions.options || {})
+                    response.options = options
                 }
                 if(onvifAuth.service){
                     command = Camera.services[onvifAuth.service][onvifAuth.action](options)
@@ -112,15 +126,15 @@ module.exports = function(s,config,lang,app,io){
         config.webPaths.apiPrefix+':auth/onvif/:ke/:id/:service/:action'
     ],function (req,res){
         s.auth(req.params,function(user){
+            const options = s.getPostData(req,'options',true) || s.getPostData(req,'params',true)
             runOnvifMethod({
                 auth: {
                     ke: req.params.ke,
                     id: req.params.id,
-                    auth: req.params.auth,
                     action: req.params.action,
                     service: req.params.service,
                 },
-                options: s.getPostData(req,'options',true) || s.getPostData(req,'params',true),
+                options: options,
             },(endData) => {
                 s.closeJsonResponse(res,endData)
             })
