@@ -36,7 +36,7 @@ module.exports = function(s,config,lang,app,io){
         })
         return newOptions
     }
-    const runOnvifMethod = (onvifOptions,callback) => {
+    const runOnvifMethod = async (onvifOptions,callback) => {
         var onvifAuth = onvifOptions.auth
         var response = {ok: false}
         var errorMessage = function(msg,error){
@@ -108,7 +108,7 @@ module.exports = function(s,config,lang,app,io){
             }
         }
         if(!s.group[onvifAuth.ke].activeMonitors[onvifAuth.id].onvifConnection){
-            const response = createOnvifDevice(onvifAuth)
+            const response = await createOnvifDevice(onvifAuth)
             if(response.ok){
                 doAction(response.device)
             }else{

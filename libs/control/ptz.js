@@ -3,6 +3,7 @@ var exec = require('child_process').exec;
 var request = require('request')
 module.exports = function(s,config,lang){
     const moveLock = {}
+    const ptzTimeoutsUntilResetToHome = {}
     const startMove = async function(options,callback){
         const device = s.group[options.ke].activeMonitors[options.id].onvifConnection
         if(!device){
@@ -357,6 +358,15 @@ module.exports = function(s,config,lang){
             },(msg) => {
                 s.userLog(event,msg)
                 // console.log(msg)
+                clearTimeout(ptzTimeoutsUntilResetToHome[event.ke + event.id])
+                ptzTimeoutsUntilResetToHome[event.ke + event.id] = setTimeout(() => {
+                    moveToPresetPosition({
+                        ke: event.ke,
+                        id: event.id,
+                    },(endData) => {
+                        console.log(endData)
+                    })
+                },7000)
             })
         }
     }

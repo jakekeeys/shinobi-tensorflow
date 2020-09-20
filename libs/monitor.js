@@ -1621,7 +1621,16 @@ module.exports = function(s,config,lang){
                                         ke: e.ke,
                                         id: e.id
                                     },(endData) => {
-                                        console.log(endData)
+                                        if(endData.ok === false){
+                                            setTimeout(() => {
+                                                setPresetForCurrentPosition({
+                                                    ke: e.ke,
+                                                    id: e.id
+                                                },(endData) => {
+                                                    console.log(endData)
+                                                })
+                                            },5000)
+                                        }
                                     })
                                 },5000)
                             }

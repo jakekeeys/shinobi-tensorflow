@@ -12,9 +12,7 @@ var B = SAT.Box;
 module.exports = function(s,config,lang){
     const {
         moveCameraPtzToMatrix,
-        moveToPresetPosition
     } = require('./control/ptz.js')(s,config,lang)
-    const ptzTimeoutsUntilResetToHome = {}
     const countObjects = async (event) => {
         const matrices = event.details.matrices
         const eventsCounted = s.group[event.ke].activeMonitors[event.id].eventsCounted || {}
@@ -283,16 +281,6 @@ module.exports = function(s,config,lang){
             countObjects(d)
         }
         if(currentConfig.detector_ptz_follow === '1'){
-            // moveToPresetPosition
-            clearTimeout(ptzTimeoutsUntilResetToHome[d.ke + d.id])
-            ptzTimeoutsUntilResetToHome[d.ke + d.id] = setTimeout(() => {
-                moveToPresetPosition({
-                    ke: d.ke,
-                    id: d.id,
-                },(endData) => {
-                    console.log(endData)
-                })
-            },7000)
             moveCameraPtzToMatrix(d,currentConfig.detector_ptz_follow_target)
         }
         if(filter.useLock){
