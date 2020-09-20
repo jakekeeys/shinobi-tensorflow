@@ -41,7 +41,7 @@ module.exports = function(s,config,lang){
     }
     const moveOnvifCamera = function(options,callback){
         const monitorConfig = s.group[options.ke].rawMonitorConfigurations[options.id]
-        const invertedVerticalAxis = monitorConfig.control_invert_y === '1'
+        const invertedVerticalAxis = monitorConfig.details.control_invert_y === '1'
         const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
         switch(options.direction){
             case'center':
