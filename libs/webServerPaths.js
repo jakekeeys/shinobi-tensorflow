@@ -12,6 +12,9 @@ var proxy = httpProxy.createProxyServer({})
 var ejs = require('ejs');
 var fileupload = require("express-fileupload");
 module.exports = function(s,config,lang,app,io){
+    const {
+        ptzControl
+    } = require('./control/ptz.js')(s,config,lang,app,io)
     if(config.productType === 'Pro'){
         var LdapAuth = require('ldapauth-fork');
     }
@@ -1655,7 +1658,7 @@ module.exports = function(s,config,lang,app,io){
     app.get(config.webPaths.apiPrefix+':auth/control/:ke/:id/:direction', function (req,res){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            s.cameraControl(req.params,function(msg){
+            ptzControl(req.params,function(msg){
                 s.userLog({
                     id: req.params.id,
                     ke: req.params.ke,

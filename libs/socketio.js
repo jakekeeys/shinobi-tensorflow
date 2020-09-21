@@ -4,6 +4,9 @@ var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var jsonfile = require("jsonfile");
 module.exports = function(s,config,lang,io){
+    const {
+        ptzControl
+    } = require('./control/ptz.js')(s,config,lang)
     s.clientSocketConnection = {}
     //send data to socket client function
     s.tx = function(z,y,x){
@@ -649,7 +652,7 @@ module.exports = function(s,config,lang,io){
                                 }
                             break;
                             case'control':
-                                s.cameraControl(d,function(msg){
+                                ptzControl(d,function(msg){
                                     s.userLog(d,msg)
                                     tx({f:'control',response:msg})
                                 })
