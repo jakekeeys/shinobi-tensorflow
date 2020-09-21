@@ -13,7 +13,8 @@ var ejs = require('ejs');
 var fileupload = require("express-fileupload");
 module.exports = function(s,config,lang,app,io){
     const {
-        ptzControl
+        ptzControl,
+        setPresetForCurrentPosition
     } = require('./control/ptz.js')(s,config,lang,app,io)
     if(config.productType === 'Pro'){
         var LdapAuth = require('ldapauth-fork');
@@ -1658,16 +1659,25 @@ module.exports = function(s,config,lang,app,io){
     app.get(config.webPaths.apiPrefix+':auth/control/:ke/:id/:direction', function (req,res){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            ptzControl(req.params,function(msg){
-                s.userLog({
+            if(req.params.direction === 'setHome'){
+                setPresetForCurrentPosition({
                     id: req.params.id,
                     ke: req.params.ke,
-                },{
-                    msg: msg,
-                    direction: req.params.direction,
+                },(response) => {
+                    res.end(s.prettyPrint(response))
                 })
-                res.end(s.prettyPrint(msg))
-            });
+            }else{
+                ptzControl(req.params,function(msg){
+                    s.userLog({
+                        id: req.params.id,
+                        ke: req.params.ke,
+                    },{
+                        msg: msg,
+                        direction: req.params.direction,
+                    })
+                    res.end(s.prettyPrint(msg))
+                })
+            }
         },res,req);
     })
     /**
