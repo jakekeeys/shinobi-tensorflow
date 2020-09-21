@@ -48,17 +48,17 @@ module.exports = function(s,config,lang,app,io){
       }
       //
       const createSocketConnections = () => {
-          console.log(`Connecting to ${config.p2pHost}`)
+          s.systemLog('p2p',`Connecting to ${config.p2pHost}...`)
           const connectionToP2PServer = socketIOClient(config.p2pHost, {transports:['websocket']});
           if(!config.p2pApiKey){
-              console.log(`Please fill 'p2pApiKey' in your conf.json.`)
+              s.systemLog('p2p',`Please fill 'p2pApiKey' in your conf.json.`)
           }
           if(!config.p2pGroupId){
-              console.log(`Please fill 'p2pGroupId' in your conf.json.`)
+              s.systemLog('p2p',`Please fill 'p2pGroupId' in your conf.json.`)
           }
           config.machineId = config.machineId || s.gid(20)
           connectionToP2PServer.on('connect',function(){
-              console.log(`Connected ${config.p2pHost}`)
+              s.systemLog('p2p',`Connected ${config.p2pHost}!`)
               connectionToP2PServer.emit('initMachine',{
                   port: config.port,
                   apiKey: config.p2pApiKey,
@@ -106,11 +106,11 @@ module.exports = function(s,config,lang,app,io){
           })
 
           connectionToP2PServer.on('wsInit',function(rawRequest){
-              console.log('wsInit')
+              s.systemLog('p2pWsInit',rawRequest)
               var user = rawRequest.user
               var clientConnectionToMachine = createShinobiSocketConnection(rawRequest.cnid)
-              connectionToP2PServer.on('f',function(rawRequest){
-                  clientConnectionToMachine.emit('f',rawRequest.data)
+              connectionToP2PServer.on('f',function(data){
+                  clientConnectionToMachine.emit('f',data)
               })
               clientConnectionToMachine.on('connect',function(){
                   clientConnectionToMachine.emit('f',{
@@ -133,11 +133,12 @@ module.exports = function(s,config,lang,app,io){
           connectionToP2PServer.on('allowDisconnect',function(bool){
               connectionToP2PServer.allowDisconnect = true;
               connectionToP2PServer.disconnect()
-              console.log('Server said to go away')
+              s.systemLog('p2p','Server Forced Disconnection')
           });
           const onDisconnect = () => {
-              console.log('disconnected p2p')
+              s.systemLog('p2p','Disconnected')
               if(!connectionToP2PServer.allowDisconnect){
+                  s.systemLog('p2p','Attempting Reconnection...')
                   setTimeout(function(){
                       connectionToP2PServer.connect()
                   },3000)

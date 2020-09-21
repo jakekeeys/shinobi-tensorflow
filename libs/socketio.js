@@ -393,7 +393,6 @@ module.exports = function(s,config,lang,io){
                         extender(r,cn,d,tx)
                     })
                 }
-                console.log(cn.ip)
                 streamConnectionAuthentication(d,cn.ip).then(onSuccess).catch(onFail)
                 return;
             }
