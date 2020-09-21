@@ -89,6 +89,8 @@
    "Never": "Never",
    "API": "API",
    "ONVIF": "ONVIF",
+   "Set Home": "Set Home",
+   "Set Home Position (ONVIF-only)": "Set Home Position (ONVIF-only)",
    "Non-Standard ONVIF": "Non-Standard ONVIF",
    "FFprobe": "Probe",
    "Monitor States": "Monitor States",
