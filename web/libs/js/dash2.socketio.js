@@ -277,7 +277,7 @@ $.ccio.globalWebsocket=function(d,user){
             if($.ccio.op().jpeg_on===true){
                 $.ccio.init('jpegMode',$.ccio.mon[d.ke+d.id+user.auth_token]);
             }else{
-                if(location.search === '?assemble=1'){
+                if(location.search === '?p2p=1'){
                     var path = '/socket.io'
                 }else{
                     var path = tool.checkCorrectPathEnding(location.pathname)+'socket.io'
@@ -689,7 +689,7 @@ $.ccio.globalWebsocket=function(d,user){
         break;
     }
 }
-if(location.search === '?assemble=1'){
+if(location.search === '?p2p=1'){
     $user.ws=io(location.origin,{
         path : '/socket.io'
     });
@@ -701,7 +701,7 @@ if(location.search === '?assemble=1'){
 $user.ws.on('connect',function (d){
     $(document).ready(function(e){
         $.ccio.init('id',$user);
-        if(location.search === '?assemble=1'){
+        if(location.search === '?p2p=1'){
             $user.ws.emit('p2pInitUser',{
               user: {
                 ke: $user.ke,

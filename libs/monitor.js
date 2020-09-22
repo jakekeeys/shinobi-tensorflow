@@ -455,7 +455,7 @@ module.exports = function(s,config,lang){
                         ke: e.ke
                     },'GRP_'+e.ke)
                 }else{
-                    console.log('not image')
+                    s.debugLog('Damaged Snapshot Data')
                     s.tx({f:'monitor_snapshot',snapshot:e.mon.name,snapshot_format:'plc',mid:e.mid,ke:e.ke},'GRP_'+e.ke)
                }
             }else{
