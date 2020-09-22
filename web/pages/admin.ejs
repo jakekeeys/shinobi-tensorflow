@@ -179,7 +179,7 @@ $.aN.e.submit(function(e){
     e.preventDefault();
     e.s = $.aN.e.serializeObject()
     e.m = $('#msg').empty()
-    $.post('<%=originalURL%><%=config.webPaths.adminApiPrefix%>'+$user.auth_token+'/accounts/'+$user.ke+'/register',{data:e.s},function(d){
+    $.post(adminApiPrefix + $user.auth_token+'/accounts/'+$user.ke+'/register',{data:e.s},function(d){
         if(d.msg){
             e.m.text(d.msg)
         }
@@ -197,7 +197,7 @@ $.sU.e.on('click','.delete',function(e){
     var html = 'Do you want to delete <b>'+subAccountEmail+'</b>? You cannot recover this account.'
     $.confirm.body.html(html)
     $.confirm.click({title:'Delete',class:'btn-danger'},function(){
-        $.post('<%=originalURL%><%=config.webPaths.adminApiPrefix%>'+$user.auth_token+'/accounts/'+$user.ke+'/delete',{
+        $.post(adminApiPrefix + $user.auth_token+'/accounts/'+$user.ke+'/delete',{
             uid: subAccountUid,
             mail: subAccountEmail
         },function(data){})
@@ -269,7 +269,7 @@ $.pR.e.on('change','[monitor]',function(e){
 $.pR.f.submit(function(e){
     e.preventDefault()
     var form = $(this).serializeObject()
-    $.post('<%=originalURL%><%=config.webPaths.adminApiPrefix%>'+$user.auth_token+'/accounts/'+$user.ke+'/edit',{
+    $.post(adminApiPrefix + $user.auth_token+'/accounts/'+$user.ke+'/edit',{
         uid: $.pR.user,
         mail: $.ccio.subs[$.pR.user].mail,
         data: form
