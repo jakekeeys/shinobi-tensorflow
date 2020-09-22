@@ -383,6 +383,35 @@ module.exports = async (s,config,lang,app,io) => {
             }
         },res,req)
     })
+    // /**
+    // * API : Superuser : Custom Auto Load Package Update.
+    // */
+    // app.post(config.webPaths.superApiPrefix+':auth/package/update', async (req,res) => {
+    //     s.superAuth(req.params, async (resp) => {
+    //         try{
+    //             const url = req.body.downloadUrl
+    //             const packageRoot = req.body.packageRoot || ''
+    //             const packageName = req.body.packageName || extractNameFromPackage(url)
+    //             const modulePath = getModulePath(packageName)
+    //             await downloadModule(url,packageName)
+    //             const properties = getModuleProperties(packageName)
+    //             const newName = await moveModuleToNameInProperties(modulePath,packageRoot,properties)
+    //             const chosenName = newName ? newName : packageName
+    //
+    //             disableModule(chosenName,true)
+    //             s.closeJsonResponse(res,{
+    //                 ok: true,
+    //                 moduleName: chosenName,
+    //                 newModule: getModule(chosenName)
+    //             })
+    //         }catch(err){
+    //             s.closeJsonResponse(res,{
+    //                 ok: false,
+    //                 error: err
+    //             })
+    //         }
+    //     },res,req)
+    // })
     /**
     * API : Superuser : Custom Auto Load Package Install.
     */

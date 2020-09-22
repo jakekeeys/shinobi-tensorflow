@@ -175,7 +175,7 @@ module.exports = function(s,config,lang){
             ){
                 if(!user.lang){
                     var details = s.parseJSON(user.details).lang
-                    user.lang = s.getDefinitonFile(user.details.lang) || s.copySystemDefaultLanguage()
+                    user.lang = s.getLanguageFile(user.details.lang) || s.copySystemDefaultLanguage()
                 }
                 onSuccessComplete(user)
             }else{

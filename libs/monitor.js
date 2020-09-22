@@ -13,6 +13,9 @@ const URL = require('url')
 const { copyObject, createQueue } = require('./common.js')
 module.exports = function(s,config,lang){
     const { cameraDestroy } = require('./monitor/utils.js')(s,config,lang)
+    const {
+        setPresetForCurrentPosition
+    } = require('./control/ptz.js')(s,config,lang)
     const startMonitorInQueue = createQueue(1, 3)
     s.initiateMonitorObject = function(e){
         if(!s.group[e.ke]){s.group[e.ke]={}};
@@ -634,21 +637,25 @@ module.exports = function(s,config,lang){
         },60000*1);
     }
     const onDetectorJpegOutputAlone = (e,d) => {
-        s.ocvTx({
-            f: 'frame',
-            mon: s.group[e.ke].rawMonitorConfigurations[e.id].details,
-            ke: e.ke,
-            id: e.id,
-            time: s.formattedTime(),
-            frame: d
-        })
+        if(s.isAtleatOneDetectorPluginConnected){
+            s.ocvTx({
+                f: 'frame',
+                mon: s.group[e.ke].rawMonitorConfigurations[e.id].details,
+                ke: e.ke,
+                id: e.id,
+                time: s.formattedTime(),
+                frame: d
+            })
+        }
     }
     const onDetectorJpegOutputSecondary = (e,buffer) => {
-        const theArray = s.group[e.ke].activeMonitors[e.id].pipe4BufferPieces
-        theArray.push(buffer)
-        if(buffer[buffer.length-2] === 0xFF && buffer[buffer.length-1] === 0xD9){
-            s.group[e.ke].activeMonitors[e.id].lastJpegDetectorFrame = Buffer.concat(theArray)
-            s.group[e.ke].activeMonitors[e.id].pipe4BufferPieces = []
+        if(s.isAtleatOneDetectorPluginConnected){
+            const theArray = s.group[e.ke].activeMonitors[e.id].pipe4BufferPieces
+            theArray.push(buffer)
+            if(buffer[buffer.length-2] === 0xFF && buffer[buffer.length-1] === 0xD9){
+                s.group[e.ke].activeMonitors[e.id].lastJpegDetectorFrame = Buffer.concat(theArray)
+                s.group[e.ke].activeMonitors[e.id].pipe4BufferPieces = []
+            }
         }
     }
     const createCameraFfmpegProcess = (e) => {
@@ -856,19 +863,13 @@ module.exports = function(s,config,lang){
                         onDetectorJpegOutputSecondary(e,data)
                     })
                 }
-            }else if(s.isAtleatOneDetectorPluginConnected){
-                if(e.details.detector_use_detect_object === '1' && e.details.detector_send_frames !== '1'){
-                    s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
-                        onDetectorJpegOutputSecondary(e,data)
-                    })
-                }else{
-                    s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
-                        onDetectorJpegOutputAlone(e,data)
-                    })
-                }
+            }else if(e.details.detector_use_detect_object === '1' && e.details.detector_send_frames !== '1'){
+                s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
+                    onDetectorJpegOutputSecondary(e,data)
+                })
             }else{
                 s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
-                    // set so ffmpeg doesnt hang
+                    onDetectorJpegOutputAlone(e,data)
                 })
             }
         }
@@ -1608,6 +1609,34 @@ module.exports = function(s,config,lang){
                             e.port = '554'
                         break;
                     }
+                }
+                if(e.details.detector_ptz_follow === '1'){
+                    setTimeout(() => {
+                        setPresetForCurrentPosition({
+                            ke: e.ke,
+                            id: e.id
+                        },(endData) => {
+                            if(endData.ok === false){
+                                setTimeout(() => {
+                                    setPresetForCurrentPosition({
+                                        ke: e.ke,
+                                        id: e.id
+                                    },(endData) => {
+                                        if(endData.ok === false){
+                                            setTimeout(() => {
+                                                setPresetForCurrentPosition({
+                                                    ke: e.ke,
+                                                    id: e.id
+                                                },(endData) => {
+                                                    console.log(endData)
+                                                })
+                                            },5000)
+                                        }
+                                    })
+                                },5000)
+                            }
+                        })
+                    },5000)
                 }
                 launchMonitorProcesses(e)
             break;
