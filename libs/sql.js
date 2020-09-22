@@ -456,6 +456,13 @@ module.exports = function(s,config){
         var startTime = options.startTime
         var limitString = `${options.limit}`
         const monitorRestrictions = s.getMonitorRestrictions(options.user.details,monitorId)
+        var skipOver = 0
+        if(limitString.indexOf(',') > -1){
+            skipOver = parseInt(limitString.split(',')[0])
+            limitString = parseInt(limitString.split(',')[1])
+        }else{
+            limitString = parseInt(limitString)
+        }
         getDatabaseRows({
             monitorRestrictions: monitorRestrictions,
             table: theTableSelected,
@@ -464,7 +471,7 @@ module.exports = function(s,config){
             endDate: endTime,
             startOperator: startTimeOperator,
             endOperator: endTimeOperator,
-            limit: options.limit,
+            limit: limitString,
             archived: archived,
             rowType: rowName,
             endIsStartTo: endIsStartTo
@@ -511,16 +518,7 @@ module.exports = function(s,config){
                     type: 'count',
                     endIsStartTo: endIsStartTo
                 },(response) => {
-                    console.log('count')
-                    console.log(response)
                     const count = response.count
-                    var skipOver = 0
-                    if(limitString.indexOf(',') > -1){
-                        skipOver = parseInt(limitString.split(',')[0])
-                        limitString = parseInt(limitString.split(',')[1])
-                    }else{
-                        limitString = parseInt(limitString)
-                    }
                     callback({
                         total: response['count(*)'],
                         limit: response.limit,
