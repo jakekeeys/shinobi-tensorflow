@@ -57,7 +57,7 @@ module.exports = function(s,config,lang,app,io){
           if(!config.p2pGroupId){
               s.systemLog('p2p',`Please fill 'p2pGroupId' in your conf.json.`)
           }
-          config.machineId = config.machineId || s.gid(20)
+          config.machineId = config.p2pApiKey + '' + config.p2pGroupId
           connectionToP2PServer.on('connect', () => {
               s.systemLog('p2p',`Connected ${config.p2pHost}!`)
               connectionToP2PServer.emit('initMachine',{
@@ -66,7 +66,6 @@ module.exports = function(s,config,lang,app,io){
                   groupId: config.p2pGroupId,
                   targetUserId: config.p2pTargetUserId,
                   targetGroupId: config.p2pTargetGroupId,
-                  machineId: config.machineId,
                   subscriptionId: config.subscriptionId || 'notActivated'
               })
           })
