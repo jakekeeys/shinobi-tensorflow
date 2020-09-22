@@ -54,17 +54,21 @@ module.exports = function(s,config,lang,io){
         }
     }
 
-    const streamConnectionAuthentication = (options) => {
+    const streamConnectionAuthentication = (options,ipAddress) => {
         return new Promise( (resolve,reject) => {
+            var isInternal = false
+            if(ipAddress.indexOf('localhost') > -1 || ipAddress.indexOf('127.0.0.1') > -1){
+                isInternal = true
+            }
+            const baseWheres = [
+                ['ke','=',options.ke],
+                ['uid','=',options.uid],
+            ]
             s.knexQuery({
                 action: "select",
                 columns: "ke,uid,auth,mail,details",
                 table: "Users",
-                where: [
-                    ['ke','=',options.ke],
-                    ['auth','=',options.auth],
-                    ['uid','=',options.uid],
-                ]
+                where: baseWheres.concat(!isInternal ? [['auth','=',options.auth]] : [])
             },(err,r) => {
                 if(r&&r[0]){
                     resolve(r)
@@ -73,11 +77,7 @@ module.exports = function(s,config,lang,io){
                         action: "select",
                         columns: "*",
                         table: "API",
-                        where: [
-                            ['ke','=',options.ke],
-                            ['code','=',options.auth],
-                            ['uid','=',options.uid],
-                        ]
+                        where: baseWheres.concat(!isInternal ? [['code','=',options.auth]] : [])
                     },(err,r) => {
                         if(r && r[0]){
                             r = r[0]
@@ -168,7 +168,7 @@ module.exports = function(s,config,lang,io){
             if(s.group[d.ke]&&s.group[d.ke].users&&s.group[d.ke].users[d.auth]){
                 onSuccess(s.group[d.ke].users[d.auth]);
             }else{
-                streamConnectionAuthentication(d).then(onSuccess).catch(onFail)
+                streamConnectionAuthentication(d,cn.ip).then(onSuccess).catch(onFail)
             }
         })
         //unique Base64 socket stream
@@ -201,7 +201,7 @@ module.exports = function(s,config,lang,io){
             if(s.group[d.ke]&&s.group[d.ke].users&&s.group[d.ke].users[d.auth]){
                 onSuccess(s.group[d.ke].users[d.auth]);
             }else{
-                streamConnectionAuthentication(d).then(onSuccess).catch(onFail)
+                streamConnectionAuthentication(d,cn.ip).then(onSuccess).catch(onFail)
             }
         })
         //unique FLV socket stream
@@ -234,7 +234,7 @@ module.exports = function(s,config,lang,io){
             if(s.group[d.ke] && s.group[d.ke].users && s.group[d.ke].users[d.auth]){
                 onSuccess(s.group[d.ke].users[d.auth]);
             }else{
-                streamConnectionAuthentication(d).then(onSuccess).catch(onFail)
+                streamConnectionAuthentication(d,cn.ip).then(onSuccess).catch(onFail)
             }
         })
         //unique MP4 socket stream
@@ -315,7 +315,7 @@ module.exports = function(s,config,lang,io){
             if(s.group[d.ke]&&s.group[d.ke].users&&s.group[d.ke].users[d.auth]){
                 onSuccess(s.group[d.ke].users[d.auth]);
             }else{
-                streamConnectionAuthentication(d).then(onSuccess).catch(onFail)
+                streamConnectionAuthentication(d,cn.ip).then(onSuccess).catch(onFail)
             }
         })
         //main socket control functions
@@ -396,7 +396,7 @@ module.exports = function(s,config,lang,io){
                         extender(r,cn,d,tx)
                     })
                 }
-                streamConnectionAuthentication(d).then(onSuccess).catch(onFail)
+                streamConnectionAuthentication(d,cn.ip).then(onSuccess).catch(onFail)
                 return;
             }
             if((d.id||d.uid||d.mid)&&cn.ke){
