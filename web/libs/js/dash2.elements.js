@@ -456,8 +456,23 @@ $(document).ready(function(e){
                 });
             break;
             case'control':
-                e.a=e.e.attr('control')
-                $.ccio.cx({f:'monitor',ff:'control',direction:e.a,id:e.mid,ke:e.ke},user)
+                var switchChosen = e.e.attr('control')
+                switch(switchChosen){
+                    case'setHome':
+                        $.get(getApiPrefix() + '/control' + '/' + $user.ke + '/' + e.mid + '/setHome',function(data){
+                            console.log(data)
+                        })
+                    break;
+                    default:
+                        $.ccio.cx({
+                            f: 'monitor',
+                            ff: 'control',
+                            direction: switchChosen,
+                            id: e.mid,
+                            ke: e.ke
+                        },user)
+                    break;
+                }
             break;
             case'videos_table':case'calendar':case'video_grid'://call videos table or calendar or video grid
                 $.vidview.launcher=$(this);
@@ -685,23 +700,27 @@ $(document).ready(function(e){
                 if(e.e.length>0){
                     e.e.remove()
                 }else{
-                    var html = '<div class="PTZ_controls">'
-                    html += '<div class="pad">'
-                        html += '<div class="control top" monitor="control" control="up"></div>'
-                        html += '<div class="control left" monitor="control" control="left"></div>'
-                        html += '<div class="control right" monitor="control" control="right"></div>'
-                        html += '<div class="control bottom" monitor="control" control="down"></div>'
-                        html += '<div class="control middle" monitor="control" control="center"></div>'
-                    html += '</div>'
-                    html += '<div class="btn-group btn-group-sm btn-group-justified">'
-                        html += '<a title="'+lang['Zoom In']+'" class="zoom_in btn btn-default" monitor="control" control="zoom_in"><i class="fa fa-search-plus"></i></a>'
-                        html += '<a title="'+lang['Zoom Out']+'" class="zoom_out btn btn-default" monitor="control" control="zoom_out"><i class="fa fa-search-minus"></i></a>'
-                    html += '</div>'
-                        html += '<div class="btn-group btn-group-sm btn-group-justified">'
-                            html += '<a title="'+lang['Enable Nightvision']+'" class="nv_enable btn btn-default" monitor="control" control="enable_nv"><i class="fa fa-moon-o"></i></a>'
-                            html += '<a title="'+lang['Disable Nightvision']+'" class="nv_disable btn btn-default" monitor="control" control="disable_nv"><i class="fa fa-sun-o"></i></a>'
-                        html += '</div>'
-                    html += '</div>'
+                    var html = `<div class="PTZ_controls">
+                        <div class="pad">
+                            <div class="control top" monitor="control" control="up"></div>
+                            <div class="control left" monitor="control" control="left"></div>
+                            <div class="control right" monitor="control" control="right"></div>
+                            <div class="control bottom" monitor="control" control="down"></div>
+                            <div class="control middle" monitor="control" control="center"></div>
+                        </div>
+                        <div class="btn-group btn-group-sm btn-group-justified">
+                            <a title="${lang['Zoom In']}" class="zoom_in btn btn-default" monitor="control" control="zoom_in"><i class="fa fa-search-plus"></i></a>
+                            <a title="${lang['Zoom Out']}" class="zoom_out btn btn-default" monitor="control" control="zoom_out"><i class="fa fa-search-minus"></i></a>
+                        </div>
+                        <div class="btn-group btn-group-sm btn-group-justified">
+                            <a title="${lang['Enable Nightvision']}" class="nv_enable btn btn-default" monitor="control" control="enable_nv"><i class="fa fa-moon-o"></i></a>
+                            <a title="${lang['Disable Nightvision']}" class="nv_disable btn btn-default" monitor="control" control="disable_nv"><i class="fa fa-sun-o"></i></a>
+                        </div>
+                        ${$.parseJSON($.ccio.mon[$user.ke + e.mid + $user.auth_token].details,{}).is_onvif === '1' ? `
+                        <div class="btn-group btn-group-sm btn-group-justified">
+                            <a title="${lang['Set Home Position (ONVIF-only)']}" class="btn btn-default" monitor="control" control="setHome"><i class="fa fa-h-square"></i> ${lang['Set Home']}</a>
+                        </div>` : ``}
+                    </div>`
                     e.p.append(html)
                 }
             break;

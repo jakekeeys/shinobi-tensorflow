@@ -277,7 +277,7 @@ $.ccio.globalWebsocket=function(d,user){
             if($.ccio.op().jpeg_on===true){
                 $.ccio.init('jpegMode',$.ccio.mon[d.ke+d.id+user.auth_token]);
             }else{
-                if(location.search === '?assemble=1'){
+                if(location.search === '?p2p=1'){
                     var path = '/socket.io'
                 }else{
                     var path = tool.checkCorrectPathEnding(location.pathname)+'socket.io'
@@ -302,7 +302,6 @@ $.ccio.globalWebsocket=function(d,user){
                                 uid: user.uid,
                                 ke: d.ke,
                                 id: d.id,
-                                subscriptionId: subscriptionId,
 //                                channel: channel
                             })
                             if(!$.ccio.mon[d.ke+d.id+user.auth_token].ctx||$.ccio.mon[d.ke+d.id+user.auth_token].ctx.length===0){
@@ -690,7 +689,7 @@ $.ccio.globalWebsocket=function(d,user){
         break;
     }
 }
-if(location.search === '?assemble=1'){
+if(location.search === '?p2p=1'){
     $user.ws=io(location.origin,{
         path : '/socket.io'
     });
@@ -702,16 +701,16 @@ if(location.search === '?assemble=1'){
 $user.ws.on('connect',function (d){
     $(document).ready(function(e){
         $.ccio.init('id',$user);
-        if(location.search === '?assemble=1'){
-            $user.ws.emit('initUser',{
-              subscriptionId: subscriptionId,
+        if(location.search === '?p2p=1'){
+            $user.ws.emit('p2pInitUser',{
               user: {
                 ke: $user.ke,
                 mail: $user.mail,
                 auth_token: $user.auth_token,
                 details: $user.details,
                 uid: $user.uid,
-            }
+            },
+            machineId: machineId
           })
         }else{
             $.ccio.cx({f:'init',ke:$user.ke,auth:$user.auth_token,uid:$user.uid})

@@ -3,7 +3,7 @@ $.ccio={
     mon:{},
     useUTC: <%- config.useUTC || false %>,
     definitions: <%-JSON.stringify(define)%>,
-    libURL: location.search === '?assemble=1' ? location.pathname + '/' : '<%-window.libURL%>',
+    libURL: location.search === '?p2p=1' ? location.pathname + '/' : '<%-window.libURL%>',
     isAppleDevice: navigator.userAgent.match(/(iPod|iPhone|iPad)/)||(navigator.userAgent.match(/(Safari)/)&&!navigator.userAgent.match('Chrome'))
 };
 <% if(config.DropboxAppKey){ %>
@@ -154,6 +154,7 @@ $(document).ready(function(e){
     function onFullScreenChange() {
         var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
         if(!fullscreenElement){
+            $('.videoPlayer-detection-info').removeClass('hide')
             $('.fullscreen').removeClass('fullscreen')
             setTimeout(function(){
                 $('canvas.stream-element').resize();

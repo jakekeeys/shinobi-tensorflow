@@ -172,7 +172,7 @@ module.exports = function(s,config){
                     dbQuery.limit(options.limit)
                 }else{
                     const limitParts = `${options.limit}`.split(',')
-                    dbQuery.limit(limitParts[0]).offset(limitParts[1])
+                    dbQuery.limit(limitParts[1]).offset(limitParts[0])
                 }
             }
             if(config.debugLog === true){
@@ -203,7 +203,7 @@ module.exports = function(s,config){
            ['ke','=',options.groupKey],
        ]
        const monitorRestrictions = options.monitorRestrictions
-       var frameLimit = parseInt(options.limit) || 500
+       var frameLimit = options.limit
        const endIsStartTo = options.endIsStartTo
        const chosenDate = options.date
        const startDate = options.startDate ? s.stringToSqlTime(options.startDate) : null
@@ -511,8 +511,6 @@ module.exports = function(s,config){
                     type: 'count',
                     endIsStartTo: endIsStartTo
                 },(response) => {
-                    console.log('count')
-                    console.log(response)
                     const count = response.count
                     var skipOver = 0
                     if(limitString.indexOf(',') > -1){

@@ -421,6 +421,25 @@ module.exports = function(s,config,lang){
                        ]
                     },
                     {
+                       "name": "detail=onvif_non_standard",
+                       "field": lang['Non-Standard ONVIF'],
+                       "description": "Is this a Non-Standard ONVIF camera?",
+                       "default": "0",
+                       "example": "",
+                       "form-group-class": "h_onvif_input h_onvif_1",
+                       "fieldType": "select",
+                       "possible": [
+                           {
+                              "name": lang.No,
+                              "value": "0"
+                           },
+                           {
+                              "name": lang.Yes,
+                              "value": "1"
+                           }
+                       ]
+                    },
+                    {
                         hidden: true,
                        "name": "detail=onvif_port",
                        "field": lang['ONVIF Port'],
@@ -3607,6 +3626,24 @@ module.exports = function(s,config,lang){
                        "form-group-class-pre-layer": "h_cs_input h_cs_1",
                        "form-group-class": "h_control_call_input h_control_call_GET h_control_call_PUT h_control_call_POST",
                        "possible": ""
+                    },
+                    {
+                       "name": "detail=control_invert_y",
+                       "field": lang["Invert Y-Axis"],
+                       "description": "For When your camera is mounted upside down or uses inverted vertical controls.",
+                       "default": "0",
+                       "example": "",
+                       "fieldType": "select",
+                       "possible": [
+                          {
+                             "name": lang.No,
+                             "value": "0"
+                          },
+                          {
+                             "name": lang.Yes,
+                             "value": "1"
+                          }
+                       ]
                     },
                 ]
              },
