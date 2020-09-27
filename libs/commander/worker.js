@@ -24,11 +24,16 @@ parentPort.on('message',(data) => {
         case'init':
             initialize(data.config,data.lang)
         break;
+        case'exit':
+            s.debugLog('Exiting...')
+            process.exit(0)
+        break;
     }
 })
 
 const initialize = (config,lang) => {
-    if(!config.p2pHost)config.p2pHost = 'ws://163.172.180.205:8084'
+    const selectedP2PServerId = config.p2pServerList[config.p2pHostSelected] ? config.p2pHostSelected : Object.keys(config.p2pServerList)[0]
+    const selectedHost = config.p2pServerList[selectedP2PServerId].host + ':' + config.p2pServerList[selectedP2PServerId].p2pPort
     const parseJSON = function(string){
         var parsed = string
         try{
@@ -69,23 +74,22 @@ const initialize = (config,lang) => {
         return masterConnectionToMachine
     }
     //
-    s.debugLog('p2p',`Connecting to ${config.p2pHost}...`)
-    const connectionToP2PServer = socketIOClient(config.p2pHost, {transports:['websocket']});
+    s.debugLog('p2p',`Connecting to ${selectedHost}...`)
+    const connectionToP2PServer = socketIOClient('ws://' + selectedHost, {transports:['websocket']});
     if(!config.p2pApiKey){
         s.systemLog('p2p',`Please fill 'p2pApiKey' in your conf.json.`)
     }
-    if(!config.p2pGroupId){
-        s.systemLog('p2p',`Please fill 'p2pGroupId' in your conf.json.`)
-    }
+    // if(!config.p2pGroupId){
+    //     s.systemLog('p2p',`Please fill 'p2pGroupId' in your conf.json.`)
+    // }
     connectionToP2PServer.on('connect', () => {
-        s.systemLog('p2p',`Connected ${config.p2pHost}!`)
+        s.systemLog('p2p',`Connected ${selectedHost}!`)
         connectionToP2PServer.emit('initMachine',{
             port: config.port,
             apiKey: config.p2pApiKey,
             groupId: config.p2pGroupId,
             targetUserId: config.p2pTargetUserId,
-            targetGroupId: config.p2pTargetGroupId,
-            subscriptionId: config.subscriptionId || 'notActivated'
+            targetGroupId: config.p2pTargetGroupId
         })
     })
     connectionToP2PServer.on('httpClose',(requestId) => {

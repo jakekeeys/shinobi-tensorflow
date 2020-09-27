@@ -88,5 +88,5 @@ require('./libs/ffmpeg.js')(s,config,lang,async function(ffmpeg){
     //on-start actions, daemon(s) starter
     await require('./libs/startup.js')(s,config,lang)
     //p2p, commander
-    require('./libs/commander.js')(s,config,lang)
+    require('./libs/commander.js')(s,config,lang,app)
 })

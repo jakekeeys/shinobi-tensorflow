@@ -1,0 +1,16 @@
+#easyRemoteAccess .card {
+    cursor: pointer;
+    transition: none;
+}
+#easyRemoteAccess .card.active {
+    border: 1px solid #72d46e;
+}
+#easyRemoteAccess .card.active .card-header,
+#easyRemoteAccess .card.active .card-footer {
+    background-color: rgb(66 182 70 / 3%);
+    border-color: rgb(66 182 70 / 0.3);
+}
+#easyRemoteAccess .card.active .name-badge {
+    color: #18ce0f;
+    border: 1px solid #18ce0f;
+}

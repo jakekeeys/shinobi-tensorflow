@@ -7,7 +7,7 @@ var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var execSync = require('child_process').execSync;
 module.exports = function(s,config,lang,app){
-
+    const { modifyConfiguration } = require('./system/utils.js')(config)
     /**
     * API : Superuser : Get Logs
     */
@@ -105,7 +105,7 @@ module.exports = function(s,config,lang,app){
     * API : Superuser : Modify Configuration (conf.json)
     */
     app.all(config.webPaths.superApiPrefix+':auth/system/configure', function (req,res){
-        s.superAuth(req.params,function(resp){
+        s.superAuth(req.params,async (resp) => {
             var endData = {
                 ok : true
             }
@@ -119,21 +119,9 @@ module.exports = function(s,config,lang,app){
                     ip: resp.ip,
                     old:jsonfile.readFileSync(s.location.config)
                 })
-                try{
-                    if(config.thisIsDocker){
-                        const dockerConfigFile = '/config/conf.json'
-                        fs.stat(dockerConfigFile,(err) => {
-                            if(!err){
-                                fs.writeFile(dockerConfigFile,JSON.stringify(postBody,null,3),function(){})
-                            }
-                        })
-                    }
-                }catch(err){
-                    console.log(err)
-                }
-                jsonfile.writeFile(s.location.config,postBody,{spaces: 2},function(){
-                    s.tx({f:'save_configuration'},'$')
-                })
+                const configError = await modifyConfiguration(postBody)
+                if(configError)s.systemLog(configError)
+                s.tx({f:'save_configuration'},'$')
             }
             s.closeJsonResponse(res,endData)
         },res,req)
