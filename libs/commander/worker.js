@@ -203,7 +203,6 @@ const initialize = (config,lang) => {
         })
     });
     connectionToP2PServer.on('wsDestroyStream',(clientKey) => {
-        console.log('wsDestroyStream',clientKey)
         if(p2pClientConnections[clientKey]){
             p2pClientConnections[clientKey].disconnect();
         }
