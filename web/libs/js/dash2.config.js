@@ -6,6 +6,7 @@ $.ccio={
     libURL: location.search === '?p2p=1' ? location.pathname + '/' : '<%-window.libURL%>',
     isAppleDevice: navigator.userAgent.match(/(iPod|iPhone|iPad)/)||(navigator.userAgent.match(/(Safari)/)&&!navigator.userAgent.match('Chrome'))
 };
+window.machineId = location.pathname.split('/')[2]
 <% if(config.DropboxAppKey){ %>
     $.ccio.DropboxAppKey = '<%-window.DropboxAppKey%>'
 <% } %>

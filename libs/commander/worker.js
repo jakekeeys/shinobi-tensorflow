@@ -117,18 +117,18 @@ const initialize = (config,lang) => {
               })
           })
     })
-    const masterConnectionToMachine = createShinobiSocketConnection()
-    masterConnectionToMachine.on('connect', () => {
-        masterConnectionToMachine.emit('f',{
-            f: 'init',
-            auth: config.p2pTargetAuth,
-            ke: config.p2pTargetGroupId,
-            uid: config.p2pTargetUserId
-        })
-    })
-    masterConnectionToMachine.on('f',(data) => {
-        connectionToP2PServer.emit('f',data)
-    })
+    // const masterConnectionToMachine = createShinobiSocketConnection()
+    // masterConnectionToMachine.on('connect', () => {
+    //     masterConnectionToMachine.emit('f',{
+    //         f: 'init',
+    //         auth: config.p2pTargetAuth,
+    //         ke: config.p2pTargetGroupId,
+    //         uid: config.p2pTargetUserId
+    //     })
+    // })
+    // masterConnectionToMachine.on('f',(data) => {
+    //     connectionToP2PServer.emit('f',data)
+    // })
 
     connectionToP2PServer.on('wsInit',(rawRequest) => {
         s.debugLog('p2pWsInit',rawRequest)
@@ -195,6 +195,7 @@ const initialize = (config,lang) => {
                     clientConnectionToMachine.emit(target,initData)
                 });
                 clientConnectionToMachine.on('data',(data) => {
+                    console.log(target)
                     connectionToP2PServer.emit('data',{data: data, cnid: initData.cnid})
                 });
             }else{
@@ -203,6 +204,7 @@ const initialize = (config,lang) => {
         })
     });
     connectionToP2PServer.on('wsDestroyStream',(clientKey) => {
+        console.log('wsDestroyStream',clientKey)
         if(p2pClientConnections[clientKey]){
             p2pClientConnections[clientKey].disconnect();
         }

@@ -290,7 +290,7 @@ $.ccio.globalWebsocket=function(d,user){
                         if($.ccio.mon[d.ke+d.id+user.auth_token].Base64 && $.ccio.mon[d.ke+d.id+user.auth_token].Base64.connected){
                             $.ccio.mon[d.ke+d.id+user.auth_token].Base64.disconnect()
                         }
-                        $.ccio.mon[d.ke+d.id+user.auth_token].Base64 = io(location.origin,{ path: path, transports: ['websocket'], forceNew: false})
+                        $.ccio.mon[d.ke+d.id+user.auth_token].Base64 = io(location.origin,{ path: websocketPath, query: websocketQuery, transports: ['websocket'], forceNew: false})
                         var ws = $.ccio.mon[d.ke+d.id+user.auth_token].Base64
                         var buffer
                         ws.on('diconnect',function(){
@@ -369,7 +369,8 @@ $.ccio.globalWebsocket=function(d,user){
                                         uid:user.uid,
                                         id:d.id,
                                         url: location.origin,
-                                        path: path,
+                                        path: websocketPath,
+                                        query: websocketQuery,
                                         onError : onPoseidonError
                                     })
                                     $.ccio.mon[d.ke+d.id+user.auth_token].Poseidon.start();
@@ -407,7 +408,8 @@ $.ccio.globalWebsocket=function(d,user){
                                     maxLatency:d.d.stream_flv_maxLatency,
                                     hasAudio:false,
                                     url: location.origin,
-                                    path: path
+                                    path: websocketPath,
+                                    query: websocketQuery
                                 }
                             }else{
                                 options = {
@@ -501,7 +503,7 @@ $.ccio.globalWebsocket=function(d,user){
                             $.ccio.mon[d.ke+d.id+user.auth_token].h265HttpStream.abort()
                         }
                         if(d.d.stream_flv_type==='ws'){
-                          $.ccio.mon[d.ke+d.id+user.auth_token].h265Socket = io(location.origin,{ path: path, transports: ['websocket'], forceNew: false})
+                          $.ccio.mon[d.ke+d.id+user.auth_token].h265Socket = io(location.origin,{ path: websocketPath, query: websocketQuery, transports: ['websocket'], forceNew: false})
                           var ws = $.ccio.mon[d.ke+d.id+user.auth_token].h265Socket
                           ws.on('diconnect',function(){
                               console.log('h265Socket Stream Disconnected')
@@ -689,15 +691,16 @@ $.ccio.globalWebsocket=function(d,user){
         break;
     }
 }
+var websocketPath = tool.checkCorrectPathEnding(location.pathname) + 'socket.io'
+var websocketQuery = {}
 if(location.search === '?p2p=1'){
-    $user.ws=io(location.origin,{
-        path : '/socket.io'
-    });
-}else{
-    $user.ws=io(location.origin,{
-        path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
-    });
+    websocketPath = '/socket.io'
+    websocketQuery.machineId = machineId
 }
+$user.ws=io(location.origin,{
+    path: websocketPath,
+    query: websocketQuery
+});
 $user.ws.on('connect',function (d){
     $(document).ready(function(e){
         $.ccio.init('id',$user);
