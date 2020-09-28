@@ -195,7 +195,6 @@ const initialize = (config,lang) => {
                     clientConnectionToMachine.emit(target,initData)
                 });
                 clientConnectionToMachine.on('data',(data) => {
-                    console.log(target)
                     connectionToP2PServer.emit('data',{data: data, cnid: initData.cnid})
                 });
             }else{
