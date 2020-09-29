@@ -132,16 +132,16 @@ module.exports = function(s,config,lang){
                 }
                 if(!e.ext){e.ext = k.filename.split('.')[1]}
                 //send event for completed recording
+                const response = {
+                    mid: e.mid,
+                    ke: e.ke,
+                    filename: k.filename,
+                    d: s.cleanMonitorObject(s.group[e.ke].rawMonitorConfigurations[e.id]),
+                    filesize: k.filesize,
+                    time: s.timeObject(k.startTime).format('YYYY-MM-DD HH:mm:ss'),
+                    end: s.timeObject(k.endTime).format('YYYY-MM-DD HH:mm:ss')
+                }
                 if(config.childNodes.enabled === true && config.childNodes.mode === 'child' && config.childNodes.host){
-                    const response = {
-                        mid: e.mid,
-                        ke: e.ke,
-                        filename: k.filename,
-                        d: s.cleanMonitorObject(e),
-                        filesize: k.filesize,
-                        time: s.timeObject(k.startTime).format('YYYY-MM-DD HH:mm:ss'),
-                        end: s.timeObject(k.endTime).format('YYYY-MM-DD HH:mm:ss')
-                    }
                     fs.createReadStream(k.dir+k.filename,{ highWaterMark: 500 })
                     .on('data',function(data){
                         s.cx(Object.assign(response,{
@@ -187,7 +187,7 @@ module.exports = function(s,config,lang){
                     })
                     s.insertDatabaseRow(e,k,callback)
                     s.insertCompletedVideoExtensions.forEach(function(extender){
-                        extender(e,k)
+                        extender(e,k,response)
                     })
                 }
             }
