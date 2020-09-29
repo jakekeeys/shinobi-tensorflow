@@ -7,6 +7,8 @@ module.exports = function(s,config,lang){
         d.formDetails.use_whcs=d.d.use_whcs
     }
     var cloudDiskUseStartupForWasabiHotCloudStorage = function(group,userDetails){
+        group.cloudDiskUse = group.cloudDiskUse || {}
+        group.cloudDiskUse['whcs'] = group.cloudDiskUse['whcs'] || {}
         group.cloudDiskUse['whcs'].name = 'Wasabi Hot Cloud Storage'
         group.cloudDiskUse['whcs'].sizeLimitCheck = (userDetails.use_whcs_size_limit === '1')
         if(!userDetails.whcs_size_limit || userDetails.whcs_size_limit === ''){
@@ -104,14 +106,20 @@ module.exports = function(s,config,lang){
             })
             var bucketName = s.group[e.ke].init.whcs_bucket
             var saveLocation = s.group[e.ke].init.whcs_dir+e.ke+'/'+e.mid+'/'+k.filename
+            // gcp does not support multipart.  Set queueSize to 1 and a big enough partSize 
+            var options = s.group[e.ke].whcs.endpoint.href.includes("https://storage.googleapis.com") ? {
+                queueSize: 1,
+                partSize: 300 * 1024 * 1024
+            } : {}
             s.group[e.ke].whcs.upload({
                 Bucket: bucketName,
                 Key: saveLocation,
                 Body:fileStream,
                 ACL:'public-read',
                 ContentType:'video/'+ext
-            },function(err,data){
+            },options,function(err,data){
                 if(err){
+                    console.error(err)
                     s.userLog(e,{type:lang['Wasabi Hot Cloud Storage Upload Error'],msg:err})
                 }
                 if(s.group[e.ke].init.whcs_log === '1' && data && data.Location){
