@@ -192,12 +192,32 @@ module.exports = function(s,config,lang){
                     },[],e.ke)
                 }
             }
+            const onMonitorUnexpectedExitForDiscord = (monitorConfig) => {
+                const ffmpegCommand = s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].ffmpeg
+                const description = lang['Process Crashed for Monitor'] + '\n' + ffmpegCommand
+                const currentTime = new Date()
+                s.discordMsg({
+                    author: {
+                      name: monitorConfig.name + ' : ' + monitorConfig.mid,
+                      icon_url: config.iconURL
+                    },
+                    title: lang['Process Unexpected Exit'] + ' : ' + monitorConfig.name,
+                    description: description,
+                    fields: [],
+                    timestamp: currentTime,
+                    footer: {
+                      icon_url: config.iconURL,
+                      text: "Shinobi Systems"
+                    }
+                },[],monitorConfig.ke)
+            }
             s.loadGroupAppExtender(loadDiscordBotForUser)
             s.unloadGroupAppExtender(unloadDiscordBotForUser)
             s.onTwoFactorAuthCodeNotification(onTwoFactorAuthCodeNotificationForDiscord)
             s.onEventTrigger(onEventTriggerForDiscord)
             s.onEventTriggerBeforeFilter(onEventTriggerBeforeFilterForDiscord)
             s.onDetectorNoTriggerTimeout(onDetectorNoTriggerTimeoutForDiscord)
+            s.onMonitorUnexpectedExit(onMonitorUnexpectedExitForDiscord)
         }catch(err){
             console.log(err)
             console.log('Could not start Discord bot, please run "npm install discord.js" inside the Shinobi folder.')
@@ -389,11 +409,46 @@ module.exports = function(s,config,lang){
                 })
             }
         }
+        const onMonitorUnexpectedExitForEmail = (monitorConfig) => {
+            const ffmpegCommand = s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].ffmpeg
+            const description = ffmpegCommand
+            const subject = lang['Process Unexpected Exit'] + ' : ' + monitorConfig.name
+            const currentTime = new Date()
+            s.knexQuery({
+                action: "select",
+                columns: "mail",
+                table: "Users",
+                where: [
+                    ['ke','=',monitorConfig.ke],
+                    ['details','NOT LIKE','%"sub"%'],
+                ]
+            },(err,r) => {
+                r = r[0]
+                s.nodemailer.sendMail({
+                    from: config.mail.from,
+                    to: checkEmail(r.mail),
+                    subject: subject,
+                    html: template.createFramework({
+                        title: subject,
+                        subtitle: lang['Process Crashed for Monitor'],
+                        body: description,
+                        footerText: currentTime
+                    }),
+                    attachments: []
+                }, (error, info) => {
+                    if (error) {
+                        s.systemLog(lang.MailError,error)
+                        return false;
+                    }
+                })
+            })
+        }
         s.onTwoFactorAuthCodeNotification(onTwoFactorAuthCodeNotificationForEmail)
         s.onEventTriggerBeforeFilter(onEventTriggerBeforeFilterForEmail)
         s.onEventTrigger(onEventTriggerForEmail)
         s.onFilterEvent(onFilterEventForEmail)
         s.onDetectorNoTriggerTimeout(onDetectorNoTriggerTimeoutForEmail)
+        s.onMonitorUnexpectedExit(onMonitorUnexpectedExitForEmail)
     }catch(err){
         console.log(err)
     }
