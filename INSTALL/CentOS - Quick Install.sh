@@ -130,65 +130,56 @@ if [ "$installdbserver" = "Y" ] || [ "$installdbserver" = "" ]; then
     #Start mysql and enable on boot
     sudo systemctl start mariadb
     sudo systemctl enable mariadb
-    #Run mysql install
+    #Configure basic security for MariaDB
     sudo mysql_secure_installation
-
-	echo "========================================================="
-    read -p "Install default database? Y/N " mysqlDefaultData
-
-	#Changes input to uppercase
-	mysqlDefaultData=${mysqlDefaultData^}
-
-    if [ "$mysqlDefaultData" = "Y" ]; then
-		#Get the username we will use to insert the database
-		until [ "$mariadbUserConfirmation" = "Y" ]; do
-			echo "Please enter your MariaDB Username"
-            read sqluser
-
-			echo "Please confirm your MariaDB Username"
-			read sqluserconfirm
-
-			if [ -z "$sqluser" ] || [ -z "$sqluserconfirm" ]; then 
-				echo "Username field left blank. Please enter a valid username."
-			elif [ "$sqluser" == "$sqluserconfirm" ]; then
-				mariadbUserConfirmation="Y"
-			else
-				echo "Username did not match."
-				echo "Please try again."
-			fi			
-		done
-		
-		#Get the password for the database user
-		until [ "$mariadbPasswordConfirmation" = "Y" ]; do
-			echo "Please enter your MariaDB Password"
-            read -s sqlpass
-
-			echo "Please confirm your MariaDB Password"
-			read -s sqlpassconfirm
-
-			if [ -z "$sqlpass" ] || [ -z "$sqlpassconfirm" ]; then 
-				echo "Password field left blank. To continue without a password"
-				echo "please type \"confirm\", to enter a pasword press any key"
-				read nopassconfirmation
-				
-				if [ "$nopassconfirmation" == "confirm" ]; then
-					break
-				fi
-			elif [ "$sqlpass" == "$sqlpassconfirm" ]; then
-				mariadbPasswordConfirmation="Y"
-			else
-				echo "Passwords did not match."
-				echo "Please try again."
-			fi			
-		done
-
-        sudo mysql -u $sqluser -p$sqlpass -e "source sql/user.sql" || true
-        sudo mysql -u $sqluser -p$sqlpass -e "source sql/framework.sql" || true
-    fi
-
 else
     echo "========================================================="
     echo "Skipping database server installation..."
+fi
+
+echo "========================================================="
+read -p "Install default database? Y/N " mysqlDefaultData
+
+#Changes input to uppercase
+mysqlDefaultData=${mysqlDefaultData^}
+
+if [ "$mysqlDefaultData" = "Y" ]; then
+	if [ "$installdbserver" = "N" ]; then
+		#Get the hostname/ip of the database server
+		read -p "Please enter the hostname or IP address of the MariaDB server: " sqlhost
+		#Get the port for the database server
+		read -p "Please enter the port number of the MariaDB instance: " sqlport
+	fi
+	
+	#Get the username we will use to connect to the database
+	read -p "Please enter your MariaDB username: " sqluser
+	#Get the password for the database user
+	read -p -s "Please enter your MariaDB password: " sqlpass
+	
+	if [ "$installdbserver" = "N" ]; then
+		while ! mysql -h $sqlhost -P $sqlport -u $sqluser -p$sqlpassword -e ";" ; do
+			echo "Unable to connect to MariaDB with the supplied credentials!"
+			read -p "Please enter the hostname or IP address of the MariaDB server: " sqlhost
+			read -p "Please enter the port number of the MariaDB instance, or leave blank for the default port: " sqlport
+			if [ "$sqlport" = "" ]; then
+				sqlport=3306
+			fi
+			read -p "Please enter your MariaDB username: " sqluser
+			read -p -s "Please enter your MariaDB password: " sqlpass
+		done
+	else
+		while ! mysql -u $sqluser -p$sqlpassword -e ";" ; do
+			echo "Unable to connect to MariaDB with the supplied credentials!"
+			read -p "Please enter your MariaDB username: " sqluser
+			read -p -s "Please enter your MariaDB password: " sqlpass
+		done
+	fi
+	
+    sudo mysql -u $sqluser -p$sqlpass -e "source sql/user.sql" || true
+    sudo mysql -u $sqluser -p$sqlpass -e "source sql/framework.sql" || true
+else
+	echo "========================================================="
+    echo "Skipping database installation..."
 fi
 
 echo "========================================================="
