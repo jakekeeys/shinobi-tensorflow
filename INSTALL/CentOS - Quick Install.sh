@@ -120,7 +120,7 @@ read -p "Do you want to install MariaDB? Y/N " installdbserver
 #Changes input to uppercase
 installdbserver=${installdbserver^}
 
-if [ "installdbserver" = "Y" ] || [ "$installdbserver" = "" ]; then
+if [ "$installdbserver" = "Y" ] || [ "$installdbserver" = "" ]; then
     echo "========================================================="
     echo "Installing MariaDB repository..."
 	#Add the MariaDB repository to yum
@@ -186,7 +186,7 @@ if [ "installdbserver" = "Y" ] || [ "$installdbserver" = "" ]; then
         sudo mysql -u $sqluser -p$sqlpass -e "source sql/framework.sql" || true
     fi
 
-elif [ "$installdbserver" = "N" ]; then
+else
     echo "========================================================="
     echo "Skipping database server installation..."
 fi
