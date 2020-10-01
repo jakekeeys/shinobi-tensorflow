@@ -10,7 +10,7 @@ elif [ "$version" = 8 ]; then
 	pkgmgr="dnf"
 fi
 
-#Check to see if we are running on a virtual machinie
+#Check to see if we are running on a virtual machine
 if hostnamectl | grep -oq "Chassis: vm"; then
     vm="open-vm-tools"
 else
@@ -128,9 +128,26 @@ if [ "installdbserver" = "M" ] || [ "$installdbserver" = "" ]; then
 	mysqlDefaultData=${mysqlDefaultData^}
 
     if [ "$mysqlDefaultData" = "Y" ]; then
-        echo "Please enter your MariaDB Username"
-        read sqluser
-        until [ "$mariadbPasswordConfirmation" = "Y" ]; do
+		#Get the username we will use to insert the database
+		until [ "$mariadbUserConfirmation" = "Y" ]; do
+			echo "Please enter your MariaDB Username"
+            read sqluser
+
+			echo "Please confirm your MariaDB Username"
+			read sqluserconfirm
+
+			if [ -z "$sqluser" ] || [ -z "$sqluserconfirm" ]; then 
+				echo "Username field left blank. Please enter a valid username."
+			elif [ "$sqluser" == "$sqluserconfirm" ]; then
+				mariadbUserConfirmation="Y"
+			else
+				echo "Username did not match."
+				echo "Please try again."
+			fi			
+		done
+		
+		#Get the password for the database user
+		until [ "$mariadbPasswordConfirmation" = "Y" ]; do
 			echo "Please enter your MariaDB Password"
             read -s sqlpass
 
