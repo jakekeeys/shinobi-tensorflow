@@ -384,7 +384,7 @@ $.ccio.globalWebsocket=function(d,user){
                                     console.error(err)
                                 }
                             }
-                        },2000)
+                        },1000)
                     break;
                     case'flv':
                         if (flvjs.isSupported()) {
