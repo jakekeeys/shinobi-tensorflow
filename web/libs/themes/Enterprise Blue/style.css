@@ -39,3 +39,6 @@
 .form-group-group.forestgreen h4 {background: #091222;}
 .dark .form-group-group {background: #18253e;}
 .dark .list-group-item {background: #091222;border-color: #18253e;}
+
+[status="1"] .btn[video="launch"],[data-status="1"] .btn[video="launch"]{background:#337ab7!important;border-color:#337ab7!important}
+[status="2"] .btn[launch="video"],[status="2"] .btn[video="launch"],[data-status="2"] .btn[video="launch"]{background:#a59100!important;border-color:#a59100!important}

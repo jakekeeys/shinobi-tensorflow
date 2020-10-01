@@ -3,8 +3,8 @@ module.exports = function(s,config,lang){
     //Amazon S3
     var beforeAccountSaveForAmazonS3 = function(d){
         //d = save event
-        d.form.details.aws_use_global=d.d.aws_use_global
-        d.form.details.use_aws_s3=d.d.use_aws_s3
+        d.formDetails.aws_use_global=d.d.aws_use_global
+        d.formDetails.use_aws_s3=d.d.use_aws_s3
     }
     var cloudDiskUseStartupForAmazonS3 = function(group,userDetails){
         group.cloudDiskUse['s3'].name = 'Amazon S3'
@@ -100,23 +100,26 @@ module.exports = function(s,config,lang){
                     s.userLog(e,{type:lang['Amazon S3 Upload Error'],msg:err})
                 }
                 if(s.group[e.ke].init.aws_s3_log === '1' && data && data.Location){
-                    var save = [
-                        e.mid,
-                        e.ke,
-                        k.startTime,
-                        1,
-                        s.s({
-                            type : 's3',
-                            location : saveLocation
-                        }),
-                        k.filesize,
-                        k.endTime,
-                        data.Location
-                    ]
-                    s.sqlQuery('INSERT INTO `Cloud Videos` (mid,ke,time,status,details,size,end,href) VALUES (?,?,?,?,?,?,?,?)',save)
-                    s.setCloudDiskUsedForGroup(e,{
-                        amount : k.filesizeMB,
-                        storageType : 's3'
+                    s.knexQuery({
+                        action: "insert",
+                        table: "Cloud Videos",
+                        insert: {
+                            mid: e.mid,
+                            ke: e.ke,
+                            time: k.startTime,
+                            status: 1,
+                            details: s.s({
+                                type : 's3',
+                                location : saveLocation
+                            }),
+                            size: k.filesize,
+                            end: k.endTime,
+                            href: data.Location
+                        }
+                    })
+                    s.setCloudDiskUsedForGroup(e.ke,{
+                        amount: k.filesizeMB,
+                        storageType: 's3'
                     })
                     s.purgeCloudDiskForGroup(e,'s3')
                 }
@@ -142,19 +145,22 @@ module.exports = function(s,config,lang){
                     s.userLog(e,{type:lang['Wasabi Hot Cloud Storage Upload Error'],msg:err})
                 }
                 if(s.group[e.ke].init.aws_s3_log === '1' && data && data.Location){
-                    var save = [
-                        queryInfo.mid,
-                        queryInfo.ke,
-                        queryInfo.time,
-                        s.s({
-                            type : 's3',
-                            location : saveLocation,
-                        }),
-                        queryInfo.size,
-                        data.Location
-                    ]
-                    s.sqlQuery('INSERT INTO `Cloud Timelapse Frames` (mid,ke,time,details,size,href) VALUES (?,?,?,?,?,?)',save)
-                    s.setCloudDiskUsedForGroup(e,{
+                    s.knexQuery({
+                        action: "insert",
+                        table: "Cloud Timelapse Frames",
+                        insert: {
+                            mid: queryInfo.mid,
+                            ke: queryInfo.ke,
+                            time: queryInfo.time,
+                            details: s.s({
+                                type : 's3',
+                                location : saveLocation
+                            }),
+                            size: queryInfo.size,
+                            href: data.Location
+                        }
+                    })
+                    s.setCloudDiskUsedForGroup(e.ke,{
                         amount : s.kilobyteToMegabyte(queryInfo.size),
                         storageType : 's3'
                     },'timelapseFrames')

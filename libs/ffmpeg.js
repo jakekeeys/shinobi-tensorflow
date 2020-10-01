@@ -103,6 +103,8 @@ module.exports = function(s,config,lang,onFinish){
                 auto: {label:lang['Auto'],value:'auto'},
                 drm: {label:lang['drm'],value:'drm'},
                 cuvid: {label:lang['cuvid'],value:'cuvid'},
+                cuda: {label:lang['cuda'],value:'cuda'},
+                opencl: {label:lang['opencl'],value:'opencl'},
                 vaapi: {label:lang['vaapi'],value:'vaapi'},
                 qsv: {label:lang['qsv'],value:'qsv'},
                 vdpau: {label:lang['vdpau'],value:'vdpau'},
@@ -158,8 +160,10 @@ module.exports = function(s,config,lang,onFinish){
                 })
             }else{
                 var primaryMap = '0:0'
-                if(e.details.primary_input && e.details.primary_input !== '')primaryMap = e.details.primary_input
-                string += ' -map ' + primaryMap
+                if(e.details.primary_input && e.details.primary_input !== ''){
+                    var primaryMap = e.details.primary_input || '0:0'
+                    string += ' -map ' + primaryMap
+                }
             }
         }
         return string;
@@ -421,6 +425,8 @@ module.exports = function(s,config,lang,onFinish){
         //
         x.hwaccel = ''
         x.cust_input = ''
+        //wallclock fix for strangely long, single frame videos
+        if((config.wallClockTimestampAsDefault || e.details.wall_clock_timestamp_ignore !== '1') && e.type === 'h264' && x.cust_input.indexOf('-use_wallclock_as_timestamps 1') === -1){x.cust_input+=' -use_wallclock_as_timestamps 1';}
         //input - frame rate (capture rate)
         if(e.details.sfps && e.details.sfps!==''){x.input_fps=' -r '+e.details.sfps}else{x.input_fps=''}
         //input - analyze duration
@@ -635,21 +641,17 @@ module.exports = function(s,config,lang,onFinish){
                 //add input feed map
                 x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.snap)
             }
-            if(!e.details.snap_fps || e.details.snap_fps === ''){e.details.snap_fps = 1}
-            if(e.details.snap_vf && e.details.snap_vf !== '' || e.cudaEnabled){
-                var snapVf = e.details.snap_vf.split(',')
-                if(e.details.snap_vf === '')snapVf.shift()
-                if(e.cudaEnabled){
-                    snapVf.push('hwdownload,format=nv12')
-                }
-                //-vf "thumbnail_cuda=2,hwdownload,format=nv12"
-                x.snap_vf=' -vf "'+snapVf.join(',')+'"'
-            }else{
-                x.snap_vf=''
+            var snapVf = e.details.snap_vf ? e.details.snap_vf.split(',') : []
+            if(e.details.snap_vf === '')snapVf.shift()
+            if(e.cudaEnabled){
+                snapVf.push('hwdownload,format=nv12')
             }
-            if(e.details.snap_scale_x && e.details.snap_scale_x !== '' && e.details.snap_scale_y && e.details.snap_scale_y !== ''){x.snap_ratio = ' -s '+e.details.snap_scale_x+'x'+e.details.snap_scale_y}else{x.snap_ratio=''}
-            if(e.details.cust_snap && e.details.cust_snap !== ''){x.cust_snap = ' '+e.details.cust_snap}else{x.cust_snap=''}
-            x.pipe+=' -update 1 -r '+e.details.snap_fps+x.cust_snap+x.snap_ratio+x.snap_vf+' "'+e.sdir+'s.jpg" -y';
+            snapVf.push(`fps=${e.details.snap_fps || '1'}`)
+            //-vf "thumbnail_cuda=2,hwdownload,format=nv12"
+            x.pipe += ` -vf "${snapVf.join(',')}"`
+            if(e.details.snap_scale_x && e.details.snap_scale_x !== '' && e.details.snap_scale_y && e.details.snap_scale_y !== '')x.pipe += ' -s '+e.details.snap_scale_x+'x'+e.details.snap_scale_y
+            if(e.details.cust_snap)x.pipe += ' ' + e.details.cust_snap
+            x.pipe += ` -update 1 "${e.sdir}s.jpg" -y`
         }
         //custom - output
         if(e.details.custom_output&&e.details.custom_output!==''){x.pipe+=' '+e.details.custom_output;}
@@ -670,7 +672,7 @@ module.exports = function(s,config,lang,onFinish){
             x.dimensions = e.details.stream_scale_x+'x'+e.details.stream_scale_y;
         }
         //record - segmenting
-        x.segment = ' -f segment -segment_atclocktime 1 -reset_timestamps 1 -strftime 1 -segment_list pipe:2 -segment_time '+(60*e.cutoff)+' "'+e.dir+'%Y-%m-%dT%H-%M-%S.'+e.ext+'"';
+        x.segment = ' -f segment -segment_atclocktime 1 -reset_timestamps 1 -strftime 1 -segment_list pipe:8 -segment_time '+(60*e.cutoff)+' "'+e.dir+'%Y-%m-%dT%H-%M-%S.'+e.ext+'"';
         //record - set defaults for extension, video quality
         switch(e.ext){
             case'mp4':
@@ -692,7 +694,6 @@ module.exports = function(s,config,lang,onFinish){
         if(e.details.acodec&&e.details.acodec!==''&&e.details.acodec!=='default'){x.acodec=e.details.acodec}
         if(e.details.cust_record.indexOf('-strict -2') === -1){x.cust_record.push(' -strict -2')}
         if(e.details.cust_record.indexOf('-threads')===-1){x.cust_record.push(' -threads 1')}
-    //    if(e.details.cust_input&&(e.details.cust_input.indexOf('-use_wallclock_as_timestamps 1')>-1)===false){e.details.cust_input+=' -use_wallclock_as_timestamps 1';}
         //record - ready or reset codecs
         if(x.acodec!=='no'){
             if(x.acodec.indexOf('none')>-1){x.acodec=''}else{x.acodec=' -acodec '+x.acodec}
@@ -794,40 +795,58 @@ module.exports = function(s,config,lang,onFinish){
                 //add input feed map
                 x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
             }
-            if(!e.details.detector_fps || e.details.detector_fps === ''){x.detector_fps = 2}else{x.detector_fps = parseInt(e.details.detector_fps)}
-            if(e.details.detector_scale_x && e.details.detector_scale_x !== '' && e.details.detector_scale_y && e.details.detector_scale_y !== ''){x.dratio=' -s '+e.details.detector_scale_x+'x'+e.details.detector_scale_y}else{x.dratio=' -s 320x240'}
+            x.dratio = ` -s ${e.details.detector_scale_x ? e.details.detector_scale_x : '640'}x${e.details.detector_scale_y ? e.details.detector_scale_y : '480'}`
             if(e.details.cust_detect&&e.details.cust_detect!==''){x.cust_detect+=e.details.cust_detect;}
-            if(sendFramesGlobally)x.pipe += ' -r ' + x.detector_fps + x.dratio + x.cust_detect
+            if(sendFramesGlobally)x.pipe += x.dratio + x.cust_detect
             x.detector_vf = []
             if(e.cudaEnabled){
                 x.detector_vf.push('hwdownload,format=nv12')
             }
+            x.detector_vf.push('fps=' + (e.details.detector_fps ? e.details.detector_fps : '2'))
             if(sendFramesGlobally && x.detector_vf.length > 0)x.pipe += ' -vf "'+x.detector_vf.join(',')+'"'
 
             var h264Output = ' -q:v 1 -an -c:v libx264 -f hls -tune zerolatency -g 1 -hls_time 2 -hls_list_size 3 -start_number 0 -live_start_index 3 -hls_allow_cache 0 -hls_flags +delete_segments+omit_endlist "'+e.sdir+'detectorStreamX.m3u8"'
+            var setObjectDetectValues = () => {
+                //for object detection
+                if(
+                    e.details.detector_scale_x_object &&
+                    e.details.detector_scale_x_object !=='' &&
+                    e.details.detector_scale_y_object &&
+                    e.details.detector_scale_y_object!==''
+                ){
+                    x.dobjratio = ' -s '+e.details.detector_scale_x_object+'x'+e.details.detector_scale_y_object
+                }else{
+                    x.dobjratio = x.dratio
+                }
+                if(e.details.cust_detect_object)x.pipe += e.details.cust_detect_object
+                x.pipe += x.dobjratio + ' -vf fps=' + (e.details.detector_fps_object || '2')
+            }
             if(e.details.detector_pam === '1'){
                 if(sendFramesGlobally && e.cudaEnabled){
                     x.pipe += ' -vf "hwdownload,format=nv12"'
                 }
-                if(sendFramesGlobally)x.pipe += ' -an -c:v pam -pix_fmt gray -f image2pipe pipe:3'
-                if(e.details.detector_use_detect_object === '1'){
-                    //for object detection
-                    x.detector_fps_object = '2'
+                if(sendFramesGlobally){
                     x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
-                    if(e.details.detector_scale_x_object&&e.details.detector_scale_x_object!==''&&e.details.detector_scale_y_object&&e.details.detector_scale_y_object!==''){x.dobjratio=' -s '+e.details.detector_scale_x_object+'x'+e.details.detector_scale_y_object}else{x.dobjratio=x.dratio}
-                    if(e.details.detector_fps_object){x.detector_fps_object = e.details.detector_fps_object}
-                    x.pipe += ' -r ' + x.detector_fps_object + x.dobjratio + x.cust_detect
+                    x.pipe += ' -an -c:v pam -pix_fmt gray -f image2pipe pipe:3'
+                }
+                if(e.details.detector_use_detect_object === '1'){
+                    x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
+                    setObjectDetectValues()
                     if(e.details.detector_h264 === '1'){
                         x.pipe += h264Output
                     }else{
                         x.pipe += ' -an -f singlejpeg pipe:4'
                     }
                 }
-            }else if(sendFramesGlobally){
+            }else if(sendFramesGlobally || sendFramesToObjectDetector){
+                if(sendFramesToObjectDetector){
+                    x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
+                    setObjectDetectValues()
+                }
                 if(e.details.detector_h264 === '1'){
                     x.pipe += h264Output
                 }else{
-                    x.pipe += ' -an -f singlejpeg pipe:3'
+                    x.pipe += ' -an -f singlejpeg pipe:4'
                 }
             }
         }
@@ -908,39 +927,38 @@ module.exports = function(s,config,lang,onFinish){
     }
     ffmpeg.buildTimelapseOutput = function(e,x){
         if(e.details.record_timelapse === '1'){
-            x.record_timelapse_video_filters = []
+            var recordTimelapseVideoFilters = []
+            var flags = []
             if(e.details.input_map_choices&&e.details.input_map_choices.record_timelapse){
                 //add input feed map
                 x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.record_timelapse)
             }
-            var flags = []
-            if(e.details.record_timelapse_fps && e.details.record_timelapse_fps !== ''){
-                flags.push('-r 1/' + e.details.record_timelapse_fps)
-            }else{
-                flags.push('-r 1/900') // 15 minutes
-            }
+            recordTimelapseVideoFilters.push('fps=1/' + (e.details.record_timelapse_fps ? e.details.record_timelapse_fps : '900'))
             if(e.details.record_timelapse_vf && e.details.record_timelapse_vf !== '')flags.push('-vf ' + e.details.record_timelapse_vf)
             if(e.details.record_timelapse_scale_x && e.details.record_timelapse_scale_x !== '' && e.details.record_timelapse_scale_y && e.details.record_timelapse_scale_y !== '')flags.push(`-s ${e.details.record_timelapse_scale_x}x${e.details.record_timelapse_scale_y}`)
             //record - watermark for -vf
             if(e.details.record_timelapse_watermark&&e.details.record_timelapse_watermark=="1"&&e.details.record_timelapse_watermark_location&&e.details.record_timelapse_watermark_location!==''){
                 switch(e.details.record_timelapse_watermark_position){
                     case'tl'://top left
-                        x.record_timelapse_watermark_position='10:10'
+                        x.record_timelapse_watermark_position = '10:10'
                     break;
                     case'tr'://top right
-                        x.record_timelapse_watermark_position='main_w-overlay_w-10:10'
+                        x.record_timelapse_watermark_position = 'main_w-overlay_w-10:10'
                     break;
                     case'bl'://bottom left
-                        x.record_timelapse_watermark_position='10:main_h-overlay_h-10'
+                        x.record_timelapse_watermark_position = '10:main_h-overlay_h-10'
                     break;
                     default://bottom right
-                        x.record_timelapse_watermark_position='(main_w-overlay_w-10)/2:(main_h-overlay_h-10)/2'
+                        x.record_timelapse_watermark_position = '(main_w-overlay_w-10)/2:(main_h-overlay_h-10)/2'
                     break;
                 }
-                x.record_timelapse_video_filters.push('movie='+e.details.record_timelapse_watermark_location+'[watermark],[in][watermark]overlay='+x.record_timelapse_watermark_position+'[out]');
+                recordTimelapseVideoFilters.push(
+                    'movie=' + e.details.record_timelapse_watermark_location,
+                    `[watermark],[in][watermark]overlay=${x.record_timelapse_watermark_position}[out]`
+                )
             }
-            if(x.record_timelapse_video_filters.length > 0){
-                var videoFilter = `-vf "${x.record_timelapse_video_filters.join(',').trim()}"`
+            if(recordTimelapseVideoFilters.length > 0){
+                var videoFilter = `-vf "${recordTimelapseVideoFilters.join(',').trim()}"`
                 flags.push(videoFilter)
             }
             x.pipe += ` -f singlejpeg ${flags.join(' ')} -an -q:v 1 pipe:7`
@@ -951,7 +969,7 @@ module.exports = function(s,config,lang,onFinish){
         x.ffmpegCommandString = x.loglevel+x.input_fps;
         //progress pipe
         x.ffmpegCommandString += ' -progress pipe:5';
-
+        const url = s.buildMonitorUrl(e);
         switch(e.type){
             case'dashcam':
                 x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i -';
@@ -960,17 +978,17 @@ module.exports = function(s,config,lang,onFinish){
                 x.ffmpegCommandString += ' -pattern_type glob -f image2pipe'+x.record_fps+' -vcodec mjpeg'+x.cust_input+x.hwaccel+' -i -';
             break;
             case'mjpeg':
-                x.ffmpegCommandString += ' -reconnect 1 -f mjpeg'+x.cust_input+x.hwaccel+' -i "'+e.url+'"';
+                x.ffmpegCommandString += ' -reconnect 1 -f mjpeg'+x.cust_input+x.hwaccel+' -i "'+url+'"';
             break;
             case'mxpeg':
-                x.ffmpegCommandString += ' -reconnect 1 -f mxg'+x.cust_input+x.hwaccel+' -i "'+e.url+'"';
+                x.ffmpegCommandString += ' -reconnect 1 -f mxg'+x.cust_input+x.hwaccel+' -i "'+url+'"';
             break;
             case'rtmp':
                 if(!e.details.rtmp_key)e.details.rtmp_key = ''
                 x.ffmpegCommandString += x.cust_input+x.hwaccel+` -i "rtmp://127.0.0.1:1935/${e.ke + '_' + e.mid + '_' + e.details.rtmp_key}"`;
             break;
             case'h264':case'hls':case'mp4':
-                x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i "'+e.url+'"';
+                x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i "'+url+'"';
             break;
             case'local':
                 x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i "'+e.path+'"';
@@ -1013,11 +1031,40 @@ module.exports = function(s,config,lang,onFinish){
         ffmpeg.assembleMainPieces(e,x)
         ffmpeg.createPipeArray(e,x)
         //hold ffmpeg command for log stream
-        s.group[e.ke].activeMonitors[e.mid].ffmpeg = x.ffmpegCommandString
+        var sanitizedCmd = x.ffmpegCommandString
+        if(e.details.muser && e.details.mpass){
+            sanitizedCmd = sanitizedCmd
+                .replace(`//${e.details.muser}:${e.details.mpass}@`,'//')
+                .replace(`=${e.details.muser}`,'=USERNAME')
+                .replace(`=${e.details.mpass}`,'=PASSWORD')
+        }else if(e.details.muser){
+            sanitizedCmd = sanitizedCmd.replace(`//${e.details.muser}:@`,'//').replace(`=${e.details.muser}`,'=USERNAME')
+        }
+        s.group[e.ke].activeMonitors[e.mid].ffmpeg = sanitizedCmd
         //clean the string of spatial impurities and split for spawn()
         x.ffmpegCommandString = s.splitForFFPMEG(x.ffmpegCommandString)
         //launch that bad boy
-        return spawn(config.ffmpegDir,x.ffmpegCommandString,{detached: true,stdio:x.stdioPipes})
+        // return spawn(config.ffmpegDir,x.ffmpegCommandString,{detached: true,stdio:x.stdioPipes})
+        try{
+          fs.unlinkSync(e.sdir + 'cmd.txt')
+        }catch(err){
+
+        }
+        fs.writeFileSync(e.sdir + 'cmd.txt',JSON.stringify({
+          cmd: x.ffmpegCommandString,
+          pipes: x.stdioPipes.length,
+          rawMonitorConfig: s.group[e.ke].rawMonitorConfigurations[e.id],
+          globalInfo: {
+            config: config,
+            isAtleatOneDetectorPluginConnected: s.isAtleatOneDetectorPluginConnected
+          }
+        },null,3),'utf8')
+        var cameraCommandParams = [
+          './libs/cameraThread/singleCamera.js',
+          config.ffmpegDir,
+          e.sdir + 'cmd.txt'
+        ]
+        return spawn('node',cameraCommandParams,{detached: true,stdio:x.stdioPipes})
     }
     if(!config.ffmpegDir){
         ffmpeg.checkForWindows(function(){

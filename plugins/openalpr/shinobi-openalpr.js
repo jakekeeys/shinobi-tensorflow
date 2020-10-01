@@ -64,7 +64,7 @@ var convertResultsToMatrices = function(results){
     return mats
 }
 // OpenALPR Init />>
-s.detectObject = function(buffer,d,tx,frameLocation){
+s.detectObject = function(buffer,d,tx,frameLocation,callback){
     try{
         var region = d.mon.detector_lisence_plate_country || 'us'
         openalpr[region].IdentifyLicense(buffer, {}, function (error, output){
@@ -86,6 +86,7 @@ s.detectObject = function(buffer,d,tx,frameLocation){
                     }
                 })
             }
+            callback()
         })
     }catch(err){
         console.log(err)

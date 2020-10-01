@@ -57,7 +57,9 @@ module.exports = function(s,config,lang,io){
     //SSL options
     var wellKnownDirectory = s.mainDirectory + '/web/.well-known'
     if(fs.existsSync(wellKnownDirectory))app.use('/.well-known',express.static(wellKnownDirectory))
+    config.sslEnabled = false
     if(config.ssl&&config.ssl.key&&config.ssl.cert){
+        config.sslEnabled = true
         config.ssl.key=fs.readFileSync(s.checkRelativePath(config.ssl.key),'utf8')
         config.ssl.cert=fs.readFileSync(s.checkRelativePath(config.ssl.cert),'utf8')
         if(config.ssl.port === undefined){
@@ -92,6 +94,12 @@ module.exports = function(s,config,lang,io){
         io.attach(serverHTTPS,{
             path:s.checkCorrectPathEnding(config.webPaths.super)+'socket.io',
             transports: ['websocket']
+        })
+        app.use(function(req, res, next) {
+          if(!req.secure) {
+              return res.redirect(['https://', req.hostname,":",config.ssl.port, req.url].join(''));
+          }
+          next();
         })
     }
     //start HTTP

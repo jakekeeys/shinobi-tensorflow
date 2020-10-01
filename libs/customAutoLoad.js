@@ -1,174 +1,463 @@
-var fs = require('fs')
-var express = require('express')
-module.exports = function(s,config,lang,app,io){
-    function mergeDeep(...objects) {
-      const isObject = obj => obj && typeof obj === 'object';
-
-      return objects.reduce((prev, obj) => {
-        Object.keys(obj).forEach(key => {
-          const pVal = prev[key];
-          const oVal = obj[key];
-
-          if (Array.isArray(pVal) && Array.isArray(oVal)) {
-            prev[key] = pVal.concat(...oVal);
-          }
-          else if (isObject(pVal) && isObject(oVal)) {
-            prev[key] = mergeDeep(pVal, oVal);
-          }
-          else {
-            prev[key] = oVal;
-          }
-        });
-
-        return prev;
-      }, {});
+const fs = require('fs-extra');
+const express = require('express')
+const request = require('request')
+const unzipper = require('unzipper')
+const fetch = require("node-fetch")
+const spawn = require('child_process').spawn
+module.exports = async (s,config,lang,app,io) => {
+    const runningInstallProcesses = {}
+    const modulesBasePath = s.mainDirectory + '/libs/customAutoLoad/'
+    const searchText = function(searchFor,searchIn){
+        return searchIn.indexOf(searchFor) > -1
     }
-    s.customAutoLoadModules = {}
-    s.customAutoLoadTree = {
-        pages: [],
-        PageBlocks: [],
-        LibsJs: [],
-        LibsCss: [],
-        adminPageBlocks: [],
-        adminLibsJs: [],
-        adminLibsCss: [],
-        superPageBlocks: [],
-        superLibsJs: [],
-        superLibsCss: []
+    const extractNameFromPackage = (filePath) => {
+        const filePathParts = filePath.split('/')
+        const packageName = filePathParts[filePathParts.length - 1].split('.')[0]
+        return packageName
     }
-    var folderPath = s.mainDirectory + '/libs/customAutoLoad'
-    var search = function(searchFor,searchIn){return searchIn.indexOf(searchFor) > -1}
-    fs.readdir(folderPath,function(err,folderContents){
-        if(!err && folderContents){
-            folderContents.forEach(function(filename){
-                s.customAutoLoadModules[filename] = {}
-                var customModulePath = folderPath + '/' + filename
-                if(filename.indexOf('.js') > -1){
-                    s.customAutoLoadModules[filename].type = 'file'
-                    try{
-                        require(customModulePath)(s,config,lang,app,io)
-                    }catch(err){
-                        console.log('Failed to Load Module : ' + filename)
-                        console.log(err)
-                    }
-                }else{
-                    if(fs.lstatSync(customModulePath).isDirectory()){
-                        s.customAutoLoadModules[filename].type = 'folder'
-                        try{
-                            require(customModulePath)(s,config,lang,app,io)
-                            fs.readdir(customModulePath,function(err,folderContents){
-                                folderContents.forEach(function(name){
-                                    switch(name){
-                                        case'web':
-                                            var webFolder = s.checkCorrectPathEnding(customModulePath) + 'web/'
-                                            fs.readdir(webFolder,function(err,webFolderContents){
-                                                webFolderContents.forEach(function(name){
-                                                    switch(name){
-                                                        case'libs':
-                                                        case'pages':
-                                                            if(name === 'libs'){
-                                                                if(config.webPaths.home !== '/'){
-                                                                    app.use('/libs',express.static(webFolder + '/libs'))
-                                                                }
-                                                                app.use(s.checkCorrectPathEnding(config.webPaths.home)+'libs',express.static(webFolder + '/libs'))
-                                                                app.use(s.checkCorrectPathEnding(config.webPaths.admin)+'libs',express.static(webFolder + '/libs'))
-                                                                app.use(s.checkCorrectPathEnding(config.webPaths.super)+'libs',express.static(webFolder + '/libs'))
-                                                            }
-                                                            var libFolder = webFolder + name + '/'
-                                                            fs.readdir(libFolder,function(err,webFolderContents){
-                                                                webFolderContents.forEach(function(libName){
-                                                                    var thirdLevelName = libFolder + libName
-                                                                    switch(libName){
-                                                                        case'js':
-                                                                        case'css':
-                                                                        case'blocks':
-                                                                            fs.readdir(thirdLevelName,function(err,webFolderContents){
-                                                                                webFolderContents.forEach(function(filename){
-                                                                                    var fullPath = thirdLevelName + '/' + filename
-                                                                                    var blockPrefix = ''
-                                                                                    switch(true){
-                                                                                        case search('super.',filename):
-                                                                                            blockPrefix = 'super'
-                                                                                        break;
-                                                                                        case search('admin.',filename):
-                                                                                            blockPrefix = 'admin'
-                                                                                        break;
-                                                                                    }
-                                                                                    switch(libName){
-                                                                                        case'js':
-                                                                                            s.customAutoLoadTree[blockPrefix + 'LibsJs'].push(filename)
-                                                                                        break;
-                                                                                        case'css':
-                                                                                            s.customAutoLoadTree[blockPrefix + 'LibsCss'].push(filename)
-                                                                                        break;
-                                                                                        case'blocks':
-                                                                                            s.customAutoLoadTree[blockPrefix + 'PageBlocks'].push(fullPath)
-                                                                                        break;
-                                                                                    }
-                                                                                })
-                                                                            })
-                                                                        break;
-                                                                        default:
-                                                                            if(libName.indexOf('.ejs') > -1){
-                                                                                s.customAutoLoadTree.pages.push(thirdLevelName)
-                                                                            }
-                                                                        break;
-                                                                    }
-                                                                })
-                                                            })
-                                                        break;
-                                                    }
-                                                })
-                                            })
-                                        break;
-                                        case'languages':
-                                            var languagesFolder = s.checkCorrectPathEnding(customModulePath) + 'languages/'
-                                            fs.readdir(languagesFolder,function(err,files){
-                                                if(err)return console.log(err);
-                                                files.forEach(function(filename){
-                                                    var fileData = require(languagesFolder + filename)
-                                                    var rule = filename.replace('.json','')
-                                                    if(config.language === rule){
-                                                        lang = Object.assign(lang,fileData)
-                                                    }
-                                                    if(s.loadedLanguages[rule]){
-                                                        s.loadedLanguages[rule] = Object.assign(s.loadedLanguages[rule],fileData)
-                                                    }else{
-                                                        s.loadedLanguages[rule] = Object.assign(s.copySystemDefaultLanguage(),fileData)
-                                                    }
-                                                })
-                                            })
-                                        break;
-                                        case'definitions':
-                                            var definitionsFolder = s.checkCorrectPathEnding(customModulePath) + 'definitions/'
-                                            fs.readdir(definitionsFolder,function(err,files){
-                                                if(err)return console.log(err);
-                                                files.forEach(function(filename){
-                                                    var fileData = require(definitionsFolder + filename)
-                                                    var rule = filename.replace('.json','').replace('.js','')
-                                                    if(config.language === rule){
-                                                        s.definitions = mergeDeep(s.definitions,fileData)
-                                                    }
-                                                    if(s.loadedDefinitons[rule]){
-                                                        s.loadedDefinitons[rule] = mergeDeep(s.loadedDefinitons[rule],fileData)
-                                                    }else{
-                                                        s.loadedDefinitons[rule] = mergeDeep(s.copySystemDefaultDefinitions(),fileData)
-                                                    }
-                                                })
-                                            })
-                                        break;
-                                    }
-                                })
+    const getModulePath = (name) => {
+        return modulesBasePath + name + '/'
+    }
+    const getModule = (moduleName) => {
+        const modulePath = modulesBasePath + moduleName
+        const stats = fs.lstatSync(modulePath)
+        const isDirectory = stats.isDirectory()
+        const newModule = {
+            name: moduleName,
+            path: modulePath + '/',
+            size: stats.size,
+            lastModified: stats.mtime,
+            created: stats.ctime,
+            isDirectory: isDirectory,
+        }
+        if(isDirectory){
+            var hasInstaller = false
+            if(!fs.existsSync(modulePath + '/index.js')){
+                hasInstaller = true
+                newModule.noIndex = true
+            }
+            if(fs.existsSync(modulePath + '/package.json')){
+                hasInstaller = true
+                newModule.properties = getModuleProperties(moduleName)
+            }else{
+                newModule.properties = {
+                    name: moduleName
+                }
+            }
+            newModule.hasInstaller = hasInstaller
+        }else{
+            newModule.isIgnitor = (moduleName.indexOf('.js') > -1)
+            newModule.properties = {
+                name: moduleName
+            }
+        }
+        return newModule
+    }
+    const getModules = (asArray) => {
+        const foundModules = {}
+        fs.readdirSync(modulesBasePath).forEach((moduleName) => {
+            foundModules[moduleName] = getModule(moduleName)
+        })
+        return asArray ? Object.values(foundModules) : foundModules
+    }
+    const downloadModule = (downloadUrl,packageName) => {
+        const downloadPath = modulesBasePath + packageName
+        fs.mkdirSync(downloadPath)
+        return new Promise(async (resolve, reject) => {
+            fs.mkdir(downloadPath, () => {
+                request(downloadUrl).pipe(fs.createWriteStream(downloadPath + '.zip'))
+                .on('finish',() => {
+                    zip = fs.createReadStream(downloadPath + '.zip')
+                    .pipe(unzipper.Parse())
+                    .on('entry', async (file) => {
+                        if(file.type === 'Directory'){
+                            try{
+                                fs.mkdirSync(modulesBasePath + file.path, { recursive: true })
+                            }catch(err){
+
+                            }
+                        }else{
+                            const content = await file.buffer();
+                            fs.writeFile(modulesBasePath + file.path,content,(err) => {
+                                if(err)console.log(err)
                             })
-                        }catch(err){
-                            console.log('Failed to Load Module : ' + filename)
-                            console.log(err)
                         }
+                    })
+                    .promise()
+                    .then(() => {
+                        fs.remove(downloadPath + '.zip', () => {})
+                        resolve()
+                    })
+                })
+            })
+        })
+    }
+    const getModuleProperties = (name) => {
+        const modulePath = getModulePath(name)
+        const propertiesPath = modulePath + 'package.json'
+        const properties = fs.existsSync(propertiesPath) ? s.parseJSON(fs.readFileSync(propertiesPath)) : {
+            name: name
+        }
+        return properties
+    }
+    const installModule = (name) => {
+        return new Promise((resolve, reject) => {
+            if(!runningInstallProcesses[name]){
+                //depending on module this may only work for Ubuntu
+                const modulePath = getModulePath(name)
+                const properties = getModuleProperties(name);
+                const installerPath = modulePath + `INSTALL.sh`
+                const propertiesPath = modulePath + 'package.json'
+                var installProcess
+                // check for INSTALL.sh (ubuntu only)
+                if(fs.existsSync(installerPath)){
+                    installProcess = spawn(`sh`,[installerPath])
+                }else if(fs.existsSync(propertiesPath)){
+                    // no INSTALL.sh found, check for package.json and do `npm install --unsafe-perm`
+                    installProcess = spawn(`npm`,['install','--unsafe-perm','--prefix',modulePath])
+                }else{
+                    resolve()
+                }
+                if(installProcess){
+                    const sendData = (data,channel) => {
+                        const clientData = {
+                            f: 'module-info',
+                            module: name,
+                            process: 'install-' + channel,
+                            data: data.toString(),
+                        }
+                        s.tx(clientData,'$')
+                        s.debugLog(clientData)
                     }
+                    installProcess.stderr.on('data',(data) => {
+                        sendData(data,'stderr')
+                    })
+                    installProcess.stdout.on('data',(data) => {
+                        sendData(data,'stdout')
+                    })
+                    installProcess.on('exit',(data) => {
+                        runningInstallProcesses[name] = null;
+                        resolve()
+                    })
+                    runningInstallProcesses[name] = installProcess
+                }
+            }else{
+                resolve(lang['Already Installing...'])
+            }
+        })
+    }
+    const disableModule = (name,status) => {
+        // set status to `false` to enable
+        const modulePath = getModulePath(name)
+        const properties = getModuleProperties(name);
+        const propertiesPath = modulePath + 'package.json'
+        var packageJson = {
+            name: name
+        }
+        try{
+            packageJson = JSON.parse(fs.readFileSync(propertiesPath))
+        }catch(err){
+
+        }
+        packageJson.disabled = status;
+        fs.writeFileSync(propertiesPath,s.prettyPrint(packageJson))
+    }
+    const deleteModule = (name) => {
+        // requires restart for changes to take effect
+        try{
+            const modulePath = modulesBasePath + name
+            fs.remove(modulePath, (err) => {
+                console.log(err)
+            })
+            return true
+        }catch(err){
+            console.log(err)
+            return false
+        }
+    }
+    const loadModule = (shinobiModule) => {
+        const moduleName = shinobiModule.name
+        s.customAutoLoadModules[moduleName] = {}
+        var customModulePath = modulesBasePath + '/' + moduleName
+        if(shinobiModule.isIgnitor){
+            s.customAutoLoadModules[moduleName].type = 'file'
+            try{
+                require(customModulePath)(s,config,lang,app,io)
+            }catch(err){
+                s.systemLog('Failed to Load Module : ' + moduleName)
+                s.systemLog(err)
+            }
+        }else if(shinobiModule.isDirectory){
+            s.customAutoLoadModules[moduleName].type = 'folder'
+            try{
+                require(customModulePath)(s,config,lang,app,io)
+                fs.readdir(customModulePath,function(err,folderContents){
+                    folderContents.forEach(function(name){
+                        switch(name){
+                            case'web':
+                                var webFolder = s.checkCorrectPathEnding(customModulePath) + 'web/'
+                                fs.readdir(webFolder,function(err,webFolderContents){
+                                    webFolderContents.forEach(function(name){
+                                        switch(name){
+                                            case'libs':
+                                            case'pages':
+                                                if(name === 'libs'){
+                                                    if(config.webPaths.home !== '/'){
+                                                        app.use('/libs',express.static(webFolder + '/libs'))
+                                                    }
+                                                    app.use(s.checkCorrectPathEnding(config.webPaths.home)+'libs',express.static(webFolder + '/libs'))
+                                                    app.use(s.checkCorrectPathEnding(config.webPaths.admin)+'libs',express.static(webFolder + '/libs'))
+                                                    app.use(s.checkCorrectPathEnding(config.webPaths.super)+'libs',express.static(webFolder + '/libs'))
+                                                }
+                                                var libFolder = webFolder + name + '/'
+                                                fs.readdir(libFolder,function(err,webFolderContents){
+                                                    webFolderContents.forEach(function(libName){
+                                                        var thirdLevelName = libFolder + libName
+                                                        switch(libName){
+                                                            case'js':
+                                                            case'css':
+                                                            case'blocks':
+                                                                fs.readdir(thirdLevelName,function(err,webFolderContents){
+                                                                    webFolderContents.forEach(function(filename){
+                                                                        var fullPath = thirdLevelName + '/' + filename
+                                                                        var blockPrefix = ''
+                                                                        switch(true){
+                                                                            case searchText('super.',filename):
+                                                                                blockPrefix = 'super'
+                                                                            break;
+                                                                            case searchText('admin.',filename):
+                                                                                blockPrefix = 'admin'
+                                                                            break;
+                                                                        }
+                                                                        switch(libName){
+                                                                            case'js':
+                                                                                s.customAutoLoadTree[blockPrefix + 'LibsJs'].push(filename)
+                                                                            break;
+                                                                            case'css':
+                                                                                s.customAutoLoadTree[blockPrefix + 'LibsCss'].push(filename)
+                                                                            break;
+                                                                            case'blocks':
+                                                                                s.customAutoLoadTree[blockPrefix + 'PageBlocks'].push(fullPath)
+                                                                            break;
+                                                                        }
+                                                                    })
+                                                                })
+                                                            break;
+                                                            default:
+                                                                if(libName.indexOf('.ejs') > -1){
+                                                                    s.customAutoLoadTree.pages.push(thirdLevelName)
+                                                                }
+                                                            break;
+                                                        }
+                                                    })
+                                                })
+                                            break;
+                                        }
+                                    })
+                                })
+                            break;
+                            case'languages':
+                                var languagesFolder = s.checkCorrectPathEnding(customModulePath) + 'languages/'
+                                fs.readdir(languagesFolder,function(err,files){
+                                    if(err)return console.log(err);
+                                    files.forEach(function(filename){
+                                        var fileData = require(languagesFolder + filename)
+                                        var rule = filename.replace('.json','')
+                                        if(config.language === rule){
+                                            lang = Object.assign(lang,fileData)
+                                        }
+                                        if(s.loadedLanguages[rule]){
+                                            s.loadedLanguages[rule] = Object.assign(s.loadedLanguages[rule],fileData)
+                                        }else{
+                                            s.loadedLanguages[rule] = Object.assign(s.copySystemDefaultLanguage(),fileData)
+                                        }
+                                    })
+                                })
+                            break;
+                            case'definitions':
+                                var definitionsFolder = s.checkCorrectPathEnding(customModulePath) + 'definitions/'
+                                fs.readdir(definitionsFolder,function(err,files){
+                                    if(err)return console.log(err);
+                                    files.forEach(function(filename){
+                                        var fileData = require(definitionsFolder + filename)
+                                        var rule = filename.replace('.json','').replace('.js','')
+                                        if(config.language === rule){
+                                            s.definitions = s.mergeDeep(s.definitions,fileData)
+                                        }
+                                        if(s.loadedDefinitons[rule]){
+                                            s.loadedDefinitons[rule] = s.mergeDeep(s.loadedDefinitons[rule],fileData)
+                                        }else{
+                                            s.loadedDefinitons[rule] = s.mergeDeep(s.copySystemDefaultDefinitions(),fileData)
+                                        }
+                                    })
+                                })
+                            break;
+                        }
+                    })
+                })
+            }catch(err){
+                s.systemLog('Failed to Load Module : ' + moduleName)
+                s.systemLog(err)
+            }
+        }
+    }
+    const moveModuleToNameInProperties = (modulePath,packageRoot,properties) => {
+        return new Promise((resolve,reject) => {
+            const packageRootParts = packageRoot.split('/')
+            const filename = packageRootParts[packageRootParts.length - 1]
+            fs.move(modulePath + packageRoot,modulesBasePath + filename,(err) => {
+                if(packageRoot){
+                    fs.remove(modulePath, (err) => {
+                        if(err)console.log(err)
+                        resolve(filename)
+                    })
+                }else{
+                    resolve(filename)
                 }
             })
-        }else{
-            fs.mkdirSync(folderPath)
+        })
+    }
+    const initializeAllModules = async () => {
+        s.customAutoLoadModules = {}
+        s.customAutoLoadTree = {
+            pages: [],
+            PageBlocks: [],
+            LibsJs: [],
+            LibsCss: [],
+            adminPageBlocks: [],
+            adminLibsJs: [],
+            adminLibsCss: [],
+            superPageBlocks: [],
+            superLibsJs: [],
+            superLibsCss: []
         }
+        fs.readdir(modulesBasePath,function(err,folderContents){
+            if(!err && folderContents.length > 0){
+                getModules(true).forEach((shinobiModule) => {
+                    if(shinobiModule.properties.disabled){
+                        return;
+                    }
+                    loadModule(shinobiModule)
+                })
+            }else{
+                fs.mkdir(modulesBasePath,() => {})
+            }
+        })
+    }
+    /**
+    * API : Superuser : Custom Auto Load Package Download.
+    */
+    app.get(config.webPaths.superApiPrefix+':auth/package/list', async (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            s.closeJsonResponse(res,{
+                ok: true,
+                modules: getModules()
+            })
+        },res,req)
     })
+    /**
+    * API : Superuser : Custom Auto Load Package Download.
+    */
+    app.post(config.webPaths.superApiPrefix+':auth/package/download', async (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            try{
+                const url = req.body.downloadUrl
+                const packageRoot = req.body.packageRoot || ''
+                const packageName = req.body.packageName || extractNameFromPackage(url)
+                const modulePath = getModulePath(packageName)
+                await downloadModule(url,packageName)
+                const properties = getModuleProperties(packageName)
+                const newName = await moveModuleToNameInProperties(modulePath,packageRoot,properties)
+                const chosenName = newName ? newName : packageName
+                disableModule(chosenName,true)
+                s.closeJsonResponse(res,{
+                    ok: true,
+                    moduleName: chosenName,
+                    newModule: getModule(chosenName)
+                })
+            }catch(err){
+                s.closeJsonResponse(res,{
+                    ok: false,
+                    error: err
+                })
+            }
+        },res,req)
+    })
+    // /**
+    // * API : Superuser : Custom Auto Load Package Update.
+    // */
+    // app.post(config.webPaths.superApiPrefix+':auth/package/update', async (req,res) => {
+    //     s.superAuth(req.params, async (resp) => {
+    //         try{
+    //             const url = req.body.downloadUrl
+    //             const packageRoot = req.body.packageRoot || ''
+    //             const packageName = req.body.packageName || extractNameFromPackage(url)
+    //             const modulePath = getModulePath(packageName)
+    //             await downloadModule(url,packageName)
+    //             const properties = getModuleProperties(packageName)
+    //             const newName = await moveModuleToNameInProperties(modulePath,packageRoot,properties)
+    //             const chosenName = newName ? newName : packageName
+    //
+    //             disableModule(chosenName,true)
+    //             s.closeJsonResponse(res,{
+    //                 ok: true,
+    //                 moduleName: chosenName,
+    //                 newModule: getModule(chosenName)
+    //             })
+    //         }catch(err){
+    //             s.closeJsonResponse(res,{
+    //                 ok: false,
+    //                 error: err
+    //             })
+    //         }
+    //     },res,req)
+    // })
+    /**
+    * API : Superuser : Custom Auto Load Package Install.
+    */
+    app.post(config.webPaths.superApiPrefix+':auth/package/install', (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            const packageName = req.body.packageName
+            const response = {ok: true}
+            const error = await installModule(packageName)
+            if(error){
+                response.ok = false
+                response.msg = error
+            }
+            s.closeJsonResponse(res,response)
+        },res,req)
+    })
+    /**
+    * API : Superuser : Custom Auto Load Package set Status (Enabled or Disabled).
+    */
+    app.post(config.webPaths.superApiPrefix+':auth/package/status', (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            const status = req.body.status
+            const packageName = req.body.packageName
+            const selection = status == 'true' ? true : false
+            disableModule(packageName,selection)
+            s.closeJsonResponse(res,{ok: true, status: selection})
+        },res,req)
+    })
+    /**
+    * API : Superuser : Custom Auto Load Package Delete
+    */
+    app.post(config.webPaths.superApiPrefix+':auth/package/delete', async (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            const packageName = req.body.packageName
+            const response = deleteModule(packageName)
+            s.closeJsonResponse(res,{ok: response})
+        },res,req)
+    })
+    /**
+    * API : Superuser : Custom Auto Load Package Reload All
+    */
+    app.post(config.webPaths.superApiPrefix+':auth/package/reloadAll', async (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            await initializeAllModules();
+            s.closeJsonResponse(res,{ok: true})
+        },res,req)
+    })
+    // Initialize Modules on Start
+    await initializeAllModules();
 }

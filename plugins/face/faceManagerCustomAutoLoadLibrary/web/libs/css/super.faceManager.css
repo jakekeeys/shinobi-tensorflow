@@ -1,0 +1,89 @@
+#faceManagerImages .face-image {
+    transition: 0s;
+}
+#faceManagerImages .face-title:first-child {
+    margin-top: 0!important;
+}
+#faceManagerImages > .row {
+    background: #fafafa;
+    border-radius: 5px;
+    padding: 5px;
+    margin: 0;
+}
+#faceManagerImages > .row.ui-droppable-hover {
+    background: #eee;
+}
+#faceManagerImages > .row:empty {
+    height: 200px;
+}
+#faceManagerImages .face-image-bg {
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    border-radius: 5px;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #eee;
+}
+#faceManagerImages .face-image .controls,
+#faceManagerImages .face-image .controls-bottom {
+    position: absolute;
+    width: 100%;
+    top: 0;
+    left: 0;
+    padding: 5px;
+    line-height: 1;
+}
+#faceManagerImages .face-image .controls-bottom {
+    top: initial;
+    bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#faceManagerImages .face-image:hover .controls .badge,
+#faceManagerImages .face-image:hover .controls-bottom .badge{
+    opacity: 0.1
+}
+/* ===================== FILE INPUT ===================== */
+.file-area {
+	 width: 100%;
+	 position: relative;
+}
+ .file-area input[type=file] {
+	 position: absolute;
+	 width: 100%;
+	 height: 100%;
+	 top: 0;
+	 left: 0;
+	 right: 0;
+	 bottom: 0;
+	 opacity: 0;
+	 cursor: pointer;
+}
+ .file-area .file-dummy {
+	 width: 100%;
+	 padding: 30px;
+	 background: rgba(255, 255, 255, 0.2);
+	 border: 2px dashed rgba(200, 200, 200, 0.2);
+	 text-align: center;
+	 transition: background 0.3s ease-in-out;
+     border-radius: 5px;
+     background-color: #f2f9ff;
+}
+ .file-area .file-dummy .success {
+	 display: none;
+}
+ .file-area input[type=file]:focus + .file-dummy {
+	 outline: 0;
+ }
+ .file-area input[type=file]:valid + .file-dummy {
+	 border-color: rgba(0, 255, 0, 0.4);
+	 background-color: rgba(0, 255, 0, 0.2);
+}
+ .file-area input[type=file]:valid + .file-dummy .success {
+	 display: inline-block;
+}
+ .file-area input[type=file]:valid + .file-dummy .default {
+	 display: none;
+}

@@ -95,6 +95,7 @@ CREATE TABLE IF NOT EXISTS `Users` (
   `auth` varchar(50) DEFAULT NULL,
   `mail` varchar(100) DEFAULT NULL,
   `pass` varchar(100) DEFAULT NULL,
+  `accountType` int(1) DEFAULT '0',
   `details` longtext,
   UNIQUE KEY `mail` (`mail`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -110,7 +111,8 @@ CREATE TABLE IF NOT EXISTS `Videos` (
   `size` float DEFAULT NULL,
   `frames` int(11) DEFAULT NULL,
   `end` timestamp NULL DEFAULT NULL,
-  `status` int(1) DEFAULT '0' COMMENT '0:Building,1:Complete,2:Read,3:Archive',
+  `status` int(1) DEFAULT '0',
+  `archived` int(1) DEFAULT '0',
   `details` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -156,6 +158,19 @@ CREATE TABLE IF NOT EXISTS `Timelapse Frames` (
   `filename` varchar(50) NOT NULL,
   `time` timestamp NULL DEFAULT NULL,
   `size` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- Dumping structure for table ccio.Timelapse Frames
+CREATE TABLE IF NOT EXISTS `Cloud Timelapse Frames` (`ke` varchar(50) NOT NULL,`mid` varchar(50) NOT NULL,`href` text NOT NULL,`details` longtext,`filename` varchar(50) NOT NULL,`time` timestamp NULL DEFAULT NULL,`size` int(11) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Dumping structure for table ccio.Events Counts
+CREATE TABLE IF NOT EXISTS `Events Counts` (
+  `ke` varchar(50) NOT NULL,
+  `mid` varchar(50) NOT NULL,
+  `details` longtext NOT NULL,
+  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `end` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `count` int(10) NOT NULL DEFAULT 1,
+  `tag` varchar(30) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.

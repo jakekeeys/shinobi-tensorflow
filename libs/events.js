@@ -3,7 +3,83 @@ var execSync = require('child_process').execSync;
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var request = require('request');
+// Matrix In Region Libs >
+var SAT = require('sat')
+var V = SAT.Vector;
+var P = SAT.Polygon;
+var B = SAT.Box;
+// Matrix In Region Libs />
 module.exports = function(s,config,lang){
+    const {
+        moveCameraPtzToMatrix,
+    } = require('./control/ptz.js')(s,config,lang)
+    const countObjects = async (event) => {
+        const matrices = event.details.matrices
+        const eventsCounted = s.group[event.ke].activeMonitors[event.id].eventsCounted || {}
+        if(matrices){
+            matrices.forEach((matrix)=>{
+                const id = matrix.tag
+                if(!eventsCounted[id])eventsCounted[id] = {times: [], count: {}, tag: matrix.tag}
+                if(!isNaN(matrix.id))eventsCounted[id].count[matrix.id] = 1
+                eventsCounted[id].times.push(new Date().getTime())
+            })
+        }
+        return eventsCounted
+    }
+    const isAtleastOneMatrixInRegion = function(regions,matrices,callback){
+        var regionPolys = []
+        var matrixPoints = []
+        regions.forEach(function(region,n){
+            var polyPoints = []
+            region.points.forEach(function(point){
+                polyPoints.push(new V(parseInt(point[0]),parseInt(point[1])))
+            })
+            regionPolys[n] = new P(new V(0,0), polyPoints)
+        })
+        var collisions = []
+        var foundInRegion = false
+        matrices.forEach(function(matrix){
+            var matrixPoly = new B(new V(matrix.x, matrix.y), matrix.width, matrix.height).toPolygon()
+            regionPolys.forEach(function(region,n){
+                var response = new SAT.Response()
+                var collided = SAT.testPolygonPolygon(matrixPoly, region, response)
+                if(collided === true){
+                    collisions.push({
+                        matrix: matrix,
+                        region: regions[n]
+                    })
+                    foundInRegion = true
+                }
+            })
+        })
+        if(callback)callback(foundInRegion,collisions)
+        return foundInRegion
+    }
+    const scanMatricesforCollisions = function(region,matrices){
+        var matrixPoints = []
+        var collisions = []
+        if (!region || !matrices){
+            if(callback)callback(collisions)
+            return collisions
+        }
+        var polyPoints = []
+        region.points.forEach(function(point){
+            polyPoints.push(new V(parseInt(point[0]),parseInt(point[1])))
+        })
+        var regionPoly = new P(new V(0,0), polyPoints)
+        matrices.forEach(function(matrix){
+            if (matrix){
+                var matrixPoly = new B(new V(matrix.x, matrix.y), matrix.width, matrix.height).toPolygon()
+                var response = new SAT.Response()
+                var collided = SAT.testPolygonPolygon(matrixPoly, regionPoly, response)
+                if(collided === true){
+                    collisions.push(matrix)
+                }
+            }
+        })
+        return collisions
+    }
+    const nonEmpty = (element) => element.length !== 0;
     s.addEventDetailsToString = function(eventData,string,addOps){
         //d = event data
         if(!addOps)addOps = {}
@@ -15,11 +91,18 @@ module.exports = function(s,config,lang){
             .replace(/{{REGION_NAME}}/g,d.details.name)
             .replace(/{{SNAP_PATH}}/g,s.dir.streams+'/'+d.ke+'/'+d.id+'/s.jpg')
             .replace(/{{MONITOR_ID}}/g,d.id)
+            .replace(/{{MONITOR_NAME}}/g,s.group[d.ke].rawMonitorConfigurations[d.id].name)
             .replace(/{{GROUP_KEY}}/g,d.ke)
             .replace(/{{DETAILS}}/g,detailString)
         if(d.details.confidence){
             newString = newString
             .replace(/{{CONFIDENCE}}/g,d.details.confidence)
+        }
+        if(newString.includes("REASON")) {
+          if(d.details.reason) {
+            newString = newString
+            .replace(/{{REASON}}/g, d.details.reason)
+          }
         }
         return newString
     }
@@ -41,7 +124,8 @@ module.exports = function(s,config,lang){
             extender(x,d)
         })
     }
-    s.triggerEvent = function(d,forceSave){
+    s.triggerEvent = async (d,forceSave) => {
+        var didCountingAlready = false
         var filter = {
             halt : false,
             addToMotionCounter : true,
@@ -50,17 +134,18 @@ module.exports = function(s,config,lang){
             webhook : true,
             command : true,
             record : true,
-            indifference : false
+            indifference : false,
+            countObjects : true
         }
-        s.onEventTriggerBeforeFilterExtensions.forEach(function(extender){
-            extender(d,filter)
-        })
         var detailString = JSON.stringify(d.details);
         if(!s.group[d.ke]||!s.group[d.ke].activeMonitors[d.id]){
             return s.systemLog(lang['No Monitor Found, Ignoring Request'])
         }
         d.mon=s.group[d.ke].rawMonitorConfigurations[d.id];
-        var currentConfig = s.group[d.ke].activeMonitors[d.id].details
+        var currentConfig = s.group[d.ke].rawMonitorConfigurations[d.id].details
+        s.onEventTriggerBeforeFilterExtensions.forEach(function(extender){
+            extender(d,filter)
+        })
         var hasMatrices = (d.details.matrices && d.details.matrices.length > 0)
         //read filters
         if(
@@ -126,6 +211,7 @@ module.exports = function(s,config,lang){
                         case'y':
                         case'height':
                         case'width':
+		                case'confidence':
                             if(d.details.matrices){
                                 d.details.matrices.forEach(function(matrix,position){
                                     modifyFilters(matrix,position)
@@ -188,10 +274,14 @@ module.exports = function(s,config,lang){
         var eventTime = new Date()
         //motion counter
         if(filter.addToMotionCounter && filter.record){
-            if(!s.group[d.ke].activeMonitors[d.id].detector_motion_count){
-                s.group[d.ke].activeMonitors[d.id].detector_motion_count=0
-            }
-            s.group[d.ke].activeMonitors[d.id].detector_motion_count+=1
+            s.group[d.ke].activeMonitors[d.id].detector_motion_count.push(d)
+        }
+        if(filter.countObjects && currentConfig.detector_obj_count === '1' && currentConfig.detector_obj_count_in_region !== '1'){
+            didCountingAlready = true
+            countObjects(d)
+        }
+        if(currentConfig.detector_ptz_follow === '1'){
+            moveCameraPtzToMatrix(d,currentConfig.detector_ptz_follow_target)
         }
         if(filter.useLock){
             if(s.group[d.ke].activeMonitors[d.id].motion_lock){
@@ -214,9 +304,12 @@ module.exports = function(s,config,lang){
         // check if object should be in region
         if(hasMatrices && currentConfig.detector_obj_region === '1'){
             var regions = s.group[d.ke].activeMonitors[d.id].parsedObjects.cords
-            var isMatrixInRegions = s.isAtleastOneMatrixInRegion(regions,d.details.matrices)
+            var isMatrixInRegions = isAtleastOneMatrixInRegion(regions,d.details.matrices)
             if(isMatrixInRegions){
                 s.debugLog('Matrix in region!')
+                if(filter.countObjects && currentConfig.detector_obj_count === '1' && currentConfig.detector_obj_count_in_region === '1' && !didCountingAlready){
+                    countObjects(d)
+                }
             }else{
                 return
             }
@@ -236,7 +329,9 @@ module.exports = function(s,config,lang){
                 time : s.formattedTime(),
                 frame : s.group[d.ke].activeMonitors[d.id].lastJpegDetectorFrame
             })
-        }else{
+        }
+        //
+        if(currentConfig.detector_use_motion === '0' || d.doObjectDetection !== true ){
             if(currentConfig.det_multi_trig === '1'){
                 s.getCamerasForMultiTrigger(d.mon).forEach(function(monitor){
                     if(monitor.mid !== d.id){
@@ -255,7 +350,16 @@ module.exports = function(s,config,lang){
             }
             //save this detection result in SQL, only coords. not image.
             if(forceSave || (filter.save && currentConfig.detector_save === '1')){
-                s.sqlQuery('INSERT INTO Events (ke,mid,details,time) VALUES (?,?,?,?)',[d.ke,d.id,detailString,eventTime])
+                s.knexQuery({
+                    action: "insert",
+                    table: "Events",
+                    insert: {
+                        ke: d.ke,
+                        mid: d.id,
+                        details: detailString,
+                        time: eventTime,
+                    }
+                })
             }
             if(currentConfig.detector === '1' && currentConfig.detector_notrigger === '1'){
                 s.setNoEventsDetector(s.group[d.ke].rawMonitorConfigurations[d.id])
@@ -299,12 +403,8 @@ module.exports = function(s,config,lang){
             }
             d.currentTime = new Date()
             d.currentTimestamp = s.timeObject(d.currentTime).format()
-            d.screenshotName = 'Motion_'+(d.mon.name.replace(/[^\w\s]/gi,''))+'_'+d.id+'_'+d.ke+'_'+s.formattedTime()
+            d.screenshotName =  d.details.reason + '_'+(d.mon.name.replace(/[^\w\s]/gi,''))+'_'+d.id+'_'+d.ke+'_'+s.formattedTime()
             d.screenshotBuffer = null
-
-            s.onEventTriggerExtensions.forEach(function(extender){
-                extender(d,filter)
-            })
 
             if(filter.webhook && currentConfig.detector_webhook === '1'){
                 var detector_webhook_url = s.addEventDetailsToString(d,currentConfig.detector_webhook_url)
@@ -324,6 +424,11 @@ module.exports = function(s,config,lang){
                 exec(detector_command,{detached: true},function(err){
                     if(err)s.debugLog(err)
                 })
+            }
+
+            for (var i = 0; i < s.onEventTriggerExtensions.length; i++) {
+                const extender = s.onEventTriggerExtensions[i]
+                await extender(d,filter)
             }
         }
         //show client machines the event
@@ -349,6 +454,7 @@ module.exports = function(s,config,lang){
                 s.group[d.ke].activeMonitors[d.id].eventBasedRecording.allowEnd = true
                 s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stdin.setEncoding('utf8')
                 s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stdin.write('q')
+                s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.kill('SIGINT')
                 delete(s.group[d.ke].activeMonitors[d.id].eventBasedRecording.timeout)
             },detector_timeout * 1000 * 60)
         }
@@ -371,7 +477,8 @@ module.exports = function(s,config,lang){
                         return
                     }
                     s.insertCompletedVideo(d.mon,{
-                        file : filename
+                        file : filename,
+                        events: s.group[d.ke].activeMonitors[d.id].detector_motion_count
                     })
                     s.userLog(d,{type:lang["Traditional Recording"],msg:lang["Detector Recording Complete"]})
                     s.userLog(d,{type:lang["Traditional Recording"],msg:lang["Clear Recorder Process"]})

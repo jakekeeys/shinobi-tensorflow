@@ -7,12 +7,9 @@ pkg install -y nano ffmpeg libav x264 x265 mysql56-server node npm
 echo "Enabling mysql..."
 sysrc mysql_enable=yes
 service mysql-server start
-echo "Cloning the official Shinobi Community Edition gitlab repo..."
-git clone "https://gitlab.com/Shinobi-Systems/ShinobiCE"
-cd ./ShinobiCE
 echo "Adding Shinobi user to database..."
 mysql -h localhost -u root -e "source sql/user.sql"
-ehco "Shinobi database framework setup..."
+echo "Shinobi database framework setup..."
 mysql -h localhost -u root -e "source sql/framework.sql"
 echo "Securing mysql..."
 #/usr/local/bin/mysql_secure_installation

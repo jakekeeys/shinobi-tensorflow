@@ -1,4 +1,39 @@
 <% include blocks/header %>
+<link rel="stylesheet" href="<%-window.libURL%>libs/themes/Ice/style.css">
+<style>
+.wide-text{
+    text-transform: uppercase;
+    letter-spacing: 3;
+    font-size: 8pt!important;
+    font-family: sans-serif;
+    color: #555;
+}
+.text-green {
+    color: #28b391!important;
+}
+.panel {
+    border-color: #28b391!important;
+    background: #044032!important;
+}
+.panel-heading {
+    background: #124438!important;
+    border-color: #163537!important;
+}
+.mdl-switch.is-checked .mdl-switch__thumb {
+    background: #28b391!important;
+}
+.mdl-switch.is-checked .mdl-switch__track {
+    background: rgba(63, 181, 99, 0.5)!important;
+}
+.shinobi-bg {
+    background: #33686d;
+}
+.form-control {
+    background: #163537;
+    border-color: #1d4c40!important;
+    color: #979797;
+}
+</style>
 <% if(screen){screen=screen.toLowerCase()} %>
 <div class="shinobi-bg display-table" style="height:100%">
 <div class="shinobi-bg-shade">
@@ -37,47 +72,41 @@
     									</div>
                                     <% } %>
 									<div class="form-group">
-										<input type="text" name="mail" id="email" tabindex="1" class="monospace form-control" placeholder="<%- lang.Email %>" value="">
+										<input type="text" name="mail" id="email" tabindex="1" autofocus class="form-control wide-text" placeholder="<%- lang.Email %>" value="">
 									</div>
 									<div class="form-group">
-										<input type="password" name="pass" id="pass" tabindex="2" class="monospace form-control" placeholder="<%- lang.Password %>">
+										<input type="password" name="pass" id="pass" tabindex="2" class="form-control wide-text" placeholder="<%- lang.Password %>">
 									</div>
 									<div class="form-group f_i_input f_i_ldap" style="display:none">
-										<input name="key" id="key" tabindex="2" class="monospace form-control" placeholder="Group Key">
+										<input name="key" id="key" tabindex="2" class="monospace form-control wide-text" placeholder="Group Key">
 									</div>
                                     <% if(config.showLoginSelector === true){ %>
     									<div class="form-group">
-    									<div class="row">
-                                            <div class="col-md-12 monospace" style="width:calc(100% - 48px)">
-                                                <select class="form-control" name="function" selector="f_i">
-                                                    <% switch(screen){
-                                                        case'super': %>
-                                                    <option value="super"><%- lang.Superuser %></option>
-                                                    <% break;
-                                                        case'admin': %>
-                                                    <option value="admin"><%- lang.Admin %></option>
-                                                    <% break;
-                                                        default: %>
-                                                    <option value="dash" selected><%- lang.Dashboard %></option>
-                                                    <% if(config.productType==='Pro'){ %>
-                                                    <option value="ldap"><%- lang.LDAP %></option>
-                                                    <% } %>
-                                                    <option value="streamer"><%- lang.Streamer %></option>
-                                                    <option value="cam"><%- lang.Dashcam %> (<%- lang.Streamer %> v2)</option>
-                                                    <% break;
-                                                    } %>
-                                                </select>
-                                            </div>
-                                            <div class="text-right" title="<%- lang['Remember Me'] %>" style="display:inline-block">
-                                                <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="remember_me">
-                                                  <input type="checkbox" id="remember_me" value="1" name="remember" class="mdl-switch__input">
-                                                    <span class="monospace mdl-switch__label"></span>
-                                                </label>
-                                            </div>
-    									</div>
+        									<div class="row">
+                                                <div class="col-md-12 monospace">
+                                                    <select class="form-control wide-text" name="function" selector="f_i">
+                                                        <% switch(screen){
+                                                            case'super': %>
+                                                        <option value="super"><%- lang.Superuser %></option>
+                                                        <% break;
+                                                            case'admin': %>
+                                                        <option value="admin"><%- lang.Admin %></option>
+                                                        <% break;
+                                                            default: %>
+                                                        <option value="dash" selected><%- lang.Dashboard %></option>
+                                                        <% if(config.productType==='Pro'){ %>
+                                                        <option value="ldap"><%- lang.LDAP %></option>
+                                                        <% } %>
+                                                        <option value="streamer"><%- lang.Streamer %></option>
+                                                        <option value="cam"><%- lang.Dashcam %> (<%- lang.Streamer %> v2)</option>
+                                                        <% break;
+                                                        } %>
+                                                    </select>
+                                                </div>
+        									</div>
     									</div>
                                     <% }else{ %>
-                                        <select class="form-control" name="function" style="display:none">
+                                        <select class="form-control wide-text" name="function" style="display:none">
                                             <% switch(screen){
                                                 case'super': %>
                                             <option value="super"><%- lang.Superuser %></option>
@@ -91,11 +120,20 @@
                                             } %>
                                         </select>
                                     <% } %>
-									<div class="form-group" style="margin:0">
-                                        <button type="submit" name="login-submit" id="login-submit" tabindex="4" class="btn btn-success btn-block"><%- lang.Login %></button>
+									<div class="form-group">
+                                        <button type="submit" name="login-submit" id="login-submit" tabindex="4" class="btn btn-success btn-block wide-text" style="color:#FFF"><i class="fa fa-key"></i> <%- lang.Login %></button>
+									</div>
+									<div class="form-group text-center" style="margin:0">
+                                        <span style="<%- config.poweredByShinobiClass %>;margin-right: 10px" class="epic-text text-green"><i class="fa fa-sign-in"></i> <%- lang['Remember Me'] %></span>
+                                        <div class="text-right" title="<%- lang['Remember Me'] %>" style="display:inline-block">
+                                            <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="remember_me">
+                                              <input type="checkbox" id="remember_me" value="1" name="remember" class="mdl-switch__input">
+                                                <span class="monospace mdl-switch__label"></span>
+                                            </label>
+                                        </div>
 									</div>
                                     <% if(config.showPoweredByShinobi){ %>
-                                        <p style="<%- config.poweredByShinobiClass %>"><small><%- config.poweredByShinobi %></small></p>
+                                        <p class="text-green" style="<%- config.poweredByShinobiClass %>"><small><%- config.poweredByShinobi %></small></p>
                                     <% }else{ %>
                                         <!-- <%- config.poweredByShinobi %> -->
                                     <% } %>

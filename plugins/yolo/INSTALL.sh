@@ -1,4 +1,5 @@
 #!/bin/bash
+DIR=`dirname $0`
 echo "----------------------------------------"
 echo "-- Installing Yolo Plugin for Shinobi --"
 echo "----------------------------------------"
@@ -21,6 +22,8 @@ fi
 # else
 #     echo "OpenCV found... : $(opencv_version)"
 # fi
+echo "If you get gcc/g++ build errors you can try running this then the installer again."
+echo "bash <(curl -s https://gitlab.com/Shinobi-Systems/supplements/-/raw/master/downgradeGccG++.sh)"
 echo "============="
 echo "Shinobi - Do you want to Install Tiny Weights?"
 echo "This is better for Graphics Cards with less than 4GB RAM"
@@ -62,6 +65,9 @@ if [ ! -e "./conf.json" ]; then
 else
     echo "conf.json already exists..."
 fi
+echo "-----------------------------------"
+echo "Adding Random Plugin Key to Main Configuration"
+node $DIR/../../tools/modifyConfigurationForPlugin.js yolo key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}')
 echo "-----------------------------------"
 if [ -f /etc/redhat-release ]; then
   yum update

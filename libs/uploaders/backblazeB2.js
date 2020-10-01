@@ -3,8 +3,8 @@ module.exports = function(s,config,lang){
     //Backblaze B2
     var beforeAccountSaveForBackblazeB2 = function(d){
         //d = save event
-        d.form.details.b2_use_global=d.d.b2_use_global
-        d.form.details.use_bb_b2=d.d.use_bb_b2
+        d.formDetails.b2_use_global=d.d.b2_use_global
+        d.formDetails.use_bb_b2=d.d.use_bb_b2
     }
     var cloudDiskUseStartupForBackblazeB2 = function(group,userDetails){
         group.cloudDiskUse['b2'].name = 'Backblaze B2'
@@ -44,7 +44,7 @@ module.exports = function(s,config,lang){
                 }
                 var backblazeErr = function(err){
                     // console.log(err)
-                    s.userLog({mid:'$USER',ke:e.ke},{type:lang['Backblaze Error'],msg:err.data || err})
+                    s.userLog({mid:'$USER',ke:e.ke},{type:lang['Backblaze Error'],msg:err.stack || err.data || err})
                 }
                 var createB2Connection = function(){
                     var b2 = new B2({
@@ -129,23 +129,26 @@ module.exports = function(s,config,lang){
                     }).then(function(resp){
                         if(s.group[e.ke].init.bb_b2_log === '1' && resp.data.fileId){
                             var backblazeDownloadUrl = s.group[e.ke].bb_b2_downloadUrl + '/file/' + s.group[e.ke].init.bb_b2_bucket + '/' + backblazeSavePath
-                            var save = [
-                                e.mid,
-                                e.ke,
-                                k.startTime,
-                                1,
-                                s.s({
-                                    type : 'b2',
-                                    bucketId : resp.data.bucketId,
-                                    fileId : resp.data.fileId,
-                                    fileName : resp.data.fileName
-                                }),
-                                k.filesize,
-                                k.endTime,
-                                backblazeDownloadUrl
-                            ]
-                            s.sqlQuery('INSERT INTO `Cloud Videos` (mid,ke,time,status,details,size,end,href) VALUES (?,?,?,?,?,?,?,?)',save)
-                            s.setCloudDiskUsedForGroup(e,{
+                            s.knexQuery({
+                                action: "insert",
+                                table: "Cloud Videos",
+                                insert: {
+                                    mid: e.mid,
+                                    ke: e.ke,
+                                    time: k.startTime,
+                                    status: 1,
+                                    details: s.s({
+                                        type : 'b2',
+                                        bucketId : resp.data.bucketId,
+                                        fileId : resp.data.fileId,
+                                        fileName : resp.data.fileName
+                                    }),
+                                    size: k.filesize,
+                                    end: k.endTime,
+                                    href: backblazeDownloadUrl
+                                }
+                            })
+                            s.setCloudDiskUsedForGroup(e.ke,{
                                 amount : k.filesizeMB,
                                 storageType : 'b2'
                             })

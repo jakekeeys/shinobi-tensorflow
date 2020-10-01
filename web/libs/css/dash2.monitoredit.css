@@ -1,0 +1,17 @@
+#add_monitor .form-group-group > h4{
+    cursor: pointer;
+}
+#add_monitor .form-group-group > h4 small{
+    cursor: pointer;
+    font-size: 8pt;
+}
+#add_monitor .hide-box-wrapper.form-group-group > h4{
+    margin: 0;
+}
+#add_monitor .hide-box-wrapper.form-group-group{
+    padding: 0;
+}
+#add_monitor .hide-box-wrapper .box-wrapper{
+    height: 0;
+    overflow: hidden;
+}

@@ -46,6 +46,7 @@ module.exports = function(s,config){
     }
     //
     s.cloudDiskUseStartupExtensions = {}
+    s.cloudDiskUseOnGetVideoDataExtensions = {}
 
     ////// EVENTS //////
     s.onEventTriggerExtensions = []
@@ -141,6 +142,11 @@ module.exports = function(s,config){
     s.onWebSocketDisconnectionExtensions = []
     s.onWebSocketDisconnection = function(callback){
         s.onWebSocketDisconnectionExtensions.push(callback)
+    }
+    //
+    s.onWebsocketMessageSendExtensions = []
+    s.onWebsocketMessageSend = function(callback){
+        s.onWebsocketMessageSendExtensions.push(callback)
     }
     //
     s.onGetCpuUsageExtensions = []

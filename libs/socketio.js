@@ -1,14 +1,23 @@
-var os = require('os');
 var moment = require('moment');
 var execSync = require('child_process').execSync;
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var jsonfile = require("jsonfile");
-var onvif = require("node-onvif");
 module.exports = function(s,config,lang,io){
+    const {
+        ptzControl
+    } = require('./control/ptz.js')(s,config,lang)
     s.clientSocketConnection = {}
     //send data to socket client function
-    s.tx = function(z,y,x){if(x){return x.broadcast.to(y).emit('f',z)};io.to(y).emit('f',z);}
+    s.tx = function(z,y,x){
+      s.onWebsocketMessageSendExtensions.forEach(function(extender){
+          extender(z,y,x)
+      })
+      if(x){
+        return x.broadcast.to(y).emit('f',z)
+      };
+      io.to(y).emit('f',z);
+    }
     s.txToDashcamUsers = function(data,groupKey){
         if(s.group[groupKey] && s.group[groupKey].dashcamUsers){
             Object.keys(s.group[groupKey].dashcamUsers).forEach(function(auth){
@@ -45,6 +54,87 @@ module.exports = function(s,config,lang,io){
         }
     }
 
+    const streamConnectionAuthentication = (options,ipAddress) => {
+        return new Promise( (resolve,reject) => {
+            var isInternal = false
+            if(ipAddress.indexOf('localhost') > -1 || ipAddress.indexOf('127.0.0.1') > -1){
+                isInternal = true
+            }
+            const baseWheres = [
+                ['ke','=',options.ke],
+                ['uid','=',options.uid],
+            ]
+            s.knexQuery({
+                action: "select",
+                columns: "ke,uid,auth,mail,details",
+                table: "Users",
+                where: baseWheres.concat(!isInternal ? [['auth','=',options.auth]] : [])
+            },(err,r) => {
+                if(r&&r[0]){
+                    resolve(r)
+                }else{
+                    s.knexQuery({
+                        action: "select",
+                        columns: "*",
+                        table: "API",
+                        where: baseWheres.concat(!isInternal ? [['code','=',options.auth]] : [])
+                    },(err,r) => {
+                        if(r && r[0]){
+                            r = r[0]
+                            r.details = JSON.parse(r.details)
+                            if(r.details.auth_socket === '1'){
+                                s.knexQuery({
+                                    action: "select",
+                                    columns: "ke,uid,auth,mail,details",
+                                    table: "Users",
+                                    where: [
+                                        ['ke','=',options.ke],
+                                        ['uid','=',options.uid],
+                                    ]
+                                },(err,r) => {
+                                    if(r && r[0]){
+                                        resolve(r)
+                                    }else{
+                                        reject('User not found')
+                                    }
+                                })
+                            }else{
+                                reject('Permissions for this key do not allow authentication with Websocket')
+                            }
+                        }else{
+                            reject('Not an API key')
+                        }
+                    })
+                }
+            })
+        })
+    }
+
+    const validatedAndBindAuthenticationToSocketConnection = (cn,d,removeListenerOnDisconnect) => {
+        if(!d.channel)d.channel = 'MAIN';
+        cn.ke = d.ke,
+        cn.uid = d.uid,
+        cn.auth = d.auth;
+        cn.channel = d.channel;
+        cn.removeListenerOnDisconnect = removeListenerOnDisconnect;
+        cn.socketVideoStream = d.id;
+    }
+
+    const createStreamEmitter = (d,cn) => {
+        var Emitter,chunkChannel
+        if(!d.channel){
+            Emitter = s.group[d.ke].activeMonitors[d.id].emitter
+            chunkChannel = 'MAIN'
+        }else{
+            Emitter = s.group[d.ke].activeMonitors[d.id].emitterChannel[parseInt(d.channel)+config.pipeAddition]
+            chunkChannel = parseInt(d.channel)+config.pipeAddition
+        }
+        if(!Emitter){
+            cn.disconnect();return;
+        }
+        return Emitter
+    }
+
     ////socket controller
     io.on('connection', function (cn) {
         var tx;
@@ -58,30 +148,14 @@ module.exports = function(s,config,lang,io){
                 return new Date().toISOString();
             }
             var tx=function(z){cn.emit('data',z);}
-            d.failed=function(msg){
+            const onFail = (msg) => {
                 tx({f:'stop_reconnect',msg:msg,token_used:d.auth,ke:d.ke});
                 cn.disconnect();
             }
-            d.success=function(r){
-                r=r[0];
-                var Emitter,chunkChannel
-                if(!d.channel){
-                    Emitter = s.group[d.ke].activeMonitors[d.id].emitter
-                    chunkChannel = 'MAIN'
-                }else{
-                    Emitter = s.group[d.ke].activeMonitors[d.id].emitterChannel[parseInt(d.channel)+config.pipeAddition]
-                    chunkChannel = parseInt(d.channel)+config.pipeAddition
-                }
-                if(!Emitter){
-                    cn.disconnect();return;
-                }
-                if(!d.channel)d.channel = 'MAIN';
-                cn.ke=d.ke,
-                cn.uid=d.uid,
-                cn.auth=d.auth;
-                cn.channel=d.channel;
-                cn.removeListenerOnDisconnect=true;
-                cn.socketVideoStream=d.id;
+            const onSuccess = (r) => {
+                r = r[0];
+                const Emitter = createStreamEmitter(d,cn)
+                validatedAndBindAuthenticationToSocketConnection(cn,d,true)
                 var contentWriter
                 cn.closeSocketVideoStream = function(){
                     Emitter.removeListener('data', contentWriter);
@@ -92,33 +166,9 @@ module.exports = function(s,config,lang,io){
              }
             //check if auth key is user's temporary session key
             if(s.group[d.ke]&&s.group[d.ke].users&&s.group[d.ke].users[d.auth]){
-                d.success(s.group[d.ke].users[d.auth]);
+                onSuccess(s.group[d.ke].users[d.auth]);
             }else{
-                s.sqlQuery('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND auth=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
-                    if(r&&r[0]){
-                        d.success(r)
-                    }else{
-                        s.sqlQuery('SELECT * FROM API WHERE ke=? AND code=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
-                            if(r&&r[0]){
-                                r=r[0]
-                                r.details=JSON.parse(r.details)
-                                if(r.details.auth_socket==='1'){
-                                    s.sqlQuery('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND uid=?',[r.ke,r.uid],function(err,r) {
-                                        if(r&&r[0]){
-                                            d.success(r)
-                                        }else{
-                                            d.failed('User not found')
-                                        }
-                                    })
-                                }else{
-                                    d.failed('Permissions for this key do not allow authentication with Websocket')
-                                }
-                            }else{
-                                d.failed('Not an API key')
-                            }
-                        })
-                    }
-                })
+                streamConnectionAuthentication(d,cn.ip).then(onSuccess).catch(onFail)
             }
         })
         //unique Base64 socket stream
@@ -131,30 +181,14 @@ module.exports = function(s,config,lang,io){
                 return new Date().toISOString();
             }
             var tx=function(z){cn.emit('data',z);}
-            d.failed=function(msg){
+            const onFail = (msg) => {
                 tx({f:'stop_reconnect',msg:msg,token_used:d.auth,ke:d.ke});
                 cn.disconnect();
             }
-            d.success=function(r){
-                r=r[0];
-                var Emitter,chunkChannel
-                if(!d.channel){
-                    Emitter = s.group[d.ke].activeMonitors[d.id].emitter
-                    chunkChannel = 'MAIN'
-                }else{
-                    Emitter = s.group[d.ke].activeMonitors[d.id].emitterChannel[parseInt(d.channel)+config.pipeAddition]
-                    chunkChannel = parseInt(d.channel)+config.pipeAddition
-                }
-                if(!Emitter){
-                    cn.disconnect();return;
-                }
-                if(!d.channel)d.channel = 'MAIN';
-                cn.ke=d.ke,
-                cn.uid=d.uid,
-                cn.auth=d.auth;
-                cn.channel=d.channel;
-                cn.removeListenerOnDisconnect=true;
-                cn.socketVideoStream=d.id;
+            const onSuccess = (r) => {
+                r = r[0];
+                const Emitter = createStreamEmitter(d,cn)
+                validatedAndBindAuthenticationToSocketConnection(cn,d,true)
                 var contentWriter
                 cn.closeSocketVideoStream = function(){
                     Emitter.removeListener('data', contentWriter);
@@ -165,33 +199,9 @@ module.exports = function(s,config,lang,io){
              }
             //check if auth key is user's temporary session key
             if(s.group[d.ke]&&s.group[d.ke].users&&s.group[d.ke].users[d.auth]){
-                d.success(s.group[d.ke].users[d.auth]);
+                onSuccess(s.group[d.ke].users[d.auth]);
             }else{
-                s.sqlQuery('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND auth=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
-                    if(r&&r[0]){
-                        d.success(r)
-                    }else{
-                        s.sqlQuery('SELECT * FROM API WHERE ke=? AND code=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
-                            if(r&&r[0]){
-                                r=r[0]
-                                r.details=JSON.parse(r.details)
-                                if(r.details.auth_socket==='1'){
-                                    s.sqlQuery('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND uid=?',[r.ke,r.uid],function(err,r) {
-                                        if(r&&r[0]){
-                                            d.success(r)
-                                        }else{
-                                            d.failed('User not found')
-                                        }
-                                    })
-                                }else{
-                                    d.failed('Permissions for this key do not allow authentication with Websocket')
-                                }
-                            }else{
-                                d.failed('Not an API key')
-                            }
-                        })
-                    }
-                })
+                streamConnectionAuthentication(d,cn.ip).then(onSuccess).catch(onFail)
             }
         })
         //unique FLV socket stream
@@ -204,30 +214,14 @@ module.exports = function(s,config,lang,io){
                 return new Date().toISOString();
             }
             var tx=function(z){cn.emit('data',z);}
-            d.failed=function(msg){
+            const onFail = (msg) => {
                 tx({f:'stop_reconnect',msg:msg,token_used:d.auth,ke:d.ke});
                 cn.disconnect();
             }
-            d.success=function(r){
+            const onSuccess = (r) => {
                 r=r[0];
-                var Emitter,chunkChannel
-                if(!d.channel){
-                    Emitter = s.group[d.ke].activeMonitors[d.id].emitter
-                    chunkChannel = 'MAIN'
-                }else{
-                    Emitter = s.group[d.ke].activeMonitors[d.id].emitterChannel[parseInt(d.channel)+config.pipeAddition]
-                    chunkChannel = parseInt(d.channel)+config.pipeAddition
-                }
-                if(!Emitter){
-                    cn.disconnect();return;
-                }
-                if(!d.channel)d.channel = 'MAIN';
-                cn.ke=d.ke,
-                cn.uid=d.uid,
-                cn.auth=d.auth;
-                cn.channel=d.channel;
-                cn.removeListenerOnDisconnect=true;
-                cn.socketVideoStream=d.id;
+                const Emitter = createStreamEmitter(d,cn)
+                validatedAndBindAuthenticationToSocketConnection(cn,d,true)
                 var contentWriter
                 cn.closeSocketVideoStream = function(){
                     Emitter.removeListener('data', contentWriter);
@@ -238,37 +232,13 @@ module.exports = function(s,config,lang,io){
                 })
              }
             if(s.group[d.ke] && s.group[d.ke].users && s.group[d.ke].users[d.auth]){
-                d.success(s.group[d.ke].users[d.auth]);
+                onSuccess(s.group[d.ke].users[d.auth]);
             }else{
-                s.sqlQuery('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND auth=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
-                    if(r&&r[0]){
-                        d.success(r)
-                    }else{
-                        s.sqlQuery('SELECT * FROM API WHERE ke=? AND code=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
-                            if(r&&r[0]){
-                                r=r[0]
-                                r.details=JSON.parse(r.details)
-                                if(r.details.auth_socket==='1'){
-                                    s.sqlQuery('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND uid=?',[r.ke,r.uid],function(err,r) {
-                                        if(r&&r[0]){
-                                            d.success(r)
-                                        }else{
-                                            d.failed('User not found')
-                                        }
-                                    })
-                                }else{
-                                    d.failed('Permissions for this key do not allow authentication with Websocket')
-                                }
-                            }else{
-                                d.failed('Not an API key')
-                            }
-                        })
-                    }
-                })
+                streamConnectionAuthentication(d,cn.ip).then(onSuccess).catch(onFail)
             }
         })
         //unique MP4 socket stream
-        cn.on('MP4',function(d){
+        cn.on('MP4',function(d, cb){
             if(!s.group[d.ke]||!s.group[d.ke].activeMonitors||!s.group[d.ke].activeMonitors[d.id]){
                 cn.disconnect();return;
             }
@@ -277,29 +247,13 @@ module.exports = function(s,config,lang,io){
                 return new Date().toISOString();
             }
             var tx=function(z){cn.emit('data',z);}
-            d.failed=function(msg){
+            const onFail = (msg) => {
                 tx({f:'stop_reconnect',msg:msg,token_used:d.auth,ke:d.ke});
                 cn.disconnect();
             }
-            d.success=function(r){
-                r=r[0];
-                var Emitter,chunkChannel
-                if(!d.channel){
-                    Emitter = s.group[d.ke].activeMonitors[d.id].emitter
-                    chunkChannel = 'MAIN'
-                }else{
-                    Emitter = s.group[d.ke].activeMonitors[d.id].emitterChannel[parseInt(d.channel)+config.pipeAddition]
-                    chunkChannel = parseInt(d.channel)+config.pipeAddition
-                }
-                if(!Emitter){
-                    cn.disconnect();return;
-                }
-                if(!d.channel)d.channel = 'MAIN';
-                cn.ke=d.ke,
-                cn.uid=d.uid,
-                cn.auth=d.auth;
-                cn.channel=d.channel;
-                cn.socketVideoStream=d.id;
+            const onSuccess = (r) => {
+                r = r[0];
+                validatedAndBindAuthenticationToSocketConnection(cn,d)
                 var mp4frag = s.group[d.ke].activeMonitors[d.id].mp4frag[d.channel];
                 var onInitialized = () => {
                     cn.emit('mime', mp4frag.mime);
@@ -315,6 +269,7 @@ module.exports = function(s,config,lang,io){
                         mp4frag.removeListener('initialized', onInitialized)
                     }
                 }
+                if (cb) cb(null, true);
                 cn.on('MP4Command',function(msg){
                     switch (msg) {
                         case 'mime' ://client is requesting mime
@@ -358,33 +313,9 @@ module.exports = function(s,config,lang,io){
                 })
             }
             if(s.group[d.ke]&&s.group[d.ke].users&&s.group[d.ke].users[d.auth]){
-                d.success(s.group[d.ke].users[d.auth]);
+                onSuccess(s.group[d.ke].users[d.auth]);
             }else{
-                s.sqlQuery('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND auth=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
-                    if(r&&r[0]){
-                        d.success(r)
-                    }else{
-                        s.sqlQuery('SELECT * FROM API WHERE ke=? AND code=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
-                            if(r&&r[0]){
-                                r=r[0]
-                                r.details=JSON.parse(r.details)
-                                if(r.details.auth_socket==='1'){
-                                    s.sqlQuery('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND uid=?',[r.ke,r.uid],function(err,r) {
-                                        if(r&&r[0]){
-                                            d.success(r)
-                                        }else{
-                                            d.failed('User not found')
-                                        }
-                                    })
-                                }else{
-                                    d.failed('Permissions for this key do not allow authentication with Websocket')
-                                }
-                            }else{
-                                d.failed('Not an API key')
-                            }
-                        })
-                    }
-                })
+                streamConnectionAuthentication(d,cn.ip).then(onSuccess).catch(onFail)
             }
         })
         //main socket control functions
@@ -392,9 +323,12 @@ module.exports = function(s,config,lang,io){
             if(!cn.ke&&d.f==='init'){//socket login
                 cn.ip=cn.request.connection.remoteAddress;
                 tx=function(z){if(!z.ke){z.ke=cn.ke;};cn.emit('f',z);}
-                d.failed=function(){tx({ok:false,msg:'Not Authorized',token_used:d.auth,ke:d.ke});cn.disconnect();}
-                d.success=function(r){
-                    r=r[0];cn.join('GRP_'+d.ke);cn.join('CPU');
+                const onFail = (msg) => {
+                    tx({ok:false,msg:'Not Authorized',token_used:d.auth,ke:d.ke});cn.disconnect();
+                }
+                const onSuccess = (r) => {
+                    r = r[0];
+                    cn.join('GRP_'+d.ke);cn.join('CPU');
                     cn.ke=d.ke,
                     cn.uid=d.uid,
                     cn.auth=d.auth;
@@ -423,9 +357,17 @@ module.exports = function(s,config,lang,io){
                     }
                     tx({f:'users_online',users:s.group[d.ke].users})
                     s.tx({f:'user_status_change',ke:d.ke,uid:cn.uid,status:1,user:s.group[d.ke].users[d.auth]},'GRP_'+d.ke)
-                    s.sendDiskUsedAmountToClients(d)
+                    s.sendDiskUsedAmountToClients(d.ke)
                     s.loadGroupApps(d)
-                    s.sqlQuery('SELECT * FROM API WHERE ke=? AND uid=?',[d.ke,d.uid],function(err,rrr) {
+                    s.knexQuery({
+                        action: "select",
+                        columns: "*",
+                        table: "API",
+                        where: [
+                            ['ke','=',d.ke],
+                            ['uid','=',d.uid],
+                        ]
+                    },function(err,rrr) {
                         tx({
                             f:'init_success',
                             users:s.group[d.ke].vid,
@@ -437,46 +379,24 @@ module.exports = function(s,config,lang,io){
                             }
                         })
                         try{
-                            s.sqlQuery('SELECT * FROM Monitors WHERE ke=?', [d.ke], function(err,r) {
-                                if(r && r[0]){
-                                    r.forEach(function(monitor){
-                                        s.cameraSendSnapshot({mid:monitor.mid,ke:monitor.ke,mon:monitor},{useIcon: true})
-                                    })
-                                }
+                            Object.values(s.group[d.ke].rawMonitorConfigurations).forEach((monitor) => {
+                                s.cameraSendSnapshot({
+                                    mid: monitor.mid,
+                                    ke: monitor.ke,
+                                    mon: monitor
+                                },{
+                                    useIcon: true
+                                })
                             })
                         }catch(err){
-                            console.log(err)
+                            s.debugLog(err)
                         }
                     })
                     s.onSocketAuthenticationExtensions.forEach(function(extender){
                         extender(r,cn,d,tx)
                     })
                 }
-                s.sqlQuery('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND auth=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
-                    if(r&&r[0]){
-                        d.success(r)
-                    }else{
-                        s.sqlQuery('SELECT * FROM API WHERE ke=? AND code=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
-                            if(r&&r[0]){
-                                r=r[0]
-                                r.details=JSON.parse(r.details)
-                                if(r.details.auth_socket==='1'){
-                                    s.sqlQuery('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND uid=?',[r.ke,r.uid],function(err,r) {
-                                        if(r&&r[0]){
-                                            d.success(r)
-                                        }else{
-                                            d.failed()
-                                        }
-                                    })
-                                }else{
-                                    d.failed()
-                                }
-                            }else{
-                                d.failed()
-                            }
-                        })
-                    }
-                })
+                streamConnectionAuthentication(d,cn.ip).then(onSuccess).catch(onFail)
                 return;
             }
             if((d.id||d.uid||d.mid)&&cn.ke){
@@ -484,73 +404,60 @@ module.exports = function(s,config,lang,io){
                 switch(d.f){
                     case'monitorOrder':
                         if(d.monitorOrder && d.monitorOrder instanceof Object){
-                            s.sqlQuery('SELECT details FROM Users WHERE uid=? AND ke=?',[cn.uid,cn.ke],function(err,r){
+                            s.knexQuery({
+                                action: "select",
+                                columns: "*",
+                                table: "Users",
+                                where: [
+                                    ['ke','=',cn.ke],
+                                    ['uid','=',cn.uid]
+                                ]
+                            },(err,r) => {
                                 if(r && r[0]){
                                     details = JSON.parse(r[0].details)
                                     details.monitorOrder = d.monitorOrder
-                                    s.sqlQuery('UPDATE Users SET details=? WHERE uid=? AND ke=?',[s.s(details),cn.uid,cn.ke])
+                                    s.knexQuery({
+                                        action: "update",
+                                        table: "Users",
+                                        update: {
+                                            details: s.s(details)
+                                        },
+                                        where: [
+                                            ['ke','=',cn.ke],
+                                            ['uid','=',cn.uid]
+                                        ]
+                                    })
                                 }
                             })
                         }
                     break;
                     case'monitorListOrder':
                         if(d.monitorListOrder && d.monitorListOrder instanceof Object){
-                            s.sqlQuery('SELECT details FROM Users WHERE uid=? AND ke=?',[cn.uid,cn.ke],function(err,r){
+                            s.knexQuery({
+                                action: "select",
+                                columns: "details",
+                                table: "Users",
+                                where: [
+                                    ['ke','=',cn.ke],
+                                    ['uid','=',cn.uid],
+                                ]
+                            },(err,r) => {
                                 if(r && r[0]){
                                     details = JSON.parse(r[0].details)
                                     details.monitorListOrder = d.monitorListOrder
-                                    s.sqlQuery('UPDATE Users SET details=? WHERE uid=? AND ke=?',[s.s(details),cn.uid,cn.ke])
+                                    s.knexQuery({
+                                        action: "update",
+                                        table: "Users",
+                                        update: {
+                                            details: s.s(details)
+                                        },
+                                        where: [
+                                            ['ke','=',cn.ke],
+                                            ['uid','=',cn.uid],
+                                        ]
+                                    })
                                 }
                             })
-                        }
-                    break;
-                    case'update':
-                        if(!config.updateKey){
-                            tx({error:lang.updateKeyText1});
-                            return;
-                        }
-                        if(d.key===config.updateKey){
-                            exec('chmod +x '+s.mainDirectory+'/UPDATE.sh&&'+s.mainDirectory+'/UPDATE.sh',{detached: true})
-                        }else{
-                            tx({error:lang.updateKeyText2});
-                        }
-                    break;
-                    case'cron':
-                        if(s.group[cn.ke]&&s.group[cn.ke].users[cn.auth].details&&!s.group[cn.ke].users[cn.auth].details.sub){
-                            s.tx({f:d.ff},s.cron.id)
-                        }
-                    break;
-                    case'api':
-                        switch(d.ff){
-                            case'delete':
-                                d.set=[],d.ar=[];
-                                d.form.ke=cn.ke;d.form.uid=cn.uid;delete(d.form.ip);
-                                if(!d.form.code){tx({f:'form_incomplete',form:'APIs',uid:cn.uid});return}
-                                d.for=Object.keys(d.form);
-                                d.for.forEach(function(v){
-                                    d.set.push(v+'=?'),d.ar.push(d.form[v]);
-                                });
-                                s.sqlQuery('DELETE FROM API WHERE '+d.set.join(' AND '),d.ar,function(err,r){
-                                    if(!err){
-                                        tx({f:'api_key_deleted',form:d.form,uid:cn.uid});
-                                        delete(s.api[d.form.code]);
-                                    }else{
-                                        s.systemLog('API Delete Error : '+e.ke+' : '+' : '+e.mid,err)
-                                    }
-                                })
-                            break;
-                            case'add':
-                                d.set=[],d.qu=[],d.ar=[];
-                                d.form.ke=cn.ke,d.form.uid=cn.uid,d.form.code=s.gid(30);
-                                d.for=Object.keys(d.form);
-                                d.for.forEach(function(v){
-                                    d.set.push(v),d.qu.push('?'),d.ar.push(d.form[v]);
-                                });
-                                s.sqlQuery('INSERT INTO API ('+d.set.join(',')+') VALUES ('+d.qu.join(',')+')',d.ar,function(err,r){
-                                    d.form.time=s.formattedTime(new Date,'YYYY-DD-MM HH:mm:ss');
-                                    if(!err){tx({f:'api_key_added',form:d.form,uid:cn.uid});}else{s.systemLog(err)}
-                                });
-                            break;
                         }
                     break;
                     case'settings':
@@ -558,9 +465,18 @@ module.exports = function(s,config,lang,io){
                             case'filters':
                                 switch(d.fff){
                                     case'save':case'delete':
-                                        s.sqlQuery('SELECT details FROM Users WHERE ke=? AND uid=?',[d.ke,d.uid],function(err,r){
-                                            if(r&&r[0]){
-                                                r=r[0];
+                                        s.knexQuery({
+                                            action: "select",
+                                            columns: "details",
+                                            table: "Users",
+                                            where: [
+                                                ['ke','=',cn.ke],
+                                                ['uid','=',cn.uid],
+                                            ],
+                                            limit: 1
+                                        },(err,r) => {
+                                            if(r && r[0]){
+                                                r = r[0];
                                                 d.d=JSON.parse(r.details);
                                                 if(d.form.id===''){d.form.id=s.gid(5)}
                                                 if(!d.d.filters)d.d.filters={};
@@ -570,9 +486,19 @@ module.exports = function(s,config,lang,io){
                                                 }else{
                                                     delete(d.d.filters[d.form.id]);
                                                 }
-                                                s.sqlQuery('UPDATE Users SET details=? WHERE ke=? AND uid=?',[JSON.stringify(d.d),d.ke,d.uid],function(err,r){
+                                                s.knexQuery({
+                                                    action: "update",
+                                                    table: "Users",
+                                                    update: {
+                                                        details: JSON.stringify(d.d)
+                                                    },
+                                                    where: [
+                                                        ['ke','=',cn.ke],
+                                                        ['uid','=',cn.uid],
+                                                    ]
+                                                },(err) => {
                                                     tx({f:'filters_change',uid:d.uid,ke:d.ke,filters:d.d.filters});
-                                                });
+                                                })
                                             }
                                         })
                                     break;
@@ -600,48 +526,52 @@ module.exports = function(s,config,lang,io){
                                         if(!d.eventEndDate&&d.endDate){
                                             d.eventEndDate = s.stringToSqlTime(d.endDate)
                                         }
-                                        var monitorQuery = ''
-                                        var monitorValues = []
+                                        var monitorRestrictions = []
                                         var permissions = s.group[d.ke].users[cn.auth].details;
                                         if(!d.mid){
-                                            if(permissions.sub&&permissions.monitors&&permissions.allmonitors!=='1'){
-                                                try{permissions.monitors=JSON.parse(permissions.monitors);}catch(er){}
-                                                var or = [];
-                                                permissions.monitors.forEach(function(v,n){
-                                                    or.push('mid=?');
-                                                    monitorValues.push(v)
-                                                })
-                                                monitorQuery += ' AND ('+or.join(' OR ')+')'
-                                            }
-                                        }else if(!permissions.sub||permissions.allmonitors!=='0'||permissions.monitors.indexOf(d.mid)>-1){
-                                            monitorQuery += ' and mid=?';
-                                            monitorValues.push(d.mid)
-                                        }
-                                        var getEvents = function(callback){
-                                            var eventQuery = 'SELECT * FROM Events WHERE ke=?';
-                                            var eventQueryValues = [cn.ke];
-                                            if(d.eventStartDate&&d.eventStartDate!==''){
-                                                if(d.eventEndDate&&d.eventEndDate!==''){
-                                                    eventQuery+=' AND `time` >= ? AND `time` <= ?';
-                                                    eventQueryValues.push(d.eventStartDate)
-                                                    eventQueryValues.push(d.eventEndDate)
-                                                }else{
-                                                    eventQuery+=' AND `time` >= ?';
-                                                    eventQueryValues.push(d.eventStartDate)
+                                            if(permissions.sub && permissions.monitors && permissions.allmonitors !== '1'){
+                                                try{
+                                                    permissions.monitors = JSON.parse(permissions.monitors);
+                                                    permissions.monitors.forEach(function(v,n){
+                                                        if(n === 0){
+                                                            monitorRestrictions.push(['mid','=',v])
+                                                        }else{
+                                                            monitorRestrictions.push(['or','mid','=',v])
+                                                        }
+                                                    })
+                                                }catch(er){
+                                                    console.log(er)
                                                 }
                                             }
-                                            if(monitorValues.length>0){
-                                                eventQuery += monitorQuery;
-                                                eventQueryValues = eventQueryValues.concat(monitorValues);
+                                        }else if(!permissions.sub||permissions.allmonitors!=='0'||permissions.monitors.indexOf(d.mid)>-1){
+                                            monitorRestrictions.push(['mid','=',d.mid])
+                                        }
+                                        var getEvents = function(callback){
+                                            var eventWhereQuery = [
+                                                ['ke','=',cn.ke],
+                                            ]
+                                            if(d.eventStartDate&&d.eventStartDate!==''){
+                                                if(d.eventEndDate&&d.eventEndDate!==''){
+                                                    eventWhereQuery.push(['time','>=',d.eventStartDate])
+                                                    eventWhereQuery.push(['time','<=',d.eventEndDate])
+                                                }else{
+                                                    eventWhereQuery.push(['time','>=',d.eventStartDate])
+                                                }
                                             }
-                                            eventQuery+=' ORDER BY `time` DESC LIMIT '+d.eventLimit+'';
-                                            s.sqlQuery(eventQuery,eventQueryValues,function(err,r){
+                                            if(monitorRestrictions.length > 0){
+                                                eventWhereQuery.push(monitorRestrictions)
+                                            }
+                                            s.knexQuery({
+                                                action: "select",
+                                                columns: "*",
+                                                table: "Events",
+                                                where: eventWhereQuery,
+                                                orderBy: ['time','desc'],
+                                                limit: d.eventLimit
+                                            },(err,r) => {
                                                 if(err){
-                                                    console.log(eventQuery)
-                                                    console.error('LINE 2428',err)
-                                                    setTimeout(function(){
-                                                        getEvents(callback)
-                                                    },2000)
+                                                    console.error(err)
+                                                    callback([])
                                                 }else{
                                                     if(!r){r=[]}
                                                     r.forEach(function(v,n){
@@ -653,7 +583,6 @@ module.exports = function(s,config,lang,io){
                                         }
                                         if(!d.videoLimit&&d.limit){
                                             d.videoLimit=d.limit
-                                            eventQuery.push()
                                         }
                                         if(!d.videoStartDate&&d.startDate){
                                             d.videoStartDate = s.stringToSqlTime(d.startDate)
@@ -662,9 +591,10 @@ module.exports = function(s,config,lang,io){
                                             d.videoEndDate = s.stringToSqlTime(d.endDate)
                                         }
                                          var getVideos = function(callback){
-                                            var videoQuery='SELECT * FROM Videos WHERE ke=?';
-                                            var videoQueryValues=[cn.ke];
-                                            if(d.videoStartDate||d.videoEndDate){
+                                            var videoWhereQuery = [
+                                                ['ke','=',cn.ke],
+                                            ]
+                                            if(d.videoStartDate || d.videoEndDate){
                                                 if(!d.videoStartDateOperator||d.videoStartDateOperator==''){
                                                     d.videoStartDateOperator='>='
                                                 }
@@ -672,38 +602,33 @@ module.exports = function(s,config,lang,io){
                                                     d.videoEndDateOperator='<='
                                                 }
                                                 switch(true){
-                                                    case(d.videoStartDate&&d.videoStartDate!==''&&d.videoEndDate&&d.videoEndDate!==''):
-                                                        videoQuery+=' AND `time` '+d.videoStartDateOperator+' ? AND `end` '+d.videoEndDateOperator+' ?';
-                                                        videoQueryValues.push(d.videoStartDate)
-                                                        videoQueryValues.push(d.videoEndDate)
+                                                    case(d.videoStartDate && d.videoStartDate !== '' && d.videoEndDate && d.videoEndDate !== ''):
+                                                        videoWhereQuery.push(['time',d.videoStartDateOperator,d.videoStartDate])
+                                                        videoWhereQuery.push(['end',d.videoEndDateOperator,d.videoEndDate])
                                                     break;
-                                                    case(d.videoStartDate&&d.videoStartDate!==''):
-                                                        videoQuery+=' AND `time` '+d.videoStartDateOperator+' ?';
-                                                        videoQueryValues.push(d.videoStartDate)
+                                                    case(d.videoStartDate && d.videoStartDate !== ''):
+                                                        videoWhereQuery.push(['time',d.videoStartDateOperator,d.videoStartDate])
                                                     break;
-                                                    case(d.videoEndDate&&d.videoEndDate!==''):
-                                                        videoQuery+=' AND `end` '+d.videoEndDateOperator+' ?';
-                                                        videoQueryValues.push(d.videoEndDate)
+                                                    case(d.videoEndDate && d.videoEndDate !== ''):
+                                                        videoWhereQuery.push(['end',d.videoEndDateOperator,d.videoEndDate])
                                                     break;
                                                 }
                                             }
-                                            if(monitorValues.length>0){
-                                                videoQuery += monitorQuery;
-                                                videoQueryValues = videoQueryValues.concat(monitorValues);
+                                            if(monitorRestrictions.length > 0){
+                                                videoWhereQuery.push(monitorRestrictions)
                                             }
-                                            videoQuery+=' ORDER BY `time` DESC';
-                                            if(!d.videoLimit||d.videoLimit==''){
-                                                d.videoLimit='100'
-                                            }
-                                            if(d.videoLimit!=='0'){
-                                                videoQuery+=' LIMIT '+d.videoLimit
-                                            }
-                                            s.sqlQuery(videoQuery,videoQueryValues,function(err,r){
+                                            s.knexQuery({
+                                                action: "select",
+                                                columns: "*",
+                                                table: "Videos",
+                                                where: videoWhereQuery,
+                                                orderBy: ['time','desc'],
+                                                limit: d.videoLimit || '100'
+                                            },(err,r) => {
                                                 if(err){
-                                                    console.log(videoQuery)
-                                                    console.error('LINE 2416',err)
+                                                    console.error(err)
                                                     setTimeout(function(){
-                                                        getVideos(callback)
+                                                        callback({total:0,limit:d.videoLimit,videos:[]})
                                                     },2000)
                                                 }else{
                                                     s.buildVideoLinks(r,{
@@ -727,8 +652,9 @@ module.exports = function(s,config,lang,io){
                                 }
                             break;
                             case'control':
-                                s.cameraControl(d,function(resp){
-                                    tx({f:'control',response:resp})
+                                ptzControl(d,function(msg){
+                                    s.userLog(d,msg)
+                                    tx({f:'control',response:msg})
                                 })
                             break;
                             case'jpeg_off':
@@ -770,7 +696,16 @@ module.exports = function(s,config,lang,io){
                                 tx({f:'monitor_watch_off',ke:d.ke,id:d.id,cnid:cn.id})
                             break;
                             case'start':case'stop':
-                                s.sqlQuery('SELECT * FROM Monitors WHERE ke=? AND mid=?',[cn.ke,d.id],function(err,r) {
+                                s.knexQuery({
+                                    action: "select",
+                                    columns: "*",
+                                    table: "Monitors",
+                                    where: [
+                                        ['ke','=',cn.ke],
+                                        ['mid','=',d.id],
+                                    ],
+                                    limit: 1
+                                },(err,r) => {
                                     if(r && r[0]){
                                         r = r[0]
                                         s.camera(d.ff,{type:r.type,url:s.buildMonitorUrl(r),id:d.id,mode:d.ff,ke:cn.ke});
@@ -778,134 +713,6 @@ module.exports = function(s,config,lang,io){
                                 })
                             break;
                         }
-                    break;
-    //                case'video':
-    //                    switch(d.ff){
-    //                        case'fix':
-    //                            s.video('fix',d)
-    //                        break;
-    //                    }
-    //                break;
-                    case'ffprobe':
-                        if(s.group[cn.ke].users[cn.auth]){
-                            switch(d.ff){
-                                case'stop':
-                                    exec('kill -9 '+s.group[cn.ke].users[cn.auth].ffprobe.pid,{detatched: true})
-                                break;
-                                default:
-                                    if(s.group[cn.ke].users[cn.auth].ffprobe){
-                                        return
-                                    }
-                                    s.group[cn.ke].users[cn.auth].ffprobe=1;
-                                    tx({f:'ffprobe_start'})
-                                    exec('ffprobe '+('-v quiet -print_format json -show_format -show_streams '+d.query),function(err,data){
-                                        tx({f:'ffprobe_data',data:data.toString('utf8')})
-                                        delete(s.group[cn.ke].users[cn.auth].ffprobe)
-                                        tx({f:'ffprobe_stop'})
-                                    })
-                                    //auto kill in 30 seconds
-                                    setTimeout(function(){
-                                        exec('kill -9 '+d.pid,{detached: true})
-                                    },30000)
-                                break;
-                            }
-                        }
-                    break;
-                    case'onvif':
-                        d.ip=d.ip.replace(/ /g,'');
-                        d.port=d.port.replace(/ /g,'');
-                        if(d.ip===''){
-                            var interfaces = os.networkInterfaces();
-                            var addresses = [];
-                            for (var k in interfaces) {
-                                for (var k2 in interfaces[k]) {
-                                    var address = interfaces[k][k2];
-                                    if (address.family === 'IPv4' && !address.internal) {
-                                        addresses.push(address.address);
-                                    }
-                                }
-                            }
-                            d.arr=[]
-                            addresses.forEach(function(v){
-                                if(v.indexOf('0.0.0')>-1){return false}
-                                v=v.split('.');
-                                delete(v[3]);
-                                v=v.join('.');
-                                d.arr.push(v+'1-'+v+'254')
-                            })
-                            d.ip=d.arr.join(',')
-                        }
-                        if(d.port===''){
-                            d.port='80,8080,8000,7575,8081,554'
-                        }
-                        d.ip.split(',').forEach(function(v){
-                            if(v.indexOf('-')>-1){
-                                v=v.split('-');
-                                d.IP_RANGE_START = v[0],
-                                d.IP_RANGE_END = v[1];
-                            }else{
-                                d.IP_RANGE_START = v;
-                                d.IP_RANGE_END = v;
-                            }
-                            if(!d.IP_LIST){
-                                d.IP_LIST = s.ipRange(d.IP_RANGE_START,d.IP_RANGE_END);
-                            }else{
-                                d.IP_LIST=d.IP_LIST.concat(s.ipRange(d.IP_RANGE_START,d.IP_RANGE_END))
-                            }
-                            //check port
-                            if(d.port.indexOf('-')>-1){
-                                d.port=d.port.split('-');
-                                d.PORT_RANGE_START = d.port[0];
-                                d.PORT_RANGE_END = d.port[1];
-                                d.PORT_LIST = s.portRange(d.PORT_RANGE_START,d.PORT_RANGE_END);
-                            }else{
-                                d.PORT_LIST=d.port.split(',')
-                            }
-                            //check user name and pass
-                            d.USERNAME='';
-                            if(d.user){
-                                d.USERNAME = d.user
-                            }
-                            d.PASSWORD='';
-                            if(d.pass){
-                                d.PASSWORD = d.pass
-                            }
-                        })
-                        d.cams=[]
-                        d.IP_LIST.forEach(function(ip_entry,n) {
-                            d.PORT_LIST.forEach(function(port_entry,nn) {
-                                var device = new onvif.OnvifDevice({
-                                    xaddr : 'http://' + ip_entry + ':' + port_entry + '/onvif/device_service',
-                                    user : d.USERNAME,
-                                    pass : d.PASSWORD
-                                })
-                                device.init().then((info) => {
-                                    var data = {
-                                        f : 'onvif',
-                                        ip : ip_entry,
-                                        port : port_entry,
-                                        info : info
-                                    }
-                                    device.services.device.getSystemDateAndTime().then((date) => {
-                                        data.date = date
-                                        device.services.media.getStreamUri({
-                                            ProfileToken : device.current_profile.token,
-                                            Protocol : 'RTSP'
-                                        }).then((stream) => {
-                                            data.uri = stream.data.GetStreamUriResponse.MediaUri.Uri
-                                            tx(data)
-                                        }).catch((error) => {
-    //                                        console.log(error)
-                                        });
-                                    }).catch((error) => {
-    //                                    console.log(error)
-                                    });
-                                }).catch(function(error){
-    //                                console.log(error)
-                                })
-                            });
-                        });
-    //                    tx({f:'onvif_end'})
                     break;
                 }
             }catch(er){
@@ -941,15 +748,19 @@ module.exports = function(s,config,lang,io){
                         case'logs':
                             switch(d.ff){
                                 case'delete':
-                                    //config.webPaths.superApiPrefix+':auth/logs/delete'
-                                    s.sqlQuery('DELETE FROM Logs WHERE ke=?',[d.ke])
+                                    s.knexQuery({
+                                        action: "delete",
+                                        table: "Logs",
+                                        where: {
+                                            ke: d.ke,
+                                        }
+                                    })
                                 break;
                             }
                         break;
                         case'system':
                             switch(d.ff){
                                 case'update':
-                                    //config.webPaths.superApiPrefix+':auth/update'
                                     s.ffmpegKill()
                                     s.systemLog('Shinobi ordered to update',{
                                         by:cn.mail,
@@ -988,145 +799,25 @@ module.exports = function(s,config,lang,io){
                                 break;
                             }
                         break;
-                        case'accounts':
-                            switch(d.ff){
-                                case'saveSuper':
-                                    var currentSuperUserList = jsonfile.readFileSync(s.location.super)
-                                    var currentSuperUser = {}
-                                    var currentSuperUserPosition = -1
-                                    //find this user in current list
-                                    currentSuperUserList.forEach(function(user,pos){
-                                        if(user.mail === cn.mail){
-                                            currentSuperUser = user
-                                            currentSuperUserPosition = pos
-                                        }
-                                    })
-                                    var logDetails = {
-                                        by : cn.mail,
-                                        ip : cn.ip
-                                    }
-                                    //check if pass and pass_again match, if not remove password
-                                    if(d.form.pass !== '' && d.form.pass === d.form.pass_again){
-                                        d.form.pass = s.createHash(d.form.pass)
-                                    }else{
-                                        delete(d.form.pass)
-                                    }
-                                    //delete pass_again from object
-                                    delete(d.form.pass_again)
-                                    //set new values
-                                    currentSuperUser = Object.assign(currentSuperUser,d.form)
-                                    //reset email and log change of email
-                                    if(d.form.mail !== cn.mail){
-                                        logDetails.newEmail = d.form.mail
-                                        logDetails.oldEmail = cn.mail + ''
-                                        cn.mail = d.form.mail
-                                    }
-                                    //log this change
-                                    s.systemLog('super.json Modified',logDetails)
-                                    //modify or add account in temporary master list
-                                    if(currentSuperUserList[currentSuperUserPosition]){
-                                        currentSuperUserList[currentSuperUserPosition] = currentSuperUser
-                                    }else{
-                                        currentSuperUserList.push(currentSuperUser)
-                                    }
-                                    //update master list in system
-                                    jsonfile.writeFile(s.location.super,currentSuperUserList,{spaces: 2},function(){
-                                        s.tx({f:'save_preferences'},cn.id)
-                                    })
-                                break;
-                                case'register':
-                                    if(d.form.mail!==''&&d.form.pass!==''){
-                                        if(d.form.pass===d.form.password_again){
-                                            s.sqlQuery('SELECT * FROM Users WHERE mail=?',[d.form.mail],function(err,r) {
-                                                if(r&&r[0]){
-                                                    //found address already exists
-                                                    d.msg=lang['Email address is in use.'];
-                                                    s.tx({f:'error',ff:'account_register',msg:d.msg},cn.id)
-                                                }else{
-                                                    //create new
-                                                    //user id
-                                                    d.form.uid=s.gid();
-                                                    //check to see if custom key set
-                                                    if(!d.form.ke||d.form.ke===''){
-                                                        d.form.ke=s.gid()
-                                                    }else{
-                                                        d.form.ke = d.form.ke.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '')
-                                                    }
-                                                    //write user to db
-                                                    s.sqlQuery('INSERT INTO Users (ke,uid,mail,pass,details) VALUES (?,?,?,?,?)',[d.form.ke,d.form.uid,d.form.mail,s.createHash(d.form.pass),d.form.details])
-                                                    s.tx({f:'add_account',details:d.form.details,ke:d.form.ke,uid:d.form.uid,mail:d.form.mail},'$');
-                                                    //init user
-                                                    s.loadGroup(d.form)
-                                                }
-                                            })
-                                        }else{
-                                            d.msg=lang["Passwords Don't Match"];
-                                        }
-                                    }else{
-                                        d.msg=lang['Fields cannot be empty'];
-                                    }
-                                    if(d.msg){
-                                        s.tx({f:'error',ff:'account_register',msg:d.msg},cn.id)
-                                    }
-                                break;
-                                case'edit':
-                                    s.sqlQuery('SELECT * FROM Users WHERE mail=?',[d.account.mail],function(err,r) {
-                                        if(r && r[0]){
-                                            r = r[0]
-                                            var details = JSON.parse(r.details)
-                                            if(d.form.pass&&d.form.pass!==''){
-                                               if(d.form.pass===d.form.password_again){
-                                                   d.form.pass=s.createHash(d.form.pass);
-                                               }else{
-                                                   s.tx({f:'error',ff:'edit_account',msg:lang["Passwords Don't Match"]},cn.id)
-                                                   return
-                                               }
-                                            }else{
-                                                delete(d.form.pass);
-                                            }
-                                            delete(d.form.password_again);
-                                            d.keys=Object.keys(d.form);
-                                            d.set=[];
-                                            d.values=[];
-                                            d.keys.forEach(function(v,n){
-                                                if(d.set==='ke'||d.set==='password_again'||!d.form[v]){return}
-                                                d.set.push(v+'=?')
-                                                if(v === 'details'){
-                                                    d.form[v] = JSON.stringify(Object.assign(details,JSON.parse(d.form[v])))
-                                                }
-                                                d.values.push(d.form[v])
-                                            })
-                                            d.values.push(d.account.mail)
-                                            s.sqlQuery('UPDATE Users SET '+d.set.join(',')+' WHERE mail=?',d.values,function(err,r) {
-                                                if(err){
-                                                    console.log(err)
-                                                    s.tx({f:'error',ff:'edit_account',msg:lang.AccountEditText1},cn.id)
-                                                    return
-                                                }
-                                                s.tx({f:'edit_account',form:d.form,ke:d.account.ke,uid:d.account.uid},'$');
-                                                delete(s.group[d.account.ke].init);
-                                                s.loadGroupApps(d.account)
-                                            })
-                                        }
-                                    })
-                                break;
-                                case'delete':
-                                    s.sqlQuery('DELETE FROM Users WHERE uid=? AND ke=? AND mail=?',[d.account.uid,d.account.ke,d.account.mail])
-                                    s.sqlQuery('DELETE FROM API WHERE uid=? AND ke=?',[d.account.uid,d.account.ke])
-                                    s.tx({f:'delete_account',ke:d.account.ke,uid:d.account.uid,mail:d.account.mail},'$');
-                                break;
-                            }
-                        break;
                     }
                 }
             }
         })
         // admin page socket functions
         cn.on('a',function(d){
-            if(!cn.init&&d.f=='init'){
-                s.sqlQuery('SELECT * FROM Users WHERE auth=? AND uid=?',[d.auth,d.uid],function(err,r){
-                    if(r&&r[0]){
-                        r=r[0];
+            if(!cn.init && d.f == 'init'){
+                s.knexQuery({
+                    action: "select",
+                    columns: "*",
+                    table: "Users",
+                    where: [
+                        ['auth','=',d.auth],
+                        ['uid','=',d.uid],
+                    ],
+                    limit: 1
+                },(err,r) => {
+                    if(r && r[0]){
+                        r = r[0];
                         if(!s.group[d.ke]){s.group[d.ke]={users:{}}}
                         if(!s.group[d.ke].users[d.auth]){s.group[d.ke].users[d.auth]={cnid:cn.id,uid:d.uid,ke:d.ke,auth:d.auth}}
                         try{s.group[d.ke].users[d.auth].details=JSON.parse(r.details)}catch(er){}
@@ -1136,65 +827,35 @@ module.exports = function(s,config,lang,io){
                         cn.auth=d.auth;
                         cn.init='admin';
                     }else{
-                        cn.disconnect();
+                        cn.disconnect()
                     }
                 })
             }else{
-                s.auth({auth:d.auth,ke:d.ke,id:d.id,ip:cn.request.connection.remoteAddress},function(user){
-                    if(!user.details.sub){
-                        switch(d.f){
-                            case'accounts':
-                                switch(d.ff){
-                                    case'edit':
-                                        d.keys=Object.keys(d.form);
-                                        d.condition=[];
-                                        d.value=[];
-                                        d.keys.forEach(function(v){
-                                            d.condition.push(v+'=?')
-                                            d.value.push(d.form[v])
-                                        })
-                                        d.value=d.value.concat([d.ke,d.$uid])
-                                        s.sqlQuery("UPDATE Users SET "+d.condition.join(',')+" WHERE ke=? AND uid=?",d.value)
-                                        s.tx({f:'edit_sub_account',ke:d.ke,uid:d.$uid,mail:d.mail,form:d.form},'ADM_'+d.ke);
-                                        s.sqlQuery("SELECT * FROM API WHERE ke=? AND uid=?",[d.ke,d.$uid],function(err,rows){
-                                            if(rows && rows[0]){
-                                                rows.forEach(function(row){
-                                                    delete(s.api[row.code])
-                                                })
-                                            }
-                                        })
-                                    break;
-                                    case'delete':
-                                        s.sqlQuery('DELETE FROM Users WHERE uid=? AND ke=? AND mail=?',[d.$uid,d.ke,d.mail])
-                                        s.sqlQuery("SELECT * FROM API WHERE ke=? AND uid=?",[d.ke,d.$uid],function(err,rows){
-                                            if(rows && rows[0]){
-                                                rows.forEach(function(row){
-                                                    delete(s.api[row.code])
-                                                })
-                                                s.sqlQuery('DELETE FROM API WHERE uid=? AND ke=?',[d.$uid,d.ke])
-                                            }
-                                        })
-                                        s.tx({f:'delete_sub_account',ke:d.ke,uid:d.$uid,mail:d.mail},'ADM_'+d.ke);
-                                    break;
-                                }
-                            break;
-                        }
-                    }
-                })
+                cn.disconnect()
             }
         })
         //functions for webcam recorder
         cn.on('r',function(d){
             if(!cn.ke&&d.f==='init'){
-                s.sqlQuery('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND auth=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
-                    if(r&&r[0]){
-                        r=r[0]
+                s.knexQuery({
+                    action: "select",
+                    columns: "ke,uid,auth,mail,details",
+                    table: "Users",
+                    where: [
+                        ['ke','=',d.ke],
+                        ['auth','=',d.auth],
+                        ['uid','=',d.uid],
+                    ],
+                    limit: 1
+                },(err,r) => {
+                    if(r && r[0]){
+                        r = r[0]
                         cn.ke=d.ke,cn.uid=d.uid,cn.auth=d.auth;
                         if(!s.group[d.ke])s.group[d.ke]={};
                         if(!s.group[d.ke].users)s.group[d.ke].users={};
                         if(!s.group[d.ke].dashcamUsers)s.group[d.ke].dashcamUsers={};
                         s.group[d.ke].users[d.auth]={
-                            cnid:cn.id,
+                            cnid: cn.id,
                             ke : d.ke,
                             uid:r.uid,
                             mail:r.mail,
@@ -1225,6 +886,9 @@ module.exports = function(s,config,lang,io){
                 if(s.group[d.ke] && s.group[d.ke].activeMonitors[d.mid]){
                     if(s.group[d.ke].activeMonitors[d.mid].allowStdinWrite === true){
                         switch(d.f){
+                            case'monitor_b64':
+                                console.log(d)
+                            break;
                             case'monitor_chunk':
                                 if(s.group[d.ke].activeMonitors[d.mid].isStarted !== true || !s.group[d.ke].activeMonitors[d.mid].spawn || !s.group[d.ke].activeMonitors[d.mid].spawn.stdin){
                                     s.tx({error:'Not Started'},cn.id);
@@ -1247,6 +911,13 @@ module.exports = function(s,config,lang,io){
                     s.tx({error:'Non Existant Monitor'},cn.id)
                 }
             }
+        })
+        cn.on('gps',(d) => {
+            s.tx({
+                f: 'gps',
+                gps: d.data,
+                mid: d.mid
+            },`MON_STREAM_${cn.ke}${d.mid}`)
         })
         //embed functions
         cn.on('e', function (d) {

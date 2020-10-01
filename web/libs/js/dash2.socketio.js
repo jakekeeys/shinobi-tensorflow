@@ -129,7 +129,7 @@ $.ccio.globalWebsocket=function(d,user){
             $.ccio.pm(3,d.apis,null,user);
             $('.os_platform').html(d.os.platform)
             $('.os_cpuCount').html(d.os.cpuCount)
-            $('.os_totalmem').html((d.os.totalmem/1000000).toFixed(2))
+            $('.os_totalmem').attr('title',`Total : ${(d.os.totalmem/1048576).toFixed(2)}`)
             if(d.os.cpuCount>1){
                 $('.os_cpuCount_trailer').html('s')
             }
@@ -148,13 +148,14 @@ $.ccio.globalWebsocket=function(d,user){
         break;
         case'os'://indicator
             //cpu
-            d.cpu=parseFloat(d.cpu).toFixed(0)+'%';
-            $('.cpu_load .progress-bar').css('width',d.cpu);
-            $('.cpu_load .percent').html(d.cpu);
+            var cpuPercent = parseFloat(d.cpu).toFixed(1) + '%'
+            $('.cpu_load .progress-bar').css('width',cpuPercent)
+            $('.cpu_load .percent').html(cpuPercent)
             //ram
-            d.ram=(100-parseFloat(d.ram)).toFixed(0)+'%';
-            $('.ram_load .progress-bar').css('width',d.ram);
-            $('.ram_load .percent').html(d.ram);
+            var ramPercent = d.ram.percent.toFixed(1) + '%'
+            $('.ram_load .progress-bar').css('width',ramPercent)
+            $('.ram_load .percent').html(ramPercent)
+            $('.ram_load .used').html(d.ram.used.toFixed(2))
         break;
         case'diskUsed':
             if(!d.limit||d.limit===''){d.limit=10000}
@@ -203,9 +204,9 @@ $.ccio.globalWebsocket=function(d,user){
 //            if($('.modal[mid="'+d.mid+'"][auth="'+user.auth_token+'"]').length>0){$('#video_viewer[mid="'+d.mid+'"]').attr('file',null).attr('ke',null).attr('mid',null).attr('auth',null).modal('hide')}
             $('[file="'+d.filename+'"][mid="'+d.mid+'"][ke="'+d.ke+'"][auth="'+user.auth_token+'"]:not(.modal)').remove();
             $('[data-file="'+d.filename+'"][data-mid="'+d.mid+'"][data-ke="'+d.ke+'"][data-auth="'+user.auth_token+'"]:not(.modal)').remove();
-            if($.pwrvid.currentDataObject&&$.pwrvid.currentDataObject[d.filename]){
-                delete($.timelapse.currentVideos[$.pwrvid.currentDataObject[d.filename].position])
-                $.pwrvid.drawTimeline(false)
+            if($.powerVideoWindow.currentDataObject&&$.powerVideoWindow.currentDataObject[d.filename]){
+                delete($.timelapse.currentVideos[$.powerVideoWindow.currentDataObject[d.filename].position])
+                $.powerVideoWindow.drawTimeline(false)
             }
             if($.timelapse.currentVideos&&$.timelapse.currentVideos[d.filename]){
                 delete($.timelapse.currentVideosArray.videos[$.timelapse.currentVideos[d.filename].position])
@@ -223,7 +224,7 @@ $.ccio.globalWebsocket=function(d,user){
                 var snapElement = $('[mid="'+d.mid+'"][ke="'+d.ke+'"][auth="'+user.auth_token+'"] .snapshot')
                 switch(d.snapshot_format){
                     case'plc':
-                        snapElement.attr('src',placeholder.getData(placeholder.plcimg(d.snapshot)))
+                        snapElement.attr('src',placeholder.getData(placeholder.plcimg({text:d.snapshot.toUpperCase().split('').join(' '), fsize: 25, bgcolor:'#1462a5'})))
                     break;
                     case'ab':
                         d.reader = new FileReader();
@@ -276,7 +277,11 @@ $.ccio.globalWebsocket=function(d,user){
             if($.ccio.op().jpeg_on===true){
                 $.ccio.init('jpegMode',$.ccio.mon[d.ke+d.id+user.auth_token]);
             }else{
-                var path = tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+                if(location.search === '?p2p=1'){
+                    var path = '/socket.io'
+                }else{
+                    var path = tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+                }
                 switch(d.d.stream_type){
                     case'jpeg':
                         $.ccio.init('jpegMode',$.ccio.mon[d.ke+d.id+user.auth_token]);
@@ -433,11 +438,13 @@ $.ccio.globalWebsocket=function(d,user){
                                     },2000)
                                 }else{
                                     var video = $('#monitor_live_'+d.id+user.auth_token+' .stream-element')[0];
-                                    if (navigator.userAgent.match(/(iPod|iPhone|iPad)/)||(navigator.userAgent.match(/(Safari)/)&&!navigator.userAgent.match('Chrome'))) {
+                                    if ($.ccio.isAppleDevice) {
                                         video.src=d.url;
-                                        if (video.paused) {
+                                        video.addEventListener('loadedmetadata', function() {
+                                          setTimeout(function(){
                                             video.play();
-                                        }
+                                          },3000)
+                                        }, false);
                                     }else{
                                         $.ccio.mon[d.ke+d.id+user.auth_token].hlsGarbageCollector=function(){
                                             if($.ccio.mon[d.ke+d.id+user.auth_token].hls){$.ccio.mon[d.ke+d.id+user.auth_token].hls.destroy();URL.revokeObjectURL(video.src)}
@@ -459,7 +466,22 @@ $.ccio.globalWebsocket=function(d,user){
                         d.fn()
                     break;
                     case'mjpeg':
-                        $('#monitor_live_'+d.id+user.auth_token+' .stream-element').attr('src',$.ccio.init('location',user)+user.auth_token+'/mjpeg/'+d.ke+'/'+d.id+'/?full=true')
+                        var liveStreamElement = $('#monitor_live_'+d.id+user.auth_token+' .stream-element')
+                        var setSource = function(){
+                            liveStreamElement.attr('src',$.ccio.init('location',user)+user.auth_token+'/mjpeg/'+d.ke+'/'+d.id)
+                            liveStreamElement.unbind('ready')
+                            liveStreamElement.ready(function(){
+                                setTimeout(function(){
+                                    liveStreamElement.contents().find("body").append('<style>img{width:100%;height:100%}</style>')
+                                },1000)
+                            })
+                        }
+                        setSource()
+                        liveStreamElement.on('error',function(err){
+                            setTimeout(function(){
+                                setSource()
+                            },4000)
+                        })
                     break;
                     case'h265':
                         var player = $.ccio.mon[d.ke+d.id+user.auth_token].h265Player
@@ -634,151 +656,65 @@ $.ccio.globalWebsocket=function(d,user){
             $.ccio.init('jpegModeAll');
             $('body').addClass('jpegMode')
         break;
-        case'drawPowerVideoMainTimeLine':
-            var videos = d.videos;
-            var events = d.events;
-//            $.pwrvid.currentlyLoading = false
-            $.pwrvid.currentVideos=videos
-            $.pwrvid.currentEvents=events
-            $.pwrvid.e.find('.loading').hide()
-            $.pwrvid.e.find('.nodata').hide()
-            //$.pwrvid.drawTimeLine
-            if($.pwrvid.t&&$.pwrvid.t.destroy){$.pwrvid.t.destroy()}
-            data={};
-            $.each(videos.videos,function(n,v){
-                if(!v||!v.mid){return}
-                v.mon=$.ccio.mon[v.ke+v.mid+$user.auth_token];
-//                v.filename=$.ccio.init('tf',v.time)+'.'+v.ext;
-                if(v.status>0){
-        //                    data.push({src:v,x:v.time,y:$.ccio.timeObject(v.time).diff($.ccio.timeObject(v.end),'minutes')/-1})
-                    data[v.filename]={
-                        filename:v.filename,
-                        time:v.time,
-                        timeFormatted:$.ccio.timeObject(v.time).format('MM/DD/YYYY HH:mm'),
-                        endTime:v.end,
-                        close:$.ccio.timeObject(v.time).diff($.ccio.timeObject(v.end),'minutes')/-1,
-                        motion:[],
-                        row:v,
-                        position:n
-                    }
-                }
-            });
+        case'gps':
+            var gps = d.gps
+            var activeMonitor = $.ccio.mon[user.ke + d.mid + user.auth_token]
+            var mapBoxMarker = activeMonitor.mapBoxMarker
+            var monitorElement = $(`.monitor_item[mid="${d.mid}"]`)
+            monitorElement.find(`.gps-map-info`).removeClass('hidden')
+            if(!mapBoxMarker){
+                var mapBox = L.map(`gps-map-${d.mid}`).setView([gps.lat, gps.lng], 5);
 
-            var eventsToCheck = Object.assign({},events)
-            $.each(data,function(m,b){
-                startTimeFormatted = $.ccio.timeObject(b.time).format('YYYY-MM-DD HH:mm:ss');
-                startTime = $.ccio.timeObject(b.time).format();
-                endTime = $.ccio.timeObject(b.endTime).format();
-                var newSetOfEventsWithoutChecked = {};
-                var eventTime
-                $.each(eventsToCheck,function(n,v){
-                    if(typeof v.time === 'string' && v.time.indexOf('T') > -1){
-                        eventTime = v.time.split('T')
-                    }else if(typeof v.time === 'number'){
-                        eventTime = moment(v.time).format('YYYY-MM-DD HH:mm:ss').split(' ')
-                    }else{
-                        eventTime = v.time.split(' ')
-                    }
-                    eventTime[1] = eventTime[1].replace(/-/g,':'),eventTime = eventTime.join(' ');
-                    if(eventTime === startTimeFormatted){
-                        data[m].motion.push(v)
-                    }else if ($.ccio.timeObject(v.time).isBetween(startTime,$.ccio.timeObject(b.endTime).format())) {
-                        data[m].motion.push(v)
-                    }else{
-                        newSetOfEventsWithoutChecked[n] = v;
-                    }
-                })
-                eventsToCheck = newSetOfEventsWithoutChecked;
-            });
-            $.pwrvid.currentDataObject=data;
-            if($.pwrvid.chart){
-                $.pwrvid.d.empty()
-                delete($.pwrvid.chart)
-            }
-            $.pwrvid.currentData=Object.values(data);
-            if($.pwrvid.currentData.length>0){
-                var labels=[]
-                var Dataset1=[]
-                var Dataset2=[]
-                $.each(data,function(n,v){
-                    labels.push(v.timeFormatted)
-                    Dataset1.push(v.close)
-                    Dataset2.push(v.motion.length)
-                })
-                $.pwrvid.d.html("<canvas></canvas>")
-                var timeFormat = 'MM/DD/YYYY HH:mm';
-                var color = Chart.helpers.color;
-                Chart.defaults.global.defaultFontColor = '#fff';
-                var config = {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            type: 'line',
-                            label: lang['Video and Time Span (Minutes)'],
-                            backgroundColor: color(window.chartColors.blue).alpha(0.2).rgbString(),
-                            borderColor: window.chartColors.blue,
-                            data: Dataset1,
-                        }, {
-                            type: 'bar',
-                            showTooltip: false,
-                            label: lang['Counts of Motion'],
-                            backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
-                            borderColor: window.chartColors.red,
-                            data:Dataset2,
-                        }, ]
-                    },
-                    options: {
-                         maintainAspectRatio: false,
-                        title: {
-                            fontColor: "white",
-                            text: lang['Video Length (minutes) and Motion Count per video']
-                        },
-                        tooltips: {
-                            callbacks: {
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: 'OpenStreet Map'
+                }).addTo(mapBox);
 
-                            },
-                        },
-                        scales: {
-                            xAxes: [{
-                                type: "time",
-                                display: true,
-                                time: {
-                                    // format: timeFormat,
-                                    unit: 'minute',
-                                    displayFormats: {
-                                        minute: 'h:mm a',
-                                    },
-                                },
-                                categoryPercentage: 0.6,
-                                barPercentage: .5,
-                            }],
-                        },
-                    }
-                };
-
-                var ctx = $.pwrvid.d.find('canvas')[0].getContext("2d");
-                $.pwrvid.chart = new Chart(ctx, config);
-                $.pwrvid.d.find('canvas').click(function(e) {
-                    var target = $.pwrvid.chart.getElementsAtEvent(e)[0];
-                    if(!target){return false}
-                    target = $.pwrvid.currentData[target._index];
-                    $.pwrvid.e.find('.temp').html('<li class="glM'+target.row.mid+$user.auth_token+'" mid="'+target.row.mid+'" ke="'+target.row.ke+'" status="'+target.row.status+'" file="'+target.row.filename+'" auth="'+$user.auth_token+'"><a class="btn btn-sm btn-primary" preview="video" href="'+target.row.href+'"><i class="fa fa-play-circle"></i></a></li>').find('a').click()
-                });
-                var colorNames = Object.keys(window.chartColors);
+                var mapBoxMarker = L.marker([gps.lat, gps.lng]).addTo(mapBox);
+                activeMonitor.mapBoxMarker = mapBoxMarker
+                activeMonitor.mapBoxBearingElement = monitorElement.find(`.gps-info-bearing`)
+                activeMonitor.mapBoxSpeedElement = monitorElement.find(`.gps-info-speed`)
             }else{
-                $.pwrvid.e.find('.nodata').show()
+                mapBoxMarker.setLatLng([gps.lat, gps.lng]).update()
             }
+            if(gps.bearing){
+                setRadialBearing(activeMonitor.mapBoxBearingElement,gps.bearing,'Bearing : ')
+            }
+            if(gps.speed){
+                setRadialBearing(activeMonitor.mapBoxSpeedElement,gps.speed,'Speed (meters/second) : ')
+            }
+            clearTimeout(activeMonitor.mapBoxTimeout)
+            activeMonitor.mapBoxTimeout = setTimeout(function(){
+                monitorElement.find(`.gps-map-info`).addClass('hidden')
+            },30000)
         break;
     }
 }
-$user.ws=io(location.origin,{
-    path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
-});
+if(location.search === '?p2p=1'){
+    $user.ws=io(location.origin,{
+        path : '/socket.io'
+    });
+}else{
+    $user.ws=io(location.origin,{
+        path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+    });
+}
 $user.ws.on('connect',function (d){
     $(document).ready(function(e){
         $.ccio.init('id',$user);
-        $.ccio.cx({f:'init',ke:$user.ke,auth:$user.auth_token,uid:$user.uid})
+        if(location.search === '?p2p=1'){
+            $user.ws.emit('p2pInitUser',{
+              user: {
+                ke: $user.ke,
+                mail: $user.mail,
+                auth_token: $user.auth_token,
+                details: $user.details,
+                uid: $user.uid,
+            },
+            machineId: machineId
+          })
+        }else{
+            $.ccio.cx({f:'init',ke:$user.ke,auth:$user.auth_token,uid:$user.uid})
+        }
         if($user.details&&$user.details.links){
             $.each($user.details.links,function(n,v){
                 if(v.secure==='0'){
@@ -857,20 +793,13 @@ $user.ws.on('f',function (d){
             }
         break;
         case'ffprobe_stop':
-            $.pB.e.find('._loading').hide()
-            $.pB.o.append('<div><b>END</b></div>');
-            $.pB.e.find('.stop').hide();
-            $.pB.e.find('[type="submit"]').show();
+            $.pB.setAsLoading(false)
         break;
         case'ffprobe_start':
-            $.pB.e.find('._loading').show()
-            $.pB.o.empty();
-            $.pB.e.find('.stop').show();
-            $.pB.e.find('[type="submit"]').hide();
+            $.pB.setAsLoading(true)
         break;
         case'ffprobe_data':
-            $.pB.results=JSON.parse(d.data)
-            $.pB.o.append($.ccio.init('jsontoblock',$.pB.results))
+            $.pB.writeData(d.data)
         break;
         case'detector_cascade_list':
             d.tmp=''
@@ -924,18 +853,7 @@ $user.ws.on('f',function (d){
 //            }
 //        break;
         case'onvif':
-            var tempID = $.ccio.gid();
-            $.oB.foundMonitors[tempID] = Object.assign({},d);
-            $.oB.e.find('._loading').hide()
-            $.oB.e.find('._notfound').remove()
-            $.oB.e.find('[type="submit"]').prop('disabled',false)
-            d.info=$.ccio.init('jsontoblock',d.info)
-            if(d.uri){
-                d.stream=d.uri
-            }else{
-                d.stream='URL not Found'
-            }
-            $('#onvif_probe .output_data').append('<tr onvif_row="'+tempID+'"><td><a class="btn btn-sm btn-primary copy">&nbsp;<i class="fa fa-copy"></i>&nbsp;</a></td><td class="ip">'+d.ip+'</td><td class="port">'+d.port+'</td><td>'+$.ccio.init('jsontoblock',d.info)+'</td><td class="url">'+d.stream+'</td></tr>')
+            $.oB.drawProbeResult(d)
         break;
     }
     delete(d);

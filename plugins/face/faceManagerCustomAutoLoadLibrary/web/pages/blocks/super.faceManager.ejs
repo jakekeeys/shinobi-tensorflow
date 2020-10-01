@@ -1,0 +1,33 @@
+<div class="modal full fade search-parent" id="faceManager" role="dialog" aria-labelledby="faceManagerLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title" id="faceManagerLabel"><i class="fa fa-pencil-square-o"></i> &nbsp; <%-lang.faceManager%></h4>
+      </div>
+      <div class="modal-body overflow-hidden">
+          <div class="row">
+              <form id="faceManagerUploadForm" class="col-4">
+                  <div class="form-group mb-3">
+                      <div class="text-left mb-2"><span class="badge badge-default"><%- lang['Face Name'] %></span></div>
+                      <input value="myFace" placeholder="<%- lang['Face Name'] %>" class="form-control form-control-lg" name="faceName" id="faceNameField" style="border-radius: .3rem;">
+                  </div>
+                  <div class="form-group file-area">
+                      <div class="text-left mb-2"><span class="badge badge-default"><%- lang['Upload Images'] %></span></div>
+                      <input type="file" id="fileinput" name="files" required multiple="multiple" accept="image/jpeg" />
+                      <div class="file-dummy">
+                        <div class="success"><span class="badge bg-light badge-success"><%- lang['Images Sent'] %></span></div>
+                        <div class="default"><span class="badge bg-light badge-info"><%- lang['Click to Upload Images'] %> (JPG/JPEG)</span></div>
+                      </div>
+                  </div>
+              </form>
+              <div class="col-8" id="faceManagerImages">
+
+              </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>

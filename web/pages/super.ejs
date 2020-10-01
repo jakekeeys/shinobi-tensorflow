@@ -32,10 +32,15 @@
         .list-group li .form-group {margin:0}
         a {cursor:pointer}
     </style>
+    <script>
+        var superApiPrefix = location.search === '?p2p=1' ? location.pathname + '/' : "<%=originalURL%><%=config.webPaths.superApiPrefix%>"
+        var shinobiConfig = <%- JSON.stringify(plainConfig) %>
+    </script>
     <% customAutoLoad.superLibsCss.forEach(function(lib){ %>
         <link rel="stylesheet" href="<%-window.libURL%>libs/css/<%-lib%>">
     <% }) %>
 </head>
+<script>$user=<%-JSON.stringify($user)%></script>
 
 <body class="index-page sidebar-collapse bg-hexagon">
     <!-- Navbar -->
@@ -83,82 +88,25 @@
                                 <li class="nav-item">
                                     <a class="nav-link" data-toggle="tab" href="#changeSuperPreferences" role="tab"><%-lang['Preferences']%></a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#customAutoLoad" role="tab"><%-lang['Custom Auto Load']%></a>
+                                </li>
                             </ul>
                             <div class="card-body">
                                 <!-- Tab panes -->
                                 <div class="tab-content text-center">
                                     <div class="tab-pane active" id="accounts" role="tabpanel">
-                                        <nav class="navbar navbar-rounded navbar-expand-lg bg-primary">
-                                            <div class="container">
-                                                <div class="collapse navbar-collapse">
-                                                    <ul class="navbar-nav">
-                                                        <li class="nav-item">
-                                                            <a class="nav-link add">
-                                                                <p><i class="fa fa-plus-square-o"></i> <%-lang['Add']%> <%-lang['Accounts']%></p>
-                                                            </a>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </nav>
+                                        <div class="mb-4"><a href="#" class="add btn btn-block btn-default"><i class="fa fa-plus"></i> <%- lang.Add %></a></div>
                                         <table class="table table-striped"></table>
                                     </div>
-                                    <div class="tab-pane" id="config" role="tabpanel">
-                                        <small class="pull-right msg"></small>
-                                        <nav class="navbar navbar-rounded navbar-expand-lg bg-success">
-                                            <div class="container">
-                                                <div class="collapse navbar-collapse">
-                                                    <ul class="navbar-nav">
-                                                        <li class="nav-item">
-                                                            <a class="nav-link submit">
-                                                                <p><i class="fa fa-check"></i> <%-lang.Save%></p>
-                                                            </a>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </nav>
-                                        <form class="form-group-group red" id="conf_json">
-                                            <small class="pull-right msg"></small>
-                                            <div id="configForHumans"></div>
-                                            <div class="form-group">
-                                                <textarea name="json" style="height:300px;font-family: monospace;" class="form-control"></textarea>
-                                            </div>
-                                        </form>
+                                    <div class="tab-pane text-left" id="config" role="tabpanel">
+                                        <% include blocks/superConfigEditor.ejs %>
                                     </div>
                                     <div class="tab-pane text-left" id="system" role="tabpanel">
-                                        <nav class="navbar navbar-rounded navbar-expand-lg bg-primary">
-                                            <div class="container">
-                                                <div class="collapse navbar-collapse">
-                                                    <ul class="navbar-nav">
-                                                        <li class="nav-item">
-                                                            <a class="nav-link" system="deleteLogs">
-                                                                <p><i class="fa fa-trash-o"></i> <%-lang['Delete']%> <%-lang['Logs']%></p>
-                                                            </a>
-                                                        </li>
-                                                        <li class="nav-item">
-                                                            <a class="nav-link" restart="system">
-                                                                <p><i class="fa fa-retweet"></i> <%-lang['Restart Core']%></p>
-                                                            </a>
-                                                        </li>
-                                                        <li class="nav-item">
-                                                            <a class="nav-link" restart="cron">
-                                                                <p><i class="fa fa-retweet"></i> <%-lang['Restart CRON']%></p>
-                                                            </a>
-                                                        </li>
-                                                        <li class="nav-item">
-                                                            <a class="nav-link" restart="logs">
-                                                                <p><i class="fa fa-retweet"></i> <%-lang['Flush PM2 Logs']%></p>
-                                                            </a>
-                                                        </li>
-
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </nav>
-                                        <div id="logs" style="height:400px;overflow:auto">
-                                            <table class="table table-striped"></table>
-                                        </div>
+                                        <% include blocks/superSystemTab.ejs %>
+                                    </div>
+                                    <div class="tab-pane text-left" id="customAutoLoad" role="tabpanel">
+                                        <% include blocks/superCustomAutoLoadManager.ejs %>
                                     </div>
                                     <div class="tab-pane text-left" id="changeSuperPreferences" role="tabpanel">
                                         <% include blocks/changeSuperPreferences.ejs %>
@@ -182,9 +130,6 @@
     </div>
     <div id="temp" style="display:none"></div>
 </body>
-<script>
-    var superApiPrefix = "<%=originalURL%><%=config.webPaths.superApiPrefix%>"
-</script>
 <% include blocks/confirm.ejs %>
 <% customAutoLoad.superPageBlocks.forEach(function(block){ %>
     <%- include(block) %>
@@ -213,7 +158,6 @@
     }
 </script>
 
-<script>$user=<%-JSON.stringify($user)%></script>
 <script>
 $.ccio={accounts:{}};$.ls=localStorage;
 if(!$user.lang||$user.lang==''){
@@ -229,12 +173,18 @@ switch($user.lang){
         })
     break;
 }
-$.ccio.ws=io(location.origin,{
-    path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
-});
+if(location.search === '?p2p=1'){
+    $.ccio.ws=io(location.origin,{
+        path : '/socket.io'
+    });
+}else{
+    $.ccio.ws=io(location.origin,{
+        path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+    });
+}
 $.ccio.cx=function(x){return $.ccio.ws.emit('super',x)}
 $.ccio.ws.on('connect',function(d){
-    $.ccio.cx({f:'init',mail:$user.mail,pass:$user.pass})
+    $.ccio.cx({f:'init',mail:$user.mail,pass:$user.pass,machineId: `<%- config.machineId %>`})
 })
 $.ccio.ws.on('f',function(d){
     switch(d.f){
@@ -278,33 +228,11 @@ $.ccio.tm=function(x,d,z,k){
         case 0://account row
             d.detailsJSON=JSON.parse(d.details);
             $.ccio.accounts[d.ke]=d;
-            tmp+='<tr ke="'+d.ke+'"><td><b class="mail">'+d.mail+'</b></td><td>'+d.ke+'</td><td><a tabindex="1" class="permission btn btn-xs btn-primary"><i class="fa fa-lock"></i></a></td><td><a tabindex="1" class="delete btn btn-xs btn-danger"><i class="fa fa-trash-o"></i></a></td></tr>';
+            tmp+='<tr ke="'+d.ke+'"><td><b class="mail epic-text">'+d.mail+'</b></td><td>'+d.ke+'</td><td><a tabindex="1" class="permission btn btn-sm btn-info"><i class="fa fa-lock"></i></a></td><td><a tabindex="1" class="delete btn btn-sm btn-danger"><i class="fa fa-trash-o"></i></a></td></tr>';
         break;
         case 4://log row, draw to global and monitor
             if(!d.time){d.time=$.ccio.init('t')}
             tmp+='<tr class="search-row"><td><span title="'+d.time+'" class="livestamp"></span><br><small>'+d.time+'</small><br><small>'+d.mid+'</small></td><td></td><td><pre class="pre-inline">'+$.ccio.init('jsontoblock',JSON.parse(d.info))+'</pre></td></tr>'
-        break;
-        case 5://config element
-            if(d.value instanceof Object){
-                tmp += '<div class="form-group config-row" layer="'+d.layer+'">\
-                        <div><input class="form-control key" type="text" value="'+d.key+'"></div>\
-                        <ul class="list-group valueObject" style="margin:0">'
-                ++d.layer
-                $.each(d.value,function(key,value){
-                    tmp += '<li class="list-group-item">'
-                    tmp += $.ccio.tm(5,{key:key,value:value,layer:d.layer})
-                    tmp += '</li>'
-                })
-                tmp += '</ul>'
-                tmp += '</div>'
-            }else{
-                tmp += '<div class="form-group config-row" layer="'+d.layer+'">\
-                    <label>\
-                        <div><input class="form-control key" type="text" value="'+d.key+'"></div>\
-                        <div><input class="form-control value" type="text" value="'+d.value+'"></div>\
-                    </label>\
-                </div>'
-            }
         break;
     }
     if(z){
@@ -316,12 +244,6 @@ $.ccio.tm=function(x,d,z,k){
         break;
     }
     return tmp;
-}
-users=<%-JSON.stringify(users)%>;
-if(users){
-    $.each(users,function(n,v){
-        $.ccio.tm(0,v,'#accounts table')
-    })
 }
 $.ccio.init=function(x,d,z,k){
     if(!k){k={}};k.tmp='';
@@ -355,189 +277,21 @@ $.ccio.init=function(x,d,z,k){
 }
 //logs
 $.logs={e:$('#logs')}
-//config editor
-<%
-    var stringedConfig = JSON.stringify(plainConfig)
-%>
-var config = <%- JSON.stringify(plainConfig) || [] %>
-$.conf={e:$('#config')};
-$.conf.f = $.conf.e.find('form')
-$.conf.configForHumans=$('#configForHumans')
-$.conf.draw=$.conf.e.find('[name="json"]')
-$.conf.valid=1;
-$.conf.jsonToFields = function(){
-//    var tmp = ''
-//    $.each(config,function(key,value){
-//        var layer = 0
-//        tmp += $.ccio.tm(5,{key:key,value:value,layer:layer})
-//    })
-//    $.conf.configForHumans.html(tmp)
-}
-$.conf.draw.val(JSON.stringify(<%-stringedConfig%>,null,3))
-$.conf.draw.keyup(function(){
-    var msg=''
-    var color=''
-    try{
-        config = $.parseJSON($.conf.draw.val())
-        msg = 'Valid JSON'
-        color = 'success'
-        $.conf.valid = 1
-        $.conf.jsonToFields()
-    }catch(er){
-        msg = 'Not a valid JSON'
-        color = 'danger'
-        $.conf.valid = 0
-    }
-    new PNotify({text:msg,type:color})
-})
-$.conf.e.find('.submit').click(function(e){
-    $.conf.f.submit()
-})
-$.conf.f.submit(function(e){
-    e.preventDefault()
-    if($.conf.valid===1){
-        $.confirm.e.modal('show');
-        $.confirm.title.html('Save Configuration <small>conf.json</small>')
-        e.html='<p>This is a change being applied to the configuration file (conf.json). Are you sure you want to do this? You must restart Shinobi for these changes to take effect. <b>The JSON below is what you are about to save.</b></p>'
-        e.html+='<pre>'+JSON.stringify($.parseJSON($.conf.draw.val()),null,3)+'</pre>'
-        $.confirm.body.html(e.html)
-        $.confirm.click({title:lang.Save,class:'btn-success'},function(){
-            $.post('<%=originalURL%><%=config.webPaths.superApiPrefix%>'+$user.sessionKey+'/system/configure',{
-                data: $.conf.draw.val()
-            },function(data){
-                // console.log(data)
-            })
-            // $.ccio.cx({f:'system',ff:'configure',data:$.parseJSON($.conf.draw.val())})
-        });
-    }else{
-        new PNotify({text:'Invalid JSON Syntax, Cannot Save.',type:'error'})
-    }
-    return false;
-})
-$.conf.e.on('keyup','.config-row input',function(){
-    var newConfig = {}
-    var checkRow = function(v,object){
-        var _this = $(v)
-        var key = _this.find('.key:first').val()
-        var layer = parseInt(_this.attr('layer'))
-        var list = _this.find('ul').first()
-        var isObject = list.length > 0
-        if(isObject){
-            if(!object[key]){
-                if(isNaN(key) === true){
-                    object[key] = {}
-                }else{
-                    object[key] = []
-                }
-            }
-            list.find('.config-row[layer="'+(layer+1)+'"]').each(function(n,v){
-                checkRow(v,object[key])
-            })
-        }else{
-            var value = _this.find('.value').val()
-            switch(value){
-                case'true':
-                    value = true
-                break;
-                case'false':
-                    value = false
-                break;
-                default:
-                    if(isNaN(value) === false){
-                        value = parseFloat(value)
-                    }
-                break;
-            }
-            object[key] = value
-        }
-
-    }
-    $.conf.configForHumans.children('.config-row').each(function(n,v){
-        checkRow(v,newConfig)
-    })
-    $.conf.draw.val(JSON.stringify(newConfig,null,3))
-    console.log(newConfig)
-})
-$.conf.f.ready(function(){
-    $.conf.jsonToFields()
-})
-//sys controls
-$.system={e:$('#system')}
-$.system.e.find('[system]').click(function(e){
-    switch($(this).attr('system')){
-        case'deleteLogs':
-            $.confirm.e.modal('show');
-            $.confirm.title.html('<%=lang['Delete Logs']%> <small>'+e.u+'</small>')
-            e.html='Do you want to delete these logs? User logs will <b>not</b> be deleted.'
-            $.confirm.body.html(e.html)
-            $.confirm.click({title:lang.Delete,class:'btn-danger'},function(){
-                // $.ccio.cx({f:'logs',ff:'delete',ke:'$'})
-                $.get('<%=originalURL%><%=config.webPaths.superApiPrefix%>'+$user.sessionKey+'/logs/delete',function(data){
-                    console.log(data)
-                })
-                $.logs.e.find('table').empty()
-            });
-        break;
-        case'update':
-            $.confirm.e.modal('show')
-            $.confirm.title.html('<%=lang.Update%> Shinobi?')
-            $.confirm.body.html('Updating Shinobi means overwriting files. If you have modified any files yourself you should update Shinobi manually.')
-            $.confirm.click({title:lang.Update,class:'btn-danger'},function(){
-                // $.ccio.cx({f:'system',ff:'update'})
-                $.get('<%=originalURL%><%=config.webPaths.superApiPrefix%>'+$user.sessionKey+'/system/update',function(data){
-                    console.log(data)
-                })
-            })
-        break;
-    }
-})
-$.system.e.find('[restart]').click(function(e){
-    $.confirm.e.modal('show');
-    e.html=''
-    e.title=''
-    e.target=$(this).attr('restart').split(',')
-    e.target.forEach(function(v){
-        switch(v){
-            case'system':
-                e.html+='<p>Do you want to restart the core (camera.js)? plugins will not be restarted. They will reconnect when Shinobi is back online.</p>'
-            break;
-            case'cron':
-                e.html+='<p>Do you want to restart the CRON (cron.js)?</p>'
-            break;
-            case'logs':
-                e.html+='<p>Flush PM2 console logs? The logs saved in the database will <b>not</b> be deleted.</p>'
-            break;
-        }
-    })
-    $.confirm.title.html('<%=lang.Restart%>?')
-    $.confirm.body.html(e.html)
-    $.confirm.click({title:lang.Restart,class:'btn-danger'},function(){
-        // $.ccio.cx({f:'system',ff:'restart',target:e.target})
-        $.get('<%=originalURL%><%=config.webPaths.superApiPrefix%>'+$user.sessionKey+'/system/restart/'+encodeURIComponent(e.target),function(data){
-            console.log(data)
-        })
-    });
-})
-$.changeSuperPreferences = {
-    window : $('#changeSuperPreferences')
-}
-$.changeSuperPreferences.form = $.changeSuperPreferences.window.find('form')
-$.changeSuperPreferences.form.find('.submit').click(function(){
-    $.changeSuperPreferences.form.submit()
-})
-$.changeSuperPreferences.form.submit(function(e){
-    e.preventDefault()
-    var formValues = $(this).serializeObject()
-    // $.ccio.cx({f:'accounts',ff:'saveSuper',form:formValues})
-    $.post('<%=originalURL%><%=config.webPaths.superApiPrefix%>'+$user.sessionKey+'/accounts/saveSettings',{
-        data: JSON.stringify(formValues)
-    },function(data){
-        console.log(data)
-    })
-    return false
-})
 ////
 $(document).ready(function(){
+    <% if(!users || !(users instanceof Array)){ %>
+          var html = `<div class="mt-3 mb-4"><p><i class="fa fa-4x fa-exclamation-circle text-danger"></i></p><h3>Database is not running or unreachable</h3><p>Please ensure it is started then restart Shinobi.</p><p>By default Shinobi uses <b>MariaDB</b>, an SQL server, as the database engine.</p><p>If you need to install the database files again you may follow <a target="_blank" href="https://shinobi.video/articles/2019-02-22-how-to-install-the-shinobi-database-manually">this article.</a></p></div>`
+          $('#main-card').html(html)
+    <% }else{ %>
+          users = <%- JSON.stringify(users) %>;
+          if(users){
+              $.each(users,function(n,v){
+                  $.ccio.tm(0,v,'#accounts table')
+              })
+          }else{
+
+          }
+    <% } %>
     $.each(<%-JSON.stringify(Logs)%>,function(n,v){
         $.ccio.tm(4,v,'#logs table')
     })

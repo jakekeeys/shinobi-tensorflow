@@ -6,32 +6,43 @@
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
-        <h4 class="modal-title" id="detector_filterLabel"><i class="fa fa-grav"></i> &nbsp; <%-lang['Detector Filters']%></h4>
+        <h4 class="modal-title" id="detector_filterLabel">
+            <i class="fa fa-grav"></i> &nbsp; <%-lang['Detector Filters']%>
+        </h4>
       </div>
       <div class="modal-body">
           <div class="form-group-group green">
-              <h4><%- lang['Saved Filters'] %> : <small class="filter_name"></small></h4>
+              <h4><%- lang['Saved Filters'] %></h4>
                 <div class="form-group">
                     <label>
                         <div><span><%-lang.Filters%></span></div>
-                        <div><select id="detector_filters" class="form-control">
-                            <option value=""><%-lang['Add New']%></option>
-                            <optgroup label="Saved"></optgroup>
-                            </select></div>
+                        <div>
+                            <select id="detector_filters" class="form-control"></select>
+                        </div>
+                        <div style="vertical-align: middle;padding-left:15px;">
+                            <a class="btn btn-success add-filter"><i class="fa fa-plus"></i> <%- lang.Add %></a>
+                        </div>
                     </label>
                 </div>
                 <div class="form-group">
-                    <label><div><span><%- lang['Filter Name'] %></span></div>
-                        <div><input class="form-control" name="id" type="hidden">
-                        <input class="form-control" name="filter_name"></div>
+                    <label>
+                        <div>
+                            <span><%- lang['Filter Name'] %></span>
+                        </div>
+                        <div>
+                            <input class="form-control" name="id" type="hidden">
+                            <input class="form-control" name="filter_name">
+                        </div>
+                        <div style="vertical-align: middle;padding-left:15px;">
+                            <a class="btn btn-danger delete-filter"><i class="fa fa-trash-o"></i> <%- lang.Delete %></a>
+                        </div>
                     </label>
                 </div>
           </div>
           <div class="form-group-group blue where">
               <h4>Conditions
                 <div class="pull-right">
-                    <a class="btn btn-success btn-xs add">&nbsp;<i class="fa fa-plus"></i>&nbsp;</a>
-                    <a class="btn btn-danger btn-xs remove">&nbsp;<i class="fa fa-trash-o"></i>&nbsp;</a>
+                    <a class="btn btn-success btn-xs add" style="margin-top: -5px;"><i class="fa fa-plus"></i> <%- lang.Add %></a>
                 </div>
               </h4>
               <div id="detector_filters_where"></div>
@@ -252,7 +263,6 @@
       <div class="modal-footer">
           <div class="pull-left">
             <button type="button" class="btn btn-default" data-dismiss="modal"><%- lang['Close'] %></button>
-            <button type="button" class="btn btn-danger delete"><%- lang['Delete'] %></button>
           </div>
         <button type="submit" class="btn btn-success"><%- lang['Save'] %></button>
       </div>

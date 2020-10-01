@@ -3,7 +3,8 @@ $.ccio={
     mon:{},
     useUTC: <%- config.useUTC || false %>,
     definitions: <%-JSON.stringify(define)%>,
-    libURL: '<%-window.libURL%>'
+    libURL: location.search === '?p2p=1' ? location.pathname + '/' : '<%-window.libURL%>',
+    isAppleDevice: navigator.userAgent.match(/(iPod|iPhone|iPad)/)||(navigator.userAgent.match(/(Safari)/)&&!navigator.userAgent.match('Chrome'))
 };
 <% if(config.DropboxAppKey){ %>
     $.ccio.DropboxAppKey = '<%-window.DropboxAppKey%>'
@@ -14,6 +15,7 @@ $.ccio.HWAccelChoices = [
             auto: {label:lang['Auto'],value:'auto'},
             drm: {label:lang['drm'],value:'drm'},
             cuvid: {label:lang['cuvid'],value:'cuvid'},
+            cuda: {label:lang['cuda'],value:'cuda'},
             vaapi: {label:lang['vaapi'],value:'vaapi'},
             qsv: {label:lang['qsv'],value:'qsv'},
             vdpau: {label:lang['vdpau'],value:'vdpau'},
@@ -47,6 +49,30 @@ switch($user.details.lang){
         })
     break;
 }
+function isObject(item) {
+  return (item && typeof item === 'object' && !Array.isArray(item));
+}
+window.mergeDeep = function(target, ...sources){
+  if (!sources.length) return target;
+  const source = sources.shift();
+
+  if (isObject(target) && isObject(source)) {
+    for (const key in source) {
+      if (isObject(source[key])) {
+        if (!target[key]) Object.assign(target, { [key]: {} });
+        mergeDeep(target[key], source[key]);
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    }
+  }
+
+  return mergeDeep(target, ...sources);
+}
+window.getApiPrefix = function(path){
+    var mainPart = $.ccio.init('location',$user) + $user.auth_token
+    return path ? mainPart + '/' + path + '/' + $user.ke : mainPart
+}
 window.chartColors = {
     red: 'rgb(255, 99, 132)',
     orange: 'rgb(255, 159, 64)',
@@ -56,6 +82,11 @@ window.chartColors = {
     purple: 'rgb(153, 102, 255)',
     grey: 'rgb(201, 203, 207)'
 };
+window.stringContains = function(find,string,toLowerCase){
+    var newString = string + ''
+    if(toLowerCase)newString = newString.toLowerCase()
+    return newString.indexOf(find) > -1
+}
 //global form functions
 $.ccio.form={};
 $.ccio.form.details=function(e){
@@ -123,6 +154,7 @@ $(document).ready(function(e){
     function onFullScreenChange() {
         var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
         if(!fullscreenElement){
+            $('.videoPlayer-detection-info').removeClass('hide')
             $('.fullscreen').removeClass('fullscreen')
             setTimeout(function(){
                 $('canvas.stream-element').resize();

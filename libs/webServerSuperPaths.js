@@ -7,62 +7,31 @@ var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var execSync = require('child_process').execSync;
 module.exports = function(s,config,lang,app){
+
     /**
     * API : Superuser : Get Logs
     */
-    app.all([config.webPaths.supersuperApiPrefix+':auth/logs'], function (req,res){
+    app.all([config.webPaths.superApiPrefix+':auth/logs'], function (req,res){
         req.ret={ok:false};
         s.superAuth(req.params,function(resp){
-            req.sql='SELECT * FROM Logs WHERE ke=?';req.ar=['$'];
-            if(!req.params.id){
-                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                    req.or=[];
-                    user.details.monitors.forEach(function(v,n){
-                        req.or.push('mid=?');req.ar.push(v)
-                    })
-                    req.sql+=' AND ('+req.or.join(' OR ')+')'
-                }
-            }else{
-                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1||req.params.id.indexOf('$')>-1){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                }else{
-                    res.end('[]');
-                    return;
-                }
-            }
-            if(req.query.start||req.query.end){
-                if(!req.query.startOperator||req.query.startOperator==''){
-                    req.query.startOperator='>='
-                }
-                if(!req.query.endOperator||req.query.endOperator==''){
-                    req.query.endOperator='<='
-                }
-                if(req.query.start && req.query.start !== '' && req.query.end && req.query.end !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                    req.query.end = s.stringToSqlTime(req.query.end)
-                    req.sql+=' AND `time` '+req.query.startOperator+' ? AND `time` '+req.query.endOperator+' ?';
-                    req.ar.push(req.query.start)
-                    req.ar.push(req.query.end)
-                }else if(req.query.start && req.query.start !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                    req.sql+=' AND `time` '+req.query.startOperator+' ?';
-                    req.ar.push(req.query.start)
-                }
-            }
-            if(!req.query.limit||req.query.limit==''){req.query.limit=50}
-            req.sql+=' ORDER BY `time` DESC LIMIT '+req.query.limit+'';
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(err){
-                    err.sql=req.sql;
-                    res.end(s.prettyPrint(err));
-                    return
-                }
-                if(!r){r=[]}
-                r.forEach(function(v,n){
-                    r[n].info=JSON.parse(v.info)
+            const monitorRestrictions = s.getMonitorRestrictions(user.details,req.params.id)
+            s.getDatabaseRows({
+                monitorRestrictions: monitorRestrictions,
+                table: 'Logs',
+                groupKey: req.params.ke,
+                date: req.query.date,
+                startDate: req.query.start,
+                endDate: req.query.end,
+                startOperator: req.query.startOperator,
+                endOperator: req.query.endOperator,
+                limit: req.query.limit,
+                archived: req.query.archived,
+                endIsStartTo: true
+            },(response) => {
+                response.rows.forEach(function(v,n){
+                    r[n].info = JSON.parse(v.info)
                 })
-                res.end(s.prettyPrint(r))
+                s.closeJsonResponse(res,r)
             })
         },res,req)
     })
@@ -71,11 +40,16 @@ module.exports = function(s,config,lang,app){
     */
     app.all(config.webPaths.superApiPrefix+':auth/logs/delete', function (req,res){
         s.superAuth(req.params,function(resp){
-            s.sqlQuery('DELETE FROM Logs WHERE ke=?',['$'],function(){
-                var endData = {
-                    ok : true
+            s.knexQuery({
+                action: "delete",
+                table: "Logs",
+                where: {
+                    ke: '$'
                 }
-                res.end(s.prettyPrint(endData))
+            },() => {
+                s.closeJsonResponse(res,{
+                    ok : true
+                })
             })
         },res,req)
     })
@@ -99,7 +73,7 @@ module.exports = function(s,config,lang,app){
             var endData = {
                 ok : true
             }
-            res.end(s.prettyPrint(endData))
+            s.closeJsonResponse(res,endData)
         },res,req)
     })
     /**
@@ -124,7 +98,7 @@ module.exports = function(s,config,lang,app){
                 s.systemLog('Flush PM2 Logs',{by:resp.$user.mail,ip:resp.ip})
                 endData.logsOuput = execSync('pm2 flush')
             }
-            res.end(s.prettyPrint(endData))
+            s.closeJsonResponse(res,endData)
         },res,req)
     })
     /**
@@ -145,11 +119,23 @@ module.exports = function(s,config,lang,app){
                     ip: resp.ip,
                     old:jsonfile.readFileSync(s.location.config)
                 })
+                try{
+                    if(config.thisIsDocker){
+                        const dockerConfigFile = '/config/conf.json'
+                        fs.stat(dockerConfigFile,(err) => {
+                            if(!err){
+                                fs.writeFile(dockerConfigFile,JSON.stringify(postBody,null,3),function(){})
+                            }
+                        })
+                    }
+                }catch(err){
+                    console.log(err)
+                }
                 jsonfile.writeFile(s.location.config,postBody,{spaces: 2},function(){
                     s.tx({f:'save_configuration'},'$')
                 })
             }
-            res.end(s.prettyPrint(endData))
+            s.closeJsonResponse(res,endData)
         },res,req)
     })
     /**
@@ -163,22 +149,23 @@ module.exports = function(s,config,lang,app){
             var endData = {
                 ok : true
             }
-            searchQuery = 'SELECT ke,uid,auth,mail,details FROM Users'
-            queryVals = []
+            const whereQuery = []
             switch(req.params.type){
                 case'admin':case'administrator':
-                    searchQuery += ' WHERE details NOT LIKE ?'
-                    queryVals.push('%"sub"%')
+                    whereQuery.push(['details','NOT LIKE','%"sub"%'])
                 break;
                 case'sub':case'subaccount':
-                    searchQuery += ' WHERE details LIKE ?'
-                    queryVals.push('%"sub"%')
+                    whereQuery.push(['details','LIKE','%"sub"%'])
                 break;
             }
-            // ' WHERE details NOT LIKE ?'
-            s.sqlQuery(searchQuery,queryVals,function(err,users) {
+            s.knexQuery({
+                action: "select",
+                columns: "ke,uid,auth,mail,details",
+                table: "Users",
+                where: whereQuery
+            },(err,users) => {
                 endData.users = users
-                res.end(s.prettyPrint(endData))
+                s.closeJsonResponse(res,endData)
             })
         },res,req)
     })
@@ -192,7 +179,7 @@ module.exports = function(s,config,lang,app){
             }
             var form = s.getPostData(req)
             if(form){
-                var currentSuperUserList = jsonfile.readFileSync(s.location.super)
+                var currentSuperUserList = JSON.parse(fs.readFileSync(s.location.super))
                 var currentSuperUser = {}
                 var currentSuperUserPosition = -1
                 //find this user in current list
@@ -230,14 +217,26 @@ module.exports = function(s,config,lang,app){
                     currentSuperUserList.push(currentSuperUser)
                 }
                 //update master list in system
-                jsonfile.writeFile(s.location.super,currentSuperUserList,{spaces: 2},function(){
+                try{
+                    if(config.thisIsDocker){
+                        const dockerSuperFile = '/config/super.json'
+                        fs.stat(dockerSuperFile,(err) => {
+                            if(!err){
+                                fs.writeFile(dockerSuperFile,JSON.stringify(currentSuperUserList,null,3),function(){})
+                            }
+                        })
+                    }
+                }catch(err){
+                    console.log(err)
+                }
+                fs.writeFile(s.location.super,JSON.stringify(currentSuperUserList,null,3),function(){
                     s.tx({f:'save_preferences'},'$')
                 })
             }else{
                 endData.ok = false
                 endData.msg = lang.postDataBroken
             }
-            res.end(s.prettyPrint(endData))
+            s.closeJsonResponse(res,endData)
         },res,req)
     })
     /**
@@ -249,7 +248,7 @@ module.exports = function(s,config,lang,app){
                 ok : false
             }
             var close = function(){
-                res.end(s.prettyPrint(endData))
+                s.closeJsonResponse(res,endData)
             }
             var isCallbacking = false
             var form = s.getPostData(req)
@@ -257,7 +256,14 @@ module.exports = function(s,config,lang,app){
                 if(form.mail !== '' && form.pass !== ''){
                     if(form.pass === form.password_again || form.pass === form.pass_again){
                         isCallbacking = true
-                        s.sqlQuery('SELECT * FROM Users WHERE mail=?',[form.mail],function(err,r) {
+                        s.knexQuery({
+                            action: "select",
+                            columns: "*",
+                            table: "Users",
+                            where: [
+                                ['mail','=',form.mail]
+                            ]
+                        },(err,r) => {
                             if(r&&r[0]){
                                 //found address already exists
                                 endData.msg = lang['Email address is in use.'];
@@ -277,16 +283,17 @@ module.exports = function(s,config,lang,app){
                                     form.details = JSON.stringify(form.details)
                                 }
                                 //write user to db
-                                s.sqlQuery(
-                                    'INSERT INTO Users (ke,uid,mail,pass,details) VALUES (?,?,?,?,?)',
-                                    [
-                                        form.ke,
-                                        form.uid,
-                                        form.mail,
-                                        s.createHash(form.pass),
-                                        form.details
-                                    ]
-                                )
+                                s.knexQuery({
+                                    action: "insert",
+                                    table: "Users",
+                                    insert: {
+                                        ke: form.ke,
+                                        uid: form.uid,
+                                        mail: form.mail,
+                                        pass: s.createHash(form.pass),
+                                        details: form.details
+                                    }
+                                })
                                 s.tx({f:'add_account',details:form.details,ke:form.ke,uid:form.uid,mail:form.mail},'$')
                                 endData.user = Object.assign(form,{})
                                 //init user
@@ -315,12 +322,19 @@ module.exports = function(s,config,lang,app){
                 ok : false
             }
             var close = function(){
-                res.end(s.prettyPrint(endData))
+                s.closeJsonResponse(res,endData)
             }
             var form = s.getPostData(req)
             if(form){
                 var account = s.getPostData(req,'account')
-                s.sqlQuery('SELECT * FROM Users WHERE mail=?',[account.mail],function(err,r) {
+                s.knexQuery({
+                    action: "select",
+                    columns: "*",
+                    table: "Users",
+                    where: [
+                        ['mail','=',account.mail]
+                    ]
+                },(err,r) => {
                     if(r && r[0]){
                         r = r[0]
                         var details = JSON.parse(r.details)
@@ -337,25 +351,16 @@ module.exports = function(s,config,lang,app){
                         }
                         delete(form.password_again);
                         delete(form.pass_again);
-                        var keys = Object.keys(form)
-                        var set = []
-                        var values = []
-                        keys.forEach(function(v,n){
-                            if(
-                                set === 'ke' ||
-                                !form[v]
-                            ){
-                                //skip
-                                return
-                            }
-                            set.push(v+'=?')
-                            if(v === 'details'){
-                                form[v] = s.stringJSON(Object.assign(details,s.parseJSON(form[v])))
-                            }
-                            values.push(form[v])
-                        })
-                        values.push(account.mail)
-                        s.sqlQuery('UPDATE Users SET '+set.join(',')+' WHERE mail=?',values,function(err,r) {
+                        delete(form.ke);
+                        form.details = s.stringJSON(Object.assign(details,s.parseJSON(form.details)))
+                        s.knexQuery({
+                            action: "update",
+                            table: "Users",
+                            update: form,
+                            where: [
+                                ['mail','=',account.mail],
+                            ]
+                        },(err,r) => {
                             if(err){
                                 console.log(err)
                                 endData.error = err
@@ -388,32 +393,78 @@ module.exports = function(s,config,lang,app){
                 ok : true
             }
             var close = function(){
-                res.end(s.prettyPrint(endData))
+                s.closeJsonResponse(res,endData)
             }
             var account = s.getPostData(req,'account')
-            s.sqlQuery('DELETE FROM Users WHERE uid=? AND ke=? AND mail=?',[account.uid,account.ke,account.mail])
-            s.sqlQuery('DELETE FROM API WHERE uid=? AND ke=?',[account.uid,account.ke])
+            s.knexQuery({
+                action: "delete",
+                table: "Users",
+                where: {
+                    ke: account.ke,
+                    uid: account.uid,
+                    mail: account.mail,
+                }
+            })
+            s.knexQuery({
+                action: "delete",
+                table: "API",
+                where:  {
+                    ke: account.ke,
+                    uid: account.uid,
+                }
+            })
             if(s.getPostData(req,'deleteSubAccounts',false) === '1'){
-                s.sqlQuery('DELETE FROM Users WHERE ke=?',[account.ke])
+                s.knexQuery({
+                    action: "delete",
+                    table: "Users",
+                    where:  {
+                        ke: account.ke,
+                    }
+                })
             }
             if(s.getPostData(req,'deleteMonitors',false) == '1'){
-                s.sqlQuery('SELECT * FROM Monitors WHERE ke=?',[account.ke],function(err,monitors){
+                s.knexQuery({
+                    action: "select",
+                    columns: "*",
+                    table: "Monitors",
+                    where:  {
+                        ke: account.ke,
+                    }
+                },(err,monitors) => {
                     if(monitors && monitors[0]){
                         monitors.forEach(function(monitor){
                             s.camera('stop',monitor)
                         })
-                        s.sqlQuery('DELETE FROM Monitors WHERE ke=?',[account.ke])
+                        s.knexQuery({
+                            action: "delete",
+                            table: "Monitors",
+                            where:  {
+                                ke: account.ke,
+                            }
+                        })
                     }
                 })
             }
             if(s.getPostData(req,'deleteVideos',false) == '1'){
-                s.sqlQuery('DELETE FROM Videos WHERE ke=?',[account.ke])
+                s.knexQuery({
+                    action: "delete",
+                    table: "Videos",
+                    where:  {
+                        ke: account.ke,
+                    }
+                })
                 fs.chmod(s.dir.videos+account.ke,0o777,function(err){
                     fs.unlink(s.dir.videos+account.ke,function(err){})
                 })
             }
             if(s.getPostData(req,'deleteEvents',false) == '1'){
-                s.sqlQuery('DELETE FROM Events WHERE ke=?',[account.ke])
+                s.knexQuery({
+                    action: "delete",
+                    table: "Events",
+                    where:  {
+                        ke: account.ke,
+                    }
+                })
             }
             s.tx({f:'delete_account',ke:account.ke,uid:account.uid,mail:account.mail},'$')
             close()
@@ -449,7 +500,11 @@ module.exports = function(s,config,lang,app){
                 if(tableName){
                     var tableIsSelected = s.getPostData(req,tableName) == 1
                     if(tableIsSelected){
-                        s.sqlQuery('SELECT * FROM `' + tableName +'`',[],function(err,dataRows){
+                        s.knexQuery({
+                            action: "select",
+                            columns: "*",
+                            table: tableName
+                        },(err,dataRows) => {
                             endData.database[tableName] = dataRows
                             ++completedTables
                             tableExportLoop(callback)
@@ -551,26 +606,26 @@ module.exports = function(s,config,lang,app){
                             ])
                         break;
                     }
-                    var keysToCheck = []
-                    var valuesToCheck = []
+                    const whereQuery = []
                     fieldsToCheck.forEach(function(key){
-                        keysToCheck.push(key + '= ?')
-                        valuesToCheck.push(row[key])
+                        whereQuery.push([key,'=',row[key]])
                     })
-                    s.sqlQuery('SELECT * FROM ' + tableName + ' WHERE ' + keysToCheck.join(' AND '),valuesToCheck,function(err,selected){
+                    s.knexQuery({
+                        action: "select",
+                        columns: "*",
+                        table: tableName,
+                        where: whereQuery
+                    },(err,selected) => {
                         if(selected && selected[0]){
                             selected = selected[0]
                             rowsExistingAlready[tableName].push(selected)
                             callback()
                         }else{
-                            var rowKeys = Object.keys(row)
-                            var insertEscapes = []
-                            var insertValues = []
-                            rowKeys.forEach(function(key){
-                                insertEscapes.push('?')
-                                insertValues.push(row[key])
-                            })
-                            s.sqlQuery('INSERT INTO ' + tableName + ' (' + rowKeys.join(',') +') VALUES (' + insertEscapes.join(',') + ')',insertValues,function(){
+                            s.knexQuery({
+                                action: "insert",
+                                table: tableName,
+                                insert: row
+                            },(err) => {
                                 if(!err){
                                     ++countOfRowsInserted[tableName]
                                 }
@@ -631,7 +686,7 @@ module.exports = function(s,config,lang,app){
                 ok : true
             }
             s.checkForStalePurgeLocks()
-            res.end(s.prettyPrint(endData))
+            s.closeJsonResponse(res,endData)
         },res,req)
     })
     /**
@@ -669,7 +724,7 @@ module.exports = function(s,config,lang,app){
                 ok : true,
                 childNodes: childNodesJson,
             }
-            res.end(s.prettyPrint(endData))
+            s.closeJsonResponse(res,endData)
         },res,req)
     })
 }

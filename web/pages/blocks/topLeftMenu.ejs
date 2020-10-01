@@ -1,0 +1,34 @@
+<div class="demo-avatar-dropdown">
+  <button id="accbtn" style="color:#fff" class="mdl-button mdl-js-button mdl-js-ripple-effect"><i class="fa fa-caret-down"></i> &nbsp;<span class="usermail"></span></button>
+  <ul class="mdl-menu mdl-menu--bottom-left mdl-js-menu mdl-js-ripple-effect" for="accbtn">
+      <li class="mdl-menu__item open-all-monitors"><div><i class="fa fa-th"></i><div><%- lang['Open All Monitors'] %></div></div></li>
+      <li class="mdl-menu__item" data-toggle="modal" data-target="#multi_mon"><div><i class="fa fa-clone"></i><div><%- lang['Monitors'] %></div></div></li>
+      <li class="mdl-menu__item" data-toggle="modal" data-target="#powerVideo"><div><i class="fa fa-map-marker"></i><div><%- lang['Power Viewer'] %></div></div></li>
+      <li class="mdl-menu__item" mid="" ke=""><div class="flex" monitor="timelapseJpeg"><i class="fa fa-angle-double-right"></i><div><%- lang['Timelapse'] %></div></div></li>
+      <li class="mdl-menu__item permission_user_change" data-toggle="modal" data-target="#settings"><div><i class="fa fa-gears"></i><div><%- lang.Settings %></div></div></li>
+      <li class="mdl-menu__item" data-toggle="modal" data-target="#apis"><div><i class="fa fa-code"></i><div><%- lang.API %></div></div></li>
+      <li class="mdl-menu__item" data-toggle="modal" data-target="#shinobihub_viewer"><div><i class="fa fa-home"></i><div><%- lang.ShinobiHub %></div></div></li>
+      <li class="mdl-menu__item" data-toggle="modal" data-target="#eventCounts"><div><i class="fa fa-eye"></i><div><%- lang['Event Counts'] %></div></div></li>
+      <% if(!details.sub){ %>
+      <li class="mdl-menu__item" data-toggle="modal" data-target="#onvif_probe"><div><i class="fa fa-rss"></i><div><%- lang.ONVIF %></div></div></li>
+      <li class="mdl-menu__item" data-toggle="modal" data-target="#probe"><div><i class="fa fa-search"></i><div><%- lang.FFprobe %></div></div></li>
+      <li class="mdl-menu__item" data-toggle="modal" data-target="#monitorStates"><div><i class="fa fa-align-right"></i><div><%- lang['Monitor States'] %></div></div></li>
+      <li class="mdl-menu__item" data-toggle="modal" data-target="#schedules"><div><i class="fa fa-clock-o"></i><div><%- lang['Schedules'] %></div></div></li>
+      <li class="mdl-menu__item" data-toggle="modal" data-target="#filters"><div><i class="fa fa-filter"></i><div><%- lang.Filters %></div></div></li>
+      <% } %>
+      <li class="mdl-menu__item permission_view_logs" data-toggle="modal" data-target="#logs_modal"><div><i class="fa fa-exclamation-triangle"></i><div><%- lang.Logs %></div></div></li>
+      <li class="mdl-menu__item" class_toggle="list-blocks" data-target="#left_menu"><div><i class="fa fa-camera"></i><div><%- lang['List Toggle'] %></div></div></li>
+      <li class="mdl-menu__item" class_toggle="hide-side" data-target=".mdl-js-layout"><div><i class="fa fa-bars"></i><div><%- lang['Hide List'] %></div></div></li>
+      <li class="mdl-menu__item shinobi-detector-motion shinobi-detector-opencv shinobi-detector_plug" class_toggle="hide_indifference" data-target="body" style="display:none"><div><i class="fa fa-bolt"></i><div><%- lang['Motion GUI'] %></div></div></li>
+      <li class="mdl-menu__item" system="jpegToggle"><div><i class="fa fa-file-image-o"></i><div><%- lang['JPEG Mode'] %></div></div></li>
+      <li class="mdl-menu__item" system="switch" switch="monitorMuteAudio" type="text"><div><i class="fa fa-volume-down"></i><div><%- lang['Mute Audio'] %></div></div></li>
+      <li class="mdl-menu__item" system="switch" switch="monitorOrder" type="text"><div><i class="fa fa-sort"></i><div><%- lang['Order Streams'] %></div></div></li>
+      <li class="mdl-menu__item" system="switch" switch="notifyHide" type="text"><div><i class="fa fa-exclamation-circle"></i><div><%- lang['Hide Notes'] %></div></div></li>
+      <li class="mdl-menu__item" data-toggle="modal" data-target="#help_window"><div><i class="fa fa-info-circle"></i><div><%- lang.Help %></div></div></li>
+      <li class="mdl-menu__item logout"><div><i class="fa fa-sign-out"></i><div><%- lang.Logout %></div></div></li>
+  </ul>
+  <div class="mdl-layout-spacer"></div>
+  <button class_toggle="list-blocks" data-target="#left_menu" class="mdl-button mdl-button--icon">
+    <i class="fa fa-camera"></i>
+  </button>
+</div>

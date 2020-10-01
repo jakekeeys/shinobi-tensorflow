@@ -76,7 +76,7 @@
                    <% }
                     %>
                     <div <%- attributes.join(' ') %> style="<%- styles.join(';') %>" class="form-group-group <%- sectionClass.join(' ') %>">
-                        <h4 class="<%- monitorSettings.headerClass %>"><%- headerTitle %>
+                        <h4 class="monitor-section-header <%- monitorSettings.headerClass %>"><%- headerTitle %>
                             <% if(monitorSettings.headerButtons){ %>
                                 <div class="pull-right">
                                     <% monitorSettings.headerButtons.forEach(function(button){ %>
@@ -88,6 +88,7 @@
                                 </div>
                             <% } %>
                         </h4>
+                        <div class="box-wrapper">
                     <% if(monitorSettings['input-mapping']){ %>
                         <div class="form-group-group forestgreen" style="display:none" input-mapping="<%- monitorSettings['input-mapping'] %>">
                             <h4><%-lang['Input Feed']%>
@@ -200,15 +201,15 @@
                         if(fieldType === 'ul' || fieldType ===  'div' || fieldType ===  'btn'){ %>
                             <%- fieldElement %>
                         <% }else{ %>
-                        <div <%- hidden %> class="form-group <%- field['form-group-class'] %>">
-                            <label><div><span><%- field.field %>
-                                <% if(field.description){ %>
-                                    <small><%- field.description %></small>
-                                <% } %>
-                            </span></div>
-                                <%- fieldElement %>
-                            </label>
-                        </div>
+                            <div <%- hidden %> class="form-group <%- field['form-group-class'] %>">
+                                <label><div><span><%- field.field %>
+                                    <% if(field.description){ %>
+                                        <small><%- field.description %></small>
+                                    <% } %>
+                                </span></div>
+                                    <%- fieldElement %>
+                                </label>
+                            </div>
                         <% }
                           }
                           if(field['form-group-class-pre-layer']){ %>
@@ -220,6 +221,7 @@
                       })
                   }
                   %>
+                  </div>
                   </div>
                   <%
                   if(monitorSettings['section-pre-class']){ %>
@@ -242,7 +244,7 @@
       </div>
       <div class="modal-footer">
           <div class="pull-left">
-            <button type="button" id="monedit_bottom_menu" class="btn btn-default"><i class="fa fa-wrench"></i> <%-lang.Options%></button>
+            <button type="button" id="monedit_bottom_menu" style="margin-right:5px" class="btn btn-default"><i class="fa fa-wrench"></i> <%-lang.Options%></button>
             <ul class="mdl-menu mdl-menu--top-left mdl-js-menu mdl-js-ripple-effect" data-mdl-for="monedit_bottom_menu">
               <li class="mdl-menu__item mdl-menu__item--full-bleed-divider" data-dismiss="modal"><i class="fa fa-times"></i> <%-lang.Close%></li>
               <li class="mdl-menu__item" monitor="delete"><i class="fa fa-trash-o"></i> <%-lang.Delete%></li>
@@ -254,7 +256,7 @@
             </ul>
             <div class="h_det_input h_det_1" style="display:inline-block">
                 <button type="button" class="btn btn-primary" monitor="region"><i class="fa fa-grav"></i> <%-lang['Region Editor']%></button>
-                <button type="button" class="btn btn-primary" monitor="detector_filters"><i class="fa fa-grav"></i> <%-lang['Detector Filters']%></button>
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#detector_filter"><i class="fa fa-grav"></i> <%-lang['Detector Filters']%></button>
               </div>
           </div>
           <div style="display:inline-block;margin-right:5px">
@@ -268,4 +270,5 @@
     </form>
   </div>
 </div>
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.monitoredit.css">
 <script src="<%-window.libURL%>libs/js/dash2.monitoredit.js"></script>

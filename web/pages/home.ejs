@@ -11,12 +11,12 @@
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/daterangepicker.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/circles.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/bootstrap.min.css">
-<link rel="stylesheet" href="<%-window.libURL%>libs/css/font-awesome.min.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/fullcalendar.min.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/gridstack.min.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/gridstack-extra.min.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/bootstrap-table.min.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/bootstrap-slider.min.css">
+<link rel="stylesheet" href="<%-window.libURL%>libs/vendor/leaflet/leaflet.css">
 
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.basic.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.misc.css">
@@ -33,7 +33,8 @@
     <link rel="stylesheet" href="<%-window.libURL%>libs/css/<%-lib%>">
 <% }) %>
 <style id="theme">
-<% if(details.theme&&details.theme!==''){ %><%- include(__dirname+'/web/libs/themes/'+details.theme+'/style.css'); %><% } %>
+    <% details.theme = details.theme || 'Ice' %>
+<%- include(__dirname + `/web/libs/themes/${details.theme}/style.css`); %>
 </style>
 <style id="custom_css">
 <%= details.css %>
@@ -54,7 +55,7 @@
       <header id="main_header" class="demo-header mdl-layout__header">
         <div class="mdl-layout__header-row">
         <ul class="nav navbar-nav">
-            <li title="<%-lang['Toggle Sidebar']%>" class_toggle="hide-side" data-target=".mdl-js-layout"><a>&nbsp;<i class="fa fa-bars"></i>&nbsp;</a></li>
+            <li title="<%-lang['Toggle Sidebar']%>" class_toggle="hide-side" data-target=".mdl-js-layout"><a>&nbsp;<i class="fa fa-align-right"></i>&nbsp;</a></li>
             <li title="<%-lang['Add Monitor']%>" mid="" ke="" class="hidden-xs permission_monitor_create"><a monitor="edit">&nbsp;<i class="fa fa-plus"></i>&nbsp;</a></li>
             <li title="<%-lang['Power Video Viewer']%>" class="hidden-xs" data-toggle="modal" data-target="#powerVideo"><a>&nbsp;<i class="fa fa-map-marker"></i>&nbsp;</a></li>
             <li>
@@ -72,7 +73,7 @@
                     </div>
                     <div class="ram_load display-table-cell">
                         <span class="pull-right percent"></span>
-                       <label><span class="os_totalmem" style="letter-spacing:2px;font-weight:100"></span> <%-lang.MB%> <%-lang.RAM%></label>
+                       <label><span class="os_totalmem used" style="letter-spacing:2px;font-weight:100"></span> <%-lang.MB%> <%-lang.RAM%></label>
                       <div class="progress">
                         <div class="progress-bar progress-bar-warning" role="progressbar" style="width:0%"></div>
                       </div>
@@ -90,7 +91,7 @@
           <div class="mdl-layout-spacer"></div>
             <ul class="nav navbar-nav navbar-right">
                 <li role="presentation" class="dropdown">
-                <div id="clock" class_toggle="twentyfour" data-target="#time-hours">
+                <div id="clock" data-target="#time-hours" style="cursor:pointer">
                     <div id="time-date"></div>
                     <ul>
                         <li id="time-hours"></li>
@@ -136,42 +137,13 @@
       </header>
       <div class="demo-drawer mdl-layout__drawer">
         <header class="demo-drawer-header">
-          <div class="demo-avatar-dropdown">
-            <button id="accbtn" style="color:#fff" class="mdl-button mdl-js-button mdl-js-ripple-effect"><i class="fa fa-caret-down"></i> &nbsp;<span class="usermail"></span></button>
-            <ul class="mdl-menu mdl-menu--bottom-left mdl-js-menu mdl-js-ripple-effect" for="accbtn">
-                <li class="mdl-menu__item" data-toggle="modal" data-target="#multi_mon"><div><i class="fa fa-clone"></i><div><%- lang['Monitors'] %></div></div></li>
-                <li class="mdl-menu__item" data-toggle="modal" data-target="#powerVideo"><div><i class="fa fa-map-marker"></i><div><%- lang['Power Viewer'] %></div></div></li>
-                <li class="mdl-menu__item" mid="" ke=""><div class="flex" monitor="timelapseJpeg"><i class="fa fa-angle-double-right"></i><div><%- lang['Timelapse'] %></div></div></li>
-                <li class="mdl-menu__item permission_user_change" data-toggle="modal" data-target="#settings"><div><i class="fa fa-gears"></i><div><%- lang.Settings %></div></div></li>
-                <li class="mdl-menu__item" data-toggle="modal" data-target="#apis"><div><i class="fa fa-code"></i><div><%- lang.API %></div></div></li>
-                <% if(!details.sub){ %>
-                <li class="mdl-menu__item" data-toggle="modal" data-target="#onvif_probe"><div><i class="fa fa-rss"></i><div><%- lang.ONVIF %></div></div></li>
-                <li class="mdl-menu__item" data-toggle="modal" data-target="#probe"><div><i class="fa fa-search"></i><div><%- lang.FFprobe %></div></div></li>
-                <li class="mdl-menu__item" data-toggle="modal" data-target="#monitorStates"><div><i class="fa fa-align-right"></i><div><%- lang['Monitor States'] %></div></div></li>
-                <li class="mdl-menu__item" data-toggle="modal" data-target="#schedules"><div><i class="fa fa-clock-o"></i><div><%- lang['Schedules'] %></div></div></li>
-                <li class="mdl-menu__item" data-toggle="modal" data-target="#filters"><div><i class="fa fa-filter"></i><div><%- lang.Filters %></div></div></li>
-                <% } %>
-                <li class="mdl-menu__item permission_view_logs" data-toggle="modal" data-target="#logs_modal"><div><i class="fa fa-exclamation-triangle"></i><div><%- lang.Logs %></div></div></li>
-                <li class="mdl-menu__item" class_toggle="list-blocks" data-target="#left_menu"><div><i class="fa fa-camera"></i><div><%- lang['List Toggle'] %></div></div></li>
-                <li class="mdl-menu__item" class_toggle="hide-side" data-target=".mdl-js-layout"><div><i class="fa fa-bars"></i><div><%- lang['Hide List'] %></div></div></li>
-                <li class="mdl-menu__item shinobi-detector-motion shinobi-detector-opencv shinobi-detector_plug" class_toggle="hide_indifference" data-target="body" style="display:none"><div><i class="fa fa-bolt"></i><div><%- lang['Motion GUI'] %></div></div></li>
-                <li class="mdl-menu__item" system="jpegToggle"><div><i class="fa fa-file-image-o"></i><div><%- lang['JPEG Mode'] %></div></div></li>
-                <li class="mdl-menu__item" system="switch" switch="monitorMuteAudio" type="text"><div><i class="fa fa-volume-down"></i><div><%- lang['Mute Audio'] %></div></div></li>
-                <li class="mdl-menu__item" system="switch" switch="monitorOrder" type="text"><div><i class="fa fa-sort"></i><div><%- lang['Order Streams'] %></div></div></li>
-                <li class="mdl-menu__item" system="switch" switch="notifyHide" type="text"><div><i class="fa fa-exclamation-circle"></i><div><%- lang['Hide Notes'] %></div></div></li>
-                <li class="mdl-menu__item logout"><div><i class="fa fa-sign-out"></i><div><%- lang.Logout %></div></div></li>
-            </ul>
-            <div class="mdl-layout-spacer"></div>
-            <button class_toggle="list-blocks" data-target="#left_menu" class="mdl-button mdl-button--icon">
-              <i class="fa fa-camera"></i>
-            </button>
-          </div>
+            <% include blocks/topLeftMenu.ejs %>
         </header>
         <nav class="demo-navigation mdl-navigation side-menu" id="left_menu">
             <div class="form-group col-md-12">
                 <input class="form-control dark" placeholder="<%- lang.Search %> <%- lang.Monitors %>" id="monitors_list_search">
             </div>
-            <div id="monitors_list" class="display-table"></div>
+            <div id="monitors_list" style="height:100%" class="display-table"></div>
             <div class="mdl-layout-spacer"></div>
         </nav>
       </div>
@@ -189,6 +161,7 @@
 <% include blocks/settings.ejs %>
 <% include blocks/filters.ejs %>
 <% include blocks/timelapse.ejs %>
+<% include blocks/eventCounts.ejs %>
 <% include blocks/videoview.ejs %>
 <% include blocks/monitoredit.ejs %>
 <% include blocks/probe.ejs %>
@@ -197,6 +170,7 @@
 <% include blocks/monitorStates.ejs %>
 <% include blocks/schedules.ejs %>
 <% include blocks/confirm.ejs %>
+<% include blocks/shinobiHub.ejs %>
 <% customAutoLoad.PageBlocks.forEach(function(block){ %>
     <%- include(block) %>
 <% }) %>
@@ -225,6 +199,7 @@
 <script src="<%-window.libURL%>libs/js/clock.js"></script>
 <script src="<%-window.libURL%>libs/js/poseidon.js"></script>
 <script src="<%-window.libURL%>libs/js/clusterPoints.js"></script>
+<script src="<%-window.libURL%>libs/js/Chart.js"></script>
 <script src="<%-window.libURL%>libs/js/daterangepicker.js"></script>
 <script src="<%-window.libURL%>libs/js/jquery.canvasAreaDraw.js"></script>
 <script src="<%-window.libURL%>libs/js/jquery-ui.min.js"></script>
@@ -232,6 +207,7 @@
 <script src="<%-window.libURL%>libs/js/lodash.min.js"></script>
 <script src="<%-window.libURL%>libs/js/gridstack.min.js"></script>
 <script src="<%-window.libURL%>libs/js/gridstack.jQueryUI.min.js"></script>
+<script src="<%-window.libURL%>libs/vendor/leaflet/leaflet.js"></script>
 <script src="<%-window.libURL%>libs/js/basic.js"></script>
 <script><% include ../libs/js/dash2.config.js %></script>
 <script src="<%-window.libURL%>libs/js/dash2.basic.js"></script>
@@ -241,8 +217,13 @@
 <script src="<%-window.libURL%>libs/js/dash2.elements.js"></script>
 <script src="<%-window.libURL%>libs/js/dash2.elementbuilder.js"></script>
 <script src="<%-window.libURL%>libs/js/dash2.init.js"></script>
+<script src="<%-window.libURL%>libs/js/dash2.gps.js"></script>
 <% customAutoLoad.LibsJs.forEach(function(lib){ %>
     <script src="<%-window.libURL%>libs/js/<%-lib%>"></script>
 <% }) %>
 <% include blocks/help.ejs %>
-<% include blocks/powerVideo2.ejs %>
+<% if(config.useOldPowerVideo){ %>
+    <% include blocks/powerVideoOld.ejs %>
+<% }else{ %>
+    <% include blocks/powerVideo2.ejs %>
+<% } %>

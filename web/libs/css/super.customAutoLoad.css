@@ -1,0 +1,12 @@
+#customAutoLoadList [package-name] .card-body{
+    min-height:auto
+}
+#customAutoLoadList [package-name] .install-output-stdout,
+#customAutoLoadList [package-name] .install-output-stderr
+{
+    max-height: 300px;
+    background: ##f7f7f7;
+    border-radius: 15px;
+    padding: 5px;
+    margin:0;
+}

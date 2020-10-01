@@ -1,5 +1,6 @@
 {
   "plug":"Face",
+  "tfjsBuild":"cpu",
   "host":"localhost",
   "port":8080,
   "key":"Face123123",

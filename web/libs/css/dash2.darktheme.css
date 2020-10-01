@@ -41,5 +41,11 @@
 }
 
 .dark .slider-selection {
-    background:#555;
+    background: #375182;
+}
+.dark .slider-handle {
+    background: #375182;
+}
+.dark .slider-track {
+    background: #333;
 }

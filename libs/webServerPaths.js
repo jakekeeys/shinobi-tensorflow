@@ -8,12 +8,15 @@ var execSync = require('child_process').execSync;
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var httpProxy = require('http-proxy');
-var onvif = require('node-onvif');
 var proxy = httpProxy.createProxyServer({})
 var ejs = require('ejs');
 var fileupload = require("express-fileupload");
 module.exports = function(s,config,lang,app,io){
-    if(config.productType==='Pro'){
+    const {
+        ptzControl,
+        setPresetForCurrentPosition
+    } = require('./control/ptz.js')(s,config,lang,app,io)
+    if(config.productType === 'Pro'){
         var LdapAuth = require('ldapauth-fork');
     }
     s.renderPage = function(req,res,paths,passables,callback){
@@ -29,8 +32,8 @@ module.exports = function(s,config,lang,app,io){
     //cb = callback
     //res = response, only needed for express (http server)
     //request = request, only needed for express (http server)
-    s.checkChildProxy = function(params,cb,res,req){
-        if(s.group[params.ke] && s.group[params.ke].activeMonitors[params.id] && s.group[params.ke].activeMonitors[params.id].childNode){
+    s.checkChildProxy = function(params,cb,res,req) {
+        if(s.group[params.ke] && s.group[params.ke].activeMonitors && s.group[params.ke].activeMonitors[params.id] && s.group[params.ke].activeMonitors[params.id].childNode){
             var url = 'http://' + s.group[params.ke].activeMonitors[params.id].childNode// + req.originalUrl
             proxy.web(req, res, { target: url })
         }else{
@@ -71,7 +74,7 @@ module.exports = function(s,config,lang,app,io){
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({extended: true}));
     app.use(function (req,res,next){
-        res.header("Access-Control-Allow-Origin",req.headers.origin);
+        res.header("Access-Control-Allow-Origin",'*');
         next()
     })
     app.set('views', s.mainDirectory + '/web');
@@ -86,7 +89,18 @@ module.exports = function(s,config,lang,app,io){
         if(s.group[req.params.ke]&&s.group[req.params.ke].users[req.params.auth]){
             delete(s.api[req.params.auth]);
             delete(s.group[req.params.ke].users[req.params.auth]);
-            s.sqlQuery("UPDATE Users SET auth=? WHERE auth=? AND ke=? AND uid=?",['',req.params.auth,req.params.ke,req.params.id])
+            s.knexQuery({
+                action: "update",
+                table: "Users",
+                update: {
+                    auth: '',
+                },
+                where: [
+                    ['auth','=',req.params.auth],
+                    ['ke','=',req.params.ke],
+                    ['uid','=',req.params.id],
+                ]
+            })
             res.end(s.prettyPrint({ok:true,msg:'You have been logged out, session key is now inactive.'}))
         }else{
             res.end(s.prettyPrint({ok:false,msg:'This group key does not exist or this user is not logged in.'}))
@@ -118,12 +132,12 @@ module.exports = function(s,config,lang,app,io){
     * API : Get User Info
     */
     app.get(config.webPaths.apiPrefix+':auth/userInfo/:ke',function (req,res){
-        req.ret={ok:false};
+        var response = {ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            req.ret.ok=true
-            req.ret.user=user
-            res.end(s.prettyPrint(req.ret));
+            response.ok = true
+            response.user = user
+            res.end(s.prettyPrint(response));
         },res,req);
     })
     //login function
@@ -144,6 +158,7 @@ module.exports = function(s,config,lang,app,io){
         s.checkCorrectPathEnding(config.webPaths.admin)+':screen',
         s.checkCorrectPathEnding(config.webPaths.super)+':screen',
     ],function (req,res){
+        var response = {ok: false};
         req.ip = s.getClientIp(req)
         var screenChooser = function(screen){
             var search = function(screen){
@@ -187,7 +202,7 @@ module.exports = function(s,config,lang,app,io){
             }
             if(req.query.json=='true'){
                 delete(data.config)
-                data.ok=true;
+                data.ok = true;
                 res.setHeader('Content-Type', 'application/json');
                 res.end(s.prettyPrint(data))
             }else{
@@ -237,16 +252,23 @@ module.exports = function(s,config,lang,app,io){
                     ip: req.ip
                 }
             }
-            if(board==='super'){
+            if(board === 'super'){
                 s.userLog(logTo,logData)
             }else{
-                s.sqlQuery('SELECT ke,uid,details FROM Users WHERE mail=?',[req.body.mail],function(err,r) {
-                    if(r&&r[0]){
+                s.knexQuery({
+                    action: "select",
+                    columns: "ke,uid,details",
+                    table: "Users",
+                    where: [
+                        ['mail','=',req.body.mail],
+                    ]
+                },(err,r) => {
+                    if(r && r[0]){
                         r = r[0]
-                        r.details=JSON.parse(r.details);
-                        r.lang=s.getLanguageFile(r.details.lang)
-                        logData.id=r.uid
-                        logData.type=r.lang['Authentication Failed']
+                        r.details = JSON.parse(r.details)
+                        r.lang = s.getLanguageFile(r.details.lang)
+                        logData.id = r.uid
+                        logData.type = r.lang['Authentication Failed']
                         logTo.ke = r.ke
                     }
                     s.userLog(logTo,logData)
@@ -256,11 +278,19 @@ module.exports = function(s,config,lang,app,io){
         checkRoute = function(r){
             switch(req.body.function){
                 case'cam':
-                    s.sqlQuery('SELECT * FROM Monitors WHERE ke=? AND type=?',[r.ke,"dashcam"],function(err,rr){
-                        req.resp.mons=rr;
+                    s.knexQuery({
+                        action: "select",
+                        columns: "*",
+                        table: "Monitors",
+                        where: [
+                            ['ke','=',r.ke],
+                            ['type','=','dashcam'],
+                        ]
+                    },(err,rr) => {
+                        response.mons = rr
                         renderPage(config.renderPaths.dashcam,{
                             // config: s.getConfigWithBranding(req.hostname),
-                            $user: req.resp,
+                            $user: response,
                             lang: r.lang,
                             define: s.getDefinitonFile(r.details.lang),
                             customAutoLoad: s.customAutoLoadTree
@@ -268,11 +298,19 @@ module.exports = function(s,config,lang,app,io){
                     })
                 break;
                 case'streamer':
-                    s.sqlQuery('SELECT * FROM Monitors WHERE ke=? AND type=?',[r.ke,"socket"],function(err,rr){
-                        req.resp.mons=rr;
+                    s.knexQuery({
+                        action: "select",
+                        columns: "*",
+                        table: "Monitors",
+                        where: [
+                            ['ke','=',r.ke],
+                            ['type','=','socket'],
+                        ]
+                    },(err,rr) => {
+                        response.mons=rr;
                         renderPage(config.renderPaths.streamer,{
                             // config: s.getConfigWithBranding(req.hostname),
-                            $user: req.resp,
+                            $user: response,
                             lang: r.lang,
                             define: s.getDefinitonFile(r.details.lang),
                             customAutoLoad: s.customAutoLoadTree
@@ -281,11 +319,26 @@ module.exports = function(s,config,lang,app,io){
                 break;
                 case'admin':
                     if(!r.details.sub){
-                        s.sqlQuery('SELECT uid,mail,details FROM Users WHERE ke=? AND details LIKE \'%"sub"%\'',[r.ke],function(err,rr) {
-                            s.sqlQuery('SELECT * FROM Monitors WHERE ke=?',[r.ke],function(err,rrr) {
+                        s.knexQuery({
+                            action: "select",
+                            columns: "uid,mail,details",
+                            table: "Users",
+                            where: [
+                                ['ke','=',r.ke],
+                                ['details','LIKE','%"sub"%'],
+                            ]
+                        },(err,rr) => {
+                            s.knexQuery({
+                                action: "select",
+                                columns: "*",
+                                table: "Monitors",
+                                where: [
+                                    ['ke','=',r.ke],
+                                ]
+                            },(err,rrr) => {
                                 renderPage(config.renderPaths.admin,{
                                     config: s.getConfigWithBranding(req.hostname),
-                                    $user: req.resp,
+                                    $user: response,
                                     $subs: rr,
                                     $mons: rrr,
                                     lang: r.lang,
@@ -301,7 +354,7 @@ module.exports = function(s,config,lang,app,io){
                             chosenRender = r.details.landing_page
                         }
                         renderPage(config.renderPaths[chosenRender],{
-                            $user:req.resp,
+                            $user:response,
                             config: s.getConfigWithBranding(req.hostname),
                             lang:r.lang,
                             define:s.getDefinitonFile(r.details.lang),
@@ -318,7 +371,7 @@ module.exports = function(s,config,lang,app,io){
                         chosenRender = r.details.landing_page
                     }
                     renderPage(config.renderPaths[chosenRender],{
-                        $user:req.resp,
+                        $user: response,
                         config: s.getConfigWithBranding(req.hostname),
                         lang:r.lang,
                         define:s.getDefinitonFile(r.details.lang),
@@ -334,15 +387,40 @@ module.exports = function(s,config,lang,app,io){
         }
         if(req.body.mail&&req.body.pass){
             req.default=function(){
-                s.sqlQuery('SELECT * FROM Users WHERE mail=? AND pass=?',[req.body.mail,s.createHash(req.body.pass)],function(err,r) {
-                    req.resp={ok:false};
-                    if(!err&&r&&r[0]){
+                s.knexQuery({
+                    action: "select",
+                    columns: "*",
+                    table: "Users",
+                    where: [
+                        ['mail','=',req.body.mail],
+                        ['pass','=',s.createHash(req.body.pass)],
+                    ],
+                    limit: 1
+                },(err,r) => {
+                    if(!err && r && r[0]){
                         r=r[0];r.auth=s.md5(s.gid());
-                        s.sqlQuery("UPDATE Users SET auth=? WHERE ke=? AND uid=?",[r.auth,r.ke,r.uid])
-                        req.resp={ok:true,auth_token:r.auth,ke:r.ke,uid:r.uid,mail:r.mail,details:r.details};
-                        r.details=JSON.parse(r.details);
-                        r.lang=s.getLanguageFile(r.details.lang)
-                        req.factorAuth=function(cb){
+                        s.knexQuery({
+                            action: "update",
+                            table: "Users",
+                            update: {
+                                auth: r.auth
+                            },
+                            where: [
+                                ['ke','=',r.ke],
+                                ['uid','=',r.uid],
+                            ]
+                        })
+                        response = {
+                            ok: true,
+                            auth_token: r.auth,
+                            ke: r.ke,
+                            uid: r.uid,
+                            mail: r.mail,
+                            details: r.details
+                        };
+                        r.details = JSON.parse(r.details);
+                        r.lang = s.getLanguageFile(r.details.lang)
+                        const factorAuth = function(cb){
                             req.params.auth = r.auth
                             req.params.ke = r.ke
                             if(r.details.factorAuth === "1"){
@@ -352,12 +430,16 @@ module.exports = function(s,config,lang,app,io){
                                 if(!r.details.acceptedMachines[req.body.machineID]){
                                     req.complete=function(){
                                         s.factorAuth[r.ke][r.uid].function = req.body.function
-                                        s.factorAuth[r.ke][r.uid].info = req.resp
+                                        s.factorAuth[r.ke][r.uid].info = response
                                         clearTimeout(s.factorAuth[r.ke][r.uid].expireAuth)
-                                        s.factorAuth[r.ke][r.uid].expireAuth=setTimeout(function(){
+                                        s.factorAuth[r.ke][r.uid].expireAuth = setTimeout(function(){
                                             s.deleteFactorAuth(r)
                                         },1000*60*15)
-                                        renderPage(config.renderPaths.factorAuth,{$user:req.resp,lang:r.lang})
+                                        renderPage(config.renderPaths.factorAuth,{$user:{
+                                            ke:r.ke,
+                                            uid:r.uid,
+                                            mail:r.mail
+                                        },lang:r.lang})
                                     }
                                     if(!s.factorAuth[r.ke]){s.factorAuth[r.ke]={}}
                                     if(!s.factorAuth[r.ke][r.uid]){
@@ -377,19 +459,27 @@ module.exports = function(s,config,lang,app,io){
                             }
                         }
                         if(r.details.sub){
-                            s.sqlQuery('SELECT details FROM Users WHERE ke=? AND details NOT LIKE ?',[r.ke,'%"sub"%'],function(err,rr) {
+                            s.knexQuery({
+                                action: "select",
+                                columns: "details",
+                                table: "Users",
+                                where: [
+                                    ['ke','=',r.ke],
+                                    ['details','NOT LIKE','%"sub"%'],
+                                ],
+                            },function(err,rr) {
                                 if(rr && rr[0]){
                                     rr=rr[0];
-                                    rr.details=JSON.parse(rr.details);
-                                    r.details.mon_groups=rr.details.mon_groups;
-                                    req.resp.details=JSON.stringify(r.details);
-                                    req.factorAuth()
+                                    rr.details = JSON.parse(rr.details);
+                                    r.details.mon_groups = rr.details.mon_groups;
+                                    response.details = JSON.stringify(r.details);
+                                    factorAuth()
                                 }else{
                                     failedAuthentication(req.body.function)
                                 }
                             })
                         }else{
-                            req.factorAuth()
+                            factorAuth()
                         }
                     }else{
                         failedAuthentication(req.body.function)
@@ -397,7 +487,15 @@ module.exports = function(s,config,lang,app,io){
                 })
             }
             if(LdapAuth&&req.body.function==='ldap'&&req.body.key!==''){
-                s.sqlQuery('SELECT * FROM Users WHERE  ke=? AND details NOT LIKE ?',[req.body.key,'%"sub"%'],function(err,r) {
+                s.knexQuery({
+                    action: "select",
+                    columns: "*",
+                    table: "Users",
+                    where: [
+                        ['ke','=',req.body.key],
+                        ['details','NOT LIKE','%"sub"%'],
+                    ],
+                },(err,r) => {
                     if(r&&r[0]){
                         r=r[0]
                         r.details=JSON.parse(r.details)
@@ -446,7 +544,7 @@ module.exports = function(s,config,lang,app,io){
                                     if(!user.uid){
                                         user.uid=s.gid()
                                     }
-                                    req.resp={
+                                    response = {
                                         ke:req.body.key,
                                         uid:user.uid,
                                         auth:s.createHash(s.gid()),
@@ -459,30 +557,48 @@ module.exports = function(s,config,lang,app,io){
                                             filter: {}
                                         })
                                     }
-                                    user.post=[]
-                                    Object.keys(req.resp).forEach(function(v){
-                                        user.post.push(req.resp[v])
-                                    })
                                     s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP Success'],msg:{user:user}})
-                                    s.sqlQuery('SELECT * FROM Users WHERE  ke=? AND mail=?',[req.body.key,user.cn],function(err,rr){
+                                    s.knexQuery({
+                                        action: "select",
+                                        columns: "*",
+                                        table: "Users",
+                                        where: [
+                                            ['ke','=',req.body.key],
+                                            ['mail','=',user.cn],
+                                        ],
+                                    },function(err,rr) {
                                         if(rr&&rr[0]){
                                             //already registered
-                                            rr=rr[0]
-                                            req.resp=rr;
-                                            rr.details=JSON.parse(rr.details)
-                                            req.resp.lang=s.getLanguageFile(rr.details.lang)
+                                            rr = rr[0]
+                                            response = rr;
+                                            rr.details = JSON.parse(rr.details)
+                                            response.lang = s.getLanguageFile(rr.details.lang)
                                             s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP User Authenticated'],msg:{user:user,shinobiUID:rr.uid}})
-                                            s.sqlQuery("UPDATE Users SET auth=? WHERE ke=? AND uid=?",[req.resp.auth,req.resp.ke,rr.uid])
+                                            s.knexQuery({
+                                                action: "update",
+                                                table: "Users",
+                                                update: {
+                                                    auth: response.auth
+                                                },
+                                                where: [
+                                                    ['ke','=',response.ke],
+                                                    ['uid','=',rr.uid],
+                                                ]
+                                            })
                                         }else{
                                             //new ldap login
                                             s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP User is New'],msg:{info:r.lang['Creating New Account'],user:user}})
-                                            req.resp.lang=r.lang
-                                            s.sqlQuery('INSERT INTO Users (ke,uid,auth,mail,pass,details) VALUES (?,?,?,?,?,?)',user.post)
+                                            response.lang = r.lang
+                                            s.knexQuery({
+                                                action: "insert",
+                                                table: "Users",
+                                                insert: response,
+                                            })
                                         }
-                                        req.resp.details = JSON.stringify(req.resp.details)
-                                        req.resp.auth_token = req.resp.auth
-                                        req.resp.ok=true
-                                        checkRoute(req.resp)
+                                        response.details = JSON.stringify(response.details)
+                                        response.auth_token = response.auth
+                                        response.ok = true
+                                        checkRoute(response)
                                     })
                                     return
                                 }
@@ -513,7 +629,16 @@ module.exports = function(s,config,lang,app,io){
                         users: true,
                         md5: true
                     },function(data){
-                        s.sqlQuery('SELECT * FROM Logs WHERE ke=? ORDER BY `time` DESC LIMIT 30',['$'],function(err,r) {
+                        s.knexQuery({
+                            action: "select",
+                            columns: "*",
+                            table: "Logs",
+                            where: [
+                                ['ke','=','$'],
+                            ],
+                            orderBy: ['time','desc'],
+                            limit: 30
+                        },(err,r) => {
                             if(!r){
                                 r=[]
                             }
@@ -545,14 +670,35 @@ module.exports = function(s,config,lang,app,io){
                             }
                             if(!req.details.acceptedMachines[req.body.machineID]){
                                 req.details.acceptedMachines[req.body.machineID]={}
-                                s.sqlQuery("UPDATE Users SET details=? WHERE ke=? AND uid=?",[s.prettyPrint(req.details),req.body.ke,req.body.id])
+                                s.knexQuery({
+                                    action: "update",
+                                    table: "Users",
+                                    update: {
+                                        details: s.prettyPrint(req.details)
+                                    },
+                                    where: [
+                                        ['ke','=',req.body.ke],
+                                        ['uid','=',req.body.id],
+                                    ]
+                                })
                             }
                         }
                         req.body.function = s.factorAuth[req.body.ke][req.body.id].function
-                        req.resp = s.factorAuth[req.body.ke][req.body.id].info
-                        checkRoute(s.factorAuth[req.body.ke][req.body.id].user)
+                        response = s.factorAuth[req.body.ke][req.body.id].info
+                        response.lang = req.lang || s.getLanguageFile(JSON.parse(s.factorAuth[req.body.ke][req.body.id].info.details).lang)
+                        checkRoute(s.factorAuth[req.body.ke][req.body.id].info)
+                        clearTimeout(s.factorAuth[req.body.ke][req.body.id].expireAuth)
+                        s.deleteFactorAuth({
+                            ke: req.body.ke,
+                            uid: req.body.id,
+                        })
                     }else{
-                        renderPage(config.renderPaths.factorAuth,{$user:s.factorAuth[req.body.ke][req.body.id].info,lang:req.lang});
+                        var info = s.factorAuth[req.body.ke][req.body.id].info
+                        renderPage(config.renderPaths.factorAuth,{$user:{
+                            ke: info.ke,
+                            id: info.uid,
+                            mail: info.mail,
+                        },lang:req.lang});
                         res.end();
                     }
                 }else{
@@ -575,178 +721,166 @@ module.exports = function(s,config,lang,app,io){
             res.end(s.prettyPrint({ok:true}))
         })
     })
-    /**
-    * Page : Montage - stand alone squished view with gridstackjs
-    */
-    app.get([
-        config.webPaths.apiPrefix+':auth/grid/:ke',
-        config.webPaths.apiPrefix+':auth/grid/:ke/:group',
-        config.webPaths.apiPrefix+':auth/cycle/:ke',
-        config.webPaths.apiPrefix+':auth/cycle/:ke/:group'
-    ], function(req,res) {
-        s.auth(req.params,function(user){
-            if(user.permissions.get_monitors==="0"){
-                res.end(user.lang['Not Permitted'])
-                return
-            }
-
-            req.params.protocol=req.protocol;
-            req.sql='SELECT * FROM Monitors WHERE mode!=? AND mode!=? AND ke=?';req.ar=['stop','idle',req.params.ke];
-            if(!req.params.id){
-                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                    req.or=[];
-                    user.details.monitors.forEach(function(v,n){
-                        req.or.push('mid=?');req.ar.push(v)
-                    })
-                    req.sql+=' AND ('+req.or.join(' OR ')+')'
-                }
-            }else{
-                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                }else{
-                    res.end(user.lang['There are no monitors that you can view with this account.']);
-                    return;
-                }
-            }
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(req.params.group){
-                    var filteredByGroupCheck = {};
-                    var filteredByGroup = [];
-                    r.forEach(function(v,n){
-                        var details = JSON.parse(r[n].details);
-                        try{
-                            req.params.group.split('|').forEach(function(group){
-                                var groups = JSON.parse(details.groups);
-                                if(groups.indexOf(group) > -1 && !filteredByGroupCheck[v.mid]){
-                                    filteredByGroupCheck[v.mid] = true;
-                                    filteredByGroup.push(v)
-                                }
-                            })
-                        }catch(err){
-
-                        }
-                    })
-                    r = filteredByGroup;
-                }
-                r.forEach(function(v,n){
-                    if(s.group[v.ke]&&s.group[v.ke].activeMonitors[v.mid]&&s.group[v.ke].activeMonitors[v.mid].watch){
-                        r[n].currentlyWatching=Object.keys(s.group[v.ke].activeMonitors[v.mid].watch).length
-                    }
-                    r[n].subStream={}
-                    var details = JSON.parse(r[n].details)
-                    if(details.snap==='1'){
-                        r[n].subStream.jpeg = '/'+req.params.auth+'/jpeg/'+v.ke+'/'+v.mid+'/s.jpg'
-                    }
-                    if(details.stream_channels&&details.stream_channels!==''){
-                        try{
-                            details.stream_channels=JSON.parse(details.stream_channels)
-                            r[n].channels=[]
-                            details.stream_channels.forEach(function(b,m){
-                                var streamURL
-                                switch(b.stream_type){
-                                    case'mjpeg':
-                                        streamURL='/'+req.params.auth+'/mjpeg/'+v.ke+'/'+v.mid+'/'+m
-                                    break;
-                                    case'hls':
-                                        streamURL='/'+req.params.auth+'/hls/'+v.ke+'/'+v.mid+'/'+m+'/s.m3u8'
-                                    break;
-                                    case'h264':
-                                        streamURL='/'+req.params.auth+'/h264/'+v.ke+'/'+v.mid+'/'+m
-                                    break;
-                                    case'flv':
-                                        streamURL='/'+req.params.auth+'/flv/'+v.ke+'/'+v.mid+'/'+m+'/s.flv'
-                                    break;
-                                    case'mp4':
-                                        streamURL='/'+req.params.auth+'/mp4/'+v.ke+'/'+v.mid+'/'+m+'/s.mp4'
-                                    break;
-                                }
-                                r[n].channels.push(streamURL)
-                            })
-                        }catch(err){
-                            s.userLog(req.params,{type:'Broken Monitor Object',msg:'Stream Channels Field is damaged. Skipping.'})
-                        }
-                    }
-                })
-                var page = config.renderPaths.grid
-                if(req.path.indexOf('/cycle/') > -1){
-                    page = config.renderPaths.cycle
-                }
-                s.renderPage(req,res,page,{
-                    data:Object.assign(req.params,req.query),
-                    baseUrl:req.protocol+'://'+req.hostname,
-                    config: s.getConfigWithBranding(req.hostname),
-                    lang:user.lang,
-                    $user:user,
-                    monitors:r,
-                    query:req.query
-                });
-            })
-        },res,req)
-    });
+    // /**
+    // * Page : Montage - stand alone squished view with gridstackjs
+    // */
+    // app.get([
+    //     config.webPaths.apiPrefix+':auth/grid/:ke',
+    //     config.webPaths.apiPrefix+':auth/grid/:ke/:group',
+    //     config.webPaths.apiPrefix+':auth/cycle/:ke',
+    //     config.webPaths.apiPrefix+':auth/cycle/:ke/:group'
+    // ], function(req,res) {
+    //     s.auth(req.params,function(user){
+    //         if(user.permissions.get_monitors==="0"){
+    //             res.end(user.lang['Not Permitted'])
+    //             return
+    //         }
+    //
+    //         req.params.protocol=req.protocol;
+    //         req.sql='SELECT * FROM Monitors WHERE mode!=? AND mode!=? AND ke=?';req.ar=['stop','idle',req.params.ke];
+    //         if(!req.params.id){
+    //             if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
+    //                 try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
+    //                 req.or=[];
+    //                 user.details.monitors.forEach(function(v,n){
+    //                     req.or.push('mid=?');req.ar.push(v)
+    //                 })
+    //                 req.sql+=' AND ('+req.or.join(' OR ')+')'
+    //             }
+    //         }else{
+    //             if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1){
+    //                 req.sql+=' and mid=?';req.ar.push(req.params.id)
+    //             }else{
+    //                 res.end(user.lang['There are no monitors that you can view with this account.']);
+    //                 return;
+    //             }
+    //         }
+    //         s.sqlQuery(req.sql,req.ar,function(err,r){
+    //             if(req.params.group){
+    //                 var filteredByGroupCheck = {};
+    //                 var filteredByGroup = [];
+    //                 r.forEach(function(v,n){
+    //                     var details = JSON.parse(r[n].details);
+    //                     try{
+    //                         req.params.group.split('|').forEach(function(group){
+    //                             var groups = JSON.parse(details.groups);
+    //                             if(groups.indexOf(group) > -1 && !filteredByGroupCheck[v.mid]){
+    //                                 filteredByGroupCheck[v.mid] = true;
+    //                                 filteredByGroup.push(v)
+    //                             }
+    //                         })
+    //                     }catch(err){
+    //
+    //                     }
+    //                 })
+    //                 r = filteredByGroup;
+    //             }
+    //             r.forEach(function(v,n){
+    //                 if(s.group[v.ke]&&s.group[v.ke].activeMonitors[v.mid]&&s.group[v.ke].activeMonitors[v.mid].watch){
+    //                     r[n].currentlyWatching=Object.keys(s.group[v.ke].activeMonitors[v.mid].watch).length
+    //                 }
+    //                 r[n].subStream={}
+    //                 var details = JSON.parse(r[n].details)
+    //                 if(details.snap==='1'){
+    //                     r[n].subStream.jpeg = '/'+req.params.auth+'/jpeg/'+v.ke+'/'+v.mid+'/s.jpg'
+    //                 }
+    //                 if(details.stream_channels&&details.stream_channels!==''){
+    //                     try{
+    //                         details.stream_channels=JSON.parse(details.stream_channels)
+    //                         r[n].channels=[]
+    //                         details.stream_channels.forEach(function(b,m){
+    //                             var streamURL
+    //                             switch(b.stream_type){
+    //                                 case'mjpeg':
+    //                                     streamURL='/'+req.params.auth+'/mjpeg/'+v.ke+'/'+v.mid+'/'+m
+    //                                 break;
+    //                                 case'hls':
+    //                                     streamURL='/'+req.params.auth+'/hls/'+v.ke+'/'+v.mid+'/'+m+'/s.m3u8'
+    //                                 break;
+    //                                 case'h264':
+    //                                     streamURL='/'+req.params.auth+'/h264/'+v.ke+'/'+v.mid+'/'+m
+    //                                 break;
+    //                                 case'flv':
+    //                                     streamURL='/'+req.params.auth+'/flv/'+v.ke+'/'+v.mid+'/'+m+'/s.flv'
+    //                                 break;
+    //                                 case'mp4':
+    //                                     streamURL='/'+req.params.auth+'/mp4/'+v.ke+'/'+v.mid+'/'+m+'/s.mp4'
+    //                                 break;
+    //                             }
+    //                             r[n].channels.push(streamURL)
+    //                         })
+    //                     }catch(err){
+    //                         s.userLog(req.params,{type:'Broken Monitor Object',msg:'Stream Channels Field is damaged. Skipping.'})
+    //                     }
+    //                 }
+    //             })
+    //             var page = config.renderPaths.grid
+    //             if(req.path.indexOf('/cycle/') > -1){
+    //                 page = config.renderPaths.cycle
+    //             }
+    //             s.renderPage(req,res,page,{
+    //                 data:Object.assign(req.params,req.query),
+    //                 baseUrl:req.protocol+'://'+req.hostname,
+    //                 config: s.getConfigWithBranding(req.hostname),
+    //                 lang:user.lang,
+    //                 $user:user,
+    //                 monitors:r,
+    //                 query:req.query
+    //             });
+    //         })
+    //     },res,req)
+    // });
     /**
     * API : Get TV Channels (Monitor Streams) json
      */
     app.get([config.webPaths.apiPrefix+':auth/tvChannels/:ke',config.webPaths.apiPrefix+':auth/tvChannels/:ke/:id','/get.php'], function (req,res){
-        req.ret={ok:false};
+        var response = {ok:false};
         if(req.query.username&&req.query.password){
             req.params.username = req.query.username
             req.params.password = req.query.password
         }
         var output = ['h264','hls','mp4']
-        if(req.query.output&&req.query.output!==''){
+        if(
+            req.query.output &&
+            req.query.output !== ''
+        ){
             output = req.query.output.split(',')
             output.forEach(function(type,n){
-                if(type==='ts'){
-                    output[n]='h264'
-                    if(output.indexOf('hls')===-1){
+                if(type === 'ts'){
+                    output[n] = 'h264'
+                    if(output.indexOf('hls') === -1){
                         output.push('hls')
                     }
                 }
             })
         }
-        var isM3u8 = false;
-        if(req.query.type==='m3u8'||req.query.type==='m3u_plus'){
-            //is m3u8
-            isM3u8 = true;
-        }else{
-            res.setHeader('Content-Type', 'application/json');
-        }
-        req.fn=function(user){
-            if(user.permissions.get_monitors==="0"){
-                res.end(s.prettyPrint([]))
+        const isM3u8 = req.query.type === 'm3u8' || req.query.type === 'm3u_plus'
+        s.auth(req.params,function(user){
+            const groupKey = req.params.ke
+            const monitorId = req.params.id
+            const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+            if(user.details.sub && user.details.allmonitors === '0' && (user.permissions.get_monitors === "0" || monitorRestrictions.length === 0)){
+                s.closeJsonResponse(res,[]);
                 return
             }
-            if(!req.params.ke){
-                req.params.ke = user.ke;
-            }
-            if(req.query.id&&!req.params.id){
-                req.params.id = req.query.id;
-            }
-            req.sql='SELECT * FROM Monitors WHERE mode!=? AND ke=?';req.ar=['stop',req.params.ke];
-            if(!req.params.id){
-                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                    req.or=[];
-                    user.details.monitors.forEach(function(v,n){
-                        req.or.push('mid=?');req.ar.push(v)
-                    })
-                    req.sql+=' AND ('+req.or.join(' OR ')+')'
-                }
-            }else{
-                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                }else{
-                    res.end('[]');
-                    return;
-                }
-            }
-            s.sqlQuery(req.sql,req.ar,function(err,r){
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "Monitors",
+                where: [
+                    ['ke','=',groupKey],
+                    ['mode','!=','stop'],
+                    monitorRestrictions
+                ]
+            },(err,r) => {
                 var tvChannelMonitors = [];
                 r.forEach(function(v,n){
                     var buildStreamURL = function(channelRow,type,channelNumber){
                         var streamURL
-                        if(channelNumber){channelNumber = '/'+channelNumber}else{channelNumber=''}
+            			if(req.query.streamtype && req.query.streamtype != type){
+            				return
+            			}
+                        if(channelNumber){channelNumber = '/' + channelNumber}else{channelNumber = ''}
                         switch(type){
                             case'mjpeg':
                                 streamURL='/'+req.params.auth+'/mjpeg/'+v.ke+'/'+v.mid+channelNumber
@@ -803,7 +937,7 @@ module.exports = function(s,config,lang,app,io){
                     tvChannelMonitors.forEach(function(channelRow,n){
                       output.forEach(function(type){
                         if(channelRow.streamsSortedByType[type]){
-                            if(req.query.type==='m3u_plus'){
+                            if(req.query.type === 'm3u_plus'){
                                 m3u8 +='#EXTINF-1 tvg-id="'+channelRow.mid+'" tvg-name="'+channelRow.channel+'" tvg-logo="'+req.protocol+'://'+req.headers.host+channelRow.snapshot+'" group-title="'+channelRow.groupTitle+'",'+channelRow.channel+'\n'
                             }else{
                                 m3u8 +='#EXTINF:-1,'+channelRow.channel+' ('+type.toUpperCase()+') \n'
@@ -814,43 +948,35 @@ module.exports = function(s,config,lang,app,io){
                     })
                     res.end(m3u8)
                 }else{
-                    if(tvChannelMonitors.length===1){tvChannelMonitors=tvChannelMonitors[0];}
-                    res.end(s.prettyPrint(tvChannelMonitors));
+                    if(tvChannelMonitors.length === 1)tvChannelMonitors=tvChannelMonitors[0];
+                    s.closeJsonResponse(res,tvChannelMonitors)
                 }
             })
-        }
-        s.auth(req.params,req.fn,res,req);
+        },res,req);
     });
     /**
     * API : Get Monitors
      */
     app.get([config.webPaths.apiPrefix+':auth/monitor/:ke',config.webPaths.apiPrefix+':auth/monitor/:ke/:id'], function (req,res){
-        req.ret={ok:false};
+        var response = {ok:false};
         res.setHeader('Content-Type', 'application/json');
-        req.fn=function(user){
-        if(user.permissions.get_monitors==="0"){
-            res.end(s.prettyPrint([]))
-            return
-        }
-            req.sql='SELECT * FROM Monitors WHERE ke=?';req.ar=[req.params.ke];
-            if(!req.params.id){
-                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                    req.or=[];
-                    user.details.monitors.forEach(function(v,n){
-                        req.or.push('mid=?');req.ar.push(v)
-                    })
-                    req.sql+=' AND ('+req.or.join(' OR ')+')'
-                }
-            }else{
-                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                }else{
-                    res.end('[]');
-                    return;
-                }
+        s.auth(req.params,(user) => {
+            const groupKey = req.params.ke
+            const monitorId = req.params.id
+            const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+            if(user.details.sub && user.details.allmonitors === '0' && (user.permissions.get_monitors === "0" || monitorRestrictions.length === 0)){
+                s.closeJsonResponse(res,[]);
+                return
             }
-            s.sqlQuery(req.sql,req.ar,function(err,r){
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "Monitors",
+                where: [
+                    ['ke','=',groupKey],
+                    monitorRestrictions
+                ]
+            },(err,r) => {
                 r.forEach(function(v,n){
                     if(s.group[v.ke] && s.group[v.ke].activeMonitors[v.mid]){
                         r[n].currentlyWatching = Object.keys(s.group[v.ke].activeMonitors[v.mid].watch).length
@@ -901,11 +1027,9 @@ module.exports = function(s,config,lang,app,io){
                         })
                     }
                 })
-                if(r.length===1){r=r[0];}
-                res.end(s.prettyPrint(r));
+                s.closeJsonResponse(res,r);
             })
-        }
-        s.auth(req.params,req.fn,res,req);
+        },res,req);
     });
     /**
     * API : Merge Recorded Videos into one file
@@ -918,21 +1042,31 @@ module.exports = function(s,config,lang,app,io){
          if(req.query.videos && req.query.videos !== ''){
              s.auth(req.params,function(user){
                  var videosSelected = JSON.parse(req.query.videos)
-                 var where = []
-                 var values = []
+                 const whereQuery = []
+                 var didOne = false
                  videosSelected.forEach(function(video){
-                     where.push("(ke=? AND mid=? AND `time`=?)")
-                     if(!video.ke)video.ke = req.params.ke
-                     values.push(video.ke)
-                     values.push(video.mid)
                      var time = s.nameToTime(video.filename)
                      if(req.query.isUTC === 'true'){
                          time = s.utcToLocal(time)
                      }
-                     time = new Date(time)
-                     values.push(time)
+                     if(didOne){
+                         whereQuery.push(['or','ke','=',req.params.ke])
+                     }else{
+                         didOne = true
+                         whereQuery.push(['ke','=',req.params.ke])
+                     }
+                     whereQuery.push(
+                         ['mid','=',video.mid],
+                         ['time','=',time],
+                     )
+
                  })
-                 s.sqlQuery('SELECT * FROM Videos WHERE '+where.join(' OR '),values,function(err,r){
+                 s.knexQuery({
+                     action: "select",
+                     columns: "*",
+                     table: "Videos",
+                     where: whereQuery
+                 },(err,r) => {
                      var resp = {ok: false}
                      if(r && r[0]){
                          s.mergeRecordedVideos(r,req.params.ke,function(fullPath,filename){
@@ -966,14 +1100,10 @@ module.exports = function(s,config,lang,app,io){
     ], function (req,res){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            var hasRestrictions = user.details.sub && user.details.allmonitors !== '1'
-            if(
-                user.permissions.watch_videos==="0" ||
-                hasRestrictions && (!user.details.video_view || user.details.video_view.indexOf(req.params.id)===-1)
-            ){
-                res.end(s.prettyPrint([]))
-                return
-            }
+            const userDetails = user.details
+            const monitorId = req.params.id
+            const groupKey = req.params.ke
+            const hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1';
             var origURL = req.originalUrl.split('/')
             var videoParam = origURL[origURL.indexOf(req.params.auth) + 1]
             var videoSet = 'Videos'
@@ -982,100 +1112,35 @@ module.exports = function(s,config,lang,app,io){
                     videoSet = 'Cloud Videos'
                 break;
             }
-            req.sql='SELECT * FROM `'+videoSet+'` WHERE ke=?';req.ar=[req.params.ke];
-            req.count_sql='SELECT COUNT(*) FROM `'+videoSet+'` WHERE ke=?';req.count_ar=[req.params.ke];
-            if(req.query.archived=='1'){
-                req.sql+=' AND details LIKE \'%"archived":"1"\''
-                req.count_sql+=' AND details LIKE \'%"archived":"1"\''
-            }
-            if(!req.params.id){
-                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                    req.or=[];
-                    user.details.monitors.forEach(function(v,n){
-                        req.or.push('mid=?');req.ar.push(v)
-                    })
-                    req.sql+=' AND ('+req.or.join(' OR ')+')'
-                    req.count_sql+=' AND ('+req.or.join(' OR ')+')'
-                }
-            }else{
-                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                    req.count_sql+=' and mid=?';req.count_ar.push(req.params.id)
-                }else{
-                    res.end('[]');
-                    return;
-                }
-            }
-            if(req.query.start||req.query.end){
-                if(req.query.start && req.query.start !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                }
-                if(req.query.end && req.query.end !== ''){
-                    req.query.end = s.stringToSqlTime(req.query.end)
-                }
-                if(!req.query.startOperator||req.query.startOperator==''){
-                    req.query.startOperator='>='
-                }
-                if(!req.query.endOperator||req.query.endOperator==''){
-                    req.query.endOperator='<='
-                }
-                var endIsStartTo
-                var theEndParameter = '`end`'
-                if(req.query.endIsStartTo){
-                    endIsStartTo = true
-                    theEndParameter = '`time`'
-                }
-                switch(true){
-                    case(req.query.start&&req.query.start!==''&&req.query.end&&req.query.end!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ? AND '+theEndParameter+' '+req.query.endOperator+' ?';
-                        req.count_sql+=' AND `time` '+req.query.startOperator+' ? AND '+theEndParameter+' '+req.query.endOperator+' ?';
-                        req.ar.push(req.query.start)
-                        req.ar.push(req.query.end)
-                        req.count_ar.push(req.query.start)
-                        req.count_ar.push(req.query.end)
-                    break;
-                    case(req.query.start&&req.query.start!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ?';
-                        req.count_sql+=' AND `time` '+req.query.startOperator+' ?';
-                        req.ar.push(req.query.start)
-                        req.count_ar.push(req.query.start)
-                    break;
-                    case(req.query.end&&req.query.end!==''):
-                        req.sql+=' AND '+theEndParameter+' '+req.query.endOperator+' ?';
-                        req.count_sql+=' AND '+theEndParameter+' '+req.query.endOperator+' ?';
-                        req.ar.push(req.query.end)
-                        req.count_ar.push(req.query.end)
-                    break;
-                }
-            }
-            req.sql+=' ORDER BY `time` DESC';
-            if(!req.query.limit||req.query.limit==''){
-                req.query.limit='100'
-            }
-            if(req.query.limit!=='0'){
-                req.sql+=' LIMIT '+req.query.limit
-            }
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(!r){
-                    res.end(s.prettyPrint({total:0,limit:req.query.limit,skip:0,videos:[]}));
-                    return
-                }
-                s.sqlQuery(req.count_sql,req.count_ar,function(err,count){
-                    s.buildVideoLinks(r,{
+            s.sqlQueryBetweenTimesWithPermissions({
+                table: videoSet,
+                user: user,
+                noCount: true,
+                groupKey: req.params.ke,
+                monitorId: req.params.id,
+                startTime: req.query.start,
+                endTime: req.query.end,
+                startTimeOperator: req.query.startOperator,
+                endTimeOperator: req.query.endOperator,
+                limit: req.query.limit,
+                archived: req.query.archived,
+                endIsStartTo: !!req.query.endIsStartTo,
+                parseRowDetails: false,
+                rowName: 'videos',
+                preliminaryValidationFailed: (
+                    user.permissions.watch_videos === "0" ||
+                    hasRestrictions &&
+                    (!userDetails.video_view || userDetails.video_view.indexOf(monitorId)===-1)
+                )
+            },(response) => {
+                if(response && response.videos){
+                    s.buildVideoLinks(response.videos,{
                         auth : req.params.auth,
                         videoParam : videoParam,
-                        hideRemote : config.hideCloudSaveUrls
+                        hideRemote : config.hideCloudSaveUrls,
                     })
-                    if(req.query.limit.indexOf(',')>-1){
-                        req.skip=parseInt(req.query.limit.split(',')[0])
-                        req.query.limit=parseInt(req.query.limit.split(',')[1])
-                    }else{
-                        req.skip=0
-                        req.query.limit=parseInt(req.query.limit)
-                    }
-                    res.end(s.prettyPrint({isUTC:config.useUTC,total:count[0]['COUNT(*)'],limit:req.query.limit,skip:req.skip,videos:r,endIsStartTo:endIsStartTo}));
-                })
+                }
+                res.end(s.prettyPrint(response))
             })
         },res,req);
     });
@@ -1086,201 +1151,141 @@ module.exports = function(s,config,lang,app,io){
 		config.webPaths.apiPrefix+':auth/events/:ke',
 		config.webPaths.apiPrefix+':auth/events/:ke/:id'
 	], function (req,res){
-        req.ret={ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.video_view.indexOf(req.params.id)===-1){
-                res.end(s.prettyPrint([]))
-                return
-            }
-            req.sql='SELECT * FROM Events WHERE ke=?';req.ar=[req.params.ke];
-            if(!req.params.id){
-                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                    req.or=[];
-                    user.details.monitors.forEach(function(v,n){
-                        req.or.push('mid=?');req.ar.push(v)
-                    })
-                    req.sql+=' AND ('+req.or.join(' OR ')+')'
-                }
-            }else{
-                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                }else{
-                    res.end('[]');
-                    return;
-                }
-            }
-            if(req.query.start||req.query.end){
-                if(req.query.start && req.query.start !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                }
-                if(req.query.end && req.query.end !== ''){
-                    req.query.end = s.stringToSqlTime(req.query.end)
-                }
-                if(!req.query.startOperator||req.query.startOperator==''){
-                    req.query.startOperator='>='
-                }
-                if(!req.query.endOperator||req.query.endOperator==''){
-                    req.query.endOperator='<='
-                }
-                switch(true){
-                    case(req.query.start&&req.query.start!==''&&req.query.end&&req.query.end!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ? AND `time` '+req.query.endOperator+' ?';
-                        req.ar.push(req.query.start)
-                        req.ar.push(req.query.end)
-                    break;
-                    case(req.query.start&&req.query.start!==''):
-                        req.sql+=' AND `time` '+req.query.startOperator+' ?';
-                        req.ar.push(req.query.start)
-                    break;
-                    case(req.query.end&&req.query.end!==''):
-                        req.sql+=' AND `time` '+req.query.endOperator+' ?';
-                        req.ar.push(req.query.end)
-                    break;
-                }
-            }
-            req.sql+=' ORDER BY `time` DESC';
-            if(!req.query.limit||req.query.limit==''){
-                req.query.limit='100'
-            }
-            if(req.query.limit!=='0'){
-                req.sql+=' LIMIT '+req.query.limit
-            }
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(err){
-                    err.sql=req.sql;
-                    res.end(s.prettyPrint(err));
-                    return
-                }
-                if(!r){r=[]}
-                r.forEach(function(v,n){
-                    r[n].details=JSON.parse(v.details);
-                })
-                res.end(s.prettyPrint(r));
+            const userDetails = user.details
+            const monitorId = req.params.id
+            const groupKey = req.params.ke
+            const hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1';
+            s.sqlQueryBetweenTimesWithPermissions({
+                table: 'Events',
+                user: user,
+                groupKey: req.params.ke,
+                monitorId: req.params.id,
+                startTime: req.query.start,
+                endTime: req.query.end,
+                startTimeOperator: req.query.startOperator,
+                endTimeOperator: req.query.endOperator,
+                limit: req.query.limit,
+                endIsStartTo: true,
+                parseRowDetails: true,
+                noFormat: true,
+                noCount: true,
+                rowName: 'events',
+                preliminaryValidationFailed: (
+                    user.permissions.watch_videos === "0" ||
+                    hasRestrictions &&
+                    (!userDetails.video_view || userDetails.video_view.indexOf(monitorId)===-1)
+                )
+            },(response) => {
+                res.end(s.prettyPrint(response))
             })
-        },res,req);
-    });
+        })
+    })
     /**
     * API : Get Logs
      */
-    app.get([config.webPaths.apiPrefix+':auth/logs/:ke',config.webPaths.apiPrefix+':auth/logs/:ke/:id'], function (req,res){
-        req.ret={ok:false};
+    app.get([
+        config.webPaths.apiPrefix+':auth/logs/:ke',
+        config.webPaths.apiPrefix+':auth/logs/:ke/:id'
+    ], function (req,res){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            if(user.permissions.get_logs==="0" || user.details.sub && user.details.view_logs !== '1'){
-                res.end(s.prettyPrint([]))
-                return
-            }
-            req.sql='SELECT * FROM Logs WHERE ke=?';req.ar=[req.params.ke];
-            if(!req.params.id){
-                if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                    try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                    req.or=[];
-                    user.details.monitors.forEach(function(v,n){
-                        req.or.push('mid=?');req.ar.push(v)
-                    })
-                    req.sql+=' AND ('+req.or.join(' OR ')+')'
-                }
-            }else{
-                if(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1||req.params.id.indexOf('$')>-1){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                }else{
-                    res.end('[]');
-                    return;
-                }
-            }
-            if(req.query.start||req.query.end){
-                if(!req.query.startOperator||req.query.startOperator==''){
-                    req.query.startOperator='>='
-                }
-                if(!req.query.endOperator||req.query.endOperator==''){
-                    req.query.endOperator='<='
-                }
-                if(req.query.start && req.query.start !== '' && req.query.end && req.query.end !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                    req.query.end = s.stringToSqlTime(req.query.end)
-                    req.sql+=' AND `time` '+req.query.startOperator+' ? AND `time` '+req.query.endOperator+' ?';
-                    req.ar.push(req.query.start)
-                    req.ar.push(req.query.end)
-                }else if(req.query.start && req.query.start !== ''){
-                    req.query.start = s.stringToSqlTime(req.query.start)
-                    req.sql+=' AND `time` '+req.query.startOperator+' ?';
-                    req.ar.push(req.query.start)
-                }
-            }
-            if(!req.query.limit||req.query.limit==''){req.query.limit=50}
-            req.sql+=' ORDER BY `time` DESC LIMIT '+req.query.limit+'';
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(err){
-                    err.sql=req.sql;
-                    res.end(s.prettyPrint(err));
-                    return
-                }
-                if(!r){r=[]}
-                r.forEach(function(v,n){
-                    r[n].info=JSON.parse(v.info)
+            const userDetails = user.details
+            const monitorId = req.params.id
+            const groupKey = req.params.ke
+            const hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1';
+            s.sqlQueryBetweenTimesWithPermissions({
+                table: 'Logs',
+                user: user,
+                groupKey: req.params.ke,
+                monitorId: req.params.id,
+                startTime: req.query.start,
+                endTime: req.query.end,
+                startTimeOperator: req.query.startOperator,
+                endTimeOperator: req.query.endOperator,
+                limit: req.query.limit || 50,
+                endIsStartTo: true,
+                noFormat: true,
+                noCount: true,
+                rowName: 'logs',
+                preliminaryValidationFailed: (
+                    user.permissions.get_logs === "0" || userDetails.sub && userDetails.view_logs !== '1'
+                )
+            },(response) => {
+                response.forEach(function(v,n){
+                    v.info = JSON.parse(v.info)
                 })
-                res.end(s.prettyPrint(r));
+                res.end(s.prettyPrint(response))
             })
-        },res,req);
+        },res,req)
     })
     /**
     * API : Get Monitors Online
      */
     app.get(config.webPaths.apiPrefix+':auth/smonitor/:ke', function (req,res){
-        req.ret={ok:false};
+        var response = {ok:false};
         res.setHeader('Content-Type', 'application/json');
-        req.fn=function(user){
-            if(user.permissions.get_monitors==="0"){
-                res.end(s.prettyPrint([]))
+        s.auth(req.params,(user) => {
+            const groupKey = req.params.ke
+            const monitorId = req.params.id
+            const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+            if(user.details.sub && user.details.allmonitors === '0' && (user.permissions.get_monitors === "0" || monitorRestrictions.length === 0)){
+                s.closeJsonResponse(res,[]);
                 return
             }
-            req.sql='SELECT * FROM Monitors WHERE ke=?';req.ar=[req.params.ke];
-            if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                req.or=[];
-                user.details.monitors.forEach(function(v,n){
-                    req.or.push('mid=?');req.ar.push(v)
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "Monitors",
+                where: [
+                    ['ke','=',groupKey],
+                    monitorRestrictions
+                ]
+            },(err,r) => {
+                const startedMonitors = []
+                r.forEach(function(v){
+                    if(
+                        s.group[groupKey] &&
+                        s.group[groupKey].activeMonitors[v.mid] &&
+                        s.group[groupKey].activeMonitors[v.mid].isStarted === true
+                    ){
+                        startedMonitors.push(v)
+                    }
                 })
-                req.sql+=' AND ('+req.or.join(' OR ')+')'
-            }
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(r&&r[0]){
-                    req.ar=[];
-                    r.forEach(function(v){
-                        if(s.group[req.params.ke]&&s.group[req.params.ke].activeMonitors[v.mid]&&s.group[req.params.ke].activeMonitors[v.mid].isStarted === true){
-                            req.ar.push(v)
-                        }
-                    })
-                }else{
-                    req.ar=[];
-                }
-                res.end(s.prettyPrint(req.ar));
+                s.closeJsonResponse(res,startedMonitors)
             })
-        }
-        s.auth(req.params,req.fn,res,req);
+        },res,req);
     });
     /**
     * API : Monitor Mode Controller
      */
     app.get([config.webPaths.apiPrefix+':auth/monitor/:ke/:id/:f',config.webPaths.apiPrefix+':auth/monitor/:ke/:id/:f/:ff',config.webPaths.apiPrefix+':auth/monitor/:ke/:id/:f/:ff/:fff'], function (req,res){
-        req.ret={ok:false};
+        var response = {ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
             if(user.permissions.control_monitors==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitor_edit.indexOf(req.params.id)===-1){
                 res.end(user.lang['Not Permitted'])
                 return
             }
-            if(req.params.f===''){req.ret.msg=user.lang.monitorGetText1;res.end(s.prettyPrint(req.ret));return}
+            if(req.params.f===''){response.msg = user.lang.monitorGetText1;res.end(s.prettyPrint(response));return}
             if(req.params.f!=='stop'&&req.params.f!=='start'&&req.params.f!=='record'){
-                req.ret.msg='Mode not recognized.';
-                res.end(s.prettyPrint(req.ret));
+                response.msg = 'Mode not recognized.';
+                res.end(s.prettyPrint(response));
                 return;
             }
-            s.sqlQuery('SELECT * FROM Monitors WHERE ke=? AND mid=?',[req.params.ke,req.params.id],function(err,r){
-                if(r&&r[0]){
-                    r=r[0];
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "Monitors",
+                where: [
+                    ['ke','=',req.params.ke],
+                    ['mid','=',req.params.id],
+                ],
+                limit: 1
+            },(err,r) => {
+                if(r && r[0]){
+                    r = r[0];
                     if(req.query.reset==='1'||(s.group[r.ke]&&s.group[r.ke].rawMonitorConfigurations[r.mid].mode!==req.params.f)||req.query.fps&&(!s.group[r.ke].activeMonitors[r.mid].currentState||!s.group[r.ke].activeMonitors[r.mid].currentState.trigger_on)){
                         if(req.query.reset!=='1'||!s.group[r.ke].activeMonitors[r.mid].trigger_timer){
                             if(!s.group[r.ke].activeMonitors[r.mid].currentState)s.group[r.ke].activeMonitors[r.mid].currentState={}
@@ -1298,7 +1303,17 @@ module.exports = function(s,config,lang,app,io){
                                 s.group[r.ke].activeMonitors[r.mid].currentState.detector_trigger_record_fps=r.fps
                             }
                             r.id=r.mid;
-                            s.sqlQuery('UPDATE Monitors SET mode=? WHERE ke=? AND mid=?',[r.mode,r.ke,r.mid]);
+                            s.knexQuery({
+                                action: "update",
+                                table: "Monitors",
+                                update: {
+                                    mode: r.mode
+                                },
+                                where: [
+                                    ['ke','=',r.ke],
+                                    ['mid','=',r.mid],
+                                ]
+                            })
                             s.group[r.ke].rawMonitorConfigurations[r.mid]=r;
                             s.tx({f:'monitor_edit',mid:r.mid,ke:r.ke,mon:r},'GRP_'+r.ke);
                             s.tx({f:'monitor_edit',mid:r.mid,ke:r.ke,mon:r},'STR_'+r.ke);
@@ -1306,12 +1321,12 @@ module.exports = function(s,config,lang,app,io){
                             if(req.params.f!=='stop'){
                                 s.camera(req.params.f,s.cleanMonitorObject(r));
                             }
-                            req.ret.msg=user.lang['Monitor mode changed']+' : '+req.params.f;
+                            response.msg = user.lang['Monitor mode changed']+' : '+req.params.f;
                         }else{
-                            req.ret.msg=user.lang['Reset Timer'];
+                            response.msg = user.lang['Reset Timer'];
                         }
-                        req.ret.cmd_at=s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss');
-                        req.ret.ok=true;
+                        response.cmd_at=s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss');
+                        response.ok = true;
                         if(req.params.ff&&req.params.f!=='stop'){
                             req.params.ff=parseFloat(req.params.ff);
                             clearTimeout(s.group[r.ke].activeMonitors[r.mid].trigger_timer)
@@ -1331,7 +1346,17 @@ module.exports = function(s,config,lang,app,io){
                             }
                             s.group[r.ke].activeMonitors[r.mid].trigger_timer=setTimeout(function(){
                                 delete(s.group[r.ke].activeMonitors[r.mid].trigger_timer)
-                                s.sqlQuery('UPDATE Monitors SET mode=? WHERE ke=? AND mid=?',[s.group[r.ke].activeMonitors[r.mid].currentState.mode,r.ke,r.mid]);
+                                s.knexQuery({
+                                    action: "update",
+                                    table: "Monitors",
+                                    update: {
+                                        mode: s.group[r.ke].activeMonitors[r.mid].currentState.mode
+                                    },
+                                    where: [
+                                        ['ke','=',r.ke],
+                                        ['mid','=',r.mid],
+                                    ]
+                                })
                                 r.neglectTriggerTimer=1;
                                 r.mode=s.group[r.ke].activeMonitors[r.mid].currentState.mode;
                                 r.fps=s.group[r.ke].activeMonitors[r.mid].currentState.fps;
@@ -1344,301 +1369,31 @@ module.exports = function(s,config,lang,app,io){
                                 s.tx({f:'monitor_edit',mid:r.mid,ke:r.ke,mon:r},'GRP_'+r.ke);
                                 s.tx({f:'monitor_edit',mid:r.mid,ke:r.ke,mon:r},'STR_'+r.ke);
                             },req.timeout);
-    //                        req.ret.end_at=s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss').add(req.timeout,'milliseconds');
+    //                        response.end_at=s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss').add(req.timeout,'milliseconds');
                         }
                      }else{
-                        req.ret.msg=user.lang['Monitor mode is already']+' : '+req.params.f;
+                        response.msg = user.lang['Monitor mode is already']+' : '+req.params.f;
                     }
                 }else{
-                    req.ret.msg=user.lang['Monitor or Key does not exist.'];
+                    response.msg = user.lang['Monitor or Key does not exist.'];
                 }
-                res.end(s.prettyPrint(req.ret));
+                res.end(s.prettyPrint(response));
             })
         },res,req);
     })
-    /**
-    * API : Get fileBin files
-     */
-    app.get([config.webPaths.apiPrefix+':auth/fileBin/:ke',config.webPaths.apiPrefix+':auth/fileBin/:ke/:id'],function (req,res){
-        res.setHeader('Content-Type', 'application/json');
-        req.fn=function(user){
-            req.sql='SELECT * FROM Files WHERE ke=?';req.ar=[req.params.ke];
-            if(user.details.sub&&user.details.monitors&&user.details.allmonitors!=='1'){
-                try{user.details.monitors=JSON.parse(user.details.monitors);}catch(er){}
-                req.or=[];
-                user.details.monitors.forEach(function(v,n){
-                    req.or.push('mid=?');req.ar.push(v)
-                })
-                req.sql+=' AND ('+req.or.join(' OR ')+')'
-            }else{
-                if(req.params.id&&(!user.details.sub||user.details.allmonitors!=='0'||user.details.monitors.indexOf(req.params.id)>-1)){
-                    req.sql+=' and mid=?';req.ar.push(req.params.id)
-                }
-            }
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(!r){
-                    r=[]
-                }else{
-                    r.forEach(function(v){
-                        v.details=JSON.parse(v.details)
-                        v.href='/'+req.params.auth+'/fileBin/'+req.params.ke+'/'+req.params.id+'/'+v.details.year+'/'+v.details.month+'/'+v.details.day+'/'+v.name;
-                    })
-                }
-                res.end(s.prettyPrint(r));
-            })
-        }
-        s.auth(req.params,req.fn,res,req);
-    });
-    /**
-    * API : Get fileBin file
-     */
-    app.get(config.webPaths.apiPrefix+':auth/fileBin/:ke/:id/:year/:month/:day/:file', function (req,res){
-        s.auth(req.params,function(user){
-            var failed = function(){
-                res.end(user.lang['File Not Found'])
-            }
-            if (!s.group[req.params.ke].fileBin[req.params.id+'/'+req.params.file]){
-                s.sqlQuery('SELECT * FROM Files WHERE ke=? AND mid=? AND name=?',[req.params.ke,req.params.id,req.params.file],function(err,r){
-                    if(r&&r[0]){
-                        r = r[0]
-                        r.details = JSON.parse(r.details)
-                        req.dir = s.dir.fileBin+req.params.ke+'/'+req.params.id+'/'+r.details.year+'/'+r.details.month+'/'+r.details.day+'/'+req.params.file;
-                        fs.stat(req.dir,function(err,stats){
-                            if(!err){
-                                res.on('finish',function(){res.end()})
-                                fs.createReadStream(req.dir).pipe(res)
-                            }else{
-                                failed()
-                            }
-                        })
-                    }else{
-                        failed()
-                    }
-                })
-            }else{
-                res.end(user.lang['Please Wait for Completion'])
-            }
-        },res,req);
-    });
-    // /**
-    // * API : Zip Videos and Get Link from fileBin
-    //  */
-    // app.get(config.webPaths.apiPrefix+':auth/zipVideos/:ke', function (req,res){
-    //     var failed = function(resp){
-    //         res.setHeader('Content-Type', 'application/json');
-    //         res.end(s.prettyPrint(resp))
-    //     }
-    //     if(req.query.videos && req.query.videos !== ''){
-    //         s.auth(req.params,function(user){
-    //             var videosSelected = JSON.parse(req.query.videos)
-    //             var where = []
-    //             var values = []
-    //             videosSelected.forEach(function(video){
-    //                 where.push("(ke=? AND mid=? AND `time`=?)")
-    //                 if(!video.ke)video.ke = req.params.ke
-    //                 values.push(video.ke)
-    //                 values.push(video.mid)
-    //                 var time = s.nameToTime(video.filename)
-    //                 if(req.query.isUTC === 'true'){
-    //                     time = s.utcToLocal(time)
-    //                 }
-    //                 time = new Date(time)
-    //                 values.push(time)
-    //             })
-    //             s.sqlQuery('SELECT * FROM Videos WHERE '+where.join(' OR '),values,function(err,r){
-    //                 var resp = {ok: false}
-    //                 if(r && r[0]){
-    //                     resp.ok = true
-    //                     var zipDownload = null
-    //                     var tempFiles = []
-    //                     var fileId = s.gid()
-    //                     var fileBinDir = s.dir.fileBin+req.params.ke+'/'
-    //                     var tempScript = s.dir.streams+req.params.ke+'/'+fileId+'.sh'
-    //                     var zippedFilename = s.formattedTime()+'-'+fileId+'-Shinobi_Recordings.zip'
-    //                     var zippedFile = fileBinDir+zippedFilename
-    //                     var script = 'cd '+fileBinDir+' && zip -9 -r '+zippedFile
-    //                     res.on('close', () => {
-    //                         if(zipDownload && zipDownload.destroy){
-    //                             zipDownload.destroy()
-    //                         }
-    //                         fs.unlink(zippedFile);
-    //                     })
-    //                     fs.mkdir(fileBinDir,function(err){
-    //                         s.handleFolderError(err)
-    //                         r.forEach(function(video){
-    //                             var timeFormatted = s.formattedTime(video.time)
-    //                             video.filename = timeFormatted+'.'+video.ext
-    //                             var dir = s.getVideoDirectory(video)+video.filename
-    //                             var tempVideoFile = timeFormatted+' - '+video.mid+'.'+video.ext
-    //                             fs.writeFileSync(fileBinDir+tempVideoFile, fs.readFileSync(dir))
-    //                             tempFiles.push(fileBinDir+tempVideoFile)
-    //                             script += ' "'+tempVideoFile+'"'
-    //                         })
-    //                         fs.writeFileSync(tempScript,script,'utf8')
-    //                         var zipCreate = spawn('sh',(tempScript).split(' '),{detached: true})
-    //                         zipCreate.stderr.on('data',function(data){
-    //                             s.userLog({ke:req.params.ke,mid:'$USER'},{title:'Zip Create Error',msg:data.toString()})
-    //                         })
-    //                         zipCreate.on('exit',function(data){
-    //                             fs.unlinkSync(tempScript)
-    //                             tempFiles.forEach(function(file){
-    //                                 fs.unlink(file,function(){})
-    //                             })
-    //                             res.setHeader('Content-Disposition', 'attachment; filename="'+zippedFilename+'"')
-    //                             var zipDownload = fs.createReadStream(zippedFile)
-    //                             zipDownload.pipe(res)
-    //                             zipDownload.on('error', function (error) {
-    //                                 var errorString = error.toString()
-    //                                 s.userLog({
-    //                                     ke: req.params.ke,
-    //                                     mid: '$USER'
-    //                                 },{
-    //                                     title: 'Zip Download Error',
-    //                                     msg: errorString
-    //                                 })
-    //                                 if(zipDownload && zipDownload.destroy){
-    //                                     zipDownload.destroy()
-    //                                 }
-    //                                 res.end(s.prettyPrint({
-    //                                     ok: false,
-    //                                     msg: errorString
-    //                                 }))
-    //                             })
-    //                             zipDownload.on('close', function () {
-    //                                 res.end()
-    //                                 zipDownload.destroy()
-    //                                 fs.unlinkSync(zippedFile)
-    //                             })
-    //                         })
-    //                     })
-    //                 }else{
-    //                     failed({ok:false,msg:'No Videos Found'})
-    //                 }
-    //             })
-    //         },res,req);
-    //     }else{
-    //         failed({ok:false,msg:'"videos" query variable is missing from request.'})
-    //     }
-    // })
-    // /**
-    // * API : Zip Cloud Videos and Get Link from fileBin
-    //  */
-    // app.get(config.webPaths.apiPrefix+':auth/zipCloudVideos/:ke', function (req,res){
-    //     var failed = function(resp){
-    //         res.setHeader('Content-Type', 'application/json');
-    //         res.end(s.prettyPrint(resp))
-    //     }
-    //     if(req.query.videos && req.query.videos !== ''){
-    //         s.auth(req.params,function(user){
-    //             var videosSelected = JSON.parse(req.query.videos)
-    //             var where = []
-    //             var values = []
-    //             videosSelected.forEach(function(video){
-    //                 where.push("(ke=? AND mid=? AND `time`=?)")
-    //                 if(!video.ke)video.ke = req.params.ke
-    //                 values.push(video.ke)
-    //                 values.push(video.mid)
-    //                 var time = s.nameToTime(video.filename)
-    //                 if(req.query.isUTC === 'true'){
-    //                     time = s.utcToLocal(time)
-    //                 }
-    //                 time = new Date(time)
-    //                 values.push(time)
-    //             })
-    //             s.sqlQuery('SELECT * FROM `Cloud Videos` WHERE '+where.join(' OR '),values,function(err,r){
-    //                 var resp = {ok: false}
-    //                 if(r && r[0]){
-    //                     resp.ok = true
-    //                     var zipDownload = null
-    //                     var tempFiles = []
-    //                     var fileId = s.gid()
-    //                     var fileBinDir = s.dir.fileBin+req.params.ke+'/'
-    //                     var tempScript = s.dir.streams+req.params.ke+'/'+fileId+'.sh'
-    //                     var zippedFilename = s.formattedTime()+'-'+fileId+'-Shinobi_Cloud_Backed_Recordings.zip'
-    //                     var zippedFile = fileBinDir+zippedFilename
-    //                     var script = 'cd '+fileBinDir+' && zip -9 -r '+zippedFile
-    //                     res.on('close', () => {
-    //                         if(zipDownload && zipDownload.destroy){
-    //                             zipDownload.destroy()
-    //                         }
-    //                         fs.unlink(zippedFile);
-    //                     })
-    //                     fs.mkdir(fileBinDir,function(err){
-    //                         var cloudDownloadCount = 0
-    //                         var getFile = function(video,completed){
-    //                             if(!video)completed();
-    //                             s.checkDetails(video)
-    //                             var filename = video.href.split('/')
-    //                             filename = filename[filename.length - 1]
-    //                             var timeFormatted = s.formattedTime(video.time)
-    //                             var tempVideoFile = video.details.type + '-' + video.mid + '-' + filename
-    //                             var tempFileWriteStream = fs.createWriteStream(fileBinDir+tempVideoFile)
-    //                             tempFileWriteStream.on('finish', function() {
-    //                                 ++cloudDownloadCount
-    //                                 getFile(r[cloudDownloadCount],completed)
-    //                             })
-    //                             var cloudVideoDownload = request(video.href)
-    //                             cloudVideoDownload.on('response',  function (res) {
-    //                                 res.pipe(tempFileWriteStream)
-    //                             })
-    //                             tempFiles.push(fileBinDir+tempVideoFile)
-    //                             script += ' "'+tempVideoFile+'"'
-    //                         }
-    //                         getFile(r[cloudDownloadCount],function(){
-    //                             fs.writeFileSync(tempScript,script,'utf8')
-    //                             var zipCreate = spawn('sh',(tempScript).split(' '),{detached: true})
-    //                             zipCreate.stderr.on('data',function(data){
-    //                                 s.userLog({ke:req.params.ke,mid:'$USER'},{title:'Zip Create Error',msg:data.toString()})
-    //                             })
-    //                             zipCreate.on('exit',function(data){
-    //                                 fs.unlinkSync(tempScript)
-    //                                 tempFiles.forEach(function(file){
-    //                                     fs.unlink(file,function(){})
-    //                                 })
-    //                                 res.setHeader('Content-Disposition', 'attachment; filename="' + zippedFilename + '"')
-    //                                 var zipDownload = fs.createReadStream(zippedFile)
-    //                                 zipDownload.pipe(res)
-    //                                 zipDownload.on('error', function (error) {
-    //                                     var errorString = error.toString()
-    //                                     s.userLog({
-    //                                         ke: req.params.ke,
-    //                                         mid: '$USER'
-    //                                     },{
-    //                                         title: 'Zip Download Error',
-    //                                         msg: errorString
-    //                                     })
-    //                                     if(zipDownload && zipDownload.destroy){
-    //                                         zipDownload.destroy()
-    //                                     }
-    //                                     res.end(s.prettyPrint({
-    //                                         ok: false,
-    //                                         msg: errorString
-    //                                     }))
-    //                                 })
-    //                                 zipDownload.on('close', function () {
-    //                                     res.end()
-    //                                     zipDownload.destroy()
-    //                                     fs.unlinkSync(zippedFile)
-    //                                 })
-    //                             })
-    //                         })
-    //                     })
-    //                 }else{
-    //                     failed({ok:false,msg:'No Videos Found'})
-    //                 }
-    //             })
-    //         },res,req);
-    //     }else{
-    //         failed({ok:false,msg:'"videos" query variable is missing from request.'})
-    //     }
-    // })
     /**
     * API : Get Cloud Video File (proxy)
      */
     app.get(config.webPaths.apiPrefix+':auth/cloudVideos/:ke/:id/:file', function (req,res){
         s.auth(req.params,function(user){
-            if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
-                res.end(user.lang['Not Permitted'])
+            const groupKey = req.params.ke
+            const monitorId = req.params.id
+            const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+            if(user.details.sub && user.details.allmonitors === '0' && (user.permissions.watch_videos === "0" || monitorRestrictions.length === 0)){
+                s.closeJsonResponse(res,{
+                    ok: false,
+                    msg: lang['Not Permitted']
+                })
                 return
             }
             var time = s.nameToTime(req.params.file)
@@ -1646,10 +1401,29 @@ module.exports = function(s,config,lang,app,io){
                 time = s.utcToLocal(time)
             }
             time = new Date(time)
-            s.sqlQuery('SELECT * FROM `Cloud Videos` WHERE ke=? AND mid=? AND `time`=? LIMIT 1',[req.params.ke,req.params.id,time],function(err,r){
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "Cloud Videos",
+                where: [
+                    ['ke','=',groupKey],
+                    ['mid','=',req.params.id],
+                    ['time','=',time]
+                ],
+                limit: 1
+            },(err,r) => {
                 if(r&&r[0]){
                     r = r[0]
-                    req.pipe(request(r.href)).pipe(res)
+                    if(JSON.parse(r.details).type === 'googd' && s.cloudDiskUseOnGetVideoDataExtensions['googd']){
+                        s.cloudDiskUseOnGetVideoDataExtensions['googd'](r).then((dataPipe) => {
+                            dataPipe.pipe(res)
+                        }).catch((err) => {
+                            console.log(err)
+                            res.end(user.lang['File Not Found in Database'])
+                        })
+                    }else{
+                        req.pipe(request(r.href)).pipe(res)
+                    }
                 }else{
                     res.end(user.lang['File Not Found in Database'])
                 }
@@ -1659,10 +1433,18 @@ module.exports = function(s,config,lang,app,io){
     /**
     * API : Get Video File
      */
+     const videoRowCaches = {}
+     const videoRowCacheTimeouts = {}
     app.get(config.webPaths.apiPrefix+':auth/videos/:ke/:id/:file', function (req,res){
         s.auth(req.params,function(user){
-            if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
-                res.end(user.lang['Not Permitted'])
+            const groupKey = req.params.ke
+            const monitorId = req.params.id
+            const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+            if(user.details.sub && user.details.allmonitors === '0' && (user.permissions.watch_videos === "0" || monitorRestrictions.length === 0)){
+                s.closeJsonResponse(res,{
+                    ok: false,
+                    msg: lang['Not Permitted']
+                })
                 return
             }
             var time = s.nameToTime(req.params.file)
@@ -1670,20 +1452,51 @@ module.exports = function(s,config,lang,app,io){
                 time = s.utcToLocal(time)
             }
             time = new Date(time)
-            s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND mid=? AND `time`=? LIMIT 1',[req.params.ke,req.params.id,time],function(err,r){
-                if(r&&r[0]){
-                    req.dir=s.getVideoDirectory(r[0])+req.params.file
-                    fs.stat(req.dir,function(err,stats){
-                        if (!err){
-                            s.streamMp4FileOverHttp(req.dir,req,res)
+            const cacheName = Object.values(req.params).join('_')
+            const cacheVideoRow = (videoRow) => {
+                videoRowCaches[cacheName] = videoRow
+                clearTimeout(videoRowCacheTimeouts[cacheName])
+                videoRowCacheTimeouts[cacheName] = setTimeout(() => {
+                    delete(videoRowCaches[cacheName])
+                },60000)
+            }
+            const sendVideo = (videoRow) => {
+                cacheVideoRow(videoRow)
+                const filePath = s.getVideoDirectory(videoRow) + req.params.file
+                fs.stat(filePath,function(err,stats){
+                    if (!err){
+                        if(req.query.json === 'true'){
+                            s.closeJsonResponse(res,videoRow)
                         }else{
-                            res.end(user.lang['File Not Found in Filesystem'])
+                            s.streamMp4FileOverHttp(filePath,req,res)
                         }
-                    })
-                }else{
-                    res.end(user.lang['File Not Found in Database'])
-                }
-            })
+                    }else{
+                        res.end(user.lang['File Not Found in Filesystem'])
+                    }
+                })
+            }
+            if(videoRowCaches[cacheName]){
+                sendVideo(videoRowCaches[cacheName])
+            }else{
+                s.knexQuery({
+                    action: "select",
+                    columns: "*",
+                    table: "Videos",
+                    where: [
+                        ['ke','=',groupKey],
+                        ['mid','=',req.params.id],
+                        ['time','=',time]
+                    ],
+                    limit: 1
+                },(err,r) => {
+                    const videoRow = r[0]
+                    if(videoRow){
+                        sendVideo(videoRow)
+                    }else{
+                        res.end(user.lang['File Not Found in Database'])
+                    }
+                })
+            }
         },res,req);
     });
     /**
@@ -1691,6 +1504,16 @@ module.exports = function(s,config,lang,app,io){
      */
      app.get(config.webPaths.apiPrefix+':auth/motion/:ke/:id', function (req,res){
          s.auth(req.params,function(user){
+             const groupKey = req.params.ke
+             const monitorId = req.params.id
+             const monitorRestrictions = s.getMonitorRestrictions(user.details,monitorId)
+             if(user.details.sub && user.details.allmonitors === '0' && monitorRestrictions.length === 0){
+                 s.closeJsonResponse(res,{
+                     ok: false,
+                     msg: lang['Not Permitted']
+                 })
+                 return
+             }
              if(req.query.data){
                  try{
                      var d = {
@@ -1756,6 +1579,7 @@ module.exports = function(s,config,lang,app,io){
                     }
                  break;
              }
+             d.doObjectDetection = (!d.details.matrices || d.details.matrices.length === 0) && (s.isAtleatOneDetectorPluginConnected && details.detector_use_detect_object === '1')
              s.triggerEvent(d)
              s.closeJsonResponse(res,{
                  ok: true,
@@ -1774,18 +1598,91 @@ module.exports = function(s,config,lang,app,io){
         },res,req);
     })
     /**
+    * API : Object Detection Counter Status
+     */
+    app.get(config.webPaths.apiPrefix+':auth/eventCountStatus/:ke/:id', function (req,res){
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,function(user){
+            if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
+                res.end(user.lang['Not Permitted'])
+                return
+            }
+            var selectedObject = s.group[req.params.ke].activeMonitors[req.params.id].eventsCounted
+            res.end(s.prettyPrint({
+                ok: true,
+                counted: Object.keys(selectedObject).length,
+                tags: selectedObject,
+            }))
+        },res,req)
+    })
+    /**
+    * API : Object Detection Counter Status
+     */
+    app.get([
+        config.webPaths.apiPrefix+':auth/eventCounts/:ke',
+        config.webPaths.apiPrefix+':auth/eventCounts/:ke/:id'
+    ], function (req,res){
+        res.setHeader('Content-Type', 'application/json')
+        s.auth(req.params,function(user){
+            const userDetails = user.details
+            const monitorId = req.params.id
+            const groupKey = req.params.ke
+            var hasRestrictions = userDetails.sub && userDetails.allmonitors !== '1';
+            s.sqlQueryBetweenTimesWithPermissions({
+                table: 'Events Counts',
+                user: user,
+                noCount: true,
+                groupKey: req.params.ke,
+                monitorId: req.params.id,
+                startTime: req.query.start,
+                endTime: req.query.end,
+                startTimeOperator: req.query.startOperator,
+                endTimeOperator: req.query.endOperator,
+                limit: req.query.limit,
+                archived: req.query.archived,
+                endIsStartTo: !!req.query.endIsStartTo,
+                parseRowDetails: true,
+                rowName: 'counts',
+                preliminaryValidationFailed: (
+                    user.permissions.watch_videos === "0" ||
+                    hasRestrictions &&
+                    (!userDetails.video_view || userDetails.video_view.indexOf(monitorId)===-1)
+                )
+            },(response) => {
+                res.end(s.prettyPrint(response))
+            })
+        },res,req)
+    })
+    /**
     * API : Camera PTZ Controller
      */
     app.get(config.webPaths.apiPrefix+':auth/control/:ke/:id/:direction', function (req,res){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
-            s.cameraControl(req.params,function(resp){
-                res.end(s.prettyPrint(resp))
-            });
+            if(req.params.direction === 'setHome'){
+                setPresetForCurrentPosition({
+                    id: req.params.id,
+                    ke: req.params.ke,
+                },(response) => {
+                    res.end(s.prettyPrint(response))
+                })
+            }else{
+                ptzControl(req.params,function(msg){
+                    s.userLog({
+                        id: req.params.id,
+                        ke: req.params.ke,
+                    },{
+                        msg: msg,
+                        direction: req.params.direction,
+                    })
+                    res.end(s.prettyPrint(msg))
+                })
+            }
         },res,req);
     })
     /**
     * API : Upload Video File
+    * API : Add "streamIn" query string to Push to "Dashcam (Streamer v2)" FFMPEG Process
      */
     app.post(config.webPaths.apiPrefix+':auth/videos/:ke/:id',fileupload(), async (req,res) => {
         var response = {ok:false}
@@ -1795,57 +1692,49 @@ module.exports = function(s,config,lang,app,io){
                 res.end(user.lang['Not Permitted'])
                 return
             }
-            var origURL = req.originalUrl.split('/')
-            var videoParam = origURL[origURL.indexOf(req.params.auth) + 1]
-            var videoSet = 'Videos'
-            req.sql='SELECT * FROM `Monitors` WHERE ke=? AND mid=?';
-            req.ar=[req.params.ke,req.params.id];
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(r && r[0]){
-                    var monitor = r[0]
-                    // req.query.overwrite === '1'
-                    if(s.group[req.params.ke] && s.group[req.params.ke].activeMonitors[req.params.id]){
-                        try {
-                            if(!req.files) {
-                                res.send({
-                                    status: false,
-                                    message: 'No file uploaded'
-                                });
-                            } else {
-                                let video = req.files.video;
-                                var time = new Date(parseInt(video.name.split('.')[0]))
-                                var filename = s.formattedTime(time) + '.' + monitor.ext
-                                video.mv(s.getVideoDirectory(monitor) +  filename,function(){
-                                    s.insertCompletedVideo(monitor,{
-                                        file : filename
-                                    },function(){
-                                        response.ok = true
-                                        response.filename = filename
-                                        res.end(s.prettyPrint({
-                                            ok: true,
-                                            message: 'File is uploaded',
-                                            data: {
-                                                name: video.name,
-                                                mimetype: video.mimetype,
-                                                size: video.size
-                                            }
-                                        }))
-                                    })
-                                });
-                            }
-                        } catch (err) {
-                            response.err = err
-                            res.status(500).end(response)
-                        }
-                    }else{
-                        response.error = 'Non Existant Monitor'
-                        res.end(s.prettyPrint(response))
+            var groupKey = req.params.ke
+            var monitorId = req.params.id
+            // req.query.overwrite === '1'
+            if(s.group[groupKey] && s.group[groupKey].activeMonitors && s.group[groupKey].activeMonitors[monitorId]){
+                var monitor = s.group[groupKey].rawMonitorConfigurations[monitorId]
+                try {
+                    if(!req.files) {
+                        res.send({
+                            status: false,
+                            message: 'No file uploaded'
+                        });
+                    } else {
+                        let video = req.files.video;
+                        var time = new Date(parseInt(video.name.split('.')[0]))
+                        var filename = s.formattedTime(time) + '.' + monitor.ext
+                        video.mv(s.getVideoDirectory(monitor) +  filename,function(){
+                            s.insertCompletedVideo(monitor,{
+                                file: filename,
+                                events: s.group[groupKey].activeMonitors[monitorId].detector_motion_count,
+                                endTime: req.body.endTime.indexOf('-') > -1 ? s.nameToTime(req.body.endTime) : parseInt(req.body.endTime) || null,
+                            },function(){
+                                response.ok = true
+                                response.filename = filename
+                                res.end(s.prettyPrint({
+                                    ok: true,
+                                    message: 'File is uploaded',
+                                    data: {
+                                        name: video.name,
+                                        mimetype: video.mimetype,
+                                        size: video.size
+                                    }
+                                }))
+                            })
+                        });
                     }
-                }else{
-                    response.msg = user.lang['No such file']
-                    res.end(s.prettyPrint(response))
+                } catch (err) {
+                    response.err = err
+                    res.status(500).end(response)
                 }
-            })
+            }else{
+                response.error = 'Non Existant Monitor'
+                res.end(s.prettyPrint(response))
+            }
         },res,req);
     })
     /**
@@ -1857,7 +1746,7 @@ module.exports = function(s,config,lang,app,io){
         config.webPaths.apiPrefix+':auth/cloudVideos/:ke/:id/:file/:mode',
         config.webPaths.apiPrefix+':auth/cloudVideos/:ke/:id/:file/:mode/:f'
     ], function (req,res){
-        req.ret={ok:false};
+        var response = {ok:false};
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
             if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.video_delete.indexOf(req.params.id)===-1){
@@ -1877,14 +1766,24 @@ module.exports = function(s,config,lang,app,io){
                     videoSet = 'Cloud Videos'
                 break;
             }
-            req.sql='SELECT * FROM `'+videoSet+'` WHERE ke=? AND mid=? AND `time`=?';
-            req.ar=[req.params.ke,req.params.id,time];
-            s.sqlQuery(req.sql,req.ar,function(err,r){
-                if(r&&r[0]){
+            const groupKey = req.params.ke
+            const monitorId = req.params.id
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: videoSet,
+                where: [
+                    ['ke','=',groupKey],
+                    ['mid','=',req.params.id],
+                    ['time','=',time]
+                ],
+                limit: 1
+            },(err,r) => {
+                if(r && r[0]){
                     r=r[0];r.filename=s.formattedTime(r.time)+'.'+r.ext;
                     switch(req.params.mode){
                         case'fix':
-                            req.ret.ok=true;
+                            response.ok = true;
                             s.video('fix',r)
                         break;
                         case'status':
@@ -1896,15 +1795,26 @@ module.exports = function(s,config,lang,app,io){
                             }
                             r.status = parseInt(req.params.f)
                             if(isNaN(req.params.f)||req.params.f===0){
-                                req.ret.msg='Not a valid value.';
+                                response.msg = 'Not a valid value.';
                             }else{
-                                req.ret.ok=true;
-                                s.sqlQuery('UPDATE `'+videoSet+'` SET status=? WHERE ke=? AND mid=? AND `time`=?',[req.params.f,req.params.ke,req.params.id,time])
+                                response.ok = true;
+                                s.knexQuery({
+                                    action: "update",
+                                    table: videoSet,
+                                    update: {
+                                        status: req.params.f
+                                    },
+                                    where: [
+                                        ['ke','=',groupKey],
+                                        ['mid','=',req.params.id],
+                                        ['time','=',time]
+                                    ]
+                                })
                                 s.tx(r,'GRP_'+r.ke);
                             }
                         break;
                         case'delete':
-                            req.ret.ok=true;
+                            response.ok = true;
                             switch(videoParam){
                                 case'cloudVideos':
                                     s.deleteVideoFromCloud(r)
@@ -1915,214 +1825,51 @@ module.exports = function(s,config,lang,app,io){
                             }
                         break;
                         default:
-                            req.ret.msg=user.lang.modifyVideoText1;
+                            response.msg = user.lang.modifyVideoText1;
                         break;
                     }
                 }else{
-                    req.ret.msg=user.lang['No such file'];
+                    response.msg = user.lang['No such file'];
                 }
-                res.end(s.prettyPrint(req.ret));
+                res.end(s.prettyPrint(response));
             })
         },res,req);
     })
     /**
     * API : Stream In to push data to ffmpeg by HTTP
      */
-    app.all(['/streamIn/:ke/:id','/streamIn/:ke/:id/:feed'], function (req, res) {
-        var checkOrigin = function(search){return req.headers.host.indexOf(search)>-1}
-        if(checkOrigin('127.0.0.1')){
-            if(!req.params.feed){req.params.feed='1'}
-            if(!s.group[req.params.ke].activeMonitors[req.params.id].streamIn[req.params.feed]){
-                s.group[req.params.ke].activeMonitors[req.params.id].streamIn[req.params.feed] = new events.EventEmitter().setMaxListeners(0)
-            }
-            //req.params.feed = Feed Number
+    app.all('/:auth/streamIn/:ke/:id', function (req, res) {
+        s.auth(req.params,function(user){
+            const ipAddress = s.getClientIp(req)
+            const groupKey = req.params.ke
+            const monitorId = req.params.id
+            const timeStartedConnection = new Date();
+            s.userLog({
+                ke: groupKey,
+                mid: monitorId,
+            },{
+                type: "HTTP streamIn Started",
+                msg: {
+                    ipAddress: ipAddress,
+                }
+            })
             res.connection.setTimeout(0);
             req.on('data', function(buffer){
-                s.group[req.params.ke].activeMonitors[req.params.id].streamIn[req.params.feed].emit('data',buffer)
+                s.group[groupKey].activeMonitors[monitorId].spawn.stdin.write(buffer)
             });
             req.on('end',function(){
-    //            console.log('streamIn closed',req.params);
+                s.userLog({
+                    ke: groupKey,
+                    mid: monitorId,
+                },{
+                    type: "HTTP streamIn Closed",
+                    msg: {
+                        timeStartedConnection: timeStartedConnection,
+                        ipAddress: ipAddress,
+                    }
+                })
             });
-        }else{
-            res.end('Local connection is only allowed.')
-        }
-    })
-    /**
-    * API : FFprobe
-     */
-    app.get(config.webPaths.apiPrefix+':auth/probe/:ke',function (req,res){
-        req.ret={ok:false};
-        res.setHeader('Content-Type', 'application/json');
-        s.auth(req.params,function(user){
-            switch(req.query.action){
-    //            case'stop':
-    //                exec('kill -9 '+user.ffprobe.pid,{detatched: true})
-    //            break;
-                default:
-                    if(!req.query.url){
-                        req.ret.error = 'Missing URL'
-                        res.end(s.prettyPrint(req.ret));
-                        return
-                    }
-                    if(user.ffprobe){
-                        req.ret.error = 'Account is already probing'
-                        res.end(s.prettyPrint(req.ret));
-                        return
-                    }
-                    user.ffprobe=1;
-                    if(req.query.flags==='default'){
-                        req.query.flags = '-v quiet -print_format json -show_format -show_streams'
-                    }else{
-                        if(!req.query.flags){
-                            req.query.flags = ''
-                        }
-                    }
-                    req.probeCommand = s.splitForFFPMEG(req.query.flags+' -i '+req.query.url).join(' ')
-                    exec('ffprobe '+req.probeCommand+' | echo ',function(err,stdout,stderr){
-                        delete(user.ffprobe)
-                        if(err){
-                           req.ret.error=(err)
-                        }else{
-                            req.ret.ok=true
-                            req.ret.result = stdout+stderr
-                        }
-                        req.ret.probe = req.probeCommand
-                        res.end(s.prettyPrint(req.ret));
-                    })
-                break;
-            }
-        },res,req);
-    })
-    /**
-    * API : ONVIF Method Controller
-     */
-    app.all([
-        config.webPaths.apiPrefix+':auth/onvif/:ke/:id/:action',
-        config.webPaths.apiPrefix+':auth/onvif/:ke/:id/:service/:action'
-    ],function (req,res){
-        var response = {ok:false};
-        res.setHeader('Content-Type', 'application/json');
-        s.auth(req.params,function(user){
-            var errorMessage = function(msg,error){
-                response.ok = false
-                response.msg = msg
-                response.error = error
-                res.end(s.prettyPrint(response))
-            }
-            var actionCallback = function(onvifActionResponse){
-                response.ok = true
-                if(onvifActionResponse.data){
-                    response.responseFromDevice = onvifActionResponse.data
-                }else{
-                    response.responseFromDevice = onvifActionResponse
-                }
-                if(onvifActionResponse.soap)response.soap = onvifActionResponse.soap
-                res.end(s.prettyPrint(response))
-            }
-            var isEmpty = function(obj) {
-                for(var key in obj) {
-                    if(obj.hasOwnProperty(key))
-                        return false;
-                }
-                return true;
-            }
-            var doAction = function(Camera){
-                var completeAction = function(command){
-                    if(command.then){
-                        command.then(actionCallback).catch(function(error){
-                            errorMessage('Device Action responded with an error',error)
-                        })
-                    }else if(command){
-                        response.ok = true
-                        response.repsonseFromDevice = command
-                        res.end(s.prettyPrint(response))
-                    }else{
-                        response.error = 'Big Errors, Please report it to Shinobi Development'
-                        res.end(s.prettyPrint(response))
-                    }
-                }
-                var action
-                if(req.params.service){
-                    if(Camera.services[req.params.service] === undefined){
-                        return errorMessage('This is not an available service. Please use one of the following : '+Object.keys(Camera.services).join(', '))
-                    }
-                    if(Camera.services[req.params.service] === null){
-                        return errorMessage('This service is not activated. Maybe you are not connected through ONVIF. You can test by attempting to use the "Control" feature with ONVIF in Shinobi.')
-                    }
-                    action = Camera.services[req.params.service][req.params.action]
-                }else{
-                    action = Camera[req.params.action]
-                }
-                // console.log(s.parseJSON(req.query.options))
-                if(!action || typeof action !== 'function'){
-                    errorMessage(req.params.action+' is not an available ONVIF function. See https://github.com/futomi/node-onvif for functions.')
-                }else{
-                    var argNames = s.getFunctionParamNames(action)
-                    var options
-                    var command
-                    if(argNames[0] === 'options' || argNames[0] === 'params'){
-                        options = {}
-                        if(req.query.options){
-                            var jsonRevokedText = 'JSON not formated correctly'
-                            try{
-                                options = JSON.parse(req.query.options)
-                            }catch(err){
-                                return errorMessage(jsonRevokedText,err)
-                            }
-                        }else if(req.body.options){
-                            try{
-                                options = JSON.parse(req.body.options)
-                            }catch(err){
-                                return errorMessage(jsonRevokedText,err)
-                            }
-                        }else if(req.query.params){
-                            try{
-                                options = JSON.parse(req.query.params)
-                            }catch(err){
-                                return errorMessage(jsonRevokedText,err)
-                            }
-                        }else if(req.body.params){
-                            try{
-                                options = JSON.parse(req.body.params)
-                            }catch(err){
-                                return errorMessage(jsonRevokedText,err)
-                            }
-                        }
-                    }
-                    if(req.params.service){
-                        command = Camera.services[req.params.service][req.params.action](options)
-                    }else{
-                        command = Camera[req.params.action](options)
-                    }
-                    completeAction(command)
-                }
-            }
-            if(!s.group[req.params.ke].activeMonitors[req.params.id].onvifConnection){
-                //prepeare onvif connection
-                var controlURL
-                var monitorConfig = s.group[req.params.ke].rawMonitorConfigurations[req.params.id]
-                if(!monitorConfig.details.control_base_url||monitorConfig.details.control_base_url===''){
-                    controlURL = s.buildMonitorUrl(monitorConfig, true)
-                }else{
-                    controlURL = monitorConfig.details.control_base_url
-                }
-                var controlURLOptions = s.cameraControlOptionsFromUrl(controlURL,monitorConfig)
-                //create onvif connection
-                s.group[req.params.ke].activeMonitors[req.params.id].onvifConnection = new onvif.OnvifDevice({
-                    xaddr : 'http://' + controlURLOptions.host + ':' + controlURLOptions.port + '/onvif/device_service',
-                    user : controlURLOptions.username,
-                    pass : controlURLOptions.password
-                })
-                var device = s.group[req.params.ke].activeMonitors[req.params.id].onvifConnection
-                device.init().then((info) => {
-                    if(info)doAction(device)
-                }).catch(function(error){
-                    return errorMessage('Device responded with an error',error)
-                })
-            }else{
-                doAction(s.group[req.params.ke].activeMonitors[req.params.id].onvifConnection)
-            }
-        },res,req);
+        },res,req)
     })
     /**
     * API : Account Edit from Dashboard

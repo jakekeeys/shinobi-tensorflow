@@ -4,7 +4,11 @@ module.exports = function(s){
         config : s.mainDirectory+'/conf.json',
         languages : s.mainDirectory+'/languages'
     }
-    var config = require(s.location.config);
+    try{
+        var config = require(s.location.config)
+    }catch(err){
+        var config = {}
+    }
     if(!config.productType){
         config.productType = 'CE'
     }

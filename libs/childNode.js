@@ -3,6 +3,7 @@ var http = require('http');
 var https = require('https');
 var express = require('express');
 module.exports = function(s,config,lang,app,io){
+    const { cameraDestroy } = require('./monitor/utils.js')(s,config,lang)
     //setup Master for childNodes
     if(config.childNodes.enabled === true && config.childNodes.mode === 'master'){
         s.childNodes = {};
@@ -63,6 +64,11 @@ module.exports = function(s,config,lang,app,io){
                             break;
                             case'sql':
                                 s.sqlQuery(d.query,d.values,function(err,rows){
+                                    cn.emit('c',{f:'sqlCallback',rows:rows,err:err,callbackId:d.callbackId});
+                                });
+                            break;
+                            case'knex':
+                                s.knexQuery(d.options,function(err,rows){
                                     cn.emit('c',{f:'sqlCallback',rows:rows,err:err,callbackId:d.callbackId});
                                 });
                             break;
@@ -145,16 +151,16 @@ module.exports = function(s,config,lang,app,io){
                                     dir : s.getVideoDirectory(d.d),
                                     file : d.filename,
                                     filename : d.filename,
-                                    filesizeMB : parseFloat((d.filesize/1000000).toFixed(2))
+                                    filesizeMB : parseFloat((d.filesize/1048576).toFixed(2))
                                 }
                                 s.insertDatabaseRow(d.d,insert)
                                 s.insertCompletedVideoExtensions.forEach(function(extender){
                                     extender(d.d,insert)
                                 })
                                 //purge over max
-                                s.purgeDiskForGroup(d)
+                                s.purgeDiskForGroup(d.ke)
                                 //send new diskUsage values
-                                s.setDiskUsedForGroup(d,insert.filesizeMB)
+                                s.setDiskUsedForGroup(d.ke,insert.filesizeMB)
                                 clearTimeout(s.group[d.ke].activeMonitors[d.mid].recordingChecker)
                                 clearTimeout(s.group[d.ke].activeMonitors[d.mid].streamChecker)
                             break;
@@ -213,11 +219,19 @@ module.exports = function(s,config,lang,app,io){
             s.queuedSqlCallbacks[callbackId] = onMoveOn
             s.cx({f:'sql',query:query,values:values,callbackId:callbackId});
         }
-        setInterval(function(){
-            s.cpuUsage(function(cpu){
-                s.cx({f:'cpu',cpu:parseFloat(cpu)})
+        s.knexQuery = function(options,onMoveOn){
+            var callbackId = s.gid()
+            if(typeof onMoveOn !== 'function'){onMoveOn=function(){}}
+            s.queuedSqlCallbacks[callbackId] = onMoveOn
+            s.cx({f:'knex',options:options,callbackId:callbackId});
+        }
+        setInterval(async () => {
+            const cpu = await s.cpuUsage()
+            s.cx({
+                f: 'cpu',
+                cpu: parseFloat(cpu)
             })
-        },2000)
+        },5000)
         childIO.on('connect', function(d){
             console.log('CHILD CONNECTION SUCCESS')
             s.cx({
@@ -241,7 +255,7 @@ module.exports = function(s,config,lang,app,io){
                 break;
                 case'kill':
                     s.initiateMonitorObject(d.d);
-                    s.cameraDestroy(s.group[d.d.ke].activeMonitors[d.d.id].spawn,d.d)
+                    cameraDestroy(d.d)
                     var childNodeIp = s.group[d.d.ke].activeMonitors[d.d.id]
                 break;
                 case'sync':

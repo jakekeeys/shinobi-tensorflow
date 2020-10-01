@@ -16,7 +16,7 @@ module.exports = function(s,config,lang){
                       "field": lang.Mode,
                       "fieldType": "select",
                       "description": "This is the primary task of the monitor.",
-                      "default": "stop",
+                      "default": "start",
                       "example": "",
                       "selector": "h_m",
                       "possible": [
@@ -52,7 +52,7 @@ module.exports = function(s,config,lang){
                       "name": "name",
                       "field": lang.Name,
                       "description": "This is the human-readable display name for the monitor.",
-                      "example": "Bunny"
+                      "example": "Home-Front"
                    },
                    {
                       "name": "detail=max_keep_days",
@@ -74,6 +74,41 @@ module.exports = function(s,config,lang){
                       "possible": s.listOfStorage
                   }
                 ]
+             },
+             "Presets": {
+                id: "monSectionPresets",
+               "name": lang.Presets,
+               "color": "purple",
+                isSection: true,
+               "info": [
+                   {
+                       "name": lang['Add New'],
+                       "color": "grey",
+                       isFormGroupGroup: true,
+                       "info": [
+                           {
+                              "id": "monitorPresetsName",
+                              "field": lang['Preset Name'],
+                          },
+                           {
+                              "fieldType": "btn",
+                              "class": `btn-success add-new`,
+                              "btnContent": `<i class="fa fa-plus"></i> &nbsp; ${lang['Add']}`,
+                           },
+                       ]
+                   },
+                   {
+                       "fieldType": 'ul',
+                       "id": "monitorPresetsSelection",
+                       "class": "mdl-list"
+                   },
+                   {
+                      "fieldType": "btn",
+                      "attribute": `data-toggle="modal" data-target="#schedules"`,
+                      "class": `btn-info`,
+                      "btnContent": `<i class="fa fa-clock-o"></i> &nbsp; ${lang['Schedules']}`,
+                   },
+               ],
              },
              "Connection": {
                 "name": lang.Connection,
@@ -163,8 +198,8 @@ module.exports = function(s,config,lang){
                        "field": lang.Automatic,
                        "description": "Feed the individual pieces required to build a stream URL or provide the full URL and allow Shinobi to parse it for you.",
                        "selector": "h_auto_host",
-                       "form-group-class": "h_t_input h_t_h264 h_t_hls h_t_mp4 h_t_jpeg h_t_mjpeg",
-                       "form-group-class-pre-layer":"h_t_input h_t_h264 h_t_hls h_t_mp4 h_t_jpeg h_t_mjpeg h_t_local",
+                       "form-group-class": "h_t_input h_t_h264 h_t_hls h_t_mp4 h_t_jpeg h_t_mjpeg h_t_mxpeg",
+                       "form-group-class-pre-layer":"h_t_input h_t_h264 h_t_hls h_t_mp4 h_t_jpeg h_t_mjpeg h_t_mxpeg h_t_local",
                        "default": "",
                        "example": "",
                        "fieldType": "select",
@@ -342,7 +377,7 @@ module.exports = function(s,config,lang){
                        "name": "detail=fatal_max",
                        "field": lang['Retry Connection'],
                        "description": "The number of times to retry for network connection between the server and camera before setting the monitor to Disabled. No decimals. Set to 0 to retry forever.",
-                       "default": "0",
+                       "default": "10",
                        "example": "",
                        "possible": "",
                        "form-group-class": "h_t_input h_t_h264 h_t_hls h_t_mp4 h_t_jpeg h_t_mjpeg h_t_local",
@@ -386,6 +421,25 @@ module.exports = function(s,config,lang){
                        ]
                     },
                     {
+                       "name": "detail=onvif_non_standard",
+                       "field": lang['Non-Standard ONVIF'],
+                       "description": "Is this a Non-Standard ONVIF camera?",
+                       "default": "0",
+                       "example": "",
+                       "form-group-class": "h_onvif_input h_onvif_1",
+                       "fieldType": "select",
+                       "possible": [
+                           {
+                              "name": lang.No,
+                              "value": "0"
+                           },
+                           {
+                              "name": lang.Yes,
+                              "value": "1"
+                           }
+                       ]
+                    },
+                    {
                         hidden: true,
                        "name": "detail=onvif_port",
                        "field": lang['ONVIF Port'],
@@ -393,6 +447,11 @@ module.exports = function(s,config,lang){
                        "default": "8000",
                        "example": "",
                        "form-group-class": "h_onvif_input h_onvif_1",
+                    },
+                    {
+                       "fieldType": "btn",
+                       "class": `btn-success probe_config`,
+                       "btnContent": `<i class="fa fa-search"></i> &nbsp; ${lang.FFprobe}`,
                     },
                 ]
             },
@@ -477,6 +536,25 @@ module.exports = function(s,config,lang){
                       "default": "",
                       "example": "25",
                       "possible": ""
+                   },
+                   {
+                      "name": "detail=wall_clock_timestamp_ignore",
+                      "field": lang['Use Camera Timestamps'],
+                      "description": "Base all incoming camera data in camera time instead of server time.",
+                      "default": "0",
+                      "example": "",
+                      "form-group-class": "h_t_input h_t_h264",
+                      "fieldType": "select",
+                      "possible": [
+                          {
+                             "name": lang.No,
+                             "value": "0"
+                          },
+                          {
+                             "name": lang.Yes,
+                             "value": "1"
+                          }
+                      ]
                    },
                    {
                        hidden: true,
@@ -1427,7 +1505,7 @@ module.exports = function(s,config,lang){
                       "possible": "1-23"
                    },
                    {
-                      "name": "preset_record",
+                      "name": "detail=preset_record",
                       "field": lang.Preset,
                       "description": "Preset flag for certain video encoders. If you find your camera is crashing every few seconds : try leaving it blank.",
                       "default": "",
@@ -1493,7 +1571,7 @@ module.exports = function(s,config,lang){
                    },
                    {
                       "name": "fps",
-                      "field": lang["Video Record Rate (FPS)"],
+                      "field": lang["Video Record Rate"],
                       "description": "The speed in which frames are recorded to files, Frames Per Second. Be aware there is no default. This can lead to large files. Best to set this camera-side.",
                       "default": "",
                       "example": "2",
@@ -1788,6 +1866,18 @@ module.exports = function(s,config,lang){
                       "fieldType": "select",
                       "possible": [
                         {
+                            "name": `.1 ${lang.minutes}`,
+                            "value": "6"
+                        },
+                        {
+                            "name": `.25 ${lang.minutes}`,
+                            "value": "15"
+                        },
+                        {
+                            "name": `.5 ${lang.minutes}`,
+                            "value": "30"
+                        },
+                        {
                             "name": `5 ${lang.minutes}`,
                             "value": "300"
                         },
@@ -1847,7 +1937,7 @@ module.exports = function(s,config,lang){
              },
              "Timelapse Watermark": {
                 "id": "monSectionRecordingWatermark",
-                "name": lang['Recording Watermark'],
+                "name": lang['Timelapse Watermark'],
 
                 "color": "red",
                 isAdvanced: true,
@@ -1979,6 +2069,16 @@ module.exports = function(s,config,lang){
                    },
                    {
                        hidden: true,
+                      "name": "detail=cust_detect_object",
+                      "field": lang["Object Detector Flags"],
+                      "description": "Custom Flags that bind to the stream Detector uses for analyzation.",
+                      "default": "",
+                      "example": "",
+                      "form-group-class": "shinobi-detector",
+                      "possible": ""
+                   },
+                   {
+                       hidden: true,
                       "name": "detail=cust_sip_record",
                       "field": lang['Traditional Recording Flags'],
                       "description": "Custom Flags that bind to the output that the Event-Based Recordings siphon from.",
@@ -2078,6 +2178,36 @@ module.exports = function(s,config,lang){
                    },
                    {
                        hidden: true,
+                       "form-group-class": "h_det_input h_det_1",
+                      "name": "detail=detector_fps",
+                      "field": lang["Detector Rate"],
+                      "description": "How many frames a second to send to the motion detector; 2 is the default.",
+                      "default": "2",
+                      "example": "",
+                      "possible": ""
+                   },
+                   {
+                       hidden: true,
+                       "form-group-class": "h_det_input h_det_1",
+                      "name": "detail=detector_scale_x",
+                      "field": lang["Feed-in Image Width"],
+                      "description": "Width of the image being detected. Smaller sizes take less CPU.",
+                      "default": "",
+                      "example": "640",
+                      "possible": ""
+                   },
+                   {
+                       hidden: true,
+                       "form-group-class": "h_det_input h_det_1",
+                      "name": "detail=detector_scale_y",
+                      "field": lang["Feed-in Image Height"],
+                      "description": "Height of the image being detected. Smaller sizes take less CPU.",
+                      "default": "",
+                      "example": "480",
+                      "possible": ""
+                   },
+                   {
+                       hidden: true,
                       "name": "detail=detector_lock_timeout",
                       "field": lang['Allow Next Trigger'],
                       "description": "Lockout for when the next trigger is allowed, to avoid overloading the database and receiving clients. Measured in milliseconds.",
@@ -2105,36 +2235,6 @@ module.exports = function(s,config,lang){
                             "value": "1"
                          }
                       ]
-                   },
-                   {
-                       hidden: true,
-                      "name": "detail=detector_fps",
-                      "field": lang["Detector Rate"],
-                      "description": "How many frames a second to send to the motion detector; 2 is the default.",
-                      "default": "2",
-                      "example": "",
-                      "form-group-class": "h_det_input h_det_1",
-                      "possible": ""
-                   },
-                   {
-                       hidden: true,
-                      "name": "detail=detector_scale_x",
-                      "field": lang["Feed-in Image Width"],
-                      "description": "Width of the image being detected. Smaller sizes take less CPU.",
-                      "default": "",
-                      "example": "640",
-                      "form-group-class": "h_det_input h_det_1",
-                      "possible": ""
-                   },
-                   {
-                       hidden: true,
-                      "name": "detail=detector_scale_y",
-                      "field": lang["Feed-in Image Height"],
-                      "description": "Height of the image being detected. Smaller sizes take less CPU.",
-                      "default": "",
-                      "example": "480",
-                      "form-group-class": "h_det_input h_det_1",
-                      "possible": ""
                    },
                    {
                        hidden: true,
@@ -2294,7 +2394,7 @@ module.exports = function(s,config,lang){
                               "class": "mdl-list"
                           },
                           {
-                              hidden: true,
+                             hidden: true,
                              "name": "detail=group_detector_multi",
                              "field": "",
                              "description": "",
@@ -2403,6 +2503,7 @@ module.exports = function(s,config,lang){
                       "name": "detail=snap_seconds_inward",
                       "field": lang['Delay for Snapshot'],
                       "description": lang['in seconds'],
+                      "form-group-class": "h_det_input h_det_1",
                       "default": "0",
                    },
                    {
@@ -2431,7 +2532,6 @@ module.exports = function(s,config,lang){
                       "description": "The amount of time until a trigger is allowed to send another email with motion details and another image.",
                       "default": "10",
                       "example": "",
-                      "form-group-class": "h_det_email_input h_det_email_1",
                       "form-group-class-pre-layer": "h_det_input h_det_1",
                       "possible": ""
                    },
@@ -2575,37 +2675,37 @@ module.exports = function(s,config,lang){
                                  }
                               ]
                            },
-                           {
-                              "name": "detail=detector_show_matrix",
-                              "field": lang["Show Matrices"],
-                              "description": "Outline which pixels are detected as changed in one matrix.",
-                              "default": "0",
-                              "example": "",
-                              "fieldType": "select",
-                              "form-group-class": "h_det_pam_input h_det_pam_1",
-                              "possible": [
-                                 {
-                                    "name": lang.No,
-                                    "value": "0"
-                                 },
-                                 {
-                                    "name": lang.Yes,
-                                    "value": "1"
-                                 }
-                              ]
-                           },
+                           // {
+                           //    "name": "detail=detector_show_matrix",
+                           //    "field": lang["Show Matrices"],
+                           //    "description": "Outline which pixels are detected as changed in one matrix.",
+                           //    "default": "0",
+                           //    "example": "",
+                           //    "fieldType": "select",
+                           //    "form-group-class": "h_det_pam_input h_det_pam_1",
+                           //    "possible": [
+                           //       {
+                           //          "name": lang.No,
+                           //          "value": "0"
+                           //       },
+                           //       {
+                           //          "name": lang.Yes,
+                           //          "value": "1"
+                           //       }
+                           //    ]
+                           // },
                            {
                               "name": "detail=detector_sensitivity",
-                              "field": lang.Indifference,
-                              "description": "This can mean multiple things depending on the detector used. Built-In Motion Detection defines this as \"Percentage Changed in View or Region\"",
-                              "default": "0.5",
+                              "field": lang['Minimum Change'],
+                              "description": "The motion confidence rating must exceed this value to be seen as a trigger. This number correlates directly to the confidence rating returned by the motion detector. This option was previously named \"Indifference\".",
+                              "default": "10",
                               "example": "10",
                               "possible": ""
                            },
                            {
                               "name": "detail=detector_max_sensitivity",
-                              "field": lang["Max Indifference"],
-                              "description": "An upperbound to indifference. Any value over this amount will be ignored.",
+                              "field": lang["Maximum Change"],
+                              "description": "The motion confidence rating must be lower than this value to be seen as a trigger. Leave blank for no maximum. This option was previously named \"Max Indifference\".",
                               "default": "",
                               "example": "75",
                               "possible": ""
@@ -2629,7 +2729,7 @@ module.exports = function(s,config,lang){
                            {
                               "name": "detail=detector_frame",
                               "field": lang["Full Frame Detection"],
-                              "description": "This will read the entire frame for pixel differences.",
+                              "description": "This will read the entire frame for pixel differences. This is the same as creating a region that covers the entire screen.",
                               "default": "1",
                               "example": "",
                               "fieldType": "select",
@@ -2937,6 +3037,26 @@ module.exports = function(s,config,lang){
                             ]
                          },
                          {
+                             hidden: true,
+                            "name": "detail=detector_obj_count_in_region",
+                            "field": lang["Count Objects only inside Regions"],
+                            "description": "Count Objects only inside Regions.",
+                            "default": "0",
+                            "example": "",
+                            "form-group-class": "h_det_count_input h_det_count_1",
+                            "fieldType": "select",
+                            "possible": [
+                               {
+                                  "name": lang.No,
+                                  "value": "0"
+                               },
+                               {
+                                  "name": lang.Yes,
+                                  "value": "1"
+                               }
+                            ]
+                         },
+                         {
                             "name": "detail=detector_obj_region",
                             "field": lang['Require Object to be in Region'],
                             "description": "",
@@ -2978,12 +3098,9 @@ module.exports = function(s,config,lang){
                            "name": "detail=detector_fps_object",
                            "field": lang['Frame Rate'],
                            "description": "",
-                           "default": "1",
+                           "default": "2",
                            "example": "",
-                           "form-group-class": "h_det_mot_fir_input h_det_mot_fir_1",
-                           "form-group-class-pre-layer": "h_det_pam_input h_det_pam_1",
-                           "fieldType": "number",
-                           "numberMin": "1",
+                           "form-group-class": "h_casc_input h_casc_1",
                            "possible": ""
                         },
                         {
@@ -2993,8 +3110,7 @@ module.exports = function(s,config,lang){
                            "description": "",
                            "default": "",
                            "example": "",
-                           "form-group-class": "h_det_mot_fir_input h_det_mot_fir_1",
-                           "form-group-class-pre-layer": "h_det_pam_input h_det_pam_1",
+                           "form-group-class": "h_casc_input h_casc_1",
                            "fieldType": "number",
                            "numberMin": "1",
                            "possible": ""
@@ -3006,8 +3122,7 @@ module.exports = function(s,config,lang){
                            "description": "",
                            "default": "",
                            "example": "",
-                           "form-group-class": "h_det_mot_fir_input h_det_mot_fir_1",
-                           "form-group-class-pre-layer": "h_det_pam_input h_det_pam_1",
+                           "form-group-class": "h_casc_input h_casc_1",
                            "fieldType": "number",
                            "numberMin": "1",
                            "possible": ""
@@ -3325,6 +3440,53 @@ module.exports = function(s,config,lang){
                        "possible": ""
                     },
                     {
+                       "name": "detail=detector_ptz_follow",
+                       "field": lang['PTZ Tracking'],
+                       "description": "Follow the largest detected object with PTZ? Requires an Object Detector running or matrices provided with events.",
+                       "default": "0",
+                       "example": "",
+                       "selector": "h_det_tracking",
+                       "fieldType": "select",
+                       "possible": [
+                           {
+                              "name": lang.No,
+                              "value": "0"
+                           },
+                           {
+                              "name": lang.Yes,
+                              "value": "1"
+                           }
+                       ]
+                    },
+                    {
+                       "name": "detail=detector_ptz_follow_target",
+                       "field": lang['PTZ Tracking Target'],
+                       "description": "",
+                       "default": "person",
+                       "example": "",
+                       "form-group-class": "h_det_tracking_input h_det_tracking_1",
+                       "possible": ""
+                    },
+                    {
+                       "name": "detail=detector_obj_count",
+                       "field": lang["Count Objects"],
+                       "description": "Count detected objects.",
+                       "default": "0",
+                       "example": "",
+                       "selector": "h_det_count",
+                       "fieldType": "select",
+                       "possible": [
+                          {
+                             "name": lang.No,
+                             "value": "0"
+                          },
+                          {
+                             "name": lang.Yes,
+                             "value": "1"
+                          }
+                       ]
+                    },
+                    {
                        "name": "detail=control_url_center",
                        "field": lang['Center'],
                        "description": "",
@@ -3465,6 +3627,24 @@ module.exports = function(s,config,lang){
                        "form-group-class": "h_control_call_input h_control_call_GET h_control_call_PUT h_control_call_POST",
                        "possible": ""
                     },
+                    {
+                       "name": "detail=control_invert_y",
+                       "field": lang["Invert Y-Axis"],
+                       "description": "For When your camera is mounted upside down or uses inverted vertical controls.",
+                       "default": "0",
+                       "example": "",
+                       "fieldType": "select",
+                       "possible": [
+                          {
+                             "name": lang.No,
+                             "value": "0"
+                          },
+                          {
+                             "name": lang.Yes,
+                             "value": "1"
+                          }
+                       ]
+                    },
                 ]
              },
              "Grouping": {
@@ -3489,7 +3669,6 @@ module.exports = function(s,config,lang){
              "Copy Settings": {
                 id: "monSectionCopying",
                "name": lang['Copy Settings'],
-
                "color": "orange",
                 isSection: true,
                "info": [
@@ -3851,6 +4030,43 @@ module.exports = function(s,config,lang){
        "Account Settings": {
           "section": "Account Settings",
           "blocks": {
+             "ShinobiHub": {
+                 "evaluation": "!details.sub && details.use_shinobihub !== '0'",
+                 "name": lang["ShinobiHub"],
+                 "color": "purple",
+                 "info": [
+                     {
+                        "name": "detail=shinobihub",
+                        "selector":"autosave_shinobihub",
+                        "field": lang.Autosave,
+                        "description": "",
+                        "default": "0",
+                        "example": "",
+                        "fieldType": "select",
+                        "possible": [
+                            {
+                               "name": lang.No,
+                               "value": "0"
+                            },
+                            {
+                               "name": lang.Yes,
+                               "value": "1"
+                            }
+                        ]
+                     },
+                     {
+                        "hidden": true,
+                        "field": lang['API Key'],
+                        "name": "detail=shinobihub_key",
+                        "placeholder": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+                        "form-group-class": "autosave_shinobihub_input autosave_shinobihub_1",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                 ]
+             },
              "2-Factor Authentication": {
                  "name": lang['2-Factor Authentication'],
                  "color": "grey",
@@ -3910,7 +4126,7 @@ module.exports = function(s,config,lang){
                           }
                        ],
                        "form-group-class": "u_discord_bot_input u_discord_bot_1"
-                    }
+                    },
                 ]
              },
              "Profile": {

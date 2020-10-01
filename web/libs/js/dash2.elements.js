@@ -79,7 +79,7 @@ $(document).ready(function(e){
         $.ccio.tm(4,d,'#logs,'+id+'.monitor_item .logs:visible,'+id+'#add_monitor:visible .logs',user)
     }
     //open all monitors
-    $('[class_toggle="list-blocks"][data-target="#left_menu"]').dblclick(function(){
+    $('.open-all-monitors').click(function(){
         $('#monitors_list .monitor_block').each(function(n,v){
             var el = $(v)
             var ke = el.attr('ke')
@@ -122,7 +122,7 @@ $(document).ready(function(e){
     $('body')
     .on('click','.logout',function(e){
         var logout = function(user,callback){
-            $.get($.ccio.init('location',user)+user.auth_token+'/logout/'+user.ke+'/'+user.uid,callback)
+            $.get(getApiPrefix() + '/logout/'+user.ke+'/'+user.uid,callback)
         }
         $.each($.users,function(n,linkedShinobiUser){
             logout(linkedShinobiUser,function(){});
@@ -157,12 +157,12 @@ $(document).ready(function(e){
                 e.preventDefault();
                 e.href=$(this).attr('href')
                 var el = $('#video_viewer')
-                var modalBody = el.find('.modal-body')
+                var videoContainer = el.find('.video-container')
                 el.find('.modal-title span').html(e.mon.name+' - '+e.file)
                 var html = '<video class="video_video" video="'+e.href+'" autoplay loop controls><source src="'+e.href+'" type="video/'+e.mon.ext+'"></video><br><small class="msg"></small>'
-                modalBody.html(html)
+                videoContainer.html(html)
                 el.find('video')[0].onerror = function(){
-                    modalBody.find('.msg').text(lang.h265BrowserText1)
+                    videoContainer.find('.msg').text(lang.h265BrowserText1)
                 }
                 el.attr('mid',e.mid);
                 footer = el.find('.modal-footer');
@@ -178,6 +178,28 @@ $(document).ready(function(e){
                         if(d.ok !== true)console.log(d,new Error())
                     })
                 }
+                setTimeout(function(){
+                    destroyGpsHandlerForVideoFile(`video_viewer_gps_map_map`)
+                    var videoElement = videoContainer.find('.video_video')
+                    var gpsContainer = videoContainer.next()
+                    var fullWidth = 'col-md-12'
+                    var partialWidth = 'col-md-8'
+                    createGpsHandlerForVideoFile({
+                        ke: e.ke,
+                        mid: e.mid,
+                        file: e.file,
+                        targetVideoElement: videoElement,
+                        targetMapElement: `video_viewer_gps_map`,
+                    },function(response){
+                        if(response.ok){
+                            videoContainer.addClass(partialWidth).removeClass(fullWidth)
+                            gpsContainer.show()
+                        }else{
+                            videoContainer.addClass(fullWidth).removeClass(partialWidth)
+                            gpsContainer.hide()
+                        }
+                    })
+                },2000)
             break;
             case'delete':
                 e.preventDefault();
@@ -186,7 +208,7 @@ $(document).ready(function(e){
                 console.log('videoLink',videoLink)
                 console.log(href)
                 if(!href){
-                    href = $.ccio.init('location',$.users[e.auth])+e.auth+'/videos/'+e.ke+'/'+e.mid+'/'+e.file+'/delete<% if(config.useUTC === true){%>?isUTC=true<%}%>'
+                    href = $.ccio.init('location',$.users[e.auth])+e.auth+'/videos/'+e.ke+'/'+e.mid+'/'+e.file+'/delete'
                 }
                 console.log(href)
                 $.confirm.e.modal('show');
@@ -221,50 +243,70 @@ $(document).ready(function(e){
         e.value = e.e.val()
         $.ccio.op(e.localStorage,e.value)
     })
-    .on('click','[system]',function(e){
-      var e={};
-        e.e=$(this),
-        e.a=e.e.attr('system');//the function
-        switch(e.a){
-            case'switch':
-                e.switch=e.e.attr('switch');
-                e.o=$.ccio.op().switches
-                if(!e.o){
-                    e.o={}
-                }
-                if(!e.o[e.switch]){
-                    e.o[e.switch]=0
-                }
-                if(e.o[e.switch]===1){
-                    e.o[e.switch]=0
+    .on('click','[system]',function(){
+        var e = {};
+        var el = $(this)
+        switch(el.attr('system')){
+            case'monitorMuteAudioSingle':
+                var monitorId = el.attr('mid')
+                var masterMute = $.ccio.op().switches.monitorMuteAudio
+                var monitorMutes = $.ccio.op().monitorMutes || {}
+                monitorMutes[monitorId] = monitorMutes[monitorId] === 1 ? 0 : 1
+                $.ccio.op('monitorMutes',monitorMutes)
+                var vidEl = $('.monitor_item[mid="' + monitorId + '"] video')[0]
+                if(monitorMutes[monitorId] === 1){
+                    vidEl.muted = true
                 }else{
-                    e.o[e.switch]=1
+                    if(masterMute !== 1){
+                        vidEl.muted = false
+                    }
                 }
-                $.ccio.op('switches',e.o)
-                switch(e.switch){
+                var volumeIcon = monitorMutes[monitorId] !== 1 ? 'volume-up' : 'volume-off'
+                $(this).find('i').removeClass('fa-volume-up fa-volume-off').addClass('fa-' + volumeIcon)
+            break;
+            case'switch':
+                var systemSwitch = el.attr('switch');
+                var theSwitches = $.ccio.op().switches
+                if(!theSwitches){
+                    theSwitches={}
+                }
+                if(!theSwitches[systemSwitch]){
+                    theSwitches[systemSwitch]=0
+                }
+                if(theSwitches[systemSwitch]===1){
+                    theSwitches[systemSwitch]=0
+                }else{
+                    theSwitches[systemSwitch]=1
+                }
+                $.ccio.op('switches',theSwitches)
+                switch(systemSwitch){
                     case'monitorOrder':
-                        if(e.o[e.switch] !== 1){
+                        if(theSwitches[systemSwitch] !== 1){
                             $('.monitor_item').attr('data-gs-auto-position','yes')
                         }else{
                             $('.monitor_item').attr('data-gs-auto-position','no')
                         }
                     break;
                     case'monitorMuteAudio':
-                        $('.monitor_item video').each(function(n,el){
-                            if(e.o[e.switch] === 1){
-                                el.muted = true
+                        var monitorMutes = $.ccio.op().monitorMutes || {}
+                        $('.monitor_item video').each(function(n,vidEl){
+                            var monitorId = $(this).parents('[mid]').attr('mid')
+                            if(theSwitches[systemSwitch] === 1){
+                                vidEl.muted = true
                             }else{
-                                el.muted = false
+                                if(monitorMutes[monitorId] !== 1){
+                                    vidEl.muted = false
+                                }
                             }
                         })
                     break;
                 }
-                switch(e.e.attr('type')){
+                switch(el.attr('type')){
                     case'text':
-                        if(e.o[e.switch]===1){
-                            e.e.addClass('text-success')
+                        if(theSwitches[systemSwitch]===1){
+                            el.addClass('text-success')
                         }else{
-                            e.e.removeClass('text-success')
+                            el.removeClass('text-success')
                         }
                     break;
                 }
@@ -367,7 +409,7 @@ $(document).ready(function(e){
                     if($.ccio.mon[e.ke+e.mid+user.auth_token].popOut){
                         $.ccio.mon[e.ke+e.mid+user.auth_token].popOut.close()
                     }
-                    $.ccio.mon[e.ke+e.mid+user.auth_token].popOut = window.open($.ccio.init('location',user)+user.auth_token+'/embed/'+e.ke+'/'+e.mid+'/fullscreen|jquery|relative|gui','pop_'+e.mid+user.auth_token,'height='+img.height+',width='+img.width);
+                    $.ccio.mon[e.ke+e.mid+user.auth_token].popOut = window.open(getApiPrefix() + '/embed/'+e.ke+'/'+e.mid+'/fullscreen|jquery|relative|gui','pop_'+e.mid+user.auth_token,'height='+img.height+',width='+img.width);
                 }
                 if(e.mon.watch===1){
                     $.ccio.snapshot(e,function(url){
@@ -386,22 +428,19 @@ $(document).ready(function(e){
             case'mode':
                 e.mode=e.e.attr('mode')
                 if(e.mode){
-                    $.getJSON($.ccio.init('location',user)+user.auth_token+'/monitor/'+e.ke+'/'+e.mid+'/'+e.mode,function(d){
+                    $.getJSON(getApiPrefix() + '/monitor/'+e.ke+'/'+e.mid+'/'+e.mode,function(d){
                         $.ccio.log(d)
                     })
                 }
             break;
-            case'timelapseJpeg':
-                $.timelapseJpeg.e.modal('show')
-                $.timelapseJpeg.monitors.find('.monitor').remove()
-                $.each($.ccio.mon,function(n,v){
-                    $.timelapseJpeg.monitors.append('<option class="monitor" value="'+v.mid+'">'+v.name+'</option>')
+            case'trigger-event':
+                $.getJSON(getApiPrefix() + '/motion/'+e.ke+'/'+e.mid+'/?data={"plug":"camera1","name":"stairs","reason":"motion","confidence":100}',function(d){
+                    $.ccio.log(d)
                 })
-                e.e=$.timelapseJpeg.monitors.find('.monitor').prop('selected',false)
-                if(e.mid!==''){
-                    e.e=$.timelapseJpeg.monitors.find('.monitor[value="'+e.mid+'"]')
-                }
-                e.e.first().prop('selected',true)
+            break;
+            case'timelapseJpeg':
+                var monitorId = createMonitorsList($.timelapseJpeg.monitorsList)
+                $.timelapseJpeg.openWindow(monitorId)
             break;
             case'region':
                 if(!e.mon){
@@ -409,35 +448,7 @@ $(document).ready(function(e){
                     return;
                 }
                 e.d=JSON.parse(e.mon.details);
-                e.width=$.aM.e.find('[detail="detector_scale_x"]');
-                e.height=$.aM.e.find('[detail="detector_scale_y"]');
-                e.d.cords=$.aM.e.find('[detail="cords"]').val();
-                if(e.width.val()===''){
-                    e.d.detector_scale_x=320;
-                    e.d.detector_scale_y=240;
-                    $.aM.e.find('[detail="detector_scale_x"]').val(e.d.detector_scale_x);
-                    $.aM.e.find('[detail="detector_scale_y"]').val(e.d.detector_scale_y);
-                }else{
-                    e.d.detector_scale_x=e.width.val();
-                    e.d.detector_scale_y=e.height.val();
-                }
-
-                $.zO.e.modal('show');
-                $.zO.o().attr('width',e.d.detector_scale_x).attr('height',e.d.detector_scale_y);
-                $.zO.c.css({width:e.d.detector_scale_x,height:e.d.detector_scale_y});
-                    if(e.d.cords&&(e.d.cords instanceof Object)===false){
-                    try{e.d.cords=JSON.parse(e.d.cords);}catch(er){}
-                }
-                if(!e.d.cords||e.d.cords===''){
-                    e.d.cords={
-                        red:{ name:"red",sensitivity:0.0005, max_sensitivity:"",color_threshold:"",points:[[0,0],[0,100],[100,0]] },
-                    }
-                }
-                $.zO.regionViewerDetails=e.d;
-                $.zO.initRegionList()
-            break;
-            case'detector_filters':
-                $.detectorFilters.e.modal('show');
+                $.loadRegionEditor(e.d)
             break;
             case'snapshot':
                 $.ccio.snapshot(e,function(url){
@@ -445,8 +456,23 @@ $(document).ready(function(e){
                 });
             break;
             case'control':
-                e.a=e.e.attr('control')
-                $.ccio.cx({f:'monitor',ff:'control',direction:e.a,mid:e.mid,ke:e.ke},user)
+                var switchChosen = e.e.attr('control')
+                switch(switchChosen){
+                    case'setHome':
+                        $.get(getApiPrefix() + '/control' + '/' + $user.ke + '/' + e.mid + '/setHome',function(data){
+                            console.log(data)
+                        })
+                    break;
+                    default:
+                        $.ccio.cx({
+                            f: 'monitor',
+                            ff: 'control',
+                            direction: switchChosen,
+                            id: e.mid,
+                            ke: e.ke
+                        },user)
+                    break;
+                }
             break;
             case'videos_table':case'calendar':case'video_grid'://call videos table or calendar or video grid
                 $.vidview.launcher=$(this);
@@ -474,7 +500,7 @@ $(document).ready(function(e){
                         videoSet = 'cloudVideos'
                     break;
                 }
-                e.videoURL=$.ccio.init('location',user)+user.auth_token+'/'+videoSet+'/'+e.ke+'/'+e.mid+'?limit='+e.limit+'&start='+$.ccio.init('th',e.dateRange.startDate)+'&end='+$.ccio.init('th',e.dateRange.endDate);
+                e.videoURL=getApiPrefix() + '/'+videoSet+'/'+e.ke+'/'+e.mid+'?limit='+e.limit+'&start='+e.dateRange.startDate.utc().format('YYYY-MM-DDTHH:mm:ss')+'&end='+e.dateRange.endDate.utc().format('YYYY-MM-DDTHH:mm:ss');
                 $.getJSON(e.videoURL,function(d){
                     d.pages=d.total/100;
                     $('.video_viewer_total').text(d.total)
@@ -505,10 +531,11 @@ $(document).ready(function(e){
                                     if(v.status !== 0){
                                         $.vidview.loadedVideos[v.filename] = Object.assign(v,{})
                                         var n=$.ccio.mon[v.ke+v.mid+user.auth_token];
-                                        if(n){v.title=n.name+' - '+(parseInt(v.size)/1000000).toFixed(2)+'mb';}
-                                        v.start=v.time;
+                                        if(n){v.title=n.name+' - '+(parseInt(v.size)/1048576).toFixed(2)+'mb';}
+                                        v.start = moment.utc(v.time).local()
+                                        v.end = moment.utc(v.end).local()
     //                                    v.filename=$.ccio.init('tf',v.time)+'.'+v.ext;
-                                        e.ar.push(v);
+                                        e.ar.push(v)
                                     }
                                 })
                                 e.b.html('')
@@ -618,7 +645,7 @@ $(document).ready(function(e){
                                     tmp+='<td title="'+v.time+'">'+$.ccio.timeObject(v.time).format('h:mm:ss A, MMMM Do YYYY')+'</td>';
                                     tmp+='<td>'+v.mon.name+'</td>';
                                     tmp+='<td>'+v.filename+'</td>';
-                                    tmp+='<td>'+(parseInt(v.size)/1000000).toFixed(2)+'</td>';
+                                    tmp+='<td>'+(parseInt(v.size)/1048576).toFixed(2)+'</td>';
                                     tmp+='<td><a class="btn btn-sm btn-default preview" href="'+href+'">&nbsp;<i class="fa fa-play-circle"></i>&nbsp;</a></td>';
                                     tmp+='<td><a class="btn btn-sm btn-primary" video="launch" href="'+href+'">&nbsp;<i class="fa fa-play-circle"></i>&nbsp;</a></td>';
                                     tmp+='<td><a class="btn btn-sm btn-success" download="'+v.mid+'-'+v.filename+'" href="'+href+'">&nbsp;<i class="fa fa-download"></i>&nbsp;</a></td>';
@@ -673,23 +700,27 @@ $(document).ready(function(e){
                 if(e.e.length>0){
                     e.e.remove()
                 }else{
-                    var html = '<div class="PTZ_controls">'
-                    html += '<div class="pad">'
-                        html += '<div class="control top" monitor="control" control="up"></div>'
-                        html += '<div class="control left" monitor="control" control="left"></div>'
-                        html += '<div class="control right" monitor="control" control="right"></div>'
-                        html += '<div class="control bottom" monitor="control" control="down"></div>'
-                        html += '<div class="control middle" monitor="control" control="center"></div>'
-                    html += '</div>'
-                    html += '<div class="btn-group btn-group-sm btn-group-justified">'
-                        html += '<a title="'+lang['Zoom In']+'" class="zoom_in btn btn-default" monitor="control" control="zoom_in"><i class="fa fa-search-plus"></i></a>'
-                        html += '<a title="'+lang['Zoom Out']+'" class="zoom_out btn btn-default" monitor="control" control="zoom_out"><i class="fa fa-search-minus"></i></a>'
-                    html += '</div>'
-                        html += '<div class="btn-group btn-group-sm btn-group-justified">'
-                            html += '<a title="'+lang['Enable Nightvision']+'" class="nv_enable btn btn-default" monitor="control" control="enable_nv"><i class="fa fa-moon-o"></i></a>'
-                            html += '<a title="'+lang['Disable Nightvision']+'" class="nv_disable btn btn-default" monitor="control" control="disable_nv"><i class="fa fa-sun-o"></i></a>'
-                        html += '</div>'
-                    html += '</div>'
+                    var html = `<div class="PTZ_controls">
+                        <div class="pad">
+                            <div class="control top" monitor="control" control="up"></div>
+                            <div class="control left" monitor="control" control="left"></div>
+                            <div class="control right" monitor="control" control="right"></div>
+                            <div class="control bottom" monitor="control" control="down"></div>
+                            <div class="control middle" monitor="control" control="center"></div>
+                        </div>
+                        <div class="btn-group btn-group-sm btn-group-justified">
+                            <a title="${lang['Zoom In']}" class="zoom_in btn btn-default" monitor="control" control="zoom_in"><i class="fa fa-search-plus"></i></a>
+                            <a title="${lang['Zoom Out']}" class="zoom_out btn btn-default" monitor="control" control="zoom_out"><i class="fa fa-search-minus"></i></a>
+                        </div>
+                        <div class="btn-group btn-group-sm btn-group-justified">
+                            <a title="${lang['Enable Nightvision']}" class="nv_enable btn btn-default" monitor="control" control="enable_nv"><i class="fa fa-moon-o"></i></a>
+                            <a title="${lang['Disable Nightvision']}" class="nv_disable btn btn-default" monitor="control" control="disable_nv"><i class="fa fa-sun-o"></i></a>
+                        </div>
+                        ${$.parseJSON($.ccio.mon[$user.ke + e.mid + $user.auth_token].details,{}).is_onvif === '1' ? `
+                        <div class="btn-group btn-group-sm btn-group-justified">
+                            <a title="${lang['Set Home Position (ONVIF-only)']}" class="btn btn-default" monitor="control" control="setHome"><i class="fa fa-h-square"></i> ${lang['Set Home']}</a>
+                        </div>` : ``}
+                    </div>`
                     e.p.append(html)
                 }
             break;
@@ -697,7 +728,7 @@ $(document).ready(function(e){
                 if($("#monitor_live_"+e.mid+user.auth_token).length===0||$.ccio.mon[e.ke+e.mid+user.auth_token].watch!==1){
                     $.ccio.cx({f:'monitor',ff:'watch_on',id:e.mid},user)
                 }else{
-                    $("#main_canvas").animate({scrollTop:$("#monitor_live_"+e.mid+user.auth_token).offset().top-($('#main_header').height()+10)},500);
+                    $("#main_canvas").animate({scrollTop:$("#monitor_live_"+e.mid+user.auth_token).position().top},500);
                 }
             break;
             case'watch_off':
@@ -711,7 +742,7 @@ $(document).ready(function(e){
                 $.each($.ccio.init('cleanMon',e.mon),function(n,v,g){
                     if(n==='host'&&v.indexOf('@')>-1){g=v.split('@')[1]}else{g=v};
                     try{JSON.parse(g);return}catch(err){}
-                    e.html+='<tr><td><b>'+n+'</b></td><td>'+g+'</td></tr>';
+                    e.html+='<tr><td><b>'+n+'</b></td><td style="word-break:break-all">'+g+'</td></tr>';
                 })
                 e.html+='</tr></table>';
                 $.confirm.body.html(e.html)
@@ -720,7 +751,7 @@ $(document).ready(function(e){
                         title:'Delete Monitor',
                         class:'btn-danger',
                         callback:function(){
-                            $.get($.ccio.init('location',user)+user.auth_token+'/configureMonitor/'+user.ke+'/'+e.mon.mid+'/delete',function(d){
+                            $.get(getApiPrefix() + '/configureMonitor/'+user.ke+'/'+e.mon.mid+'/delete',function(d){
                                 $.ccio.log(d)
                             })
                         }
@@ -729,7 +760,7 @@ $(document).ready(function(e){
                         title:'Delete Monitor and Files',
                         class:'btn-danger',
                         callback:function(){
-                            $.get($.ccio.init('location',user)+user.auth_token+'/configureMonitor/'+user.ke+'/'+e.mon.mid+'/delete?deleteFiles=true',function(d){
+                            $.get(getApiPrefix() + '/configureMonitor/'+user.ke+'/'+e.mon.mid+'/delete?deleteFiles=true',function(d){
                                 $.ccio.log(d)
                             })
                         }
@@ -776,8 +807,10 @@ $(document).ready(function(e){
     })
 
     $('.modal').on('hidden.bs.modal',function(){
-        $(this).find('video').remove();
-        $(this).find('iframe').attr('src','about:blank');
+        var el = $(this)
+        el.find('video').remove();
+        el.find('iframe').attr('src','about:blank');
+        if(el.attr('id') === 'video_viewer')destroyGpsHandlerForVideoFile(`video_viewer_gps_map_map`)
     });
     $('.modal').on('shown.bs.modal',function(){
         e={e:$(this).find('.flex-container-modal-body')}

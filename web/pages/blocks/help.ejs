@@ -1,4 +1,12 @@
 <% if(!config.userHasSubscribed){ %>
+    <style>
+        @media (min-width: 768px){
+            #help_window .modal-dialog {
+                width: 800px;
+                margin: 30px auto;
+            }
+        }
+    </style>
     <div class="modal fade" id="help_window" tabindex="-1" role="dialog" aria-labelledby="help_windowLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -9,33 +17,264 @@
             <h4 class="modal-title" id="help_windowLabel"><i class="fa fa-question-circle"></i> &nbsp; <span><%-lang.Help%></span></h4>
           </div>
           <div class="modal-body">
-              <blockquote class="blockquoteInHelp">
-                  <a href="https://licenses.shinobi.video/subscribe" target="_blank"><img src="<%-window.libURL%>libs/img/icon/apple-touch-icon-152x152.png" class="pull-right" style="border-radius:50%;margin-left:20px;border: 1px solid #c3996b;"></a>
-                  <p>For information about how to use Shinobi you can check out the <a target="_blank" href="http://shinobi.video/docs">Docs</a>.</p>
-                  <p><a target="_blank" href="https://discord.gg/ehRd8Zz">Discord</a> Community Chat is great for meeting people and asking questions. For general questions and community support you can also try the <a href="https://www.reddit.com/r/ShinobiCCTV">Reddit forum</a>.</p>
-              </blockquote>
+              <div class="row">
+                  <% [
+                      {
+                          bigIcon: "smile-o",
+                          title: "It's a proven fact",
+                          info: `Generosity makes you a happier person, please consider supporting the development.`,
+                          buttons: [
+                              {
+                                  icon: 'share-square-o',
+                                  color: 'default',
+                                  text: 'ShinobiShop Subscriptions',
+                                  href: 'https://licenses.shinobi.video/subscribe',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'paypal',
+                                  color: 'default',
+                                  text: 'Donate by PayPal',
+                                  href: 'https://www.paypal.me/ShinobiCCTV',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'bank',
+                                  color: 'default',
+                                  text: 'University of Zurich (UZH)',
+                                  href: 'https://www.media.uzh.ch/en/Press-Releases/2017/Generosity.html',
+                                  class: ''
+                              },
+                          ]
+                      },
+                      {
+                          title: "New to Shinobi?",
+                          info: `Try reading over some of these links to get yourself started.`,
+                          buttons: [
+                              {
+                                  icon: 'newspaper-o',
+                                  color: 'default',
+                                  text: 'After Installation Guides',
+                                  href: 'https://shinobi.video/docs/configure',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'plus',
+                                  color: 'default',
+                                  text: 'Adding an H.264 Camera',
+                                  href: 'https://shinobi.video/docs/configure#content-adding-an-h264h265-camera',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'plus',
+                                  color: 'default',
+                                  text: 'Adding an MJPEG Camera',
+                                  href: 'https://shinobi.video/articles/2018-09-19-how-to-add-an-mjpeg-camera',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'gears',
+                                  color: 'default',
+                                  text: 'RTSP Camera Optimization',
+                                  href: 'https://shinobi.video/articles/2017-07-29-how-i-optimized-my-rtsp-camera',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'comments-o',
+                                  color: 'info',
+                                  text: 'Community Chat',
+                                  href: 'https://discord.gg/ehRd8Zz',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'reddit',
+                                  color: 'info',
+                                  text: 'Forum on Reddit',
+                                  href: 'https://www.reddit.com/r/ShinobiCCTV',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'file-o',
+                                  color: 'primary',
+                                  text: 'Documentation',
+                                  href: 'http://shinobi.video/docs',
+                                  class: ''
+                              }
+                          ]
+                      },
+                      {
+                          title: "ShinobiHub",
+                          info: `Explore and Contribute to the community of Shinobi all in one place.`,
+                          buttons: [
+                              {
+                                  icon: 'newspaper-o',
+                                  color: 'primary',
+                                  text: 'Read Articles',
+                                  href: 'https://hub.shinobi.video/articles',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'search',
+                                  color: 'success',
+                                  text: 'Explore Configurations',
+                                  href: 'https://hub.shinobi.video/explore',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'lightbulb-o',
+                                  color: 'info',
+                                  text: 'View Suggestions',
+                                  href: 'https://hub.shinobi.video/suggestions',
+                                  class: ''
+                              },
+                          ]
+                      },
+                      {
+                          title: "Shinobi Mobile",
+                          info: `Your subscription key can unlock features for <a href="https://cdn.shinobi.video/installers/ShinobiMobile/" target="_blank"><b>Shinobi Mobile</b></a> running on iOS and Android today!`,
+                          buttons: [
+                              {
+                                  icon: 'star',
+                                  color: 'success',
+                                  text: 'Join Public Beta',
+                                  href: 'https://cdn.shinobi.video/installers/ShinobiMobile/',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'comments-o',
+                                  color: 'primary',
+                                  text: '<b>#mobile-client</b> Chat',
+                                  href: 'https://discord.gg/ehRd8Zz',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'cube',
+                                  color: 'default',
+                                  text: lang[`Don't Show for 1 Week`],
+                                  class: 'hide_donate',
+                              },
+                          ]
+                      },
+                      {
+                          title: "Shinobi Dashcam",
+                          info: `<a href="https://cdn.shinobi.video/installers/Dashcam/" target="_blank"><b>Shinobi Dashcam</b></a> runs on iOS and Android, Subscribe to a Shinobi Mobile license to unlock extended features!`,
+                          buttons: [
+                              {
+                                  icon: 'star',
+                                  color: 'success',
+                                  text: 'Join Public Beta',
+                                  href: 'https://cdn.shinobi.video/installers/Dashcam/',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'comments-o',
+                                  color: 'primary',
+                                  text: '<b>#dashcam</b> Chat',
+                                  href: 'https://discord.gg/D3cHZ3u',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'cube',
+                                  color: 'default',
+                                  text: lang[`Don't Show for 1 Week`],
+                                  class: 'hide_donate',
+                              },
+                          ]
+                      },
+                      {
+                          title: "Byaku",
+                          info: `Byaku is a Neural Net Training tool that allows you to build Object Detection sets. <a href="https://cdn.shinobi.video/installers/Byaku/" target="_blank"><b>Byaku</b></a> runs on Linux. Subscribe to use features like automatically downloading thousands of images already pre-annotated and ready for you to train.`,
+                          buttons: [
+                              {
+                                  icon: 'star',
+                                  color: 'success',
+                                  text: 'Join Public Beta',
+                                  href: 'https://cdn.shinobi.video/installers/Byaku/',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'comments-o',
+                                  color: 'primary',
+                                  text: '<b>#byaku</b> Chat',
+                                  href: 'https://discord.gg/3XA9RNP',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'cube',
+                                  color: 'default',
+                                  text: lang[`Don't Show for 1 Week`],
+                                  class: 'hide_donate',
+                              },
+                          ]
+                      },
+                      {
+                          title: "Support the Development",
+                          info: `Subscribe to any of the following to boost development! Once subscribed put your Subscription ID in the configuration file (conf.json), then restart Shinobi and this promotion window won't appear anymore, thanks! <i class="fa fa-smile-o"></i> <br><br> <code>"subscriptionId":"sub_XXXXXXXXXXXX",</code>`,
+                          buttons: [
+                              {
+                                  icon: 'share-square-o',
+                                  color: 'default',
+                                  text: 'Shinobi Mobile License ($5/m)',
+                                  href: 'https://licenses.shinobi.video/subscribe?planSubscribe=plan_G31AZ9mknNCa6z',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'share-square-o',
+                                  color: 'default',
+                                  text: 'Tiny Support Subscription ($10/m)',
+                                  href: 'https://licenses.shinobi.video/subscribe?planSubscribe=plan_G42jNgIqXaWmIC',
+                                  class: ''
+                              },
+                              {
+                                  icon: 'share-square-o',
+                                  color: 'default',
+                                  text: 'Shinobi Pro License ($75/m)',
+                                  href: 'https://licenses.shinobi.video/subscribe?planSubscribe=plan_G3LGdNwA8lSmQy',
+                                  class: ''
+                              },
+                          ]
+                      },
+                      {
+                          title: "Donations, One-Time Boost",
+                          info: `Sometimes a subscription isn't practical for people. In which case you may show support through a PayPal donation. And as a thank you for doing so your <b>PayPal Transaction ID</b> can be used as a <code>subscriptionId</code> in your Shinobi configuration file. <br><br>Each 5 USD/EUR or 7 CAD will provide one month of activated usage. <i>Meaning, a $20 USD donation today makes this popup go away (or activates the mobile app) for 4 months.</i>`,
+                          buttons: [
+                              {
+                                  icon: 'paypal',
+                                  color: 'default',
+                                  text: 'Donate by PayPal',
+                                  href: 'https://www.paypal.me/ShinobiCCTV',
+                                  class: ''
+                              },
+                          ]
+                      },
+                  ].forEach((promo) => { %>
+                      <div class="col-md-<%- promo.width || '6' %>">
+                      <div class="helpquote" style="margin-bottom:5px;font-size:10pt;padding: 10px 20px;border-left: 5px solid #eee;">
+                          <%- promo.bigIcon ? `<div style="margin-bottom:15px;text-align:center"><i class="fa fa-${promo.bigIcon} fa-5x"></i></div>` : '' %>
+                          <%- promo.title ? `<h4>${promo.title}</h4>` : '' %>
+                          <p><%- promo.info %></p>
+                          <% if(promo.buttons) { %>
+                              <div style="margin-top:5px;">
+                                  <% promo.buttons.forEach((button) => { %>
+                                      <a style="margin-bottom:4px" <%- button.href ? `href="${button.href}"` : '' %> target="_blank" class="btn btn-sm btn-block btn-<%- button.color %> <%- button.class %>"><i class="fa fa-<%- button.icon %>" aria-hidden="true"></i> <%- button.text %></a>
+                                  <% }) %>
+                              </div>
+                          <% } %>
+                      </div>
+                      </div>
+                  <% }) %>
+              </div>
               <blockquote class="blockquoteInHelp" style="margin-bottom:10px">
-                  <b>Support the development by subscribing</b> to any of the following and put your subscription key in the configuration file (conf.json), then restart Shinobi and this annoying popup window won't appear anymore, thanks! <i class="fa fa-smile-o"></i>
-                  <br><br>
-                  <code>"subscriptionId":"sub_XXXXXXXXXXXX",</code>
-                  <br><br>
-                  <p>If you already are supporting the development in a different way, please contact us and we can get this popup to go away for you :) Cheers!</p>
+                  <p>If you already are supporting the development in a different way, please contact us and we can get this popup to go away for you <i class="fa fa-smile-o"></i> Cheers!</p>
               </blockquote>
-              <div style="margin-bottom:10px;text-align:center">
-                  <a href="https://licenses.shinobi.video/subscribe?planSubscribe=plan_G31AZ9mknNCa6z" target="_blank" class="btn btn-default"><i class="fa fa-share-square-o" aria-hidden="true"></i> Shinobi Mobile License ($5/m)</a>
-                  <a href="https://licenses.shinobi.video/subscribe?planSubscribe=plan_G3LGdNwA8lSmQy" target="_blank" class="btn btn-default"><i class="fa fa-share-square-o" aria-hidden="true"></i> Shinobi Pro License ($75/m)</a> &nbsp;
-              </div>
-              <div style="margin-bottom:5px;text-align:center">
-                  <a href="https://licenses.shinobi.video/subscribe?planSubscribe=plan_G42jNgIqXaWmIC" target="_blank" class="btn btn-default"><i class="fa fa-share-square-o" aria-hidden="true"></i> Tiny Support Subscription ($10/m)</a> &nbsp;
-              </div>
               <div>
                   <!-- <iframe src="https://shinobi.video/ads" style="width:100%;height:250px;border:none;"></iframe> -->
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-danger pull-left hide_donate"><%-lang[`Don't Show for 1 Week`]%></button>
-            <a target="_blank" href="http://discordapp.com/invite/mdhmvuH/" class="btn btn-primary"><%-lang['Chat on Discord']%></a>
-            <a target="_blank" href="http://shinobi.video/docs" class="btn btn-success"><%-lang.Documentation%></a>
+            <button type="button" class="btn btn-danger pull-left hide_donate"><i class="fa fa-cube"></i> <%-lang[`Don't Show for 1 Week`]%></button>
+            <a target="_blank" href="https://discord.gg/gCxefHA" class="btn btn-primary"><i class="fa fa-comments-o"></i> <%-lang['Chat on Discord']%></a>
+            <a target="_blank" href="http://shinobi.video/docs" class="btn btn-default"><i class="fa fa-file-o"></i> <%-lang.Documentation%></a>
           </div>
         </div>
       </div>
@@ -59,11 +298,11 @@
             setTimeout(function(){
                 $.help.e.modal('show')
             },1000 * 60 * 0.2)
-            $.help.hide.click(function(){
-                $.ccio.op('subscription_checked',new Date());
-                $.help.e.modal('hide');
-            })
         }
+        $.help.hide.click(function(){
+            $.ccio.op('subscription_checked',new Date());
+            $.help.e.modal('hide');
+        })
         console.log('Please support the Shinobi developement.')
         console.log('https://licenses.shinobi.video/subscribe')
     })

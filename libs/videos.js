@@ -64,17 +64,20 @@ module.exports = function(s,config,lang){
             k.details.dir = e.details.dir
         }
         if(config.useUTC === true)k.details.isUTC = config.useUTC;
-        var save = [
-            e.mid,
-            e.ke,
-            k.startTime,
-            e.ext,
-            1,
-            s.s(k.details),
-            k.filesize,
-            k.endTime,
-        ]
-        s.sqlQuery('INSERT INTO Videos (mid,ke,time,ext,status,details,size,end) VALUES (?,?,?,?,?,?,?,?)',save,function(err){
+        s.knexQuery({
+            action: "insert",
+            table: "Videos",
+            insert: {
+                ke: e.ke,
+                mid: e.mid,
+                time: k.startTime,
+                ext: e.ext,
+                status: 1,
+                details: s.s(k.details),
+                size: k.filesize,
+                end: k.endTime,
+            }
+        },(err) => {
             if(callback)callback(err)
             fs.chmod(k.dir+k.file,0o777,function(err){
 
@@ -90,7 +93,11 @@ module.exports = function(s,config,lang){
         e.dir = s.getVideoDirectory(e)
         k.dir = e.dir.toString()
         if(s.group[e.ke].activeMonitors[e.id].childNode){
-            s.cx({f:'insertCompleted',d:s.group[e.ke].rawMonitorConfigurations[e.id],k:k},s.group[e.ke].activeMonitors[e.id].childNodeId);
+            s.cx({
+                f: 'insertCompleted',
+                d: s.group[e.ke].rawMonitorConfigurations[e.id],
+                k: k
+            },s.group[e.ke].activeMonitors[e.id].childNodeId);
         }else{
             //get file directory
             k.fileExists = fs.existsSync(k.dir+k.file)
@@ -108,10 +115,10 @@ module.exports = function(s,config,lang){
             }
             if(k.fileExists===true){
                 //close video row
-                k.details = {}
+                k.details = k.details && k.details instanceof Object ? k.details : {}
                 k.stat = fs.statSync(k.dir+k.file)
                 k.filesize = k.stat.size
-                k.filesizeMB = parseFloat((k.filesize/1000000).toFixed(2))
+                k.filesizeMB = parseFloat((k.filesize/1048576).toFixed(2))
 
                 k.startTime = new Date(s.nameToTime(k.file))
                 k.endTime = new Date(k.endTime || k.stat.mtime)
@@ -126,58 +133,54 @@ module.exports = function(s,config,lang){
                 if(!e.ext){e.ext = k.filename.split('.')[1]}
                 //send event for completed recording
                 if(config.childNodes.enabled === true && config.childNodes.mode === 'child' && config.childNodes.host){
+                    const response = {
+                        mid: e.mid,
+                        ke: e.ke,
+                        filename: k.filename,
+                        d: s.cleanMonitorObject(e),
+                        filesize: k.filesize,
+                        time: s.timeObject(k.startTime).format('YYYY-MM-DD HH:mm:ss'),
+                        end: s.timeObject(k.endTime).format('YYYY-MM-DD HH:mm:ss')
+                    }
                     fs.createReadStream(k.dir+k.filename,{ highWaterMark: 500 })
                     .on('data',function(data){
-                        s.cx({
+                        s.cx(Object.assign(response,{
                             f:'created_file_chunk',
-                            mid:e.mid,
-                            ke:e.ke,
-                            chunk:data,
-                            filename:k.filename,
-                            d:s.cleanMonitorObject(e),
-                            filesize:e.filesize,
-                            time:s.timeObject(k.startTime).format(),
-                            end:s.timeObject(k.endTime).format()
-                        })
+                            chunk: data,
+                        }))
                     })
                     .on('close',function(){
                         clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingChecker)
                         clearTimeout(s.group[e.ke].activeMonitors[e.id].streamChecker)
-                        s.cx({
+                        s.cx(Object.assign(response,{
                             f:'created_file',
-                            mid:e.id,
-                            ke:e.ke,
-                            filename:k.filename,
-                            d:s.cleanMonitorObject(e),
-                            filesize:k.filesize,
-                            time:s.timeObject(k.startTime).format(),
-                            end:s.timeObject(k.endTime).format()
-                        })
+                        }))
                     })
                 }else{
                     var href = '/videos/'+e.ke+'/'+e.mid+'/'+k.filename
                     if(config.useUTC === true)href += '?isUTC=true';
                     s.txWithSubPermissions({
-                        f:'video_build_success',
-                        hrefNoAuth:href,
-                        filename:k.filename,
-                        mid:e.mid,
-                        ke:e.ke,
-                        time:k.startTime,
-                        size:k.filesize,
-                        end:k.endTime
+                        f: 'video_build_success',
+                        hrefNoAuth: href,
+                        filename: k.filename,
+                        mid: e.mid,
+                        ke: e.ke,
+                        time: k.startTime,
+                        size: k.filesize,
+                        end: k.endTime,
+                        events: k.events && k.events.length > 0 ? k.events : null
                     },'GRP_'+e.ke,'video_view')
                     //purge over max
-                    s.purgeDiskForGroup(e)
+                    s.purgeDiskForGroup(e.ke)
                     //send new diskUsage values
                     var storageIndex = s.getVideoStorageIndex(e)
                     if(storageIndex){
-                        s.setDiskUsedForGroupAddStorage(e,{
+                        s.setDiskUsedForGroupAddStorage(e.ke,{
                             size: k.filesizeMB,
                             storageIndex: storageIndex
                         })
                     }else{
-                        s.setDiskUsedForGroup(e,k.filesizeMB)
+                        s.setDiskUsedForGroup(e.ke,k.filesizeMB)
                     }
                     s.onBeforeInsertCompletedVideoExtensions.forEach(function(extender){
                         extender(e,k)
@@ -210,8 +213,17 @@ module.exports = function(s,config,lang){
             time = e.time
         }
         time = new Date(time)
-        var queryValues = [e.id,e.ke,time];
-        s.sqlQuery('SELECT * FROM Videos WHERE `mid`=? AND `ke`=? AND `time`=?',queryValues,function(err,r){
+        const whereQuery = {
+            ke: e.ke,
+            mid: e.id,
+            time: time,
+        }
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            table: "Videos",
+            where: whereQuery
+        },(err,r) => {
             if(r && r[0]){
                 r = r[0]
                 fs.chmod(e.dir+filename,0o777,function(err){
@@ -225,14 +237,18 @@ module.exports = function(s,config,lang){
                     },'GRP_'+e.ke);
                     var storageIndex = s.getVideoStorageIndex(e)
                     if(storageIndex){
-                        s.setDiskUsedForGroupAddStorage(e,{
-                            size: -(r.size / 1000000),
+                        s.setDiskUsedForGroupAddStorage(e.ke,{
+                            size: -(r.size / 1048576),
                             storageIndex: storageIndex
                         })
                     }else{
-                        s.setDiskUsedForGroup(e,-(r.size / 1000000))
+                        s.setDiskUsedForGroup(e.ke,-(r.size / 1048576))
                     }
-                    s.sqlQuery('DELETE FROM Videos WHERE `mid`=? AND `ke`=? AND `time`=?',queryValues,function(err){
+                    s.knexQuery({
+                        action: "delete",
+                        table: "Videos",
+                        where: whereQuery
+                    },(err) => {
                         if(err){
                             s.systemLog(lang['File Delete Error'] + ' : '+e.ke+' : '+' : '+e.id,err)
                         }
@@ -253,9 +269,8 @@ module.exports = function(s,config,lang){
     }
     s.deleteListOfVideos = function(videos){
         var deleteSetOfVideos = function(videos){
-            var query = 'DELETE FROM Videos WHERE '
-            var videoQuery = []
-            var queryValues = []
+            const whereQuery = []
+            var didOne = false;
             videos.forEach(function(video){
                 s.checkDetails(video)
                 //e = video object
@@ -276,37 +291,45 @@ module.exports = function(s,config,lang){
                     time = video.time
                 }
                 time = new Date(time)
-                fs.chmod(video.dir+filename,0o777,function(err){
+                fs.chmod(video.dir + filename,0o777,function(err){
                     s.tx({
                         f: 'video_delete',
                         filename: filename,
-                        mid: video.id,
+                        mid: video.mid,
                         ke: video.ke,
                         time: s.nameToTime(filename),
                         end: s.formattedTime(new Date,'YYYY-MM-DD HH:mm:ss')
                     },'GRP_'+video.ke);
                     var storageIndex = s.getVideoStorageIndex(video)
                     if(storageIndex){
-                        s.setDiskUsedForGroupAddStorage(video,{
-                            size: -(video.size / 1000000),
+                        s.setDiskUsedForGroupAddStorage(video.ke,{
+                            size: -(video.size / 1048576),
                             storageIndex: storageIndex
                         })
                     }else{
-                        s.setDiskUsedForGroup(video,-(video.size / 1000000))
+                        s.setDiskUsedForGroup(video.ke,-(video.size / 1048576))
                     }
-                    fs.unlink(video.dir+filename,function(err){
-                        fs.stat(video.dir+filename,function(err){
+                    fs.unlink(video.dir + filename,function(err){
+                        fs.stat(video.dir + filename,function(err){
                             if(!err){
-                                s.file('delete',video.dir+filename)
+                                s.file('delete',video.dir + filename)
                             }
                         })
                     })
                 })
-                videoQuery.push('(`mid`=? AND `ke`=? AND `time`=?)')
-                queryValues = queryValues.concat([video.id,video.ke,time])
+                const queryGroup = {
+                    ke: video.ke,
+                    mid: video.mid,
+                    time: time,
+                }
+                if(whereQuery.length > 0)queryGroup.__separator = 'or'
+                whereQuery.push(queryGroup)
             })
-            query += videoQuery.join(' OR ')
-            s.sqlQuery(query,queryValues,function(err){
+            s.knexQuery({
+                action: "delete",
+                table: "Videos",
+                where: whereQuery
+            },(err) => {
                 if(err){
                     s.systemLog(lang['List of Videos Delete Error'],err)
                 }
@@ -338,11 +361,24 @@ module.exports = function(s,config,lang){
     s.deleteVideoFromCloud = function(e){
         // e = video object
         s.checkDetails(e)
-        var videoSelector = [e.id,e.ke,new Date(e.time)]
-        s.sqlQuery('SELECT * FROM `Cloud Videos` WHERE `mid`=? AND `ke`=? AND `time`=?',videoSelector,function(err,r){
+        const whereQuery = {
+            ke: e.ke,
+            mid: e.mid,
+            time: new Date(e.time),
+        }
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            table: "Cloud Videos",
+            where: whereQuery
+        },(err,r) => {
             if(r&&r[0]){
                 r = r[0]
-                s.sqlQuery('DELETE FROM `Cloud Videos` WHERE `mid`=? AND `ke`=? AND `time`=?',videoSelector,function(){
+                s.knexQuery({
+                    action: "delete",
+                    table: "Cloud Videos",
+                    where: whereQuery
+                },(err,r) => {
                     s.deleteVideoFromCloudExtensionsRunner(e,r)
                 })
             }else{
@@ -374,18 +410,23 @@ module.exports = function(s,config,lang){
                     }
                     fiveRecentFiles.forEach(function(filename){
                         if(/T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]./.test(filename)){
-                            var queryValues = [
-                                monitor.ke,
-                                monitor.mid,
-                                s.nameToTime(filename)
-                            ]
-                            s.sqlQuery('SELECT * FROM Videos WHERE ke=? AND mid=? AND time=? LIMIT 1',queryValues,function(err,rows){
+                            s.knexQuery({
+                                action: "select",
+                                columns: "*",
+                                table: "Videos",
+                                where: [
+                                    ['ke','=',monitor.ke],
+                                    ['mid','=',monitor.mid],
+                                    ['time','=',s.nameToTime(filename)],
+                                ],
+                                limit: 1
+                            },(err,rows) => {
                                 if(!err && (!rows || !rows[0])){
                                     ++orphanedFilesCount
                                     var video = rows[0]
                                     s.insertCompletedVideo(monitor,{
                                         file : filename
-                                    },function(){
+                                    },() => {
                                         fileComplete()
                                     })
                                 }else{
@@ -463,14 +504,14 @@ module.exports = function(s,config,lang){
                 createLocation = fileLocationMid
             }
         })
-        if(concatFiles.length > 30){
+        if(concatFiles.length > framesPerSecond){
             var commandTempLocation = `${s.dir.streams}${ke}/${mid}/mergeJpegs_${finalFileName}.sh`
             var finalMp4OutputLocation = `${s.dir.fileBin}${ke}/${mid}/${finalFileName}.mp4`
             if(!s.group[ke].activeMonitors[mid].buildingTimelapseVideo){
                 if(!fs.existsSync(finalMp4OutputLocation)){
                     var currentFile = 0
                     var completionTimeout
-                    var commandString = `ffmpeg -y -pattern_type glob -f image2pipe -vcodec mjpeg -r ${framesPerSecond} -analyzeduration 10 -i - -q:v 1 -c:v libx264 -r ${framesPerSecond} "${finalMp4OutputLocation}"`
+                    var commandString = `ffmpeg -y -f image2pipe -vcodec mjpeg -r ${framesPerSecond} -analyzeduration 10 -i - -q:v 1 -c:v libx264 -r ${framesPerSecond} "${finalMp4OutputLocation}"`
                     fs.writeFileSync(commandTempLocation,commandString)
                     var videoBuildProcess = spawn('sh',[commandTempLocation])
                     videoBuildProcess.stderr.on('data',function(data){
@@ -486,8 +527,19 @@ module.exports = function(s,config,lang){
                         var timeNow = new Date()
                         var fileStats = fs.statSync(finalMp4OutputLocation)
                         var details = {}
-                        s.sqlQuery('INSERT INTO `Files` (ke,mid,details,name,size,time) VALUES (?,?,?,?,?,?)',[ke,mid,s.s(details),finalFileName + '.mp4',fileStats.size,timeNow])
-                        s.setDiskUsedForGroup({ke: ke},fileStats.size / 1000000,'fileBin')
+                        s.knexQuery({
+                            action: "insert",
+                            table: "Files",
+                            insert: {
+                                ke: ke,
+                                mid: mid,
+                                details: s.s(details),
+                                name: finalFileName + '.mp4',
+                                size: fileStats.size,
+                                time: timeNow,
+                            }
+                        })
+                        s.setDiskUsedForGroup(ke,fileStats.size / 1048576,'fileBin')
                         fs.unlink(commandTempLocation,function(){
 
                         })
