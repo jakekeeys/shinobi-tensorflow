@@ -119,7 +119,7 @@ read -p "Do you want to install MariaDB? Y/N " installdbserver
 #Changes input to uppercase
 sqliteormariadb=${installdbserver^}
 
-if [ "installdbserver" = "M" ] || [ "$installdbserver" = "" ]; then
+if [ "installdbserver" = "Y" ] || [ "$installdbserver" = "" ]; then
     echo "========================================================="
     echo "Installing MariaDB repository..."
 	#Add the MariaDB repository to yum
