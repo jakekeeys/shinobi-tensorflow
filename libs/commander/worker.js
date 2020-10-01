@@ -57,16 +57,16 @@ const initialize = (config,lang) => {
         if(method === 'GET' && data){
             requestEndpoint += '?' + createQueryStringFromObject(data)
         }
-        return request(requestEndpoint,{
+        const theRequest = request(requestEndpoint,{
             method: method,
             json: method !== 'GET' ? (data ? data : null) : null
-        }, function(err,resp,body){
+        }, typeof callback === 'function' ? (err,resp,body) => {
             // var json = parseJSON(body)
             if(err)console.error(err,data)
             callback(err,body,resp)
-        }).on('data', function(data) {
-            onDataReceived(data)
-        })
+        } : null)
+        .on('data', onDataReceived);
+        return theRequest
     }
     const createShinobiSocketConnection = (connectionId) => {
         const masterConnectionToMachine = socketIOClient(`ws://localhost:${config.port}`, {transports:['websocket']})
@@ -103,13 +103,13 @@ const initialize = (config,lang) => {
           rawRequest.url,
           rawRequest.method,
           rawRequest.data,
-          function(err,json,resp){
+          rawRequest.focus !== 'mp4' && rawRequest.focus !== 'flv' && rawRequest.focus !== 'mjpeg' && rawRequest.focus !== 'h264' ? function(err,json,resp){
               connectionToP2PServer.emit('httpResponse',{
                   err: err,
                   json: rawRequest.bodyOnEnd ? json : null,
                   rid: rawRequest.rid
               })
-          },
+          } : null,
           (data) => {
               if(!rawRequest.bodyOnEnd)connectionToP2PServer.emit('httpResponseChunk',{
                   data: data,
