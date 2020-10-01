@@ -11,10 +11,10 @@ elif [ "$version" = 8 ]; then
 else
 	echo "This version of CentOS is unsupported!"
 	read -p "Continue at your own risk? Y/N" osoverride
-	
+
 	#Changes input to uppercase
 	osoverride=${osoverride^}
-	
+
 	if [ ! "$osoverride" = "Y" ]; then
 		exit 1
 	else 
@@ -44,7 +44,8 @@ echo "========================================================="
 read -p "Press [Enter] to begin..."
 
 #Install dependencies
-echo "Installing dependencies and tools"
+echo "Installing dependencies and tools..." 
+
 if [ "$version" = 7 ]; then
 	#Installing deltarpm first will greatly increase the download speed of the other packages
 	sudo yum install deltarpm -y -q -e 0
@@ -54,7 +55,7 @@ fi
 sudo $pkgmgr install $vm nano dos2unix net-tools curl wget git gcc gcc-c++ make zip -y -q -e 0
 
 #Install updates
-echo "Updating system"
+echo "Updating system..."
 sudo $pkgmgr update -y -q -e 0
 
 #Skip if running from the Ninja installer
@@ -117,7 +118,7 @@ echo "========================================================="
 read -p "Do you want to install MariaDB? Y/N " installdbserver
 
 #Changes input to uppercase
-sqliteormariadb=${installdbserver^}
+installdbserver=${installdbserver^}
 
 if [ "installdbserver" = "Y" ] || [ "$installdbserver" = "" ]; then
     echo "========================================================="
