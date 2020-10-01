@@ -193,23 +193,25 @@ module.exports = function(s,config,lang){
                 }
             }
             const onMonitorUnexpectedExitForDiscord = (monitorConfig) => {
-                const ffmpegCommand = s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].ffmpeg
-                const description = lang['Process Crashed for Monitor'] + '\n' + ffmpegCommand
-                const currentTime = new Date()
-                s.discordMsg({
-                    author: {
-                      name: monitorConfig.name + ' : ' + monitorConfig.mid,
-                      icon_url: config.iconURL
-                    },
-                    title: lang['Process Unexpected Exit'] + ' : ' + monitorConfig.name,
-                    description: description,
-                    fields: [],
-                    timestamp: currentTime,
-                    footer: {
-                      icon_url: config.iconURL,
-                      text: "Shinobi Systems"
-                    }
-                },[],monitorConfig.ke)
+                if(monitorConfig.details.notify_discord === '1' && monitorConfig.details.notify_onUnexpectedExit === '1'){
+                    const ffmpegCommand = s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].ffmpeg
+                    const description = lang['Process Crashed for Monitor'] + '\n' + ffmpegCommand
+                    const currentTime = new Date()
+                    s.discordMsg({
+                        author: {
+                          name: monitorConfig.name + ' : ' + monitorConfig.mid,
+                          icon_url: config.iconURL
+                        },
+                        title: lang['Process Unexpected Exit'] + ' : ' + monitorConfig.name,
+                        description: description,
+                        fields: [],
+                        timestamp: currentTime,
+                        footer: {
+                          icon_url: config.iconURL,
+                          text: "Shinobi Systems"
+                        }
+                    },[],monitorConfig.ke)
+                }
             }
             s.loadGroupAppExtender(loadDiscordBotForUser)
             s.unloadGroupAppExtender(unloadDiscordBotForUser)
@@ -410,38 +412,40 @@ module.exports = function(s,config,lang){
             }
         }
         const onMonitorUnexpectedExitForEmail = (monitorConfig) => {
-            const ffmpegCommand = s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].ffmpeg
-            const description = ffmpegCommand
-            const subject = lang['Process Unexpected Exit'] + ' : ' + monitorConfig.name
-            const currentTime = new Date()
-            s.knexQuery({
-                action: "select",
-                columns: "mail",
-                table: "Users",
-                where: [
-                    ['ke','=',monitorConfig.ke],
-                    ['details','NOT LIKE','%"sub"%'],
-                ]
-            },(err,r) => {
-                r = r[0]
-                s.nodemailer.sendMail({
-                    from: config.mail.from,
-                    to: checkEmail(r.mail),
-                    subject: subject,
-                    html: template.createFramework({
-                        title: subject,
-                        subtitle: lang['Process Crashed for Monitor'],
-                        body: description,
-                        footerText: currentTime
-                    }),
-                    attachments: []
-                }, (error, info) => {
-                    if (error) {
-                        s.systemLog(lang.MailError,error)
-                        return false;
-                    }
+            if(monitorConfig.details.notify_email === '1' && monitorConfig.details.notify_onUnexpectedExit === '1'){
+                const ffmpegCommand = s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].ffmpeg
+                const description = ffmpegCommand
+                const subject = lang['Process Unexpected Exit'] + ' : ' + monitorConfig.name
+                const currentTime = new Date()
+                s.knexQuery({
+                    action: "select",
+                    columns: "mail",
+                    table: "Users",
+                    where: [
+                        ['ke','=',monitorConfig.ke],
+                        ['details','NOT LIKE','%"sub"%'],
+                    ]
+                },(err,r) => {
+                    r = r[0]
+                    s.nodemailer.sendMail({
+                        from: config.mail.from,
+                        to: checkEmail(r.mail),
+                        subject: subject,
+                        html: template.createFramework({
+                            title: subject,
+                            subtitle: lang['Process Crashed for Monitor'],
+                            body: description,
+                            footerText: currentTime
+                        }),
+                        attachments: []
+                    }, (error, info) => {
+                        if (error) {
+                            s.systemLog(lang.MailError,error)
+                            return false;
+                        }
+                    })
                 })
-            })
+            }
         }
         s.onTwoFactorAuthCodeNotification(onTwoFactorAuthCodeNotificationForEmail)
         s.onEventTriggerBeforeFilter(onEventTriggerBeforeFilterForEmail)

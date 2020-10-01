@@ -3922,6 +3922,76 @@ module.exports = function(s,config,lang){
                    },
                ],
              },
+             "Notifications": {
+                "name": lang['Notifications'],
+                "color": "blue",
+                isAdvanced: true,
+                "isSection": true,
+                "id": "monSectionNotifications",
+                "selector": "h_det",
+                "attribute": `triggerChange="#add_monitor [detail=detector_record_method]"`,
+                "blockquote": `${lang.DetectorText}\n<p class="shinobi-detector-msg"></p>`,
+                "info": [
+                    {
+                       "name": lang.Methods,
+                       "color": "blue",
+                        isFormGroupGroup: true,
+                       "info": [
+                           {
+                              "name": "detail=notify_email",
+                              "field": lang.Email,
+                              "default": "0",
+                              "example": "",
+                              "fieldType": "select",
+                              "possible": [
+                                 {
+                                    "name": lang.No,
+                                    "value": "0"
+                                 },
+                                 {
+                                    "name": lang.Yes,
+                                    "value": "1"
+                                 }
+                              ]
+                           },
+                           {
+                              "name": "detail=notify_discord",
+                              "field": lang.Discord,
+                              "default": "0",
+                              "example": "",
+                              "fieldType": "select",
+                              "possible": [
+                                 {
+                                    "name": lang.No,
+                                    "value": "0"
+                                 },
+                                 {
+                                    "name": lang.Yes,
+                                    "value": "1"
+                                 }
+                              ]
+                           },
+                       ],
+                    },
+                   {
+                      "name": "detail=notify_onUnexpectedExit",
+                      "field": lang['On Unexpected Exit'],
+                      "default": "0",
+                      "example": "1",
+                      "fieldType": "select",
+                      "possible": [
+                         {
+                            "name": lang.No,
+                            "value": "0"
+                         },
+                         {
+                            "name": lang.Yes,
+                            "value": "1"
+                         }
+                      ]
+                   },
+               ]
+             },
              "Logging": {
                 "name": lang.Logging,
                 "color": "green",
