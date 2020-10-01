@@ -275,7 +275,7 @@ echo "||=============== Installation Complete ===============||"
 echo "========================================================="
 echo "|| Login with the Superuser and create a new user!!    ||"
 echo "========================================================="
-echo "|| Open http://$ipaddress:8080/super in your browser. ||"
+echo "|| Open http://${ipaddress// /}:8080/super in your browser. ||"
 echo "========================================================="
 if [ "$createSuperJson" = "Y" ]; then
     echo "|| Default Superuser : admin@shinobi.video             ||"
