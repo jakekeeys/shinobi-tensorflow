@@ -8,6 +8,18 @@ if [ "$version" = 7 ]; then
 	pkgmgr="yum"
 elif [ "$version" = 8 ]; then
 	pkgmgr="dnf"
+else
+	echo "This version of CentOS is unsupported!"
+	read -p "Continue at your own risk? Y/N" osoverride
+	
+	#Changes input to uppercase
+	osoverride=${osoverride^}
+	
+	if [ ! "$osoverride" = "Y" ]; then
+		exit 1
+	else 
+		pkgmgr="yum"	
+	fi
 fi
 
 #Check to see if we are running on a virtual machine
@@ -36,7 +48,6 @@ echo "Installing dependencies and tools"
 if [ "$version" = 7 ]; then
 	#Installing deltarpm first will greatly increase the download speed of the other packages
 	sudo yum install deltarpm -y -q -e 0
-	
 fi 
 
 #Install remaining packages
