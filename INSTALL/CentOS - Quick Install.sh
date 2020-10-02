@@ -12,13 +12,10 @@ else
 	echo "This version of CentOS is unsupported!"
 	read -p "Continue at your own risk? Y/N" osoverride
 
-	#Changes input to uppercase
-	osoverride=${osoverride^}
-
-	if [ ! "$osoverride" = "Y" ]; then
+	if [ ! "${osoverride^}" = "Y" ]; then
 		exit 1
 	else 
-		pkgmgr="yum"	
+		pkgmgr="yum"
 	fi
 fi
 
@@ -52,54 +49,69 @@ if [ "$version" = 7 ]; then
 fi 
 
 #Install remaining packages
-sudo $pkgmgr install $vm nano dos2unix net-tools curl wget git gcc gcc-c++ make zip -y -q -e 0
+sudo "$pkgmgr" install "$vm" nano dos2unix net-tools curl wget git gcc gcc-c++ make zip -y -q -e 0
 
 #Install updates
 echo "Updating system..."
-sudo $pkgmgr update -y -q -e 0
+sudo "$pkgmgr" update -y -q -e 0
 
 #Skip if running from the Ninja installer
 if [ "$1" != 1 ]; then
 	#Clone git repo and change directory
-	sudo git clone -q https://gitlab.com/Shinobi-Systems/Shinobi.git Shinobi
-	cd Shinobi
+	if sudo git clone -q https://gitlab.com/Shinobi-Systems/Shinobi.git Shinobi &> /dev/null; then
+		echo "Successfully cloned Shinobi repository."
+	else 
+		echo "Failed to clone Shinobi repository!"
+	fi
+	if cd Shinobi; then
+		echo "Changed to the Shinobi Directory."
+	else
+		echo "Failed to change to the Shinobi directory!";
+		exit 1
+	fi
 
 	echo "========================================================="
-	echo "Do you want to use the Master or Development branch of Shinobi?"
-	read -p "[M]aster or [D]ev " gitbranch
+	read -p "Do you want to use the Development branch of Shinobi? Y/N " gitbranch
 
-	#Changes input to uppercase
-	gitbranch=${gitbranch^}
-
-	if [ "$gitbranch" = "D" ]; then
+	if [ "${gitbranch^}" = "Y" ]; then
 		#Change to dev branch
 		sudo git checkout dev
 		sudo git pull
 	fi
 fi
 
+echo "========================================================="
+
 if ! [ -x "$(command -v node)" ]; then
-    echo "========================================================="
     echo "Node.js not found, installing..."
     sudo curl --silent --location https://rpm.nodesource.com/setup_12.x | sudo bash -
-	sudo $pkgmgr install nodejs -y -q -e 0
+	sudo "$pkgmgr" install nodejs -y -q -e 0
 else
     echo "Node.js is already installed..."
-    echo "Version : $(node -v)"
-fi
-if ! [ -x "$(command -v npm)" ]; then
-	sudo $pkgmgr install npm -y -q -e 0
+    echo "Version: $(node -v)"
 fi
 
 echo "========================================================="
-read -p "Do you want to install FFMPEG? Y/N " ffmpeginstall
 
-#Changes input to uppercase
-ffmpeginstall=${ffmpeginstall^}
+if ! [ -x "$(command -v npm)" ]; then
+	echo "NPM not found, installing..."
+	sudo "$pkgmgr" install npm -y -q -e 0
+else
+	echo "NPM is already installed..."
+    echo "Version: $(npm -v)"
+fi
 
-if [ "$ffmpeginstall" = "Y" ]; then
+echo "========================================================="
+
+if ! [ -x "$(ffmpeg -version)" ]; then
+	 ffmpeginstall="Y"
+else
+	read -p "FFMPEG is already installed and is version $(ffmpeg -version | sed -n "s/ffmpeg version \([-0-9.]*\).*/\1/p;"). Do you want to install FFMPEG? Y/N " ffmpeginstall
+fi
+
+if [ "${ffmpeginstall^}" = "Y" ]; then
     #Install EPEL Repo
-    sudo $pkgmgr install epel-release -y -q -e 0
+    sudo "$pkgmgr" install epel-release -y -q -e 0
     if [ "$version" = 7 ]; then
 		#Enable Nux Dextop repo for FFMPEG (CentOS 7)
 		sudo rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
@@ -117,21 +129,26 @@ fi
 echo "========================================================="
 read -p "Do you want to install MariaDB? Y/N " installdbserver
 
-#Changes input to uppercase
-installdbserver=${installdbserver^}
-
-if [ "$installdbserver" = "Y" ] || [ "$installdbserver" = "" ]; then
+if [ "${installdbserver^}" = "Y" ] || [ "${installdbserver^}" = "" ]; then
     echo "========================================================="
     echo "Installing MariaDB repository..."
 	#Add the MariaDB repository to yum
 	sudo curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash -s -- --skip-maxscale
 	echo "Installing MariaDB..."
-    sudo $pkgmgr install mariadb mariadb-server -y -q -e 0
+    sudo "$pkgmgr" install mariadb mariadb-server -y -q -e 0
     #Start mysql and enable on boot
     sudo systemctl start mariadb
     sudo systemctl enable mariadb
-    #Configure basic security for MariaDB
-    sudo mysql_secure_installation
+	echo "========================================================="
+	read -p "Do you want to configure basic security for MariaDB? Y/N " securedbserver
+
+	if [ "${securedbserver^}" = "Y" ]; then
+		#Configure basic security for MariaDB
+		sudo mysql_secure_installation
+	else 
+		echo "========================================================="
+		echo "Skipping database server security configuration..."
+	fi
 else
     echo "========================================================="
     echo "Skipping database server installation..."
@@ -140,43 +157,61 @@ fi
 echo "========================================================="
 read -p "Install default database? Y/N " mysqlDefaultData
 
-#Changes input to uppercase
-mysqlDefaultData=${mysqlDefaultData^}
+if [ "${mysqlDefaultData^}" = "Y" ]; then
 
-if [ "$mysqlDefaultData" = "Y" ]; then
-	if [ "$installdbserver" = "N" ]; then
-		#Get the hostname/ip of the database server
-		read -p "Please enter the hostname or IP address of the MariaDB server: " sqlhost
-		#Get the port for the database server
-		read -p "Please enter the port number of the MariaDB instance: " sqlport
-	fi
-	
-	#Get the username we will use to connect to the database
+	echo "========================================================="
+	#Get the username and password we will use to connect to the database
 	read -p "Please enter your MariaDB username: " sqluser
-	#Get the password for the database user
-	read -p -s "Please enter your MariaDB password: " sqlpass
-	
-	if [ "$installdbserver" = "N" ]; then
-		while ! mysql -h $sqlhost -P $sqlport -u $sqluser -p$sqlpassword -e ";" ; do
+	read -sp "Please enter your MariaDB password: " sqlpass
+
+	if [ "${installdbserver^}" = "N" ]; then
+
+		#Get the hostname/ip of the database server
+		read -p "Please enter the hostname or IP address of the database server, or leave blank for localhost: " sqlhost
+		#Get the port for the database server
+		read -p "Please enter the port number of the MariaDB instance, or leave blank for the default port: " sqlport
+		
+		#If the hostname is left blank, use localhost
+		if [ "$sqlhost" = "" ]; then
+			sqlhost=127.0.0.1
+		fi
+		#If the port is left blank, use the default MariaDB port
+		if [ "$sqlport" = "" ]; then
+			sqlport=3306
+		fi
+
+		#Loop until able to connect to the database
+		while ! mysql -h "$sqlhost" -P "$sqlport" -u "$sqluser" -p"$sqlpass" -e ";" ; do
 			echo "Unable to connect to MariaDB with the supplied credentials!"
-			read -p "Please enter the hostname or IP address of the MariaDB server: " sqlhost
+			read -p "Please enter the hostname or IP address of the database server, or leave blank for localhost: " sqlhost
 			read -p "Please enter the port number of the MariaDB instance, or leave blank for the default port: " sqlport
+						
+			read -p "Please enter your MariaDB username: " sqluser
+			read -p -s "Please enter your MariaDB password: " sqlpass
+			
+			#If the hostname is left blank, use localhost
+			if [ "$sqlhost" = "" ]; then
+				sqlhost=127.0.0.1
+			fi
+			#If the port is left blank, use the default MariaDB port
 			if [ "$sqlport" = "" ]; then
 				sqlport=3306
 			fi
-			read -p "Please enter your MariaDB username: " sqluser
-			read -p -s "Please enter your MariaDB password: " sqlpass
 		done
 	else
-		while ! mysql -u $sqluser -p$sqlpassword -e ";" ; do
+		while ! mysql -u "$sqluser" -p"$sqlpass" -e ";" ; do
 			echo "Unable to connect to MariaDB with the supplied credentials!"
 			read -p "Please enter your MariaDB username: " sqluser
-			read -p -s "Please enter your MariaDB password: " sqlpass
+			read -sp "Please enter your MariaDB password: " sqlpass
+			sqlhost=127.0.0.1
+			sqlport=3306
 		done
 	fi
-	
-    sudo mysql -u $sqluser -p$sqlpass -e "source sql/user.sql" || true
-    sudo mysql -u $sqluser -p$sqlpass -e "source sql/framework.sql" || true
+	echo "========================================================="
+	echo "Inserting database tables"
+	#Connect to the database and insert the default database
+    sudo mysql -h "$sqlhost" -P "$sqlport" -u "$sqluser" -p"$sqlpass" -e "source sql/user.sql" || true
+    sudo mysql -h "$sqlhost" -P "$sqlport" -u "$sqluser" -p"$sqlpass" -e "source sql/framework.sql" || true
 else
 	echo "========================================================="
     echo "Skipping database installation..."
@@ -201,10 +236,7 @@ ln -s INSTALL/shinobi /usr/bin/shinobi
 echo "========================================================="
 read -p "Automatically create firewall rules? Y/N " createfirewallrules
 
-#Changes input to uppercase
-createfirewallrules=${createfirewallrules^}
-
-if [ "$createfirewallrules" = "Y" ]; then
+if [ "${createfirewallrules^}" = "Y" ]; then
     sudo firewall-cmd --permanent --add-port=8080/tcp -q
     sudo firewall-cmd --reload -q
 fi
@@ -227,10 +259,7 @@ if [ ! -e "./super.json" ]; then
     echo "This may be useful for account and password managment"
     read -p "in commercial deployments. Y/N " createSuperJson
 
-	#Changes input to uppercase
-	createSuperJson=${createSuperJson^}
-
-    if [ "$createSuperJson" = "Y" ]; then
+    if [ "${createSuperJson^}" = "Y" ]; then
         sudo cp super.sample.json super.json
     fi
 fi
@@ -238,10 +267,7 @@ fi
 echo "========================================================="
 read -p "Start Shinobi on boot? Y/N " startupShinobi
 
-	#Changes input to uppercase
-	startupShinobi=${startupShinobi^}
-
-if [ "$startupShinobi" = "Y" ]; then
+if [ "${startupShinobi^}" = "Y" ]; then
     sudo pm2 startup
     sudo pm2 save
     sudo pm2 list
@@ -250,10 +276,7 @@ fi
 echo "========================================================="
 read -p "Start Shinobi now? Y/N " startShinobi
 
-	#Changes input to uppercase
-	startShinobi=${startShinobi^}
-
-if [ "$startShinobi" = "Y" ]; then
+if [ "${startShinobi^}" = "Y" ]; then
     sudo pm2 start camera.js
     sudo pm2 start cron.js
 fi
@@ -268,7 +291,7 @@ echo "|| Login with the Superuser and create a new user!!    ||"
 echo "========================================================="
 echo "|| Open http://${ipaddress// /}:8080/super in your browser. ||"
 echo "========================================================="
-if [ "$createSuperJson" = "Y" ]; then
+if [ "${createSuperJson^}" = "Y" ]; then
     echo "|| Default Superuser : admin@shinobi.video             ||"
     echo "|| Default Password : admin                            ||"
 	echo "|| You can edit these settings in \"super.json\"         ||"
