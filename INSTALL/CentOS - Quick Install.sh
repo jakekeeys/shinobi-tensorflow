@@ -82,6 +82,7 @@ fi
 
 echo "========================================================="
 
+#Check if Node.js is installed
 if ! [ -x "$(command -v node)" ]; then
     echo "Node.js not found, installing..."
     sudo curl --silent --location https://rpm.nodesource.com/setup_12.x | sudo bash -
@@ -93,6 +94,7 @@ fi
 
 echo "========================================================="
 
+#Check if NPM is installed
 if ! [ -x "$(command -v npm)" ]; then
 	echo "NPM not found, installing..."
 	sudo "$pkgmgr" install npm -y -q -e 0
@@ -103,10 +105,13 @@ fi
 
 echo "========================================================="
 
-if ! [ -x "$(ffmpeg -version)" ]; then
-	 ffmpeginstall="Y"
+#Check if FFMPEG is installed
+if ! [ -x "$(command -v ffmpeg)" ]; then
+	echo "FFMPEG not found, installing..."
+	ffmpeginstall="Y"
 else
-	read -p "FFMPEG is already installed and is version $(ffmpeg -version | sed -n "s/ffmpeg version \([-0-9.]*\).*/\1/p;"). Do you want to install FFMPEG? Y/N " ffmpeginstall
+	echo "FFMPEG is already installed and is version $(ffmpeg -version | sed -n "s/ffmpeg version \([-0-9.]*\).*/\1/p;")."
+	read -p "Do you want to install FFMPEG? Y/N " ffmpeginstall
 fi
 
 if [ "${ffmpeginstall^}" = "Y" ]; then
