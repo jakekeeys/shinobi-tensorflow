@@ -119,6 +119,11 @@ $(document).ready(function(){
             if(selectedServer && selectedServer.host){
                 var href = `http://${selectedServer.host}:${selectedServer.webPort}/s/${apiKey}?p2p=1`
                 copyToClipboard(href)
+                new PNotify({
+                    type: 'success',
+                    title: lang['Copied to Clipboard'],
+                    text: `<div style="word-break: break-all;">${href}</div>`,
+                })
             }else{
                 new PNotify({
                     type: 'warning',
