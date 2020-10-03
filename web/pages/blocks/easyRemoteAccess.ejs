@@ -33,6 +33,14 @@
             <div><input class="form-control" type="text" name="p2pApiKey" value="<%- config.p2pApiKey %>"></div>
         </label>
     </div>
+    <blockquote class="text-center mt-4 mb-4" style="background: #fff;
+        border: 2px solid #c79d05;
+    border-radius: 15px;
+    padding: 10px;
+    font-style: italic;">
+        <p><b>This feature is for subscribers only.</b> To get an API Key please login to your <a class="btn badge badge-sm badge-default" href="https://licenses.shinobi.video/login" target="_blank">Shinobi<b>Shop</b></a> account and create a key associated to <b>any active Subscription ID</b>.</p>
+        <p class="mb-0">If you would like to get access to a private (dedicated) P2P server please create an account at the <a class="btn badge badge-sm badge-default" href="https://licenses.shinobi.video/login" target="_blank">Shinobi<b>Shop</b></a> and contact us via the Live Chat widget.</p>
+    </blockquote>
     <div class="form-group">
         <div class="row" id="p2pServerList">
             <% Object.keys(p2pServerList).forEach((key) => {
@@ -50,10 +58,13 @@
                                     <td class="text-left epic-text epic-text-filter"><%- lang.Host %></td>
                                     <td class="text-right"><span class="badge badge-sm badge-default"><%- details.host %></span></td>
                                 </tr>
-                                <tr title="Network Speed">
+                                <tr>
                                     <td><i class="fa fa-bolt"></i></td>
                                     <td class="text-left epic-text epic-text-filter"><%- lang.Bandwidth %></td>
-                                    <td class="text-right"><span class="badge badge-sm badge-default"><%- details.maxNetworkSpeed.down %> / <%- details.maxNetworkSpeed.up %></span></td>
+                                    <td class="text-right">
+                                        <span title="Download Usage" class="badge badge-sm badge-default"><span class="networkUseDown"><i class="fa fa-spinner fa-pulse"></i></span> / <%- details.maxNetworkSpeed.down %></span>
+                                        <span title="Upload Usage" class="badge badge-sm badge-default"><span class="networkUseUp"><i class="fa fa-spinner fa-pulse"></i></span> / <%- details.maxNetworkSpeed.up %></span>
+                                    </td>
                                 </tr>
                                 <tr title="CPU Usage">
                                     <td><i class="fa fa-cubes"></i></td>
@@ -62,8 +73,8 @@
                                 </tr>
                                 <tr title="RAM Usage">
                                     <td><i class="fa fa-tasks"></i></td>
-                                    <td class="text-left epic-text epic-text-filter"><span class="ramUsed"><i class="fa fa-spinner fa-pulse"></i></span> <%- lang.RAM %></td>
-                                    <td class="text-right"><span class="badge badge-sm badge-default"><span class="ramPercent"><i class="fa fa-spinner fa-pulse"></i></span>%</span></td>
+                                    <td class="text-left epic-text epic-text-filter"><span class="ramTotal"><i class="fa fa-spinner fa-pulse"></i></span> <%- lang.RAM %></td>
+                                    <td class="text-right"><span class="badge badge-sm badge-default"><span class="ramPercent"><i class="fa fa-spinner fa-pulse"></i></span>%, <span class="ramUsed"><i class="fa fa-spinner fa-pulse"></i></span> MB</span></td>
                                 </tr>
                             </table>
                         </div>

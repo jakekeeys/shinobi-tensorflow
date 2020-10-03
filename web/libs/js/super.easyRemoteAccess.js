@@ -2,12 +2,20 @@ $(document).ready(function(){
     var easyRemoteAccessTab = $('#easyRemoteAccess')
     var p2pHostSelectedContainer = $('#p2pHostSelected')
     var easyRemoteAccessForm = easyRemoteAccessTab.find('form')
+    function bytesToSize(bytes) {
+       var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+       if (bytes == 0) return '0 Byte';
+       var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+       return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+    }
     function beginStatusConnectionForServer(key,server){
         var cardEl = easyRemoteAccessTab.find(`[drawn-id="${key}"]`)
         var cpuUsageEl = cardEl.find('.cpuUsage')
         var ramPercentEl = cardEl.find('.ramPercent')
         var ramUsedEl = cardEl.find('.ramUsed')
         var cpuCoresEl = cardEl.find('.cpuCores')
+        var networkUseDownEl = cardEl.find('.networkUseDown')
+        var networkUseUpEl = cardEl.find('.networkUseUp')
         var socketConnection = io(`ws://${server.host}:${server.p2pPort}`,{
             transports: ['websocket'],
             query: {
@@ -15,9 +23,12 @@ $(document).ready(function(){
             }
         })
         socketConnection.on('initUI',function(data){
+            cardEl.find('.ramTotal').text(bytesToSize(data.ram))
             cpuCoresEl.text(data.cpuCores)
         })
         socketConnection.on('charts',function(data){
+            networkUseUpEl.text(data.network.up)
+            networkUseDownEl.text(data.network.down)
             cpuUsageEl.text(data.cpu)
             ramUsedEl.text(data.ram.used)
             ramPercentEl.text(data.ram.percent)
