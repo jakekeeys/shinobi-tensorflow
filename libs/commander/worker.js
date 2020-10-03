@@ -73,6 +73,18 @@ const initialize = (config,lang) => {
         p2pClientConnections[connectionId || p2pClientConnectionStaticName] = masterConnectionToMachine
         return masterConnectionToMachine
     }
+    const killAllClientConnections = () => {
+        Object.keys(p2pClientConnections).forEach((key) => {
+            try{
+                p2pClientConnections[key].disconnect()
+            }catch(err){
+
+            }
+            setTimeout(() => {
+                delete(p2pClientConnections[key])
+            },1000)
+        })
+    }
     //
     s.debugLog('p2p',`Connecting to ${selectedHost}...`)
     const connectionToP2PServer = socketIOClient('ws://' + selectedHost, {transports:['websocket']});
@@ -221,6 +233,7 @@ const initialize = (config,lang) => {
     });
     const onDisconnect = () => {
         s.systemLog('p2p','Disconnected')
+        killAllClientConnections()
         if(!connectionToP2PServer.allowDisconnect){
             s.systemLog('p2p','Attempting Reconnection...')
             setTimeout(() => {
