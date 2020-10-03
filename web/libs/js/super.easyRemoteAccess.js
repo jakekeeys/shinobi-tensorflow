@@ -2,6 +2,27 @@ $(document).ready(function(){
     var easyRemoteAccessTab = $('#easyRemoteAccess')
     var p2pHostSelectedContainer = $('#p2pHostSelected')
     var easyRemoteAccessForm = easyRemoteAccessTab.find('form')
+    function beginStatusConnectionForServer(key,server){
+        var cardEl = easyRemoteAccessTab.find(`[drawn-id="${key}"]`)
+        var cpuUsageEl = cardEl.find('.cpuUsage')
+        var ramPercentEl = cardEl.find('.ramPercent')
+        var ramUsedEl = cardEl.find('.ramUsed')
+        var cpuCoresEl = cardEl.find('.cpuCores')
+        var socketConnection = io(`ws://${server.host}:${server.p2pPort}`,{
+            transports: ['websocket'],
+            query: {
+                charts: '1'
+            }
+        })
+        socketConnection.on('initUI',function(data){
+            cpuCoresEl.text(data.cpuCores)
+        })
+        socketConnection.on('charts',function(data){
+            cpuUsageEl.text(data.cpu)
+            ramUsedEl.text(data.ram.used)
+            ramPercentEl.text(data.ram.percent)
+        })
+    }
     easyRemoteAccessTab.find('.submit').click(function(){
         easyRemoteAccessForm.submit()
     })
@@ -48,5 +69,8 @@ $(document).ready(function(){
             })
         }
         return false;
+    })
+    $.each(p2pServerList,function(key,server){
+        beginStatusConnectionForServer(key,server)
     })
 })

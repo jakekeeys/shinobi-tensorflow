@@ -1,6 +1,13 @@
 <% const p2pServerList = config.p2pServerList || {}
     const selectedServer = p2pServerList[config.p2pHostSelected]
  %>
+ <style>
+     .epic-text-filter {
+         text-transform: none;
+        letter-spacing: 0.5pt;
+        font-size: 9pt;
+     }
+ </style>
  <script>
      window.p2pServerList = <%- JSON.stringify(p2pServerList) %>
      window.currentlySelectedP2PServerId = `<%- config.p2pHostSelected %>`
@@ -31,21 +38,37 @@
             <% Object.keys(p2pServerList).forEach((key) => {
                 const details = p2pServerList[key]
             %>
-                <div class="col-md-3 mt-2">
+                <div class="col-md-4 mt-2">
                     <div class="card <% if(config.p2pHostSelected === key){ %>active<% } %>" drawn-id="<%- key %>">
                         <div class="card-header" style="min-height:auto">
                             <span class="badge badge-sm badge-info name-badge"><%- details.name %></span>
                         </div>
-                        <div class="card-body" style="min-height:auto">
-                            <div title="Host Address">
-                                <span class="badge badge-sm badge-default"><i class="fa fa-globe"></i></span> <span class="badge badge-sm badge-default"><%- details.host %></span>
-                            </div>
-                            <div title="Network Speed">
-                                <span class="badge badge-sm badge-default"><i class="fa fa-bolt"></i></span> <span class="badge badge-sm badge-default"><%- details.maxNetworkSpeed.down %> / <%- details.maxNetworkSpeed.up %><%- details.maxNetworkSpeed.shared ? ' Shared Bandwidth' : '' %></span>
-                            </div>
+                        <div style="min-height:auto">
+                            <table class="table table-striped mb-0 text-center">
+                                <tr title="Host Address">
+                                    <td><i class="fa fa-globe"></i></td>
+                                    <td class="text-left epic-text epic-text-filter"><%- lang.Host %></td>
+                                    <td class="text-right"><span class="badge badge-sm badge-default"><%- details.host %></span></td>
+                                </tr>
+                                <tr title="Network Speed">
+                                    <td><i class="fa fa-bolt"></i></td>
+                                    <td class="text-left epic-text epic-text-filter"><%- lang.Bandwidth %></td>
+                                    <td class="text-right"><span class="badge badge-sm badge-default"><%- details.maxNetworkSpeed.down %> / <%- details.maxNetworkSpeed.up %></span></td>
+                                </tr>
+                                <tr title="CPU Usage">
+                                    <td><i class="fa fa-cubes"></i></td>
+                                    <td class="text-left epic-text epic-text-filter"><span class="cpuCores"></span> <%- lang.Cores %></td>
+                                    <td class="text-right"><span class="badge badge-sm badge-default"><span class="cpuUsage"><i class="fa fa-spinner fa-pulse"></i></span>%</span></td>
+                                </tr>
+                                <tr title="RAM Usage">
+                                    <td><i class="fa fa-tasks"></i></td>
+                                    <td class="text-left epic-text epic-text-filter"><span class="ramUsed"><i class="fa fa-spinner fa-pulse"></i></span> <%- lang.RAM %></td>
+                                    <td class="text-right"><span class="badge badge-sm badge-default"><span class="ramPercent"><i class="fa fa-spinner fa-pulse"></i></span>%</span></td>
+                                </tr>
+                            </table>
                         </div>
                         <div class="card-footer" style="min-height:auto">
-                            <span class="badge badge-sm badge-default"><i class="fa fa-map-marker"></i> <%- details.location.lat %>, <%- details.location.lon %></span>
+                            <a class="btn badge badge-sm badge-default" target="_blank" href="<%- `https://www.google.ca/maps/@${details.location.lat},${details.location.lon},15z` %>"><i class="fa fa-map-marker"></i> <%- details.location.lat %>, <%- details.location.lon %></a>
                         </div>
                     </div>
                 </div>
