@@ -38,8 +38,11 @@
 }
 #easyRemoteAccess .card .selected-badge {
     display: none;
+    color: #fff!important;
+    background: #054e9f;
+    border: 1px solid #054e9f;
 }
-#easyRemoteAccess .card.active .selected-badge {
+#easyRemoteAccess .card.selected .selected-badge {
     display: inline-block;
 }
 #easyRemoteAccess .card.active .table-striped tbody tr:nth-of-type(odd) {

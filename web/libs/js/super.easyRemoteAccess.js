@@ -3,6 +3,7 @@ $(document).ready(function(){
     var p2pHostSelectedContainer = $('#p2pHostSelected')
     var easyRemoteAccessForm = easyRemoteAccessTab.find('form')
     var loadingRegistration = false
+    var currentlyRegisteredP2PServer = currentlySelectedP2PServerId ? currentlySelectedP2PServerId + '' : undefined
     function copyToClipboard(str) {
         const el = document.createElement('textarea');
         el.value = str;
@@ -58,6 +59,16 @@ $(document).ready(function(){
         loadingRegistration = false
         easyRemoteAccessTab.find('.remote-dashboard-link').html(`<i class="fa fa-external-link"></i> ` + lang['Open Remote Dashboard'])
         easyRemoteAccessTab.find('.remote-dashboard-link-copy').html(`<i class="fa fa-copy"></i> ` + lang['Copy Remote Link'])
+        displayCurrentlySelectedInternally()
+    }
+    function displayCurrentlySelectedInternally(){
+        var selectedServer = p2pServerList[currentlyRegisteredP2PServer]
+        if(selectedServer){
+            var key = selectedServer.key
+            var cardEl = easyRemoteAccessTab.find(`[drawn-id="${key}"]`)
+            easyRemoteAccessTab.find(`[drawn-id].selected`).removeClass('selected')
+            cardEl.addClass('selected')
+        }
     }
     easyRemoteAccessTab.find('.submit').click(function(){
         easyRemoteAccessForm.submit()
@@ -73,6 +84,7 @@ $(document).ready(function(){
         },function(data){
             console.log(data)
             if(data.ok){
+                currentlyRegisteredP2PServer = currentlySelectedP2PServerId + ''
                 new PNotify({
                     type: 'success',
                     title: lang['P2P Settings Applied'],
@@ -94,7 +106,7 @@ $(document).ready(function(){
         e.preventDefault()
         if(!loadingRegistration){
             var apiKey = easyRemoteAccessForm.find('[name="p2pApiKey"]').val()
-            var selectedServer = p2pServerList[currentlySelectedP2PServerId]
+            var selectedServer = p2pServerList[currentlyRegisteredP2PServer]
             console.log(selectedServer,currentlySelectedP2PServerId,p2pServerList)
             if(selectedServer && selectedServer.host){
                 var href = `http://${selectedServer.host}:${selectedServer.webPort}/s/${apiKey}?p2p=1`
@@ -114,7 +126,7 @@ $(document).ready(function(){
         e.preventDefault()
         if(!loadingRegistration){
             var apiKey = easyRemoteAccessForm.find('[name="p2pApiKey"]').val()
-            var selectedServer = p2pServerList[currentlySelectedP2PServerId]
+            var selectedServer = p2pServerList[currentlyRegisteredP2PServer]
             console.log(selectedServer,currentlySelectedP2PServerId,p2pServerList)
             if(selectedServer && selectedServer.host){
                 var href = `http://${selectedServer.host}:${selectedServer.webPort}/s/${apiKey}?p2p=1`
@@ -135,6 +147,8 @@ $(document).ready(function(){
         return false;
     })
     $.each(p2pServerList,function(key,server){
+        server.key = key
         beginStatusConnectionForServer(key,server)
     })
+    displayCurrentlySelectedInternally()
 })
