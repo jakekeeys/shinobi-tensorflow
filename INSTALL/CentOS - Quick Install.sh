@@ -135,7 +135,6 @@ echo "========================================================="
 read -p "Do you want to install MariaDB? Y/N " installdbserver
 
 if [ "${installdbserver^}" = "Y" ] || [ "${installdbserver^}" = "" ]; then
-    echo "========================================================="
     echo "Installing MariaDB repository..."
 	#Add the MariaDB repository to yum
 	sudo curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash -s -- --skip-maxscale
@@ -155,7 +154,6 @@ if [ "${installdbserver^}" = "Y" ] || [ "${installdbserver^}" = "" ]; then
 		echo "Skipping database server security configuration..."
 	fi
 else
-    echo "========================================================="
     echo "Skipping database server installation..."
 fi
 
@@ -170,37 +168,83 @@ if [ "${mysqlDefaultData^}" = "Y" ]; then
 	read -sp "Please enter your MariaDB password: " sqlpass
 
 	if [ "${installdbserver^}" = "N" ]; then
-
+		echo ""
 		#Get the hostname/ip of the database server
-		read -p "Please enter the hostname or IP address of the database server, or leave blank for localhost: " sqlhost
+		echo "Please enter the hostname or IP address of the database"
+		read -p "server, or leave blank for localhost: " sqlhost
 		#Get the port for the database server
-		read -p "Please enter the port number of the MariaDB instance, or leave blank for the default port: " sqlport
-		
+		echo ""
+		echo "Step 1"
+		echo ""				
+		while :; do
+			echo "Please enter the port number of the MariaDB instance,"
+			read -p "or leave blank for the default port: " sqlport
+			[[ "$sqlport" =~ ^[0-9]+$|^$ ]] || { echo "Please enter numeric characters only"; echo ""; continue; }
+			if [ "$sqlport" = "" ]; then
+					sqlport=3306
+					echo ""
+					echo "Step 2A"
+					echo ""
+					break
+			elif [ "$sqlport" -ge 1 ] && [ "$sqlport" -le 65535 ]; then
+				echo ""
+				echo "Step 2B"
+				echo ""
+				break
+			else
+				echo ""
+				echo "Step 2C"
+				echo ""
+                echo "Please enter a number between 1 and 65535"
+                echo "or leave blank for the default port 3306"
+                echo ""
+			fi
+		done
+
 		#If the hostname is left blank, use localhost
 		if [ "$sqlhost" = "" ]; then
 			sqlhost=127.0.0.1
-		fi
-		#If the port is left blank, use the default MariaDB port
-		if [ "$sqlport" = "" ]; then
-			sqlport=3306
 		fi
 
 		#Loop until able to connect to the database
 		while ! mysql -h "$sqlhost" -P "$sqlport" -u "$sqluser" -p"$sqlpass" -e ";" ; do
 			echo "Unable to connect to MariaDB with the supplied credentials!"
-			read -p "Please enter the hostname or IP address of the database server, or leave blank for localhost: " sqlhost
-			read -p "Please enter the port number of the MariaDB instance, or leave blank for the default port: " sqlport
-						
 			read -p "Please enter your MariaDB username: " sqluser
-			read -p -s "Please enter your MariaDB password: " sqlpass
+			read -sp "Please enter your MariaDB password: " sqlpass
+			echo ""			
+			echo "Please enter the hostname or IP address of the database"
+			read -p "server, or leave blank for localhost: " sqlhost
+			echo ""
+			echo "Step 3"
+			echo ""
+			while :; do
+				echo "Please enter the port number of the MariaDB instance,"
+				read -p "or leave blank for the default port: " sqlport
+				[[ "$sqlport" =~ ^[0-9]+$|^$ ]] || { echo "Please enter numeric characters only"; echo ""; continue; }
+				if [ "$sqlport" = "" ]; then
+						sqlport=3306
+						echo ""
+						echo "Step 3A"
+						echo ""
+						break
+				elif [ "$sqlport" -ge 1 ] && [ "$sqlport" -le 65535 ]; then
+					echo ""
+					echo "Step 3B"
+					echo ""
+					break
+				else
+					echo ""
+					echo "Step 3C"
+					echo ""
+					echo "Please enter a number between 1 and 65535"
+					echo "or leave blank for the default port 3306"
+					echo ""
+				fi
+			done
 			
 			#If the hostname is left blank, use localhost
 			if [ "$sqlhost" = "" ]; then
 				sqlhost=127.0.0.1
-			fi
-			#If the port is left blank, use the default MariaDB port
-			if [ "$sqlport" = "" ]; then
-				sqlport=3306
 			fi
 		done
 	else
@@ -208,6 +252,7 @@ if [ "${mysqlDefaultData^}" = "Y" ]; then
 			echo "Unable to connect to MariaDB with the supplied credentials!"
 			read -p "Please enter your MariaDB username: " sqluser
 			read -sp "Please enter your MariaDB password: " sqlpass
+			echo ""
 			sqlhost=127.0.0.1
 			sqlport=3306
 		done
