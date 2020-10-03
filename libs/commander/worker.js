@@ -226,6 +226,9 @@ const initialize = (config,lang) => {
             setTimeout(() => {
                 connectionToP2PServer.connect()
             },3000)
+        }else{
+            s.systemLog('p2p','Closing Process')
+            process.exit()
         }
     }
     connectionToP2PServer.on('error',onDisconnect)

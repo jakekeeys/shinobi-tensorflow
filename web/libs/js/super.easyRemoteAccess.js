@@ -2,9 +2,24 @@ $(document).ready(function(){
     var easyRemoteAccessTab = $('#easyRemoteAccess')
     var p2pHostSelectedContainer = $('#p2pHostSelected')
     var easyRemoteAccessForm = easyRemoteAccessTab.find('form')
+    var loadingRegistration = false
+    function copyToClipboard(str) {
+        const el = document.createElement('textarea');
+        el.value = str;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+    };
     function bytesToSize(bytes) {
        var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
        if (bytes == 0) return '0 Byte';
+       var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+       return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+    }
+    function bitsToSize(bytes) {
+       var sizes = ['Bits', 'Kbits', 'Mbits', 'GBits', 'TBits'];
+       if (bytes == 0) return '0 Bits';
        var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
        return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
     }
@@ -27,12 +42,22 @@ $(document).ready(function(){
             cpuCoresEl.text(data.cpuCores)
         })
         socketConnection.on('charts',function(data){
-            networkUseUpEl.text(data.network.up)
-            networkUseDownEl.text(data.network.down)
+            networkUseUpEl.text(bitsToSize(data.network.up))
+            networkUseDownEl.text(bitsToSize(data.network.down))
             cpuUsageEl.text(data.cpu)
             ramUsedEl.text(data.ram.used)
             ramPercentEl.text(data.ram.percent)
         })
+    }
+    function disableForm(){
+        loadingRegistration = true
+        easyRemoteAccessTab.find('.remote-dashboard-link').html(`<i class="fa fa-spinner fa-pulse"></i>`)
+        easyRemoteAccessTab.find('.remote-dashboard-link-copy').html(`<i class="fa fa-spinner fa-pulse"></i>`)
+    }
+    function enableForm(){
+        loadingRegistration = false
+        easyRemoteAccessTab.find('.remote-dashboard-link').html(`<i class="fa fa-external-link"></i> ` + lang['Open Remote Dashboard'])
+        easyRemoteAccessTab.find('.remote-dashboard-link-copy').html(`<i class="fa fa-copy"></i> ` + lang['Copy Remote Link'])
     }
     easyRemoteAccessTab.find('.submit').click(function(){
         easyRemoteAccessForm.submit()
@@ -40,6 +65,7 @@ $(document).ready(function(){
     easyRemoteAccessForm.submit(function(e){
         e.preventDefault()
         var formValues = $(this).serializeObject()
+        disableForm()
         formValues.p2pHostSelected = currentlySelectedP2PServerId
         console.log(formValues)
         $.post(superApiPrefix + $user.sessionKey + '/p2p/save',{
@@ -52,6 +78,7 @@ $(document).ready(function(){
                     title: lang['P2P Settings Applied'],
                     text: lang.p2pSettingsText1,
                 })
+                setTimeout(enableForm,5000)
             }
         })
         return false
@@ -65,19 +92,40 @@ $(document).ready(function(){
     })
     easyRemoteAccessTab.on('click','.remote-dashboard-link',function(e){
         e.preventDefault()
-        var apiKey = easyRemoteAccessForm.find('[name="p2pApiKey"]').val()
-        var selectedServer = p2pServerList[currentlySelectedP2PServerId]
-        console.log(selectedServer,currentlySelectedP2PServerId,p2pServerList)
-        if(selectedServer && selectedServer.host){
-            var href = `http://${selectedServer.host}:${selectedServer.webPort}/s/${apiKey}?p2p=1`
-            var win = window.open(href, '_blank');
-            win.focus();
-        }else{
-            new PNotify({
-                type: 'warning',
-                title: lang['P2P Server Not Selected'],
-                text: lang.p2pServerNotSelectedText,
-            })
+        if(!loadingRegistration){
+            var apiKey = easyRemoteAccessForm.find('[name="p2pApiKey"]').val()
+            var selectedServer = p2pServerList[currentlySelectedP2PServerId]
+            console.log(selectedServer,currentlySelectedP2PServerId,p2pServerList)
+            if(selectedServer && selectedServer.host){
+                var href = `http://${selectedServer.host}:${selectedServer.webPort}/s/${apiKey}?p2p=1`
+                var win = window.open(href, '_blank');
+                win.focus();
+            }else{
+                new PNotify({
+                    type: 'warning',
+                    title: lang['P2P Server Not Selected'],
+                    text: lang.p2pServerNotSelectedText,
+                })
+            }
+        }
+        return false;
+    })
+    easyRemoteAccessTab.on('click','.remote-dashboard-link-copy',function(e){
+        e.preventDefault()
+        if(!loadingRegistration){
+            var apiKey = easyRemoteAccessForm.find('[name="p2pApiKey"]').val()
+            var selectedServer = p2pServerList[currentlySelectedP2PServerId]
+            console.log(selectedServer,currentlySelectedP2PServerId,p2pServerList)
+            if(selectedServer && selectedServer.host){
+                var href = `http://${selectedServer.host}:${selectedServer.webPort}/s/${apiKey}?p2p=1`
+                copyToClipboard(href)
+            }else{
+                new PNotify({
+                    type: 'warning',
+                    title: lang['P2P Server Not Selected'],
+                    text: lang.p2pServerNotSelectedText,
+                })
+            }
         }
         return false;
     })
