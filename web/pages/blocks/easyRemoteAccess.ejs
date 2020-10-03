@@ -1,7 +1,15 @@
+<% const p2pServerList = config.p2pServerList || {}
+    const selectedServer = p2pServerList[config.p2pHostSelected]
+ %>
+ <script>
+     window.p2pServerList = <%- JSON.stringify(p2pServerList) %>
+     window.currentlySelectedP2PServerId = `<%- config.p2pHostSelected %>`
+ </script>
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/super.easyRemoteAccess.css">
 <form>
-    <div class="mb-4">
-        <a href="#" class="submit btn btn-block btn-default"><i class="fa fa-check"></i> <%- lang.Save %></a>
+    <div class="mb-4 btn-group" style="display:flex">
+        <a style="flex:6" href="#" class="submit btn btn-default"><i class="fa fa-check"></i> <%- lang.Save %></a>
+        <a style="flex:6" target="_blank" href="#" class="btn btn-info remote-dashboard-link"><i class="fa fa-external-link"></i> <%- lang['Open Dashboard Remotely'] %></a>
     </div>
     <div class="form-group">
         <label>
@@ -15,13 +23,13 @@
     <div class="form-group">
         <label>
             <div><span><%-lang['P2P API Key']%></span></div>
-            <div><input class="form-control" type="password" name="p2pApiKey" value="<%- config.p2pApiKey %>"></div>
+            <div><input class="form-control" type="text" name="p2pApiKey" value="<%- config.p2pApiKey %>"></div>
         </label>
     </div>
     <div class="form-group">
         <div class="row" id="p2pServerList">
-            <% Object.keys(config.p2pServerList).forEach((key) => {
-                const details = config.p2pServerList[key]
+            <% Object.keys(p2pServerList).forEach((key) => {
+                const details = p2pServerList[key]
             %>
                 <div class="col-md-3 mt-2">
                     <div class="card <% if(config.p2pHostSelected === key){ %>active<% } %>" drawn-id="<%- key %>">

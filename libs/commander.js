@@ -5,6 +5,36 @@ module.exports = function(s,config,lang,app){
     config.machineId = config.p2pApiKey + '' + config.p2pGroupId
     config.p2pTargetAuth = config.p2pTargetAuth || s.gid(30)
     if(!config.p2pServerList)config.p2pServerList = {
+        "vancouver-1": {
+            name: 'Vancouver-1',
+            host: '104.218.61.236',
+            p2pPort: '8084',
+            webPort: '8000',
+            maxNetworkSpeed: {
+                up: 5000,
+                down: 5000,
+                shared: true
+            },
+            location: {
+                lat: 49.284966,
+                lon: -123.1140607
+            }
+        },
+        "toronto-1": {
+            name: 'Toronto-1',
+            host: '104.218.60.72',
+            p2pPort: '8084',
+            webPort: '8000',
+            maxNetworkSpeed: {
+                up: 5000,
+                down: 5000,
+                shared: true
+            },
+            location: {
+                lat: 43.644773,
+                lon: -79.3862837
+            }
+        },
         "paris-1": {
             name: 'Paris-1',
             host: '163.172.180.205',
@@ -18,22 +48,22 @@ module.exports = function(s,config,lang,app){
             location: {
                 lat: 48.873877,
                 lon: 2.295533
-            },
+            }
         },
-        "paris-2": {
-            name: 'Paris-2',
-            host: '163.172.180.205',
+        "amsterdam-1": {
+            name: 'Amsterdam-1',
+            host: '51.15.43.80',
             p2pPort: '8084',
             webPort: '8000',
             maxNetworkSpeed: {
-                up: 200,
-                down: 200,
+                up: 500,
+                down: 500,
                 shared: true
             },
             location: {
-                lat: 48.873877,
-                lon: 2.295533
-            },
+                lat: 52.348773,
+                lon: 4.8846043
+            }
         },
     }
     if(!config.p2pHostSelected)config.p2pHostSelected = 'paris-1'

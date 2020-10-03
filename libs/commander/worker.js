@@ -131,7 +131,6 @@ const initialize = (config,lang) => {
     // })
 
     connectionToP2PServer.on('wsInit',(rawRequest) => {
-        s.debugLog('p2pWsInit',rawRequest)
         const user = rawRequest.user
         const clientConnectionToMachine = createShinobiSocketConnection(rawRequest.cnid)
         connectedUserWebSockets[user.auth_token] = user;
