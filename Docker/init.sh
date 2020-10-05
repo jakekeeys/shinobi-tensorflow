@@ -102,7 +102,7 @@ if [ ! -e "./super.json" ]; then
 fi
 
 echo "Running extension init file ..."
-( exec "./init.extension.sh" ) 
+( sh /home/Shinobi/Docker/init.extension.sh ) 
 
 # Execute Command
 echo "Starting Shinobi ..."
