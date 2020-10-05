@@ -100,6 +100,10 @@ if [ ! -e "./super.json" ]; then
     sudo cp super.sample.json super.json
     sudo cp super.sample.json /config/super.json
 fi
+
+echo "Running extension init file ..."
+( exec "./init.extension.sh" ) 
+
 # Execute Command
 echo "Starting Shinobi ..."
 exec "$@"
