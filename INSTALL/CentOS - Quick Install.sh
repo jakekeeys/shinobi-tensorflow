@@ -172,29 +172,17 @@ if [ "${mysqlDefaultData^}" = "Y" ]; then
 		#Get the hostname/ip of the database server
 		echo "Please enter the hostname or IP address of the database"
 		read -p "server, or leave blank for localhost: " sqlhost
-		#Get the port for the database server
-		echo ""
-		echo "Step 1"
-		echo ""				
+		#Get the port for the database server			
 		while :; do
 			echo "Please enter the port number of the MariaDB instance,"
 			read -p "or leave blank for the default port: " sqlport
 			[[ "$sqlport" =~ ^[0-9]+$|^$ ]] || { echo "Please enter numeric characters only"; echo ""; continue; }
 			if [ "$sqlport" = "" ]; then
 					sqlport=3306
-					echo ""
-					echo "Step 2A"
-					echo ""
 					break
 			elif [ "$sqlport" -ge 1 ] && [ "$sqlport" -le 65535 ]; then
-				echo ""
-				echo "Step 2B"
-				echo ""
 				break
 			else
-				echo ""
-				echo "Step 2C"
-				echo ""
                 echo "Please enter a number between 1 and 65535"
                 echo "or leave blank for the default port 3306"
                 echo ""
@@ -214,28 +202,17 @@ if [ "${mysqlDefaultData^}" = "Y" ]; then
 			echo ""			
 			echo "Please enter the hostname or IP address of the database"
 			read -p "server, or leave blank for localhost: " sqlhost
-			echo ""
-			echo "Step 3"
-			echo ""
+
 			while :; do
 				echo "Please enter the port number of the MariaDB instance,"
 				read -p "or leave blank for the default port: " sqlport
 				[[ "$sqlport" =~ ^[0-9]+$|^$ ]] || { echo "Please enter numeric characters only"; echo ""; continue; }
 				if [ "$sqlport" = "" ]; then
 						sqlport=3306
-						echo ""
-						echo "Step 3A"
-						echo ""
 						break
 				elif [ "$sqlport" -ge 1 ] && [ "$sqlport" -le 65535 ]; then
-					echo ""
-					echo "Step 3B"
-					echo ""
 					break
 				else
-					echo ""
-					echo "Step 3C"
-					echo ""
 					echo "Please enter a number between 1 and 65535"
 					echo "or leave blank for the default port 3306"
 					echo ""
@@ -257,6 +234,7 @@ if [ "${mysqlDefaultData^}" = "Y" ]; then
 			sqlport=3306
 		done
 	fi
+	echo ""
 	echo "========================================================="
 	echo "Inserting database tables"
 	#Connect to the database and insert the default database
