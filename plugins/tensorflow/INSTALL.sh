@@ -39,7 +39,7 @@ if [ "$installJetsonFlag" = true ] && [ "$installArmFlag" = true ]; then
 fi
 
 if ([ "$installJetsonFlag" = true ] || [ "$installArmFlag" = true ]) && [ "$installGpuFlag" = true ]; then
-	echo "--gpu flag cannot be set with --jetson or --arm"
+	echo "--gpu flag cannot be set with --jetson or --arm. Exiting..."
 	exit -2
 fi
 
