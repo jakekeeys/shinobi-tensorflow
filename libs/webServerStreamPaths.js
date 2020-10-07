@@ -222,6 +222,7 @@ module.exports = function(s,config,lang,app){
                 res.end(user.lang['Not Permitted'])
                 return
             }
+            const flags = req.query.noflags ? '' : req.query.flags || '-s 200x200'
             res.writeHead(200, {
                 'Content-Type': 'image/jpeg',
                 'Cache-Control': 'no-cache',
@@ -231,7 +232,8 @@ module.exports = function(s,config,lang,app){
                 ke: req.params.ke,
                 mid: req.params.id,
             },{
-                useIcon: true
+                useIcon: true,
+                flags: flags
             }))
         },res,req);
     });
