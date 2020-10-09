@@ -32,6 +32,9 @@ $(document).ready(function(){
         var cpuCoresEl = cardEl.find('.cpuCores')
         var networkUseDownEl = cardEl.find('.networkUseDown')
         var networkUseUpEl = cardEl.find('.networkUseUp')
+        var chartViewerCount = cardEl.find('.chartViewerCount')
+        var connectedUsers = cardEl.find('.connectedUsers')
+        var registeredServers = cardEl.find('.registeredServers')
         var socketConnection = io(`ws://${server.host}:${server.p2pPort}`,{
             transports: ['websocket'],
             query: {
@@ -48,6 +51,9 @@ $(document).ready(function(){
             cpuUsageEl.text(data.cpu)
             ramUsedEl.text(data.ram.used)
             ramPercentEl.text(data.ram.percent)
+            registeredServers.text(data.servers)
+            connectedUsers.text(data.users)
+            chartViewerCount.text(data.statViewers)
         })
     }
     function disableForm(){

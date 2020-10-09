@@ -25,7 +25,7 @@ parentPort.on('message',(data) => {
             initialize(data.config,data.lang)
         break;
         case'exit':
-            s.debugLog('Exiting...')
+            s.debugLog('Closing P2P Connection...')
             process.exit(0)
         break;
     }
@@ -153,6 +153,7 @@ const initialize = (config,lang) => {
                 auth: user.auth_token,
                 ke: user.ke,
                 uid: user.uid,
+                ipAddress: rawRequest.ipAddress
             })
         });
         ([
