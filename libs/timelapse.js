@@ -203,6 +203,66 @@ module.exports = function(s,config,lang,app,io){
         },res,req);
     });
     /**
+    * API : Build MP4 File
+     */
+    app.post([
+        config.webPaths.apiPrefix+':auth/timelapseBuildVideo/:ke',
+        config.webPaths.apiPrefix+':auth/timelapseBuildVideo/:ke/:id',
+    ], function (req,res){
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,function(user){
+            var hasRestrictions = user.details.sub && user.details.allmonitors !== '1'
+            if(
+                user.permissions.watch_videos==="0" ||
+                hasRestrictions &&
+                (
+                    !user.details.video_view ||
+                    user.details.video_view.indexOf(req.params.id) === -1
+                )
+            ){
+                s.closeJsonResponse(res,[])
+                return
+            }
+            const monitorRestrictions = s.getMonitorRestrictions(user.details,req.params.id)
+            if(monitorRestrictions.length === 0){
+                s.closeJsonResponse(res,{
+                    ok: false
+                })
+                return
+            }
+            const framesPosted = s.getPostData(req, 'frames', true) || []
+            const frames = []
+            var n = 0
+            framesPosted.forEach((frame) => {
+                var firstParam = ['ke','=',req.params.ke]
+                if(n !== 0)firstParam = (['or']).concat(firstParam)
+                frames.push(firstParam,['mid','=',req.params.id],['filename','=',frame.filename])
+                ++n
+            })
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "Timelapse Frames",
+                where: frames
+            },(err,r) => {
+                if(r.length === 0){
+                    s.closeJsonResponse(res,{
+                        ok: false
+                    })
+                    return
+                }
+                s.createVideoFromTimelapse(r,s.getPostData(req, 'fps'),function(response){
+                    s.closeJsonResponse(res,{
+                        ok : response.ok,
+                        filename : response.filename,
+                        fileExists : response.fileExists,
+                        msg : response.msg,
+                    })
+                })
+            })
+        },res,req);
+    });
+    /**
     * API : Get Timelapse images
      */
     app.get([
@@ -291,7 +351,6 @@ module.exports = function(s,config,lang,app,io){
                     ['time','=<',dateNowMoment],
                 ]
             },function(err,frames) {
-                console.log(frames.length)
                 var groups = {}
                 frames.forEach(function(frame){
                     if(groups[frame.ke])groups[frame.ke] = {}
@@ -305,7 +364,6 @@ module.exports = function(s,config,lang,app,io){
                             if(response.ok){
 
                             }
-                            console.log(response.fileLocation)
                         })
                     })
                 })

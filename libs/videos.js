@@ -543,7 +543,9 @@ module.exports = function(s,config,lang){
                         fs.unlink(commandTempLocation,function(){
 
                         })
-                        delete(s.group[ke].activeMonitors[mid].buildingTimelapseVideo)
+                        setTimeout(() => {
+                            delete(s.group[ke].activeMonitors[mid].buildingTimelapseVideo)
+                        },3000)
                     })
                     var readFile = function(){
                         var filePath = concatFiles[currentFile]
@@ -573,6 +575,7 @@ module.exports = function(s,config,lang){
                     callback({
                         ok: false,
                         fileExists: true,
+                        filename: finalFileName + '.mp4',
                         fileLocation: finalMp4OutputLocation,
                         msg: lang['Already exists']
                     })
