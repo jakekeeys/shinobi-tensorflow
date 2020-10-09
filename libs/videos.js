@@ -545,7 +545,7 @@ module.exports = function(s,config,lang){
                         })
                         setTimeout(() => {
                             delete(s.group[ke].activeMonitors[mid].buildingTimelapseVideo)
-                        },3000)
+                        },5000)
                     })
                     var readFile = function(){
                         var filePath = concatFiles[currentFile]

@@ -251,7 +251,7 @@ module.exports = function(s,config,lang,app,io){
                     })
                     return
                 }
-                s.createVideoFromTimelapse(r,s.getPostData(req, 'fps'),function(response){
+                s.createVideoFromTimelapse(r.reverse(),s.getPostData(req, 'fps'),function(response){
                     s.closeJsonResponse(res,{
                         ok : response.ok,
                         filename : response.filename,
