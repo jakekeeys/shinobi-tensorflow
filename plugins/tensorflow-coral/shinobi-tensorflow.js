@@ -28,15 +28,24 @@ try{
 var spawn = require('child_process').spawn;
 var child = spawn('python3', ['-u', 'detect_image.py']);
 var ready = false;
+var lastStatusLog = new Date();
+
+child.on('close', function() {
+	child = spawn('python3', ['-u', 'detect_image.py']);
+});
 
 child.stdout.on('data', function (data) {
     var rawString = data.toString('utf8');
-    console.log(rawString);
+    if(new Date() - lastStatusLog > 5000){
+        lastStatusLog = new Date();
+        console.log(rawString, new Date());
+    }
     var messages = rawString.split('\n')
     messages.forEach((message) => {
         if(message === "") return;
         var obj = JSON.parse(message)
         if (obj.type === "error") {
+            console.log("Script got error: "+message.data, new Date());
             throw message.data;
         }
 
@@ -87,7 +96,8 @@ async function process(buffer, type) {
 s.detectObject = function(buffer,d,tx,frameLocation,callback){
     process( buffer).then((resp)=>{
         var results = resp.data
-        if(results[0]){
+        //console.log(resp.time)
+        if(Array.isArray(results) && results[0]){
             var mats = []
             results.forEach(function(v){
                 mats.push({
