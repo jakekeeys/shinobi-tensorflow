@@ -139,6 +139,7 @@ $(document).ready(function(e){
         pauseTimelapse()
         frameIcons.empty()
         setPlayBackFrame(null)
+        allowKeepChecking = false
     }
     var pauseTimelapse = function(){
         canPlay = false
@@ -185,8 +186,8 @@ $(document).ready(function(e){
         var filename = el.attr('data-filename')
         var frame = currentPlaylist[filename]
         $.confirm.create({
-            title: `sdf`,
-            body: `sdf`,
+            title: lang['Delete Timelapse Frame'],
+            body: lang.DeleteThisMsg + `<br><br><img style="max-width:100%" src="${frame.href}">`,
             clickOptions: {
                 class: 'btn-danger',
                 title: lang.Delete,
