@@ -2,6 +2,8 @@ var fs = require('fs')
 var moment = require('moment')
 var express = require('express')
 module.exports = function(s,config,lang,app,io){
+    const timelapseFramesCache = {}
+    const timelapseFramesCacheTimeouts = {}
     s.getTimelapseFrameDirectory = function(e){
         if(e.mid&&!e.id){e.id=e.mid}
         s.checkDetails(e)
@@ -128,6 +130,37 @@ module.exports = function(s,config,lang,app,io){
                     limit: 1
                 },function(){
                     s.onDeleteTimelapseFrameFromCloudExtensionsRunner(e,r)
+                })
+            }else{
+//                    console.log('Delete Failed',e)
+//                    console.error(err)
+            }
+        })
+    }
+    const deleteTimelapseFrame = function(e){
+        // e = video object
+        s.checkDetails(e)
+        var frameSelector = {
+            ke: e.ke,
+            mid: e.mid,
+            filename: e.filename,
+        }
+        s.knexQuery({
+            action: "select",
+            columns: "*",
+            table: "Timelapse Frames",
+            where: frameSelector,
+            limit: 1
+        },function(err,r){
+            if(r && r[0]){
+                r = r[0]
+                s.knexQuery({
+                    action: "delete",
+                    table: "Timelapse Frames",
+                    where: frameSelector,
+                    limit: 1
+                },function(){
+                    s.file('delete',e.fileLocation)
                 })
             }else{
 //                    console.log('Delete Failed',e)
@@ -267,6 +300,7 @@ module.exports = function(s,config,lang,app,io){
      */
     app.get([
         config.webPaths.apiPrefix+':auth/timelapse/:ke/:id/:date/:filename',
+        config.webPaths.apiPrefix+':auth/timelapse/:ke/:id/:date/:filename/:action',
     ], function (req,res){
         res.setHeader('Content-Type', 'application/json');
         s.auth(req.params,function(user){
@@ -279,41 +313,64 @@ module.exports = function(s,config,lang,app,io){
                 return
             }
             const monitorRestrictions = s.getMonitorRestrictions(user.details,req.params.id)
-            s.getDatabaseRows({
-                monitorRestrictions: monitorRestrictions,
-                table: 'Timelapse Frames',
-                groupKey: req.params.ke,
-                archived: req.query.archived,
-                filename: req.params.filename,
-                rowType: 'frames',
-                endIsStartTo: true
-            },(response) => {
-                var frame = response.frames[0]
-                if(frame){
-                    var fileLocation
-                    if(frame.details.dir){
-                        fileLocation = `${s.checkCorrectPathEnding(frame.details.dir)}`
-                    }else{
-                        fileLocation = `${s.dir.videos}`
-                    }
-                    var selectedDate = req.params.date
-                    if(selectedDate.indexOf('-') === -1){
-                        selectedDate = req.params.filename.split('T')[0]
-                    }
-                    fileLocation = `${fileLocation}${frame.ke}/${frame.mid}_timelapse/${selectedDate}/${req.params.filename}`
-                    fs.stat(fileLocation,function(err,stats){
-                        if(!err){
+            const cacheKey = req.params.ke + req.params.id + req.params.filename
+            const processFrame = (frame) => {
+                var fileLocation
+                if(frame.details.dir){
+                    fileLocation = `${s.checkCorrectPathEnding(frame.details.dir)}`
+                }else{
+                    fileLocation = `${s.dir.videos}`
+                }
+                var selectedDate = req.params.date
+                if(selectedDate.indexOf('-') === -1){
+                    selectedDate = req.params.filename.split('T')[0]
+                }
+                fileLocation = `${fileLocation}${frame.ke}/${frame.mid}_timelapse/${selectedDate}/${req.params.filename}`
+                fs.stat(fileLocation,function(err,stats){
+                    if(!err){
+                        if(req.params.action === 'delete'){
+                            deleteTimelapseFrame({
+                                ke: frame.ke,
+                                mid: frame.mid,
+                                filename: req.params.filename,
+                                fileLocation: fileLocation,
+                            })
+                            delete(timelapseFramesCache[cacheKey])
+                            s.closeJsonResponse(res,{ok: true})
+                        }else{
                             res.contentType('image/jpeg')
                             res.on('finish',function(){res.end()})
                             fs.createReadStream(fileLocation).pipe(res)
-                        }else{
-                            s.closeJsonResponse(res,{ok: false, msg: lang[`Nothing exists`]})
                         }
-                    })
-                }else{
-                    s.closeJsonResponse(res,{ok: false, msg: lang[`Nothing exists`]})
-                }
-            })
+                    }else{
+                        s.closeJsonResponse(res,{ok: false, msg: lang[`Nothing exists`]})
+                    }
+                })
+            }
+            if(timelapseFramesCache[cacheKey]){
+                processFrame(timelapseFramesCache[cacheKey])
+            }else{
+                s.getDatabaseRows({
+                    monitorRestrictions: monitorRestrictions,
+                    table: 'Timelapse Frames',
+                    groupKey: req.params.ke,
+                    archived: req.query.archived,
+                    filename: req.params.filename,
+                    rowType: 'frames',
+                    endIsStartTo: true
+                },(response) => {
+                    var frame = response.frames[0]
+                    if(frame){
+                        timelapseFramesCache[cacheKey] = frame
+                        timelapseFramesCacheTimeouts[cacheKey] = setTimeout(function(){
+                            delete(timelapseFramesCache[cacheKey])
+                        },1000 * 60 * 10)
+                        processFrame(frame)
+                    }else{
+                        s.closeJsonResponse(res,{ok: false, msg: lang[`Nothing exists`]})
+                    }
+                })
+            }
         },res,req);
     });
     /**

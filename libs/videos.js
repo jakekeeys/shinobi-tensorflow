@@ -543,6 +543,7 @@ module.exports = function(s,config,lang){
                         fs.unlink(commandTempLocation,function(){
 
                         })
+                        s.purgeDiskForGroup(ke)
                         setTimeout(() => {
                             delete(s.group[ke].activeMonitors[mid].buildingTimelapseVideo)
                         },5000)

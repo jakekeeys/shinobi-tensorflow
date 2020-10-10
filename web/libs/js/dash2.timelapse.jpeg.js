@@ -82,7 +82,7 @@ $(document).ready(function(e){
                 $.each(data.reverse(),function(n,fileInfo){
                     fileInfo.href = apiURL + '/' + fileInfo.filename.split('T')[0] + '/' + fileInfo.filename
                     fileInfo.number = n
-                    frameIconsHtml += '<div class="col-md-4"><div class="frame" data-filename="' + fileInfo.filename + '" style="background-image:url(\'' + fileInfo.href + '\')"><div class="shade">' + moment(fileInfo.time).format('YYYY-MM-DD HH:mm:ss') + '</div></div></div>'
+                    frameIconsHtml += '<div class="col-md-4 frame-container"><div class="frame" data-filename="' + fileInfo.filename + '" style="background-image:url(\'' + fileInfo.href + '\')"><div class="button-strip"><button type="button" class="btn btn-sm btn-danger delete"><i class="fa fa-trash-o"></i></button></div><div class="shade">' + moment(fileInfo.time).format('YYYY-MM-DD HH:mm:ss') + '</div></div></div>'
                     currentPlaylist[fileInfo.filename] = fileInfo
                 })
                 currentPlaylistArray = data
@@ -178,6 +178,27 @@ $(document).ready(function(e){
     })
     timelapseWindow.on('click','.playPause',function(){
         togglePlayPause()
+    })
+    timelapseWindow.on('click','.frame .delete',function(e){
+        e.stopPropagation()
+        var el = $(this).parents('.frame')
+        var filename = el.attr('data-filename')
+        var frame = currentPlaylist[filename]
+        $.confirm.create({
+            title: `sdf`,
+            body: `sdf`,
+            clickOptions: {
+                class: 'btn-danger',
+                title: lang.Delete,
+            },
+            clickCallback: function(){
+                $.get(frame.href + '/delete',function(response){
+                    if(response.ok){
+                        el.parent().remove()
+                    }
+                })
+            }
+        })
     })
     timelapseWindow.on('click','.download_mp4',function(){
         if(downloaderIsChecking){
