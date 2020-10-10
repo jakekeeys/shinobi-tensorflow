@@ -85,8 +85,8 @@ module.exports = (s,config,lang) => {
                 var dir = s.getTimelapseFrameDirectory(frame)
                 var fileLocationMid = `${dir}` + frame.filename
                 const queryGroup = {
-                    mid: video.mid,
-                    time: video.time,
+                    mid: frame.mid,
+                    time: frame.time,
                 }
                 if(whereGroup.length > 0)queryGroup.__separator = 'or'
                 whereGroup.push(queryGroup)
