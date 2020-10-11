@@ -86,7 +86,7 @@ def printData(array, time):
 
 def main():
     labels = load_labels("models/coco_labels.txt")
-    interpreter = make_interpreter("models/mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite")
+    interpreter = make_interpreter("models/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite")
     interpreter.allocate_tensors()
     threshold = 0.4
     printInfo("ready")
