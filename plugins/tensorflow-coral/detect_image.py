@@ -33,7 +33,6 @@ EDGETPU_SHARED_LIB = {
     'Windows': 'edgetpu.dll'
 }[platform.system()]
 
-
 def load_labels(path, encoding='utf-8'):
     """Loads labels from file (with or without index numbers).
 
