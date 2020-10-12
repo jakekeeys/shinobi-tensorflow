@@ -115,7 +115,6 @@ CREATE TABLE IF NOT EXISTS "Monitors" (
   "height" int DEFAULT '360'
 )  ;
 
-CREATE TYPE presettype AS ENUM('monitor','event','null','user');
 CREATE TABLE IF NOT EXISTS "Presets" (
   "ke" varchar(50) DEFAULT NULL,
   "name" text,
