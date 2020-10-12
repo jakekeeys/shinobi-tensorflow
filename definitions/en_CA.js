@@ -3768,6 +3768,25 @@ module.exports = function(s,config,lang){
                       ]
                    },
                    {
+                      "field": lang['Copy Timelapse Settings'],
+                      "description": "",
+                      "default": "0",
+                      "example": "",
+                      "fieldType": "select",
+                      "attribute": `copy="#monSectionTimelapse"`,
+                      "form-group-class": "h_copy_settings_input h_copy_settings_1",
+                      "possible": [
+                         {
+                            "name": lang.No,
+                            "value": "0"
+                         },
+                         {
+                            "name": lang.Yes,
+                            "value": "1"
+                         }
+                      ]
+                   },
+                   {
                       "field": lang['Copy Stream Settings'],
                       "description": "",
                       "default": "0",
