@@ -24,11 +24,16 @@ parentPort.on('message',(data) => {
         case'init':
             initialize(data.config,data.lang)
         break;
+        case'exit':
+            s.debugLog('Closing P2P Connection...')
+            process.exit(0)
+        break;
     }
 })
 
 const initialize = (config,lang) => {
-    if(!config.p2pHost)config.p2pHost = 'ws://163.172.180.205:8084'
+    const selectedP2PServerId = config.p2pServerList[config.p2pHostSelected] ? config.p2pHostSelected : Object.keys(config.p2pServerList)[0]
+    const selectedHost = config.p2pServerList[selectedP2PServerId].host + ':' + config.p2pServerList[selectedP2PServerId].p2pPort
     const parseJSON = function(string){
         var parsed = string
         try{
@@ -52,40 +57,51 @@ const initialize = (config,lang) => {
         if(method === 'GET' && data){
             requestEndpoint += '?' + createQueryStringFromObject(data)
         }
-        return request(requestEndpoint,{
+        const theRequest = request(requestEndpoint,{
             method: method,
             json: method !== 'GET' ? (data ? data : null) : null
-        }, function(err,resp,body){
+        }, typeof callback === 'function' ? (err,resp,body) => {
             // var json = parseJSON(body)
             if(err)console.error(err,data)
             callback(err,body,resp)
-        }).on('data', function(data) {
-            onDataReceived(data)
-        })
+        } : null)
+        .on('data', onDataReceived);
+        return theRequest
     }
     const createShinobiSocketConnection = (connectionId) => {
         const masterConnectionToMachine = socketIOClient(`ws://localhost:${config.port}`, {transports:['websocket']})
         p2pClientConnections[connectionId || p2pClientConnectionStaticName] = masterConnectionToMachine
         return masterConnectionToMachine
     }
+    const killAllClientConnections = () => {
+        Object.keys(p2pClientConnections).forEach((key) => {
+            try{
+                p2pClientConnections[key].disconnect()
+            }catch(err){
+
+            }
+            setTimeout(() => {
+                delete(p2pClientConnections[key])
+            },1000)
+        })
+    }
     //
-    s.debugLog('p2p',`Connecting to ${config.p2pHost}...`)
-    const connectionToP2PServer = socketIOClient(config.p2pHost, {transports:['websocket']});
+    s.debugLog('p2p',`Connecting to ${selectedHost}...`)
+    const connectionToP2PServer = socketIOClient('ws://' + selectedHost, {transports:['websocket']});
     if(!config.p2pApiKey){
         s.systemLog('p2p',`Please fill 'p2pApiKey' in your conf.json.`)
     }
-    if(!config.p2pGroupId){
-        s.systemLog('p2p',`Please fill 'p2pGroupId' in your conf.json.`)
-    }
+    // if(!config.p2pGroupId){
+    //     s.systemLog('p2p',`Please fill 'p2pGroupId' in your conf.json.`)
+    // }
     connectionToP2PServer.on('connect', () => {
-        s.systemLog('p2p',`Connected ${config.p2pHost}!`)
+        s.systemLog('p2p',`Connected ${selectedHost}!`)
         connectionToP2PServer.emit('initMachine',{
             port: config.port,
             apiKey: config.p2pApiKey,
             groupId: config.p2pGroupId,
             targetUserId: config.p2pTargetUserId,
-            targetGroupId: config.p2pTargetGroupId,
-            subscriptionId: config.subscriptionId || 'notActivated'
+            targetGroupId: config.p2pTargetGroupId
         })
     })
     connectionToP2PServer.on('httpClose',(requestId) => {
@@ -99,13 +115,13 @@ const initialize = (config,lang) => {
           rawRequest.url,
           rawRequest.method,
           rawRequest.data,
-          function(err,json,resp){
+          rawRequest.focus !== 'mp4' && rawRequest.focus !== 'flv' && rawRequest.focus !== 'mjpeg' && rawRequest.focus !== 'h264' ? function(err,json,resp){
               connectionToP2PServer.emit('httpResponse',{
                   err: err,
                   json: rawRequest.bodyOnEnd ? json : null,
                   rid: rawRequest.rid
               })
-          },
+          } : null,
           (data) => {
               if(!rawRequest.bodyOnEnd)connectionToP2PServer.emit('httpResponseChunk',{
                   data: data,
@@ -113,21 +129,20 @@ const initialize = (config,lang) => {
               })
           })
     })
-    const masterConnectionToMachine = createShinobiSocketConnection()
-    masterConnectionToMachine.on('connect', () => {
-        masterConnectionToMachine.emit('f',{
-            f: 'init',
-            auth: config.p2pTargetAuth,
-            ke: config.p2pTargetGroupId,
-            uid: config.p2pTargetUserId
-        })
-    })
-    masterConnectionToMachine.on('f',(data) => {
-        connectionToP2PServer.emit('f',data)
-    })
+    // const masterConnectionToMachine = createShinobiSocketConnection()
+    // masterConnectionToMachine.on('connect', () => {
+    //     masterConnectionToMachine.emit('f',{
+    //         f: 'init',
+    //         auth: config.p2pTargetAuth,
+    //         ke: config.p2pTargetGroupId,
+    //         uid: config.p2pTargetUserId
+    //     })
+    // })
+    // masterConnectionToMachine.on('f',(data) => {
+    //     connectionToP2PServer.emit('f',data)
+    // })
 
     connectionToP2PServer.on('wsInit',(rawRequest) => {
-        s.debugLog('p2pWsInit',rawRequest)
         const user = rawRequest.user
         const clientConnectionToMachine = createShinobiSocketConnection(rawRequest.cnid)
         connectedUserWebSockets[user.auth_token] = user;
@@ -138,6 +153,7 @@ const initialize = (config,lang) => {
                 auth: user.auth_token,
                 ke: user.ke,
                 uid: user.uid,
+                ipAddress: rawRequest.ipAddress
             })
         });
         ([
@@ -218,11 +234,15 @@ const initialize = (config,lang) => {
     });
     const onDisconnect = () => {
         s.systemLog('p2p','Disconnected')
+        killAllClientConnections()
         if(!connectionToP2PServer.allowDisconnect){
             s.systemLog('p2p','Attempting Reconnection...')
             setTimeout(() => {
                 connectionToP2PServer.connect()
             },3000)
+        }else{
+            s.systemLog('p2p','Closing Process')
+            process.exit()
         }
     }
     connectionToP2PServer.on('error',onDisconnect)

@@ -321,7 +321,8 @@ module.exports = function(s,config,lang,io){
         //main socket control functions
         cn.on('f',function(d){
             if(!cn.ke&&d.f==='init'){//socket login
-                cn.ip=cn.request.connection.remoteAddress;
+                const ipAddress = cn.request.connection.remoteAddress
+                cn.ip = (ipAddress.indexOf('127.0.0.1') > -1 || ipAddress.indexOf('localhost') > -1) && d.ipAddress ?  d.ipAddress : ipAddress;
                 tx=function(z){if(!z.ke){z.ke=cn.ke;};cn.emit('f',z);}
                 const onFail = (msg) => {
                     tx({ok:false,msg:'Not Authorized',token_used:d.auth,ke:d.ke});cn.disconnect();

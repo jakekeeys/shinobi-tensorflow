@@ -38,7 +38,8 @@
     position: relative;
     cursor: pointer;
 }
-#timelapsejpeg .frameIcons .frame .shade{
+#timelapsejpeg .frameIcons .frame .shade,
+#timelapsejpeg .frameIcons .button-strip{
     position: absolute;
     bottom: 0;
     left: 0;
@@ -47,6 +48,16 @@
     font-family: monospace;
     background: rgba(0,0,0,0.6);
     color: #fff
+}
+#timelapsejpeg .frameIcons .button-strip{
+    top: 0;
+    bottom: auto;
+    opacity: 0;
+    transition: 0.2;
+    text-align: right;
+}
+#timelapsejpeg .frameIcons .frame:hover .button-strip{
+    opacity: 1;
 }
 #timelapsejpeg .playBackView{
     position:absolute;

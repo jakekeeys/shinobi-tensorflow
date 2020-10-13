@@ -246,7 +246,7 @@ const knexQuery = (options,callback) => {
                 dbQuery.limit(options.limit)
             }else{
                 const limitParts = `${options.limit}`.split(',')
-                dbQuery.limit(limitParts[0]).offset(limitParts[1])
+                dbQuery.limit(limitParts[1]).offset(limitParts[0])
             }
         }
         if(config.debugLog === true){

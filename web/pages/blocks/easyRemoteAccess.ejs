@@ -1,0 +1,130 @@
+<% const p2pServerList = config.p2pServerList || {}
+    const selectedServer = p2pServerList[config.p2pHostSelected]
+ %>
+ <style>
+     .epic-text-filter {
+         text-transform: none;
+        letter-spacing: 0.5pt;
+        font-size: 9pt;
+     }
+     blockquote {
+         background: #073c3e;
+        height: 100%;
+        border-radius: 15px;
+        color: #fff;
+        padding: 10px;
+        font-style: italic;
+        box-shadow: 0 0 5px #19ce11;
+     }
+ </style>
+ <script>
+     window.p2pServerList = <%- JSON.stringify(p2pServerList) %>
+     window.currentlySelectedP2PServerId = `<%- config.p2pHostSelected %>`
+ </script>
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/super.easyRemoteAccess.css">
+<form>
+    <div class="row mb-4" style="display:flex">
+        <div class="col-md-6">
+            <div class="mb-4 btn-group" style="display:flex">
+                <a style="flex:12" href="#" class="submit btn btn-success"><i class="fa fa-check"></i> <%- lang.Save %></a>
+            </div>
+            <div class="form-group">
+                <label>
+                    <div><span><%-lang['Enabled']%></span></div>
+                    <div><select class="form-control" type="email" name="p2pEnabled">
+                        <option <% if(config.p2pEnabled === true){ %>selected<% } %> value="1">Yes</option>
+                        <option <% if(config.p2pEnabled !== true){ %>selected<% } %> value="0">No</option>
+                    </select></div>
+                </label>
+            </div>
+            <div class="form-group">
+                <label>
+                    <div><span><%-lang['P2P API Key']%></span></div>
+                    <div><input class="form-control" type="text" name="p2pApiKey" value="<%- config.p2pApiKey %>"></div>
+                </label>
+            </div>
+            <div class="form-group btn-group" style="display:flex">
+                <a style="flex:6" target="_blank" href="#" class="btn btn-default remote-dashboard-link-copy"><i class="fa fa-copy"></i> <%- lang['Copy Remote Link'] %></a>
+                <a style="flex:6" target="_blank" href="#" class="btn btn-info remote-dashboard-link"><i class="fa fa-external-link"></i> <%- lang['Open Remote Dashboard'] %></a>
+            </div>
+        </div>
+        <div class="col-md-6 pt-2 pb-4">
+            <blockquote class="text-center m-0 pt-4 pb-4">
+                <p><b>This feature is for subscribers only.</b> To get an API Key please login to your <a class="btn badge badge-sm badge-default" href="https://licenses.shinobi.video/login" target="_blank">Shinobi<b>Shop</b></a> account and create a key associated to <b>any active Subscription ID</b>.</p>
+                <p>If you would like to get access to a private (dedicated) P2P server please create an account at the <a class="btn badge badge-sm badge-default" href="https://licenses.shinobi.video/login" target="_blank">Shinobi<b>Shop</b></a> and contact us via the Live Chat widget.</p>
+                <p class="mb-0">Purchase a <a class="btn badge badge-sm badge-success" href="https://licenses.shinobi.video/subscribe?planSubscribe=plan_G31AZ9mknNCa6z" target="_blank">Mobile License Key</a> to get started!</p>
+            </blockquote>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="row" id="p2pServerList">
+            <% Object.keys(p2pServerList).forEach((key) => {
+                const details = p2pServerList[key]
+            %>
+                <div class="col-md-4 mt-2">
+                    <div class="card <% if(config.p2pHostSelected === key){ %>active<% } %>" drawn-id="<%- key %>">
+                        <div class="card-header" style="min-height:auto">
+                            <span class="badge badge-sm badge-danger pull-right selected-badge"><%- lang.Selected %></span>
+                            <span class="badge badge-sm badge-info name-badge"><%- details.name %></span>
+                        </div>
+                        <div style="min-height:auto">
+                            <table class="table mb-0 text-center">
+                                <tr title="Host Address">
+                                    <td><span class="info-badge badge badge-sm badge-default"><%- details.host %></span></td>
+                                </tr>
+                            </table>
+                            <table class="table table-striped mb-0 text-center">
+                                <tr>
+                                    <td><i class="fa fa-download"></i></td>
+                                    <td class="text-left epic-text epic-text-filter"><%- lang['Download Bandwidth'] %></td>
+                                    <td class="text-right">
+                                        <span class="info-badge badge badge-sm badge-default"><span class="networkUseDown"><i class="fa fa-spinner fa-pulse"></i></span> / <%- details.maxNetworkSpeed.down %></span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fa fa-upload"></i></td>
+                                    <td class="text-left epic-text epic-text-filter"><%- lang['Upload Bandwidth'] %></td>
+                                    <td class="text-right">
+                                        <span class="info-badge badge badge-sm badge-default"><span class="networkUseUp"><i class="fa fa-spinner fa-pulse"></i></span> / <%- details.maxNetworkSpeed.up %></span>
+                                    </td>
+                                </tr>
+                                <tr title="CPU Usage">
+                                    <td><i class="fa fa-cubes"></i></td>
+                                    <td class="text-left epic-text epic-text-filter"><span class="cpuCores"></span> <%- lang.Threads %></td>
+                                    <td class="text-right"><span class="info-badge badge badge-sm badge-default"><span class="cpuUsage"><i class="fa fa-spinner fa-pulse"></i></span>%</span></td>
+                                </tr>
+                                <tr title="RAM Usage">
+                                    <td><i class="fa fa-tasks"></i></td>
+                                    <td class="text-left epic-text epic-text-filter"><span class="ramTotal"><i class="fa fa-spinner fa-pulse"></i></span> <%- lang.RAM %></td>
+                                    <td class="text-right"><span class="info-badge badge badge-sm badge-default"><span class="ramPercent"><i class="fa fa-spinner fa-pulse"></i></span>%, <span class="ramUsed"><i class="fa fa-spinner fa-pulse"></i></span> MB</span></td>
+                                </tr>
+                                <tr title="Registered Servers">
+                                    <td><i class="fa fa-database"></i></td>
+                                    <td class="text-left epic-text epic-text-filter"><%- lang['Registered Servers'] %></td>
+                                    <td class="text-right"><span class="info-badge badge badge-sm badge-default"><span class="registeredServers"><i class="fa fa-spinner fa-pulse"></i></span></td>
+                                </tr>
+                                <tr title="Connected Users">
+                                    <td><i class="fa fa-user"></i></td>
+                                    <td class="text-left epic-text epic-text-filter"><%- lang['Connected Users'] %></td>
+                                    <td class="text-right"><span class="info-badge badge badge-sm badge-default"><span class="connectedUsers"><i class="fa fa-spinner fa-pulse"></i></span></td>
+                                </tr>
+                                <tr title="Viewing Server Stats">
+                                    <td><i class="fa fa-eye"></i></td>
+                                    <td class="text-left epic-text epic-text-filter"><%- lang['Viewing Server Stats'] %></td>
+                                    <td class="text-right"><span class="info-badge badge badge-sm badge-default"><span class="chartViewerCount"><i class="fa fa-spinner fa-pulse"></i></span></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="card-footer" style="min-height:auto">
+                            <a class="btn badge badge-sm badge-default geo-badge" target="_blank" href="<%- `https://www.google.ca/maps/@${details.location.lat},${details.location.lon},15z` %>"><i class="fa fa-map-marker"></i> <%- details.location.lat %>, <%- details.location.lon %></a>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+    <div class="form-group btn-group" style="display:flex">
+        <a style="flex:4" href="#" class="submit btn btn-success"><i class="fa fa-check"></i> <%- lang.Save %></a>
+    </div>
+</form>
+<script src="<%-window.libURL%>libs/js/super.easyRemoteAccess.js" type="text/javascript"></script>

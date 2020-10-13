@@ -203,7 +203,10 @@ module.exports = function(s,config,lang,app,io){
     /**
     * API : Get fileBin file
      */
-    app.get(config.webPaths.apiPrefix+':auth/fileBin/:ke/:id/:year/:month/:day/:file', async (req,res) => {
+    app.get([
+        config.webPaths.apiPrefix+':auth/fileBin/:ke/:id/:file',
+        config.webPaths.apiPrefix+':auth/fileBin/:ke/:id/:year/:month/:day/:file',
+    ], async (req,res) => {
         s.auth(req.params,function(user){
             var failed = function(){
                 res.end(user.lang['File Not Found'])
@@ -233,11 +236,11 @@ module.exports = function(s,config,lang,app,io){
                     if(r && r[0]){
                         r = r[0]
                         r.details = JSON.parse(r.details)
-                        req.dir = s.dir.fileBin + req.params.ke + '/' + req.params.id + '/' + r.details.year + '/' + r.details.month + '/' + r.details.day + '/' + req.params.file;
-                        fs.stat(req.dir,function(err,stats){
+                        const filePath = s.dir.fileBin + req.params.ke + '/' + req.params.id + (r.details.year && r.details.month && r.details.day ? '/' + r.details.year + '/' + r.details.month + '/' + r.details.day : '') + '/' + req.params.file;
+                        fs.stat(filePath,function(err,stats){
                             if(!err){
                                 res.on('finish',function(){res.end()})
-                                fs.createReadStream(req.dir).pipe(res)
+                                fs.createReadStream(filePath).pipe(res)
                             }else{
                                 failed()
                             }

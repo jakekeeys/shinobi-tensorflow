@@ -85,8 +85,8 @@ module.exports = (s,config,lang) => {
                 var dir = s.getTimelapseFrameDirectory(frame)
                 var fileLocationMid = `${dir}` + frame.filename
                 const queryGroup = {
-                    mid: video.mid,
-                    time: video.time,
+                    mid: frame.mid,
+                    time: frame.time,
                 }
                 if(whereGroup.length > 0)queryGroup.__separator = 'or'
                 whereGroup.push(queryGroup)
@@ -139,7 +139,7 @@ module.exports = (s,config,lang) => {
     const deleteSetOfFileBinFiles = function(options,callback){
         const groupKey = options.groupKey
         const err = options.err
-        const frames = options.frames
+        const files = options.files
         const storageIndex = options.storageIndex
         var whereGroup = []
         var whereQuery = [
@@ -328,11 +328,11 @@ module.exports = (s,config,lang) => {
                     ],
                     orderBy: ['time','asc'],
                     limit: 1
-                },(err,frames) => {
+                },(err,files) => {
                     deleteSetOfFileBinFiles({
                         groupKey: groupKey,
                         err: err,
-                        frames: frames,
+                        files: files,
                         storageIndex: null
                     },callback)
                 })

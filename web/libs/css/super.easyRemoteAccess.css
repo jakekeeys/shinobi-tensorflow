@@ -1,0 +1,50 @@
+#easyRemoteAccess .card {
+    cursor: pointer;
+    transition: none;
+}
+#easyRemoteAccess .card.active {
+    background-color: #18ce0f !important;
+    color: #fff;
+}
+#easyRemoteAccess .card.active *{
+    color: #fff!important;
+}
+#easyRemoteAccess .card.active .card-header,
+#easyRemoteAccess .card.active .card-footer {
+    background-color: rgb(66 182 70 / 3%);
+    border-color: rgb(66 182 70 / 0.3);
+}
+#easyRemoteAccess .card.active .name-badge,
+#easyRemoteAccess .card.active .info-badge
+ {
+    color: #18ce0f!important;
+    background: #fff;
+    border: 1px solid #ffffff;
+}
+#easyRemoteAccess .card.active .name-badge *,
+#easyRemoteAccess .card.active .info-badge *
+ {
+    color: #18ce0f!important;
+}
+#easyRemoteAccess .card.active .geo-badge {
+    border: 1px solid #FFB236;
+}
+#easyRemoteAccess .card.active .geo-badge:focus, #easyRemoteAccess .card.active .geo-badge:hover {
+    text-decoration: none;
+    background-color: #d39e00;
+}
+#easyRemoteAccess .card.active .fa {
+    color: #6ee068;
+}
+#easyRemoteAccess .card .selected-badge {
+    display: none;
+    color: #fff!important;
+    background: #054e9f;
+    border: 1px solid #054e9f;
+}
+#easyRemoteAccess .card.selected .selected-badge {
+    display: inline-block;
+}
+#easyRemoteAccess .card.active .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgb(49 204 68 / 5%);
+}

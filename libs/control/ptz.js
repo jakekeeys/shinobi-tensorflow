@@ -46,7 +46,12 @@ module.exports = function(s,config,lang){
         const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
         switch(options.direction){
             case'center':
-                callback({type:'Center button inactive'})
+                moveToPresetPosition({
+                    ke: options.ke,
+                    id: options.id,
+                },(endData) => {
+                    callback({type:'Moving to Home Preset', response: endData})
+                })
             break;
             case'stopMove':
                 callback({type:'Control Trigger Ended'})
