@@ -443,11 +443,11 @@ module.exports = function(s,config,lang){
             finish()
         }
     }
-    s.streamMp4FileOverHttp = function(filePath,req,res){
+    s.streamMp4FileOverHttp = function(filePath,req,res,pureStream){
         var ext = filePath.split('.')
         ext = ext[ext.length - 1]
         var total = fs.statSync(filePath).size;
-        if (req.headers['range']) {
+        if (req.headers['range'] && !pureStream) {
             try{
                 var range = req.headers.range;
                 var parts = range.replace(/bytes=/, "").split("-");

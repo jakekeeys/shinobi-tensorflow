@@ -1468,7 +1468,7 @@ module.exports = function(s,config,lang,app,io){
                         if(req.query.json === 'true'){
                             s.closeJsonResponse(res,videoRow)
                         }else{
-                            s.streamMp4FileOverHttp(filePath,req,res)
+                            s.streamMp4FileOverHttp(filePath,req,res,!!req.query.pureStream)
                         }
                     }else{
                         res.end(user.lang['File Not Found in Filesystem'])
