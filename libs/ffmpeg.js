@@ -809,7 +809,6 @@ module.exports = function(s,config,lang,onFinish){
                 const objVideoFilters = [objectDetectorFpsFilter]
                 if(e.details.cust_detect_object)detectorFlags.push(e.details.cust_detect_object)
                 if(isCudaEnabled)objVideoFilters.push(cudaVideoFilters)
-                console.log(' -vf "' + objVideoFilters.join(',') + '"')
                 detectorFlags.push(objectDetectorDimensionsFlag + ' -vf "' + objVideoFilters.join(',') + '"')
             }
             if(sendFramesGlobally){
@@ -840,10 +839,10 @@ module.exports = function(s,config,lang,onFinish){
                 addObjectDetectValues()
                 detectorFlags.push('-an -f singlejpeg pipe:4')
             }
+            x.pipe += detectorFlags.join(' ')
         }
-        x.pipe += detectorFlags.join(' ')
         //Traditional Recording Buffer
-        if(e.details.detector=='1'&&e.details.detector_trigger=='1'&&e.details.detector_record_method==='sip'){
+        if(e.details.detector === '1' && e.details.detector_trigger === '1' && e.details.detector_record_method === 'sip'){
             if(e.details.cust_sip_record && e.details.cust_sip_record !== ''){x.pipe += ' ' + e.details.cust_sip_record}
             if(e.details.input_map_choices&&e.details.input_map_choices.detector_sip_buffer){
                 //add input feed map
