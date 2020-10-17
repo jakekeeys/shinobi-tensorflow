@@ -136,18 +136,13 @@ module.exports = function(s,config,lang,onFinish){
         })
     }
     //ffmpeg string cleaner, splits for use with spawn()
-    s.splitForFFPMEG = function (ffmpegCommandAsString) {
+    s.splitForFFPMEG = function (words) {
         //this function ignores spaces inside quotes.
-        return ffmpegCommandAsString.replace(/\s+/g,' ').trim().match(/\\?.|^$/g).reduce((p, c) => {
-            if(c === '"'){
-                p.quote ^= 1;
-            }else if(!p.quote && c === ' '){
-                p.a.push('');
-            }else{
-                p.a[p.a.length-1] += c.replace(/\\(.)/,"$1");
-            }
-            return  p;
-        }, {a: ['']}).a
+        const wordArray = words.trim().match(/"([^"]+)"|[^" ]+/g);
+        for(var i=0,l=wordArray.length; i<l; i++){
+            wordArray[i] = wordArray[i].replace(/^"|"$/g, '');
+        }
+        return wordArray.filter(piece => piece != '');
     };
     s.createFFmpegMap = function(e,arrayOfMaps){
         //`e` is the monitor object
@@ -786,70 +781,67 @@ module.exports = function(s,config,lang,onFinish){
     ffmpeg.buildMainDetector = function(e,x){
         //e = monitor object
         //x = temporary values
-        x.cust_detect = ' '
-        //detector - plugins, motion
-        var sendFramesGlobally = (e.details.detector_send_frames === '1')
-        var sendFramesToObjectDetector = (e.details.detector_send_frames_object !== '0' && e.details.detector_use_detect_object === '1')
-        if(e.details.detector === '1' && (sendFramesGlobally || sendFramesToObjectDetector) && e.coProcessor === false){
-            if(sendFramesGlobally && e.details.input_map_choices && e.details.input_map_choices.detector){
-                //add input feed map
-                x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
-            }
-            x.dratio = ` -s ${e.details.detector_scale_x ? e.details.detector_scale_x : '640'}x${e.details.detector_scale_y ? e.details.detector_scale_y : '480'}`
-            if(e.details.cust_detect&&e.details.cust_detect!==''){x.cust_detect+=e.details.cust_detect;}
-            if(sendFramesGlobally)x.pipe += x.dratio + x.cust_detect
-            x.detector_vf = []
-            if(e.cudaEnabled){
-                x.detector_vf.push('hwdownload,format=nv12')
-            }
-            x.detector_vf.push('fps=' + (e.details.detector_fps ? e.details.detector_fps : '2'))
-            if(sendFramesGlobally && x.detector_vf.length > 0)x.pipe += ' -vf "'+x.detector_vf.join(',')+'"'
 
-            var h264Output = ' -q:v 1 -an -c:v libx264 -f hls -tune zerolatency -g 1 -hls_time 2 -hls_list_size 3 -start_number 0 -live_start_index 3 -hls_allow_cache 0 -hls_flags +delete_segments+omit_endlist "'+e.sdir+'detectorStreamX.m3u8"'
-            var setObjectDetectValues = () => {
-                //for object detection
-                if(
-                    e.details.detector_scale_x_object &&
-                    e.details.detector_scale_x_object !=='' &&
-                    e.details.detector_scale_y_object &&
-                    e.details.detector_scale_y_object!==''
-                ){
-                    x.dobjratio = ' -s '+e.details.detector_scale_x_object+'x'+e.details.detector_scale_y_object
-                }else{
-                    x.dobjratio = x.dratio
-                }
-                if(e.details.cust_detect_object)x.pipe += e.details.cust_detect_object
-                x.pipe += x.dobjratio + ' -vf fps=' + (e.details.detector_fps_object || '2')
+        const detectorFlags = []
+        const inputMapsRequired = (e.details.input_map_choices && e.details.input_map_choices.detector)
+        const sendFramesGlobally = (e.details.detector_send_frames === '1')
+        const objectDetectorOutputIsEnabled = (e.details.detector_use_detect_object === '1')
+        const builtInMotionDetectorIsEnabled = (e.details.detector_pam === '1')
+        const sendFramesToObjectDetector = (e.details.detector_send_frames_object !== '0' && e.details.detector_use_detect_object === '1')
+        const baseWidth = e.details.detector_scale_x ? e.details.detector_scale_x : '640'
+        const baseHeight = e.details.detector_scale_y ? e.details.detector_scale_y : '480'
+        const baseDimensionsFlag = `-s ${baseWidth}x${baseHeight}`
+        const baseFps = e.details.detector_fps ? e.details.detector_fps : '2'
+        const baseFpsFilter = 'fps=' + baseFps
+        const objectDetectorDimensionsFlag = `-s ${e.details.detector_scale_x_object ? e.details.detector_scale_x_object : baseWidth}x${e.details.detector_scale_y_object ? e.details.detector_scale_y_object : baseHeight}`
+        const objectDetectorFpsFilter = 'fps=' + (e.details.detector_fps_object ? e.details.detector_fps_object : baseFps)
+        const isCudaEnabled = false || e.cudaEnabled
+        const cudaVideoFilters = 'hwdownload,format=nv12'
+        const videoFilters = []
+        if(e.details.detector === '1' && (sendFramesGlobally || sendFramesToObjectDetector) && e.coProcessor === false){
+            const addVideoFilters = () => {
+                if(videoFilters.length > 0)detectorFlags.push(' -vf "' + videoFilters.join(',') + '"')
             }
-            if(e.details.detector_pam === '1'){
-                if(sendFramesGlobally && e.cudaEnabled){
-                    x.pipe += ' -vf "hwdownload,format=nv12"'
+            const addInputMap = () => {
+                if(inputMapsRequired)detectorFlags.push(s.createFFmpegMap(e,e.details.input_map_choices.detector))
+            }
+            const addObjectDetectValues = () => {
+                const objVideoFilters = [objectDetectorFpsFilter]
+                if(e.details.cust_detect_object)detectorFlags.push(e.details.cust_detect_object)
+                if(isCudaEnabled)objVideoFilters.push(cudaVideoFilters)
+                console.log(' -vf "' + objVideoFilters.join(',') + '"')
+                detectorFlags.push(objectDetectorDimensionsFlag + ' -vf "' + objVideoFilters.join(',') + '"')
+            }
+            if(sendFramesGlobally){
+                addInputMap()
+                detectorFlags.push(baseDimensionsFlag)
+                if(isCudaEnabled){
+                    videoFilters.push(cudaVideoFilters)
                 }
-                if(sendFramesGlobally){
-                    x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
-                    x.pipe += ' -an -c:v pam -pix_fmt gray -f image2pipe pipe:3'
-                }
-                if(e.details.detector_use_detect_object === '1'){
-                    x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
-                    setObjectDetectValues()
-                    if(e.details.detector_h264 === '1'){
-                        x.pipe += h264Output
-                    }else{
-                        x.pipe += ' -an -f singlejpeg pipe:4'
+                videoFilters.push(baseFpsFilter)
+                if(e.details.cust_detect)detectorFlags.push(e.details.cust_detect)
+                addVideoFilters()
+                if(builtInMotionDetectorIsEnabled){
+                    detectorFlags.push('-an -c:v pam -pix_fmt gray -f image2pipe pipe:3')
+                    if(objectDetectorOutputIsEnabled){
+                        addInputMap()
+                        addObjectDetectValues()
+                        detectorFlags.push('-an -f singlejpeg pipe:4')
                     }
-                }
-            }else if(sendFramesGlobally || sendFramesToObjectDetector){
-                if(sendFramesToObjectDetector){
-                    x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector)
-                    setObjectDetectValues()
-                }
-                if(e.details.detector_h264 === '1'){
-                    x.pipe += h264Output
+                }else if(sendFramesToObjectDetector){
+                    addInputMap()
+                    addObjectDetectValues()
+                    detectorFlags.push('-an -f singlejpeg pipe:4')
                 }else{
-                    x.pipe += ' -an -f singlejpeg pipe:4'
+                    detectorFlags.push('-an -f singlejpeg pipe:4')
                 }
+            }else if(sendFramesToObjectDetector){
+                addInputMap()
+                addObjectDetectValues()
+                detectorFlags.push('-an -f singlejpeg pipe:4')
             }
         }
+        x.pipe += detectorFlags.join(' ')
         //Traditional Recording Buffer
         if(e.details.detector=='1'&&e.details.detector_trigger=='1'&&e.details.detector_record_method==='sip'){
             if(e.details.cust_sip_record && e.details.cust_sip_record !== ''){x.pipe += ' ' + e.details.cust_sip_record}

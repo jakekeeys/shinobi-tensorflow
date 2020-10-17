@@ -338,7 +338,7 @@ module.exports = function(s,config,lang){
         const thresholdY = imgHeight * 0.125
         const imageCenterX = imgWidth / 2
         const imageCenterY = imgHeight / 2
-        const matrices = event.details.matrices
+        const matrices = event.details.matrices || []
         const largestMatrix = getLargestMatrix(matrices.filter(matrix => matrix.tag === (trackingTarget || 'person')))
         // console.log(matrices.find(matrix => matrix.tag === 'person'))
         if(!largestMatrix)return;
