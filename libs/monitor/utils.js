@@ -65,7 +65,6 @@ module.exports = (s,config,lang) => {
             if(activeMonitor.childNode){
                 s.cx({f:'kill',d:s.cleanMonitorObject(e)},activeMonitor.childNodeId)
             }else{
-                s.coSpawnClose(e)
                 if(proc && proc.kill){
                     if(s.isWin){
                         spawn("taskkill", ["/pid", proc.pid, '/t'])
