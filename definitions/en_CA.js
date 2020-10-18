@@ -683,25 +683,6 @@ module.exports = function(s,config,lang){
                          "possible": ""
                      },
                      {
-                         "name": "detail=use_coprocessor",
-                         "field": lang['Use coProcessor'],
-                         "description": "",
-                         "default": "",
-                         "example": "",
-                         "fieldType": "select",
-                         "form-group-class": "h_gpud_input h_gpud_1",
-                         "possible": [
-                            {
-                               "name": lang.No,
-                               "value": "0",
-                            },
-                            {
-                               "name": lang.Yes,
-                               "value": "1",
-                            }
-                         ]
-                     },
-                     {
                          "fieldType": 'div',
                          "id": "monSectionInputMaps"
                      },

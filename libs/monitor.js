@@ -839,7 +839,7 @@ module.exports = function(s,config,lang){
                 },900)
             })
         }
-        if(e.details.detector === '1' && e.coProcessor === false){
+        if(e.details.detector === '1'){
             s.ocvTx({f:'init_monitor',id:e.id,ke:e.ke})
             //frames from motion detect
             if(e.details.detector_pam === '1'){
@@ -923,11 +923,7 @@ module.exports = function(s,config,lang){
            break;
         }
         if(frameToStreamPrimary){
-            if(e.coProcessor === true && e.details.stream_type === ('b64'||'mjpeg')){
-
-            }else{
-                s.group[e.ke].activeMonitors[e.id].spawn.stdout.on('data',frameToStreamPrimary)
-            }
+            s.group[e.ke].activeMonitors[e.id].spawn.stdout.on('data',frameToStreamPrimary)
         }
         if(e.details.stream_channels && e.details.stream_channels !== ''){
             var createStreamEmitter = function(channel,number){
@@ -1114,11 +1110,7 @@ module.exports = function(s,config,lang){
                             if(activeMonitor.isStarted === true){
                                 s.fileStats(e.sdir+'s.jpg',function(err,snap){
                                     var notStreaming = function(){
-                                        if(e.coProcessor === true){
-                                            s.coSpawnLauncher(e)
-                                        }else{
-                                            launchMonitorProcesses(e)
-                                        }
+                                        launchMonitorProcesses(e)
                                         s.userLog(e,{type:lang['Camera is not streaming'],msg:{msg:lang['Restarting Process']}})
                                         s.orphanedVideoCheck(e,2,null,true)
                                     }
@@ -1204,11 +1196,6 @@ module.exports = function(s,config,lang){
                                 ){
                                     catchNewSegmentNames(e)
                                     cameraFilterFfmpegLog(e)
-                                }
-                                if(e.coProcessor === true){
-                                    setTimeout(function(){
-                                        s.coSpawnLauncher(e)
-                                    },6000)
                                 }
                                 s.onMonitorStartExtensions.forEach(function(extender){
                                     extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)

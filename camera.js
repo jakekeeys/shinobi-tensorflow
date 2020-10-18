@@ -27,8 +27,6 @@ require('./libs/codeTester.js')(s,config,lang)
 require('./libs/version.js')(s,config,lang)
 //video processing engine
 require('./libs/ffmpeg.js')(s,config,lang,async function(ffmpeg){
-    //ffmpeg coProcessor
-    require('./libs/ffmpegCoProcessor.js')(s,config,lang,ffmpeg)
     //database connection : mysql, sqlite3..
     require('./libs/sql.js')(s,config)
     //authenticator functions : API, dashboard login..
