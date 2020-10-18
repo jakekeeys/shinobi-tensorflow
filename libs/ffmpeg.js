@@ -826,7 +826,7 @@ module.exports = function(s,config,lang,onFinish){
                 addObjectDetectValues()
                 detectorFlags.push('-an -f singlejpeg pipe:4')
             }
-            x.pipe += detectorFlags.join(' ')
+            x.pipe += ' ' + detectorFlags.join(' ')
         }
         //Traditional Recording Buffer
         if(e.details.detector === '1' && e.details.detector_trigger === '1' && e.details.detector_record_method === 'sip'){
