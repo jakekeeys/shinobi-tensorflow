@@ -790,6 +790,9 @@ module.exports = function(s,config,lang,onFinish){
             const addInputMap = () => {
                 if(inputMapsRequired)detectorFlags.push(s.createFFmpegMap(e,e.details.input_map_choices.detector))
             }
+            const addObjectDetectorInputMap = () => {
+                if(inputMapsRequired)detectorFlags.push(s.createFFmpegMap(e,e.details.input_map_choices.detector_object || e.details.input_map_choices.detector))
+            }
             const addObjectDetectValues = () => {
                 const objVideoFilters = [objectDetectorFpsFilter]
                 if(e.details.cust_detect_object)detectorFlags.push(e.details.cust_detect_object)
@@ -797,30 +800,29 @@ module.exports = function(s,config,lang,onFinish){
                 detectorFlags.push(objectDetectorDimensionsFlag + ' -vf "' + objVideoFilters.join(',') + '"')
             }
             if(sendFramesGlobally){
-                addInputMap()
+                if(builtInMotionDetectorIsEnabled)addInputMap();
                 detectorFlags.push(baseDimensionsFlag)
-                if(isCudaEnabled){
-                    videoFilters.push(cudaVideoFilters)
-                }
+                if(isCudaEnabled)videoFilters.push(cudaVideoFilters);
                 videoFilters.push(baseFpsFilter)
                 if(e.details.cust_detect)detectorFlags.push(e.details.cust_detect)
                 addVideoFilters()
                 if(builtInMotionDetectorIsEnabled){
                     detectorFlags.push('-an -c:v pam -pix_fmt gray -f image2pipe pipe:3')
                     if(objectDetectorOutputIsEnabled){
-                        addInputMap()
+                        addObjectDetectorInputMap()
                         addObjectDetectValues()
                         detectorFlags.push('-an -f singlejpeg pipe:4')
                     }
                 }else if(sendFramesToObjectDetector){
-                    addInputMap()
+                    addObjectDetectorInputMap()
                     addObjectDetectValues()
                     detectorFlags.push('-an -f singlejpeg pipe:4')
                 }else{
+                    addInputMap()
                     detectorFlags.push('-an -f singlejpeg pipe:4')
                 }
             }else if(sendFramesToObjectDetector){
-                addInputMap()
+                addObjectDetectorInputMap()
                 addObjectDetectValues()
                 detectorFlags.push('-an -f singlejpeg pipe:4')
             }

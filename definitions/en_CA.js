@@ -2978,6 +2978,7 @@ module.exports = function(s,config,lang){
                       headerTitle: `${lang['Object Detection']} <small><b class="shinobi-detector_name"></b> <b class="shinobi-detector-invert">${lang['Not Connected']}</b><b class="shinobi-detector" style="display:none">${lang['Connected']}</b></small>`,
                       isFormGroupGroup: true,
                       isSection: true,
+                      "input-mapping": "detector_object",
                       "section-class": "h_det_input h_det_1",
                       "info": [
                           {
@@ -3185,7 +3186,7 @@ module.exports = function(s,config,lang){
                    {
                        hidden: true,
                       "name": lang['Traditional Recording'],
-
+                      "input-mapping": "detector_sip_buffer",
                       "color": "orange",
                       id: "monSectionDetectorTraditionalRecording",
                       isSection: true,
