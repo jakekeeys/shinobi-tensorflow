@@ -136,13 +136,17 @@ module.exports = function(s,config,lang,onFinish){
         })
     }
     //ffmpeg string cleaner, splits for use with spawn()
-    s.splitForFFPMEG = function (words) {
-        //this function ignores spaces inside quotes.
-        const wordArray = words.trim().match(/"([^"]+)"|[^" ]+/g);
-        for(var i=0,l=wordArray.length; i<l; i++){
-            wordArray[i] = wordArray[i].replace(/^"|"$/g, '');
-        }
-        return wordArray.filter(piece => piece != '');
+    s.splitForFFPMEG = function (ffmpegCommandAsString) {
+        return ffmpegCommandAsString.replace(/\s+/g,' ').trim().match(/\\?.|^$/g).reduce((p, c) => {
+            if(c === '"'){
+                p.quote ^= 1;
+            }else if(!p.quote && c === ' '){
+                p.a.push('');
+            }else{
+                p.a[p.a.length-1] += c.replace(/\\(.)/,"$1");
+            }
+            return  p;
+        }, {a: ['']}).a
     };
     s.createFFmpegMap = function(e,arrayOfMaps){
         //`e` is the monitor object
