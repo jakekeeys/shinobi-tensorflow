@@ -376,13 +376,10 @@ module.exports = function(jsonData,pamDiffResponder){
     }
 
     return function(cameraProcess,fallback){
-      if(jsonData.rawMonitorConfig.details.detector === '1' && jsonData.rawMonitorConfig.coProcessor === false){
-          //frames from motion detect
-          if(jsonData.rawMonitorConfig.details.detector_pam === '1'){
-            createPamDiffEngine()
+        if(jsonData.rawMonitorConfig.details.detector_pam === '1'){
+          createPamDiffEngine()
 
-            cameraProcess.stdio[3].pipe(p2p).pipe(pamDiff)
-          }
-       }
+          cameraProcess.stdio[3].pipe(p2p).pipe(pamDiff)
+        }
     };
 }
