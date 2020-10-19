@@ -120,9 +120,6 @@ module.exports = function(s,config,lang){
                 exec(d.execute,{detached: true})
             break;
         }
-        s.onEventTriggerBeforeFilterExtensions.forEach(function(extender){
-            extender(x,d)
-        })
     }
     s.triggerEvent = async (d,forceSave) => {
         var didCountingAlready = false

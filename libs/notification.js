@@ -58,21 +58,22 @@ module.exports = function(s,config,lang){
                 filter.discord = true
             }
             const onEventTriggerForDiscord = async (d,filter) => {
+                const monitorConfig = s.group[d.ke].rawMonitorConfigurations[d.id]
                 // d = event object
                 //discord bot
-                if(filter.discord && s.group[d.ke].discordBot && d.mon.details.detector_discordbot === '1' && !s.group[d.ke].activeMonitors[d.id].detector_discordbot){
+                if(filter.discord && s.group[d.ke].discordBot && monitorConfig.details.detector_discordbot === '1' && !s.group[d.ke].activeMonitors[d.id].detector_discordbot){
                     var detector_discordbot_timeout
-                    if(!d.mon.details.detector_discordbot_timeout||d.mon.details.detector_discordbot_timeout===''){
+                    if(!monitorConfig.details.detector_discordbot_timeout||monitorConfig.details.detector_discordbot_timeout===''){
                         detector_discordbot_timeout = 1000*60*10;
                     }else{
-                        detector_discordbot_timeout = parseFloat(d.mon.details.detector_discordbot_timeout)*1000*60;
+                        detector_discordbot_timeout = parseFloat(monitorConfig.details.detector_discordbot_timeout)*1000*60;
                     }
                     //lock mailer so you don't get emailed on EVERY trigger event.
                     s.group[d.ke].activeMonitors[d.id].detector_discordbot = setTimeout(function(){
                         clearTimeout(s.group[d.ke].activeMonitors[d.id].detector_discordbot);
                         delete(s.group[d.ke].activeMonitors[d.id].detector_discordbot);
                     },detector_discordbot_timeout)
-                    if(d.mon.details.detector_discordbot_send_video === '1'){
+                    if(monitorConfig.details.detector_discordbot_send_video === '1'){
                         // change to function that captures on going video capture, waits, grabs new video file, slices portion (max for transmission) and prepares for delivery
                         s.mergeDetectorBufferChunks(d,function(mergedFilepath,filename){
                             s.discordMsg({
@@ -95,8 +96,8 @@ module.exports = function(s,config,lang){
                             ],d.ke)
                         })
                     }
-                    const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(d.mon,{
-                        secondsInward: d.mon.details.snap_seconds_inward
+                    const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(monitorConfig,{
+                        secondsInward: monitorConfig.details.snap_seconds_inward
                     })
                     if(screenShot[screenShot.length - 2] === 0xFF && screenShot[screenShot.length - 1] === 0xD9){
                         d.screenshotBuffer = screenShot
@@ -310,13 +311,15 @@ module.exports = function(s,config,lang){
             }
         }
         const onEventTriggerBeforeFilterForEmail = function(d,filter){
-            if(d.mon.details.detector_mail === '1'){
+            const monitorConfig = s.group[d.ke].rawMonitorConfigurations[d.id]
+            if(monitorConfig.details.detector_mail === '1'){
                 filter.mail = true
             }else{
                 filter.mail = false
             }
         }
         const onEventTriggerForEmail = async (d,filter) => {
+            const monitorConfig = s.group[d.ke].rawMonitorConfigurations[d.id]
             if(filter.mail && config.mail && !s.group[d.ke].activeMonitors[d.id].detector_mail){
                 s.knexQuery({
                     action: "select",
@@ -329,10 +332,10 @@ module.exports = function(s,config,lang){
                 },async (err,r) => {
                     r = r[0];
                     var detector_mail_timeout
-                    if(!d.mon.details.detector_mail_timeout||d.mon.details.detector_mail_timeout===''){
+                    if(!monitorConfig.details.detector_mail_timeout||monitorConfig.details.detector_mail_timeout===''){
                         detector_mail_timeout = 1000*60*10;
                     }else{
-                        detector_mail_timeout = parseFloat(d.mon.details.detector_mail_timeout)*1000*60;
+                        detector_mail_timeout = parseFloat(monitorConfig.details.detector_mail_timeout)*1000*60;
                     }
                     //lock mailer so you don't get emailed on EVERY trigger event.
                     s.group[d.ke].activeMonitors[d.id].detector_mail = setTimeout(function(){
@@ -370,7 +373,7 @@ module.exports = function(s,config,lang){
                             }
                         })
                     }
-                    if(d.mon.details.detector_mail_send_video === '1'){
+                    if(monitorConfig.details.detector_mail_send_video === '1'){
                         // change to function that captures on going video capture, waits, grabs new video file, slices portion (max for transmission) and prepares for delivery
                         s.mergeDetectorBufferChunks(d,function(mergedFilepath,filename){
                             fs.readFile(mergedFilepath,function(err,buffer){
@@ -397,8 +400,8 @@ module.exports = function(s,config,lang){
                         })
                     }
                     if(!d.screenshotBuffer){
-                        const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(d.mon,{
-                            secondsInward: d.mon.details.snap_seconds_inward
+                        const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(monitorConfig,{
+                            secondsInward: monitorConfig.details.snap_seconds_inward
                         })
                         d.screenshotBuffer = screenShot
                     }

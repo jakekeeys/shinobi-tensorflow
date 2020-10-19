@@ -262,8 +262,7 @@ module.exports = function(s,config,lang){
                     })
                 })
             }else{
-                console.log(new Error())
-                console.log(lang['Database row does not exist'],queryValues)
+                console.log(lang['Database row does not exist'],whereQuery)
             }
         })
     }
