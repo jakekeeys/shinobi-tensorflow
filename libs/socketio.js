@@ -974,6 +974,9 @@ module.exports = function(s,config,lang,io){
                          case's.deleteVideo':
                              s.deleteVideo(d.file)
                          break;
+                         case's.deleteFileBinEntry':
+                             s.deleteFileBinEntry(d.file)
+                         break;
                          case'start':case'end':
                              d.mid='_cron';s.userLog(d,{type:'cron',msg:d.msg})
                          break;

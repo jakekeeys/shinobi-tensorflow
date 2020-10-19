@@ -90,39 +90,44 @@ module.exports = function(s,config,lang,app,io){
             const groupKey = options.ke
             const monitorId = options.mid
             const filename = options.name
+            const whereQuery = {
+                ke: groupKey,
+                mid: monitorId,
+                name: filename,
+            }
             if(!filename){
                 resolve('No Filename')
                 return
             }
-            s.knexQuery({
-                action: "select",
-                columns: "size",
-                table: "Files",
-                where: {
-                    ke: groupKey,
-                    mid: monitorId,
-                    name: filename,
-                }
-            },(err,rows) => {
-                if(rows[0]){
-                    const fileSize = rows[0].size
-                    s.knexQuery({
-                        action: "delete",
-                        table: "Files",
-                        where: {
-                            ke: groupKey,
-                            mid: monitorId,
-                            name: filename,
-                        }
-                    },(err) => {
-                        resolve()
-                        s.setDiskUsedForGroup(groupKey,-(fileSize/1048576),'fileBin')
-                        s.purgeDiskForGroup(groupKey)
-                    })
-                }else{
+            const deleteRow = (fileSize) => {
+                s.knexQuery({
+                    action: "delete",
+                    table: "Files",
+                    where: whereQuery
+                },(err,r) => {
                     resolve()
-                }
-            })
+                    s.file('delete',getFileBinDirectory(whereQuery) + filename)
+                    s.setDiskUsedForGroup(groupKey,-(fileSize/1048576),'fileBin')
+                    s.purgeDiskForGroup(groupKey)
+                })
+            }
+            if(options.size){
+                deleteRow(options.size)
+            }else{
+                s.knexQuery({
+                    action: "select",
+                    columns: "size",
+                    table: "Files",
+                    where: whereQuery
+                },(err,rows) => {
+                    if(rows[0]){
+                        const fileSize = rows[0].size
+                        deleteRow(fileSize)
+                    }else{
+                        resolve()
+                    }
+                })
+            }
         })
     }
     const insertFileBinEntry = (options) => {

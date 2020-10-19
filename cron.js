@@ -88,6 +88,9 @@ const sendToWebSocket = (x,y) => {
 const deleteVideo = (x) => {
     postMessage({f:'s.deleteVideo',file:x})
 }
+const deleteFileBinEntry = (x) => {
+    postMessage({f:'s.deleteFileBinEntry',file:x})
+}
 const getVideoDirectory = function(e){
     if(e.mid&&!e.id){e.id=e.mid};
     if(e.details&&(e.details instanceof Object)===false){
@@ -344,31 +347,21 @@ const deleteOldFileBins = function(v,callback){
                 ['time','<', sqlDate(v.d.fileBin_days+' DAY')],
             ]
         },(err,files) => {
-            if(files&&files[0]){
+            if(files && files[0]){
                 //delete the files
                 files.forEach(function(file){
-                    fs.unlink(getFileBinDirectory(file) + file.name,function(err){
-//                        if(err)console.error(err)
+                    deleteFileBinEntry(file)
+                })
+                if(config.debugLog === true){
+                    postMessage({
+                        f: 'deleteFileBins',
+                        msg: files.length + ' files older than ' + v.d.fileBin_days + ' days deleted',
+                        ke: v.ke,
+                        time: moment()
                     })
-                })
-                //delete the database rows
-                knexQuery({
-                    action: "delete",
-                    table: "Files",
-                    where: [
-                        ['ke','=',v.ke],
-                        ['time','<', sqlDate(v.d.fileBin_days+' DAY')],
-                    ]
-                },(err,rrr) => {
-                    callback()
-                    if(err)return console.error(err);
-                    if(rrr.affectedRows && rrr.affectedRows.length>0 || config.debugLog === true){
-                        postMessage({f:'deleteFileBins',msg:(rrr.affectedRows || 0)+' files older than '+v.d.fileBin_days+' days deleted',ke:v.ke,time:moment()})
-                    }
-                })
-            }else{
-                callback()
+                }
             }
+            callback()
         })
     }else{
         callback()
