@@ -9,7 +9,13 @@ $(document).ready(function(){
     var shinobiHubWindowPages = $('#shinobihub-pages')
 
     var getConfigurationsFromHub = function(rowLimit,skipOver,explore,searchQuery,sortBy,sortDirection,callback){
-        $.get(getApiPrefix() + `/getShinobiHubConfigurations/${$user.ke}/cam?rowLimit=${rowLimit}&skipOver=${skipOver}&explore=${explore ? explore : "0"}&search=${searchQuery}&sortDirection=${sortDirection}&sortBy=${sortBy}`,callback)
+        // $.get(,callback)
+        $.get(`https://hub.shinobi.video/searchConfiguration?skipOver=${skipOver}&rowLimit=${rowLimit}&sortBy=${sortBy}&sortDirection=${sortDirection}`,function(data){
+            callback(data)
+            // $.get(getApiPrefix() + `/getShinobiHubConfigurations/${$user.ke}/cam?rowLimit=${rowLimit}&skipOver=${skipOver}&explore=${explore ? explore : "0"}&search=${searchQuery}&sortDirection=${sortDirection}&sortBy=${sortBy}`,function(privateData){
+            //     callback(data.concat(privateData || []))
+            // })
+        })
     }
     var buildConfigRow = function(row){
         return `<tr drawn-id="${row.id}">
