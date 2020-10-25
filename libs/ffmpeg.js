@@ -148,10 +148,13 @@ module.exports = function(s,config,lang,onFinish){
             return  p;
         }, {a: ['']}).a
     };
+    const hasInputMaps = (e) => {
+        return (e.details.input_maps && e.details.input_maps.length > 0)
+    }
     s.createFFmpegMap = function(e,arrayOfMaps){
         //`e` is the monitor object
         var string = '';
-        if(e.details.input_maps && e.details.input_maps.length > 0){
+        if(hasInputMaps(e)){
             if(arrayOfMaps && arrayOfMaps instanceof Array && arrayOfMaps.length>0){
                 arrayOfMaps.forEach(function(v){
                     if(v.map==='')v.map='0'
@@ -322,10 +325,8 @@ module.exports = function(s,config,lang,onFinish){
         }else{
             x.stream_video_filters=''
         }
-        if(e.details.input_map_choices&&e.details.input_map_choices.record){
-            //add input feed map
-            x.pipe += s.createFFmpegMap(e,e.details.input_map_choices['stream_channel-'+(number-config.pipeAddition)])
-        }
+        x.pipe += s.createFFmpegMap(e,e.details.input_map_choices['stream_channel-'+(number-config.pipeAddition)])
+
         if(channel.stream_vcodec !== 'copy' || channel.stream_type === 'mjpeg' || channel.stream_type === 'b64'){
             x.cust_stream += x.stream_fps
         }
@@ -553,10 +554,7 @@ module.exports = function(s,config,lang,onFinish){
             x.stream_video_filters=''
         }
         //stream - pipe build
-        if(e.details.input_map_choices&&e.details.input_map_choices.stream){
-            //add input feed map
-            x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.stream)
-        }
+        x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.stream)
         if(e.details.stream_fps&&e.details.stream_fps!==''){x.stream_fps=' -r '+e.details.stream_fps}else{x.stream_fps = ''}
         if(x.stream_fps && (e.details.stream_vcodec !== 'copy' || e.details.stream_type === 'mjpeg' || e.details.stream_type === 'b64')){
             x.cust_stream += x.stream_fps
@@ -622,10 +620,7 @@ module.exports = function(s,config,lang,onFinish){
         }
         //api - snapshot bin/ cgi.bin (JPEG Mode)
         if(e.details.snap === '1'){
-            if(e.details.input_map_choices&&e.details.input_map_choices.snap){
-                //add input feed map
-                x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.snap)
-            }
+            x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.snap)
             var snapVf = e.details.snap_vf ? e.details.snap_vf.split(',') : []
             if(e.details.snap_vf === '')snapVf.shift()
             if(e.cudaEnabled){
@@ -739,10 +734,7 @@ module.exports = function(s,config,lang,onFinish){
         }
         //build record string.
         if(e.mode === 'record'){
-            if(e.details.input_map_choices&&e.details.input_map_choices.record){
-                //add input feed map
-                x.record_string += s.createFFmpegMap(e,e.details.input_map_choices.record)
-            }
+            x.record_string += s.createFFmpegMap(e,e.details.input_map_choices.record)
             //if h264, hls, mp4, or local add the audio codec flag
             switch(e.type){
                 case'h264':case'hls':case'mp4':case'local':
@@ -792,10 +784,10 @@ module.exports = function(s,config,lang,onFinish){
                 if(videoFilters.length > 0)detectorFlags.push(' -vf "' + videoFilters.join(',') + '"')
             }
             const addInputMap = () => {
-                if(inputMapsRequired)detectorFlags.push(s.createFFmpegMap(e,e.details.input_map_choices.detector))
+                detectorFlags.push(s.createFFmpegMap(e,e.details.input_map_choices.detector))
             }
             const addObjectDetectorInputMap = () => {
-                if(inputMapsRequired)detectorFlags.push(s.createFFmpegMap(e,e.details.input_map_choices.detector_object || e.details.input_map_choices.detector))
+                detectorFlags.push(s.createFFmpegMap(e,e.details.input_map_choices.detector_object || e.details.input_map_choices.detector))
             }
             const addObjectDetectValues = () => {
                 const objVideoFilters = [objectDetectorFpsFilter]
@@ -835,10 +827,7 @@ module.exports = function(s,config,lang,onFinish){
         //Traditional Recording Buffer
         if(e.details.detector === '1' && e.details.detector_trigger === '1' && e.details.detector_record_method === 'sip'){
             if(e.details.cust_sip_record && e.details.cust_sip_record !== ''){x.pipe += ' ' + e.details.cust_sip_record}
-            if(e.details.input_map_choices&&e.details.input_map_choices.detector_sip_buffer){
-                //add input feed map
-                x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector_sip_buffer)
-            }
+            x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector_sip_buffer || e.details.input_map_choices.detector)
             x.detector_buffer_filters=[]
             if(!e.details.detector_buffer_vcodec||e.details.detector_buffer_vcodec===''||e.details.detector_buffer_vcodec==='auto'){
                 switch(e.type){
@@ -905,10 +894,7 @@ module.exports = function(s,config,lang,onFinish){
         if(e.details.record_timelapse === '1'){
             var recordTimelapseVideoFilters = []
             var flags = []
-            if(e.details.input_map_choices&&e.details.input_map_choices.record_timelapse){
-                //add input feed map
-                x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.record_timelapse)
-            }
+            x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.record_timelapse)
             recordTimelapseVideoFilters.push('fps=1/' + (e.details.record_timelapse_fps ? e.details.record_timelapse_fps : '900'))
             if(e.details.record_timelapse_vf && e.details.record_timelapse_vf !== '')flags.push('-vf ' + e.details.record_timelapse_vf)
             if(e.details.record_timelapse_scale_x && e.details.record_timelapse_scale_x !== '' && e.details.record_timelapse_scale_y && e.details.record_timelapse_scale_y !== '')flags.push(`-s ${e.details.record_timelapse_scale_x}x${e.details.record_timelapse_scale_y}`)
