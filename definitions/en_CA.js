@@ -2568,7 +2568,7 @@ module.exports = function(s,config,lang){
                    },
                    {
                       "name": "detail=use_detector_filters",
-                      "field": lang['Detector Filters'],
+                      "field": lang['Event Filters'],
                       "description": "",
                       "default": "0",
                       "example": "",
