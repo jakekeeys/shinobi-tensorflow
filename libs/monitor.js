@@ -12,6 +12,14 @@ const async = require("async");
 const URL = require('url')
 const { copyObject, createQueue } = require('./common.js')
 module.exports = function(s,config,lang){
+    const {
+        ffprobe,
+        probeMonitor,
+        getStreamInfoFromProbe,
+        applyPartialToConfiguration,
+        createWarningsForConfiguration,
+        buildMonitorConfigPartialFromWarnings,
+    } = require('./ffmpeg/utils.js')(s,config,lang)
     const { cameraDestroy } = require('./monitor/utils.js')(s,config,lang)
     const {
         setPresetForCurrentPosition
@@ -857,7 +865,7 @@ module.exports = function(s,config,lang){
                        console.log('There was an error parsing a detector event')
                        console.log(err)
                    }
-               })
+                })
                 if(e.details.detector_use_detect_object === '1'){
                     s.group[e.ke].activeMonitors[e.id].spawn.stdio[4].on('data',function(data){
                         onDetectorJpegOutputSecondary(e,data)
@@ -1454,7 +1462,7 @@ module.exports = function(s,config,lang){
             })
         })
     }
-    s.camera = function(x,e,cn){
+    s.camera = async (x,e,cn) => {
         // x = function or mode
         // e = monitor object
         // cn = socket connection or callback or options (depends on function chosen)
@@ -1551,8 +1559,22 @@ module.exports = function(s,config,lang){
                     //stop action, monitor already started or recording
                     return
                 }
-                //lock this function
-                s.sendMonitorStatus({id:e.id,ke:e.ke,status:lang.Starting});
+                const probeResponse = await probeMonitor(s.group[e.ke].rawMonitorConfigurations[e.id],2000)
+                const probeStreams = getStreamInfoFromProbe(probeResponse.result)
+                activeMonitor.probeResult = probeStreams
+                const warnings = createWarningsForConfiguration(activeMonitor,probeStreams)
+                activeMonitor.warnings = warnings
+                if(warnings.length > 0){
+                    console.log(JSON.stringify(warnings,null,3))
+                    const configPartial = buildMonitorConfigPartialFromWarnings(warnings)
+                    applyPartialToConfiguration(activeMonitor,configPartial)
+                    applyPartialToConfiguration(s.group[e.ke].rawMonitorConfigurations[e.id],configPartial)
+                }
+                s.sendMonitorStatus({
+                    id: e.id,
+                    ke: e.ke,
+                    status: lang.Starting,
+                });
                 activeMonitor.isStarted = true
                 if(e.details && e.details.dir && e.details.dir !== ''){
                     activeMonitor.addStorageId = e.details.dir

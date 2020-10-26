@@ -687,7 +687,12 @@ module.exports = function(s,config,lang,io){
                                 if(cn.jpeg_on !== true){
                                     cn.join('MON_STREAM_'+d.ke+d.id);
                                 }
-                                tx({f:'monitor_watch_on',id:d.id,ke:d.ke})
+                                tx({
+                                    f: 'monitor_watch_on',
+                                    id: d.id,
+                                    ke: d.ke,
+                                    warnings: s.group[d.ke].activeMonitors[d.id].warnings || []
+                                })
                                 s.camera('watch_on',d,cn)
                             break;
                             case'watch_off':
