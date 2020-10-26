@@ -46,16 +46,20 @@ module.exports = (s,config,lang) => {
         }
         const streams = probeResult.streams || []
         streams.forEach((stream) => {
-            const codecType = stream.codec_type || 'video'
-            const simpleInfo = {
-                fps: eval(stream.r_frame_rate) || '',
-                width: stream.coded_width,
-                height: stream.coded_height,
-                streamType: stream.codec_type,
-                codec: stream.codec_name.toLowerCase(),
+            try{
+                const codecType = stream.codec_type || 'video'
+                const simpleInfo = {
+                    fps: eval(stream.r_frame_rate) || '',
+                    width: stream.coded_width,
+                    height: stream.coded_height,
+                    streamType: stream.codec_type,
+                    codec: stream.codec_name.toLowerCase(),
+                }
+                streamIndex.all.push(simpleInfo)
+                streamIndex[codecType].push(simpleInfo)
+            }catch(err){
+                console.log(err)
             }
-            streamIndex.all.push(simpleInfo)
-            streamIndex[codecType].push(simpleInfo)
         })
         if(streamIndex.video.length === 0){
             streamIndex.video.push({
