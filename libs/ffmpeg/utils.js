@@ -53,7 +53,7 @@ module.exports = (s,config,lang) => {
                     width: stream.coded_width,
                     height: stream.coded_height,
                     streamType: stream.codec_type,
-                    codec: stream.codec_name.toLowerCase(),
+                    codec: (stream.codec_name || '').toLowerCase(),
                 }
                 streamIndex.all.push(simpleInfo)
                 streamIndex[codecType].push(simpleInfo)
