@@ -12,8 +12,9 @@ if [ -x "$(command -v apt)" ]; then
 
     sudo apt-get update -y
 
-    sudo apt-get -o Dpkg::Options::="--force-overwrite" install cuda-toolkit-10-2 -y --no-install-recommends
+    sudo apt-get -o Dpkg::Options::="--force-overwrite" install  cuda-toolkit-10-2 -y --no-install-recommends
     sudo apt-get -o Dpkg::Options::="--force-overwrite" install --fix-broken -y
+    sudo apt install nvidia-utils-440 nvidia-headless-440 -y
 
     # Install CUDA DNN
     wget https://cdn.shinobi.video/installers/libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb -O cuda-dnn.deb
