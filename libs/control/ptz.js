@@ -43,6 +43,7 @@ module.exports = function(s,config,lang){
     const moveOnvifCamera = function(options,callback){
         const monitorConfig = s.group[options.ke].rawMonitorConfigurations[options.id]
         const invertedVerticalAxis = monitorConfig.details.control_invert_y === '1'
+        const turnSpeed = parseFloat(monitorConfig.details.control_turn_speed) || 0.1
         const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
         switch(options.direction){
             case'center':
@@ -69,7 +70,7 @@ module.exports = function(s,config,lang){
                 }
                 if(options.axis){
                     options.axis.forEach((axis) => {
-                        controlOptions.Velocity[axis.direction] = axis.amount
+                        controlOptions.Velocity[axis.direction] = axis.amount < 0 ? -turnSpeed : axis.amount > 0 ? turnSpeed : 0
                     })
                 }else{
                     var onvifDirections = {
@@ -139,6 +140,7 @@ module.exports = function(s,config,lang){
         }
     }
     const ptzControl = async function(options,callback){
+        console.log(options)
         if(!s.group[options.ke] || !s.group[options.ke].activeMonitors[options.id]){return}
         const monitorConfig = s.group[options.ke].rawMonitorConfigurations[options.id]
         const controlUrlMethod = monitorConfig.details.control_url_method || 'GET'
@@ -282,6 +284,7 @@ module.exports = function(s,config,lang){
     const setPresetForCurrentPosition = (options,callback) => {
         const nonStandardOnvif = s.group[options.ke].rawMonitorConfigurations[options.id].details.onvif_non_standard === '1'
         const profileToken = options.ProfileToken || "__CURRENT_TOKEN"
+        console.log(options.PresetToken)
         s.runOnvifMethod({
             auth: {
                 ke: options.ke,
@@ -291,7 +294,7 @@ module.exports = function(s,config,lang){
             },
             options: {
                 ProfileToken: profileToken,
-                PresetToken: nonStandardOnvif ? null : options.PresetToken || profileToken,
+                PresetToken: nonStandardOnvif ? '1' : options.PresetToken || profileToken,
                 PresetName: options.PresetName || nonStandardOnvif ? '1' : profileToken
             },
         },(endData) => {

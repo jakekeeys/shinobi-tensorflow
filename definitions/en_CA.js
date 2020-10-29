@@ -3422,6 +3422,15 @@ module.exports = function(s,config,lang){
                        "possible": ""
                     },
                     {
+                       "name": "detail=control_turn_speed",
+                       "field": lang['Turn Speed'],
+                       "description": "",
+                       "default": "0.1",
+                       "example": "",
+                       "form-group-class": "h_cs_input h_cs_1",
+                       "possible": ""
+                    },
+                    {
                        "name": "detail=detector_ptz_follow",
                        "field": lang['PTZ Tracking'],
                        "description": "Follow the largest detected object with PTZ? Requires an Object Detector running or matrices provided with events.",
