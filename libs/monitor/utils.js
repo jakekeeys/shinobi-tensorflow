@@ -1,3 +1,6 @@
+const fs = require('fs');
+const treekill = require('tree-kill');
+const spawn = require('child_process').spawn;
 module.exports = (s,config,lang) => {
     const cameraDestroy = function(e,p){
         if(
@@ -82,7 +85,75 @@ module.exports = (s,config,lang) => {
             }
         }
     }
+    const createSnapshot = (options) => {
+        const url = options.url
+        const streamDir = options.streamDir || s.dir.streams
+        const inputOptions = options.input || []
+        const outputOptions = options.output || []
+        return new Promise((resolve,reject) => {
+            if(!url){
+                resolve(null);
+                return
+            }
+            const temporaryImageFile = streamDir + s.gid(5) + '.jpg'
+            const ffmpegCmd = s.splitForFFPMEG(`-loglevel warning -re -probesize 100000 -analyzeduration 100000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -f image2 -an -vf "fps=1" -vframes 1 "${temporaryImageFile}"`)
+            const snapProcess = spawn('ffmpeg',ffmpegCmd,{detached: true})
+            snapProcess.stderr.on('data',function(data){
+                // s.debugLog(data.toString())
+            })
+            snapProcess.on('close',async function(data){
+                clearTimeout(snapProcessTimeout)
+                fs.readFile(temporaryImageFile,(err,imageBuffer) => {
+                    try{
+                        s.file('delete',temporaryImageFile)
+                    }catch(err){
+
+                    }
+                    if(err){
+                        s.debugLog(err)
+                    }
+                    resolve(imageBuffer)
+                })
+            })
+            var snapProcessTimeout = setTimeout(function(){
+                var pid = snapProcess.pid
+                if(s.isWin){
+                    spawn("taskkill", ["/pid", pid, '/t'])
+                }else{
+                    process.kill(-pid, 'SIGTERM')
+                }
+                setTimeout(function(){
+                    if(s.isWin === false){
+                        treekill(pid)
+                    }else{
+                        snapProcess.kill()
+                    }
+                    fs.readFile(temporaryImageFile,(err,imageBuffer) => {
+                        try{
+                            s.file('delete',temporaryImageFile)
+                        }catch(err){
+
+                        }
+                        if(err){
+                            s.debugLog(err)
+                        }
+                        resolve(imageBuffer)
+                    })
+                },10000)
+            },30000)
+        })
+    }
+    const addCredentialsToStreamLink = (options) => {
+        const streamUrl = options.url
+        const username = options.username
+        const password = options.password
+        const urlParts = streamUrl.split('://')
+        urlParts[0] = 'http'
+        return ['rtsp','://',`${username}:${password}@`,urlParts[1]].join('')
+    }
     return {
-        cameraDestroy: cameraDestroy
+        cameraDestroy: cameraDestroy,
+        createSnapshot: createSnapshot,
+        addCredentialsToStreamLink: addCredentialsToStreamLink,
     }
 }

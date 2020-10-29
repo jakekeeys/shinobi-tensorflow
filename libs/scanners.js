@@ -2,6 +2,10 @@ var os = require('os');
 var exec = require('child_process').exec;
 var onvif = require("node-onvif");
 module.exports = function(s,config,lang,app,io){
+    const {
+        createSnapshot,
+        addCredentialsToStreamLink,
+     } = require('./monitor/utils.js')(s,config,lang)
     const activeProbes = {}
     const runFFprobe = (url,auth,callback) => {
         var endData = {ok: false}
@@ -114,7 +118,15 @@ module.exports = function(s,config,lang,app,io){
                     uri: stream.data.GetStreamUriResponse.MediaUri.Uri
                 }
                 responseList.push(cameraResponse)
-                if(foundCameraCallback)foundCameraCallback(Object.assign(cameraResponse,{f: 'onvif'}))
+                const imageSnap = (await createSnapshot({
+                    output: ['-s 400x400'],
+                    url: addCredentialsToStreamLink({
+                        username: onvifUsername,
+                        password: onvifPassword,
+                        url: stream.data.GetStreamUriResponse.MediaUri.Uri
+                    }),
+                })).toString('base64');
+                if(foundCameraCallback)foundCameraCallback(Object.assign(cameraResponse,{f: 'onvif', snapShot: imageSnap}))
             }catch(err){
                 const searchError = (find) => {
                     return s.stringContains(find,err.message,true)

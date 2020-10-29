@@ -24,6 +24,7 @@ $(document).ready(function(e){
             streamUrl = options.uri
         }
         $('#onvif_probe .output_data').append(`<tr onvif_row="${tempID}">
+            <td><img style="max-width:100px" src="${options.snapShot ? 'data:image/png;base64,' + options.snapShot : placeholder.getData(placeholder.plcimg({text: ' ', fsize: 25, bgcolor:'#1462a5'}))}"></td>
             <td><a ${options.error ? `target="_blank" href="http${options.port == 443 ? 's' : ''}://${options.ip}:${options.port}"` : ''} class="btn btn-sm btn-primary ${options.error ? '' : 'copy'}">&nbsp;<i class="fa fa-${options.error ? 'link' : 'copy'}"></i>&nbsp;</a></td>
             <td class="ip">${options.ip}</td>
             <td class="port">${options.port}</td>
