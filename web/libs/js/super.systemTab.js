@@ -20,7 +20,7 @@ $(document).ready(function(){
                 })
             break;
             case'update':
-                var html = 'Updating Shinobi means overwriting files. If you have modified any files yourself you should update Shinobi manually.'
+                var html = lang.updateNotice1
                 $.confirm.create({
                     title: `${lang.Update} Shinobi?`,
                     body: html,

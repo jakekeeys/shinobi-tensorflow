@@ -7,7 +7,10 @@ var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var execSync = require('child_process').execSync;
 module.exports = function(s,config,lang,app){
-    const { modifyConfiguration } = require('./system/utils.js')(config)
+    const {
+        modifyConfiguration,
+        updateSystem,
+     } = require('./system/utils.js')(config)
     /**
     * API : Superuser : Get Logs
     */
@@ -57,18 +60,15 @@ module.exports = function(s,config,lang,app){
     * API : Superuser : Update Shinobi
     */
     app.all(config.webPaths.superApiPrefix+':auth/system/update', function (req,res){
-        s.superAuth(req.params,function(resp){
-            s.ffmpegKill()
-            s.systemLog('Shinobi ordered to update',{
+        s.superAuth(req.params,async (resp) => {
+            s.systemLog(lang['Shinobi Ordered to Update'],{
                 by: resp.$user.mail,
                 ip: resp.ip
             })
-            var updateProcess = spawn('sh',(s.mainDirectory+'/UPDATE.sh').split(' '),{detached: true})
-            updateProcess.stderr.on('data',function(data){
-                s.systemLog('Update Info',data.toString())
-            })
-            updateProcess.stdout.on('data',function(data){
-                s.systemLog('Update Info',data.toString())
+            const didUpdate = await updateSystem()
+            s.systemLog(lang.restartRequired,{
+                by: resp.$user.mail,
+                ip: resp.ip
             })
             var endData = {
                 ok : true
