@@ -2,7 +2,7 @@ $(document).ready(function(e){
     //onvif probe
     var onvifScannerWindow = $('#onvif_probe')
     var scanForm = onvifScannerWindow.find('form');
-    var outputBlock = onvifScannerWindow.find('.output_data');
+    var outputBlock = onvifScannerWindow.find('.onvif_result');
     var checkTimeout
     var setAsLoading = function(appearance){
         if(appearance){
@@ -20,17 +20,22 @@ $(document).ready(function(e){
         setAsLoading(false)
         var info = options.error ? options.error : options.info ? $.ccio.init('jsontoblock',options.info) : ''
         var streamUrl = options.error ? '' : 'No Stream URL Found'
+        var launchWebPage = `target="_blank" href="http${options.port == 443 ? 's' : ''}://${options.ip}:${options.port}"`
         if(options.uri){
             streamUrl = options.uri
         }
-        $('#onvif_probe .output_data').append(`<tr onvif_row="${tempID}">
-            <td><img style="max-width:100px" src="${options.snapShot ? 'data:image/png;base64,' + options.snapShot : placeholder.getData(placeholder.plcimg({text: ' ', fsize: 25, bgcolor:'#1462a5'}))}"></td>
-            <td><a ${options.error ? `target="_blank" href="http${options.port == 443 ? 's' : ''}://${options.ip}:${options.port}"` : ''} class="btn btn-sm btn-primary ${options.error ? '' : 'copy'}">&nbsp;<i class="fa fa-${options.error ? 'link' : 'copy'}"></i>&nbsp;</a></td>
-            <td class="ip">${options.ip}</td>
-            <td class="port">${options.port}</td>
-            <td>${info}</td>
-            <td class="url">${streamUrl}</td>
-        </tr>`)
+        $('#onvif_probe .onvif_result')[options.error ? 'append' : 'prepend'](`
+            <div class="col-md-4" onvif_row="${tempID}">
+                <div style="display:block" ${options.error ? launchWebPage : ''} class="card bg-default ${options.error ? '' : 'copy'}">
+                    <div class="preview-image card-header" style="background-image:url(${options.snapShot ? 'data:image/png;base64,' + options.snapShot : placeholder.getData(placeholder.plcimg({text: ' ', fsize: 25, bgcolor:'#1f80f9'}))})"></div>
+                    <div class="card-body" ${options.error ? '' : 'style="min-height:190px"'}>
+                        <div>${info}</div>
+                        <div class="url">${streamUrl}</div>
+                    </div>
+                    <div class="card-footer">${options.ip}:${options.port}</div>
+                </div>
+            </div>
+        `)
     }
     scanForm.submit(function(e){
         e.preventDefault();
@@ -48,7 +53,7 @@ $(document).ready(function(e){
         });
         clearTimeout(checkTimeout)
         checkTimeout = setTimeout(function(){
-            if(outputBlock.find('tr').length === 0){
+            if(outputBlock.find('.card').length === 0){
                 setAsLoading(false)
                 outputBlock.append(`<td style="padding: 10px;" class="text-center _notfound text-white epic-text">${lang.sorryNothingWasFound}</td>`)
             }

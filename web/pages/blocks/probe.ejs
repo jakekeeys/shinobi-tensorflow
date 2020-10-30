@@ -30,6 +30,7 @@
   </div>
 </div>
 <!--onvif PROBE Window-->
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.onvifscanner.css">
 <div class="modal full dark fade" id="onvif_probe" role="dialog" aria-labelledby="onvif_probeLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <form class="modal-content">
@@ -71,7 +72,7 @@
           <div class="col-md-6">
               <div class="form-group-group blue" style="padding:0">
                   <h4 style="margin-bottom:0;padding: 15px 25px;"><%-lang['Found Devices']%></h4>
-                  <table class="output_data table table-striped" style="margin:0"></table>
+                  <div class="onvif_result"></div>
               </div>
           </div>
         </div>

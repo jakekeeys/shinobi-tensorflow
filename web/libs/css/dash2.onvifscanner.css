@@ -1,0 +1,15 @@
+#onvif_probe .preview-image {
+    width: 100%;
+    background-size: cover;
+    height: 100px;
+}
+#onvif_probe .card {
+    cursor: pointer;
+    color: #333;
+}
+#onvif_probe .card-body {
+    min-height: auto;
+}
+#onvif_probe .onvif_result {
+    padding-top:2rem;
+}

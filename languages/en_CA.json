@@ -282,7 +282,7 @@
    "ONVIF Scanner": "ONVIF Scanner",
    "ONVIFEventsNotAvailable": "ONVIF Events not Available",
    "ONVIFnotCompliantProfileT": "Camera is not ONVIF Profile T Compliant",
-   "ONVIFErr400": "Found ONVIF port but authorization failed when retrieving the Stream URL. Check username and password used for scan.",
+   "ONVIFErr400": "Found ONVIF port but authorization failed when retrieving the Stream URL. Check username and password used for scan. Make sure your camera time and server time are synced.",
    "ONVIFErr405": "Method Not Allowed. Check username and password used for scan.",
    "ONVIFErr404": "Not Found. This may just be the web panel for a network device.",
    "Scan Settings": "Scan Settings",
