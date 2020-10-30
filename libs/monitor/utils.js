@@ -95,6 +95,19 @@ module.exports = (s,config,lang) => {
                 resolve(null);
                 return
             }
+            const completeRequest = () => {
+                fs.readFile(temporaryImageFile,(err,imageBuffer) => {
+                    fs.unlink(temporaryImageFile,(err) => {
+                        if(err){
+                            s.debugLog(err)
+                        }
+                    })
+                    if(err){
+                        s.debugLog(err)
+                    }
+                    resolve(imageBuffer)
+                })
+            }
             const temporaryImageFile = streamDir + s.gid(5) + '.jpg'
             const ffmpegCmd = s.splitForFFPMEG(`-loglevel warning -re -probesize 100000 -analyzeduration 100000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -f image2 -an -vf "fps=1" -vframes 1 "${temporaryImageFile}"`)
             const snapProcess = spawn('ffmpeg',ffmpegCmd,{detached: true})
@@ -103,17 +116,7 @@ module.exports = (s,config,lang) => {
             })
             snapProcess.on('close',async function(data){
                 clearTimeout(snapProcessTimeout)
-                fs.readFile(temporaryImageFile,(err,imageBuffer) => {
-                    try{
-                        s.file('delete',temporaryImageFile)
-                    }catch(err){
-
-                    }
-                    if(err){
-                        s.debugLog(err)
-                    }
-                    resolve(imageBuffer)
-                })
+                completeRequest()
             })
             var snapProcessTimeout = setTimeout(function(){
                 var pid = snapProcess.pid
@@ -128,17 +131,7 @@ module.exports = (s,config,lang) => {
                     }else{
                         snapProcess.kill()
                     }
-                    fs.readFile(temporaryImageFile,(err,imageBuffer) => {
-                        try{
-                            s.file('delete',temporaryImageFile)
-                        }catch(err){
-
-                        }
-                        if(err){
-                            s.debugLog(err)
-                        }
-                        resolve(imageBuffer)
-                    })
+                    completeRequest()
                 },10000)
             },30000)
         })

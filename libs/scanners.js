@@ -118,14 +118,21 @@ module.exports = function(s,config,lang,app,io){
                     uri: stream.data.GetStreamUriResponse.MediaUri.Uri
                 }
                 responseList.push(cameraResponse)
-                const imageSnap = (await createSnapshot({
-                    output: ['-s 400x400'],
-                    url: addCredentialsToStreamLink({
-                        username: onvifUsername,
-                        password: onvifPassword,
-                        url: stream.data.GetStreamUriResponse.MediaUri.Uri
-                    }),
-                })).toString('base64');
+                var imageSnap
+                if(cameraResponse.uri){
+                    try{
+                        imageSnap = (await createSnapshot({
+                            output: ['-s 400x400'],
+                            url: addCredentialsToStreamLink({
+                                username: onvifUsername,
+                                password: onvifPassword,
+                                url: cameraResponse.uri
+                            }),
+                        })).toString('base64');
+                    }catch(err){
+                        // s.debugLog(err)
+                    }
+                }
                 if(foundCameraCallback)foundCameraCallback(Object.assign(cameraResponse,{f: 'onvif', snapShot: imageSnap}))
             }catch(err){
                 const searchError = (find) => {
@@ -156,7 +163,7 @@ module.exports = function(s,config,lang,app,io){
                     port: camera.port,
                     error: errorMessage
                 });
-                s.debugLog(err)
+                // s.debugLog(err)
             }
         })
         return responseList
