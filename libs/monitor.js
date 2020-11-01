@@ -1556,6 +1556,14 @@ module.exports = function(s,config,lang){
                     var wantedStatus = lang.Idle
                 }
                 s.sendMonitorStatus({id:e.id,ke:e.ke,status:wantedStatus})
+                if(e.type === 'mjpeg'){
+                    setTimeout(() => {
+                        s.orphanedVideoCheck({
+                            ke: e.ke,
+                            mid: e.id,
+                        },2,null,true)
+                    },2000)    
+                }
                 s.onMonitorStopExtensions.forEach(function(extender){
                     extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
                 })
