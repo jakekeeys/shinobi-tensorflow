@@ -661,7 +661,7 @@ module.exports = function(s,config,lang,onFinish){
             if(e.details.cust_record)customRecordingFlags.push(...e.details.cust_record.split(' '))
             //record - resolution
             if(customRecordingFlags.indexOf('-strict -2') === -1)customRecordingFlags.push(`-strict -2`)
-            if(customRecordingFlags.indexOf('-threads') === -1)customRecordingFlags.push(`-threads 1`)
+            // if(customRecordingFlags.indexOf('-threads') === -1)customRecordingFlags.push(`-threads 10`)
             if(!videoCodecisCopy){
                 if(
                     !isNaN(parseInt(e.details.record_scale_x)) &&
@@ -693,7 +693,7 @@ module.exports = function(s,config,lang,onFinish){
                     }
                 break;
             }
-            if(videoCodec !== ' none'){
+            if(videoCodec !== 'none'){
                 recordingFlags.push(`-vcodec ` + videoCodec)
             }
             //record - timestamp options for -vf

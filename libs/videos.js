@@ -409,27 +409,31 @@ module.exports = function(s,config,lang){
                     }
                     fiveRecentFiles.forEach(function(filename){
                         if(/T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]./.test(filename)){
-                            s.knexQuery({
-                                action: "select",
-                                columns: "*",
-                                table: "Videos",
-                                where: [
-                                    ['ke','=',monitor.ke],
-                                    ['mid','=',monitor.mid],
-                                    ['time','=',s.nameToTime(filename)],
-                                ],
-                                limit: 1
-                            },(err,rows) => {
-                                if(!err && (!rows || !rows[0])){
-                                    ++orphanedFilesCount
-                                    var video = rows[0]
-                                    s.insertCompletedVideo(monitor,{
-                                        file : filename
-                                    },() => {
-                                        fileComplete()
+                            fs.stat(filename,(err,stats) => {
+                                if(!err && stats.size > 10){
+                                    s.knexQuery({
+                                        action: "select",
+                                        columns: "*",
+                                        table: "Videos",
+                                        where: [
+                                            ['ke','=',monitor.ke],
+                                            ['mid','=',monitor.mid],
+                                            ['time','=',s.nameToTime(filename)],
+                                        ],
+                                        limit: 1
+                                    },(err,rows) => {
+                                        if(!err && (!rows || !rows[0])){
+                                            ++orphanedFilesCount
+                                            var video = rows[0]
+                                            s.insertCompletedVideo(monitor,{
+                                                file : filename
+                                            },() => {
+                                                fileComplete()
+                                            })
+                                        }else{
+                                            fileComplete()
+                                        }
                                     })
-                                }else{
-                                    fileComplete()
                                 }
                             })
                         }
