@@ -13,7 +13,6 @@ const URL = require('url')
 const { copyObject, createQueue } = require('./common.js')
 module.exports = function(s,config,lang){
     const {
-        ffprobe,
         probeMonitor,
         getStreamInfoFromProbe,
         applyPartialToConfiguration,
@@ -47,6 +46,11 @@ module.exports = function(s,config,lang){
         if(!s.group[e.ke].activeMonitors[e.mid].pipe4BufferPieces){s.group[e.ke].activeMonitors[e.mid].pipe4BufferPieces = []};
         if(s.group[e.ke].activeMonitors[e.mid].delete){clearTimeout(s.group[e.ke].activeMonitors[e.mid].delete)}
         if(!s.group[e.ke].rawMonitorConfigurations){s.group[e.ke].rawMonitorConfigurations={}}
+        if(!s.group[e.ke].activeMonitors[e.mid].criticalErrors)s.group[e.ke].activeMonitors[e.mid].criticalErrors = {
+            "404": false,
+            "453": false,
+            "500": false,
+        }
         s.onMonitorInitExtensions.forEach(function(extender){
             extender(e)
         })
@@ -610,10 +614,8 @@ module.exports = function(s,config,lang){
     }
     const resetRecordingCheck = function(e){
         clearTimeout(s.group[e.ke].activeMonitors[e.id].recordingChecker)
-        var cutoff = e.cutoff + 0
-        if(e.type === 'dashcam'){
-            cutoff *= 100
-        }
+        const segmentLengthInMinutes = !isNaN(parseFloat(e.details.cutoff)) ? parseFloat(e.details.cutoff) : '15'
+        const segmentLength = e.type === 'dashcam' ? segmentLengthInMinutes * 100 : segmentLengthInMinutes
         s.group[e.ke].activeMonitors[e.id].recordingChecker = setTimeout(function(){
             if(s.group[e.ke].activeMonitors[e.id].isStarted === true && s.group[e.ke].rawMonitorConfigurations[e.id].mode === 'record'){
                 forceMonitorRestart({
@@ -626,7 +628,7 @@ module.exports = function(s,config,lang){
                     }
                 })
             }
-        },60000 * cutoff * 1.3);
+        },60000 * segmentLength * 1.3);
     }
     const resetStreamCheck = function(e){
         clearTimeout(s.group[e.ke].activeMonitors[e.id].streamChecker)
@@ -1012,6 +1014,9 @@ module.exports = function(s,config,lang){
         s.group[e.ke].activeMonitors[e.id].spawn.stderr.on('data',function(d){
             d=d.toString();
             switch(true){
+                case checkLog(d,'Not Enough Bandwidth'):
+                    s.group[e.ke].activeMonitors[e.id].criticalErrors['453'] = true
+                break;
                 case checkLog(d,'No space left on device'):
                     s.checkUserPurgeLock(e.ke)
                     s.purgeDiskForGroup(e.ke)
@@ -1098,7 +1103,7 @@ module.exports = function(s,config,lang){
         //create host string without username and password
         var strippedHost = s.stripAuthFromHost(e)
         var doOnThisMachine = function(callback){
-            createCameraFolders(e,function(){
+            createCameraFolders(e,async function(){
                 activeMonitor.allowStdinWrite = false
                 if(e.details.detector_trigger === '1'){
                     clearTimeout(activeMonitor.motion_lock)
@@ -1170,7 +1175,7 @@ module.exports = function(s,config,lang){
                         resetStreamCheck(e)
                     })
                 }
-                s.cameraSendSnapshot({mid:e.id,ke:e.ke,mon:e},{useIcon: true})
+                if(!activeMonitor.criticalErrors['453'])await s.cameraSendSnapshot({mid:e.id,ke:e.ke,mon:e},{useIcon: true})
                 //check host to see if has password and user in it
                 clearTimeout(activeMonitor.recordingChecker)
                 if(activeMonitor.isStarted === true){
@@ -1547,6 +1552,10 @@ module.exports = function(s,config,lang){
                     var wantedStatus = lang.Idle
                 }
                 s.sendMonitorStatus({id:e.id,ke:e.ke,status:wantedStatus})
+                s.orphanedVideoCheck({
+                    ke: e.ke,
+                    mid: e.id,
+                },2,null,true)
                 s.onMonitorStopExtensions.forEach(function(extender){
                     extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
                 })
@@ -1559,14 +1568,14 @@ module.exports = function(s,config,lang){
                     //stop action, monitor already started or recording
                     return
                 }
-                const probeResponse = await probeMonitor(s.group[e.ke].rawMonitorConfigurations[e.id],2000)
+                const probeResponse = await probeMonitor(s.group[e.ke].rawMonitorConfigurations[e.id],2000,true)
                 const probeStreams = getStreamInfoFromProbe(probeResponse.result)
                 activeMonitor.probeResult = probeStreams
-                const warnings = createWarningsForConfiguration(activeMonitor,probeStreams)
+                const warnings = createWarningsForConfiguration(s.group[e.ke].rawMonitorConfigurations[e.id],probeStreams)
                 activeMonitor.warnings = warnings
                 if(warnings.length > 0){
-                    console.log(JSON.stringify(warnings,null,3))
                     const configPartial = buildMonitorConfigPartialFromWarnings(warnings)
+                    applyPartialToConfiguration(e,configPartial)
                     applyPartialToConfiguration(activeMonitor,configPartial)
                     applyPartialToConfiguration(s.group[e.ke].rawMonitorConfigurations[e.id],configPartial)
                 }
@@ -1596,29 +1605,8 @@ module.exports = function(s,config,lang){
                     e.details.fatal_max = parseFloat(e.details.fatal_max)
                 }
                 activeMonitor.errorFatalCount = 0;
-                //cutoff time and recording check interval
-                if(!e.details.cutoff||e.details.cutoff===''){e.cutoff=15}else{e.cutoff=parseFloat(e.details.cutoff)};
-                if(isNaN(e.cutoff)===true){e.cutoff=15}
                 //start drawing files
                 delete(activeMonitor.childNode)
-                //validate port
-                if(!e.port){
-                    switch(e.protocol){
-                        case'http':
-                            e.port = '80'
-                        break;
-                        case'rtmps':
-                        case'https':
-                            e.port = '443'
-                        break;
-                        case'rtmp':
-                            e.port = '1935'
-                        break;
-                        case'rtsp':
-                            e.port = '554'
-                        break;
-                    }
-                }
                 if(e.details.detector_ptz_follow === '1'){
                     setTimeout(() => {
                         setPresetForCurrentPosition({

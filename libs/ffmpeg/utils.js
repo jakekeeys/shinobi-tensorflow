@@ -1,41 +1,65 @@
+const exec = require('child_process').exec;
+const spawn = require('child_process').spawn;
+const treekill = require('tree-kill');
 module.exports = (s,config,lang) => {
     const { mergeDeep } = require('../common.js')
-    var exec = require('child_process').exec;
+    const getPossibleWarnings = require('./possibleWarnings.js')
     const activeProbes = {}
-    const runFFprobe = (url,auth,callback) => {
+    const runFFprobe = (url,auth,callback,forceOverlap) => {
         var endData = {ok: false, result: {}}
         if(!url){
             endData.error = 'Missing URL'
             callback(endData)
             return
         }
-        if(activeProbes[auth]){
+        if(!forceOverlap && activeProbes[auth]){
             endData.error = 'Account is already probing'
             callback(endData)
             return
         }
         activeProbes[auth] = 1
-        const probeCommand = s.splitForFFPMEG(`-v quiet -print_format json -show_format -show_streams -i "${url}"`).join(' ')
-        exec('ffprobe ' + probeCommand,function(err,stdout,stderr){
+        var stderr = ''
+        var stdout = ''
+        const probeCommand = s.splitForFFPMEG(`-analyzeduration 100000 probesize 100000 -v quiet -print_format json -show_format -show_streams -i "${url}"`)
+        var processTimeout = null
+        var ffprobeLocation = config.ffmpegDir.split('/')
+        ffprobeLocation[ffprobeLocation.length - 1] = 'ffprobe'
+        ffprobeLocation = ffprobeLocation.join('/')
+        const probeProcess = spawn(ffprobeLocation, probeCommand)
+        const finishReponse = () => {
             delete(activeProbes[auth])
-            if(err){
-                endData.error = err
+            if(!stdout){
+                endData.error = stderr
             }else{
                 endData.ok = true
                 endData.result = s.parseJSON(stdout)
             }
             endData.probe = probeCommand
             callback(endData)
+        }
+        probeProcess.stderr.on('data',function(data){
+            stderr += data.toString()
         })
+        probeProcess.stdout.on('data',function(data){
+            stdout += data.toString()
+        })
+        probeProcess.on('close',function(){
+            clearTimeout(processTimeout)
+            finishReponse()
+        })
+        processTimeout = setTimeout(() => {
+            treekill(probeProcess.pid)
+            finishReponse()
+        },4000)
     }
-    const probeMonitor = (monitor,timeoutAmount) => {
+    const probeMonitor = (monitor,timeoutAmount,forceOverlap) => {
         return new Promise((resolve,reject) => {
             const url = s.buildMonitorUrl(monitor);
             runFFprobe(url,`${monitor.ke}${monitor.mid}`,(response) => {
                 setTimeout(() => {
                     resolve(response)
                 },timeoutAmount || 1000)
-            })
+            },forceOverlap)
         })
     }
     const getStreamInfoFromProbe = (probeResult) => {
@@ -70,76 +94,10 @@ module.exports = (s,config,lang) => {
         return streamIndex
     }
     const createWarningsForConfiguration = (monitor,probeResult) => {
-        const primaryVideoStream = probeResult.video[0]
         const warnings = []
-        const possibleWarnings = [
-            {
-                isTrue: monitor.details.stream_vcodec === 'copy' && primaryVideoStream.codec === 'hevc',
-                title: lang['Codec Mismatch'],
-                text: lang.codecMismatchText1,
-                level: 5,
-            },
-            {
-                isTrue: (
-                    (
-                        monitor.details.stream_type === 'mp4' ||
-                        monitor.details.stream_type === 'flv' ||
-                        monitor.details.stream_type === 'hls'
-                    ) &&
-                    monitor.details.stream_vcodec === 'copy' &&
-                    primaryVideoStream.codec === 'mjpeg'
-                ),
-                title: lang['Automatic Codec Repair'],
-                text: lang.codecMismatchText2,
-                level: 10,
-                automaticChange: {
-                    details: {
-                        stream_type: 'mjpeg'
-                    }
-                }
-            },
-            {
-                isTrue: (
-                    (
-                        monitor.details.stream_type === 'mjpeg' ||
-                        monitor.details.stream_vcodec === 'libx264'
-                    ) &&
-                    primaryVideoStream.codec === 'h264'
-                ),
-                title: lang['Performance Optimization Possible'],
-                text: lang.performanceOptimizeText1,
-                level: 1,
-            },
-            {
-                isTrue: (
-                    monitor.details.vcodec === 'copy' &&
-                    primaryVideoStream.codec === 'mjpeg'
-                ),
-                title: lang['Codec Mismatch'],
-                text: lang.codecMismatchText3,
-                level: 10,
-                automaticChange: {
-                    fps: probeResult.fps,
-                    details: {
-                        vcodec: 'libx264',
-                    }
-                }
-            },
-            {
-                isTrue: (
-                    !monitor.details.sfps &&
-                    primaryVideoStream.codec === 'mjpeg'
-                ),
-                title: lang['Field Missing Value'],
-                text: lang.fieldMissingValueText1,
-                level: 10,
-                automaticChange: {
-                    details: {
-                        sfps: probeResult.fps,
-                    }
-                }
-            },
-        ];
+        const possibleWarnings = getPossibleWarnings(monitor,probeResult,config,lang)
+        console.log(Object.keys(monitor))
+        console.log(`monitor.protocol`,monitor.protocol)
         possibleWarnings.forEach((warning) => {
             if(warning.isTrue)warnings.push(warning)
         })

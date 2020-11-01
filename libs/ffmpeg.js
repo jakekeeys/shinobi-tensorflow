@@ -476,6 +476,10 @@ module.exports = function(s,config,lang,onFinish){
         x.stream_video_filters = []
         x.pipe = ''
         x.cust_stream = ' -strict -2'
+        //
+        // if(e.details.stream_scale_x&&e.details.stream_scale_x!==''&&e.details.stream_scale_y&&e.details.stream_scale_y!==''){
+        //     x.dimensions = e.details.stream_scale_x+'x'+e.details.stream_scale_y;
+        // }
         //stream - timestamp
         if(e.details.stream_timestamp&&e.details.stream_timestamp=="1"&&e.details.vcodec!=='copy'){
             //font
@@ -639,114 +643,105 @@ module.exports = function(s,config,lang,onFinish){
     ffmpeg.buildMainRecording = function(e,x){
         //e = monitor object
         //x = temporary values
-        x.record_video_filters = []
-        x.record_string = ''
-        x.cust_record = e.details.cust_record ? e.details.cust_record.split(' ') : []
-        //record - resolution
-        if(e.record_scale_x!==''&&e.record_scale_y!==''&&e.record_scale_x!=='0'&&e.record_scale_y!=='0'&&!isNaN(e.record_scale_x)&&!isNaN(e.record_scale_y)){
-            x.record_dimensions=' -s '+e.record_scale_x+'x'+e.record_scale_y
-        }else{
-            x.record_dimensions=''
-        }
-        if(e.details.stream_scale_x&&e.details.stream_scale_x!==''&&e.details.stream_scale_y&&e.details.stream_scale_y!==''){
-            x.dimensions = e.details.stream_scale_x+'x'+e.details.stream_scale_y;
-        }
-        //record - segmenting
-        x.segment = ' -f segment -segment_atclocktime 1 -reset_timestamps 1 -strftime 1 -segment_list pipe:8 -segment_time '+(60*e.cutoff)+' "'+e.dir+'%Y-%m-%dT%H-%M-%S.'+e.ext+'"';
-        //record - set defaults for extension, video quality
-        switch(e.ext){
-            case'mp4':
-                x.vcodec='libx264';x.acodec='aac';
-                if(e.details.crf&&e.details.crf!==''){x.vcodec+=' -crf '+e.details.crf}
-                x.cust_record.push(`-segment_format_options movflags=faststart+frag_keyframe+empty_moov`)
-            break;
-            case'webm':
-                x.acodec='libvorbis',x.vcodec='libvpx';
-                if(e.details.crf&&e.details.crf!==''){x.vcodec+=' -q:v '+e.details.crf}else{x.vcodec+=' -q:v 1';}
-            break;
-        }
-        if(e.details.vcodec==='h264_vaapi'){
-           x.record_video_filters.push('format=nv12,hwupload');
-        }
-        //record - use custom video codec
-        if(e.details.vcodec&&e.details.vcodec!==''&&e.details.vcodec!=='default'){x.vcodec=e.details.vcodec}
-        //record - use custom audio codec
-        if(e.details.acodec&&e.details.acodec!==''&&e.details.acodec!=='default'){x.acodec=e.details.acodec}
-        if(e.details.cust_record.indexOf('-strict -2') === -1){x.cust_record.push(' -strict -2')}
-        if(e.details.cust_record.indexOf('-threads')===-1){x.cust_record.push(' -threads 1')}
-        //record - ready or reset codecs
-        if(x.acodec!=='no'){
-            if(x.acodec.indexOf('none')>-1){x.acodec=''}else{x.acodec=' -acodec '+x.acodec}
-        }else{
-            x.acodec=' -an'
-        }
-        if(x.vcodec.indexOf('none')>-1){x.vcodec=''}else{x.vcodec=' -vcodec '+x.vcodec}
-        //record - frames per second (fps)
-        if(e.fps&&e.fps!==''&&e.details.vcodec!=='copy'){x.record_fps=' -r '+e.fps}else{x.record_fps=''}
-        //record - timestamp options for -vf
-        if(e.details.timestamp&&e.details.timestamp=="1"&&e.details.vcodec!=='copy'){
-            //font
-            if(e.details.timestamp_font&&e.details.timestamp_font!==''){x.time_font=e.details.timestamp_font}else{x.time_font='/usr/share/fonts/truetype/freefont/FreeSans.ttf'}
-            //position x
-            if(e.details.timestamp_x&&e.details.timestamp_x!==''){x.timex=e.details.timestamp_x}else{x.timex='(w-tw)/2'}
-            //position y
-            if(e.details.timestamp_y&&e.details.timestamp_y!==''){x.timey=e.details.timestamp_y}else{x.timey='0'}
-            //text color
-            if(e.details.timestamp_color&&e.details.timestamp_color!==''){x.time_color=e.details.timestamp_color}else{x.time_color='white'}
-            //box color
-            if(e.details.timestamp_box_color&&e.details.timestamp_box_color!==''){x.time_box_color=e.details.timestamp_box_color}else{x.time_box_color='0x00000000@1'}
-            //text size
-            if(e.details.timestamp_font_size&&e.details.timestamp_font_size!==''){x.time_font_size=e.details.timestamp_font_size}else{x.time_font_size='10'}
-
-            x.record_video_filters.push('drawtext=fontfile='+x.time_font+':text=\'%{localtime}\':x='+x.timex+':y='+x.timey+':fontcolor='+x.time_color+':box=1:boxcolor='+x.time_box_color+':fontsize='+x.time_font_size);
-        }
-        //record - watermark for -vf
-        if(e.details.watermark&&e.details.watermark=="1"&&e.details.watermark_location&&e.details.watermark_location!==''){
-            switch(e.details.watermark_position){
-                case'tl'://top left
-                    x.watermark_position='10:10'
-                break;
-                case'tr'://top right
-                    x.watermark_position='main_w-overlay_w-10:10'
-                break;
-                case'bl'://bottom left
-                    x.watermark_position='10:main_h-overlay_h-10'
-                break;
-                default://bottom right
-                    x.watermark_position='(main_w-overlay_w-10)/2:(main_h-overlay_h-10)/2'
-                break;
-            }
-            x.record_video_filters.push('movie='+e.details.watermark_location+'[watermark],[in][watermark]overlay='+x.watermark_position+'[out]');
-        }
-        //record - rotation
-        if(e.details.rotate_record&&e.details.rotate_record!==""&&e.details.rotate_record!=="no"&&e.details.stream_vcodec!=="copy"){
-            x.record_video_filters.push('transpose='+e.details.rotate_record);
-        }
-        //check custom record filters for -vf
-        if(e.details.vf&&e.details.vf!==''){
-            x.record_video_filters.push(e.details.vf)
-        }
-        //compile filter string for -vf
-        if(x.record_video_filters.length>0){
-           x.record_video_filters=' -vf '+x.record_video_filters.join(',')
-        }else{
-            x.record_video_filters=''
-        }
-        //build record string.
         if(e.mode === 'record'){
-            x.record_string += s.createFFmpegMap(e,e.details.input_map_choices.record)
-            //if h264, hls, mp4, or local add the audio codec flag
+            const recordingFlags = []
+            const recordingFilters = []
+            const customRecordingFlags = []
+            const videoCodecisCopy = e.details.vcodec === 'copy'
+            const videoExtIsMp4 = e.ext === 'mp4'
+            const defaultVideoCodec = videoExtIsMp4 ? 'libx264' : 'libvpx'
+            const defaultAudioCodec = videoExtIsMp4 ? 'aac' : 'libvorbis'
+            const videoCodec = e.details.vcodec === 'default' ? defaultVideoCodec : e.details.vcodec ? e.details.vcodec : defaultVideoCodec
+            const audioCodec = e.details.acodec === 'default' ? defaultAudioCodec : e.details.acodec ? e.details.acodec : defaultAudioCodec
+            const videoQuality = e.details.crf ? e.details.crf : '1'
+            const videoFps = !isNaN(parseFloat(e.fps)) && e.fps !== '0' ? parseFloat(e.fps) : null
+            const segmentLengthInMinutes = !isNaN(parseFloat(e.details.cutoff)) ? parseFloat(e.details.cutoff) : '15'
+            const inputMap = s.createFFmpegMap(e,e.details.input_map_choices.record)
+            if(inputMap)recordingFlags.push(inputMap)
+            if(e.details.cust_record)customRecordingFlags.push(...e.details.cust_record.split(' '))
+            //record - resolution
+            if(customRecordingFlags.indexOf('-strict -2') === -1)customRecordingFlags.push(`-strict -2`)
+            if(customRecordingFlags.indexOf('-threads') === -1)customRecordingFlags.push(`-threads 1`)
+            if(!videoCodecisCopy){
+                if(
+                    !isNaN(parseInt(e.details.record_scale_x)) &&
+                    !isNaN(parseInt(e.details.record_scale_y))
+                ){
+                    recordingFlags.push(`-s ${e.details.record_scale_x}x${e.details.record_scale_y}`)
+                }
+                if(videoExtIsMp4){
+                    recordingFlags.push(`-crf ${videoQuality}`)
+                }else{
+                    recordingFlags.push(`-q:v ${videoQuality}`)
+                }
+                if(videoFps){
+                    recordingFilters.push(`fps=${videoFps}`)
+                }
+            }
+            if(videoExtIsMp4){
+                customRecordingFlags.push(`-segment_format_options movflags=faststart+frag_keyframe+empty_moov`)
+            }
+            if(videoCodec === 'h264_vaapi'){
+                recordingFilters.push('format=nv12,hwupload')
+            }
             switch(e.type){
                 case'h264':case'hls':case'mp4':case'local':
-                    x.record_string+=x.acodec;
+                    if(audioCodec === 'no'){
+                        recordingFlags.push(`-an`)
+                    }else if(audioCodec !== 'none'){
+                        recordingFlags.push(`-acodec ` + audioCodec)
+                    }
                 break;
             }
-            //custom flags
-            if(x.cust_record.length > 0){x.record_string+=' ' + x.cust_record.join(' ')}
-            //preset flag
-            if(e.details.preset_record&&e.details.preset_record!==''){x.record_string+=' -preset '+e.details.preset_record;}
-            //main string write
-            x.record_string+=x.vcodec+x.record_fps+x.record_video_filters+x.record_dimensions+x.segment;
+            if(videoCodec !== ' none'){
+                recordingFlags.push(`-vcodec ` + videoCodec)
+            }
+            //record - timestamp options for -vf
+            if(e.details.timestamp === "1" && !videoCodecisCopy){
+                const timestampFont = e.details.timestamp_font ? e.details.timestamp_font : '/usr/share/fonts/truetype/freefont/FreeSans.ttf'
+                const timestampX = e.details.timestamp_x ? e.details.timestamp_x : '(w-tw)/2'
+                const timestampY = e.details.timestamp_y ? e.details.timestamp_y : '0'
+                const timestampColor = e.details.timestamp_color ? e.details.timestamp_color : 'white'
+                const timestampBackgroundColor = e.details.timestamp_box_color ? e.details.timestamp_box_color : '0x00000000@1'
+                const timestampFontSize = e.details.timestamp_font_size ? e.details.timestamp_font_size : '10'
+                recordingFilters.push(`'drawtext=fontfile=${timestampFont}:text=\'%{localtime}\':x=${timestampX}:y=${timestampY}:fontcolor=${timestampColor}:box=1:boxcolor=${timestampBackgroundColor}:fontsize=${timestampFontSize}`);
+            }
+            //record - watermark for -vf
+            if(e.details.watermark === "1" && e.details.watermark_location){
+                const watermarkLocation = e.details.watermark_location
+                //bottom right is default
+                var watermarkPosition = '(main_w-overlay_w-10)/2:(main_h-overlay_h-10)/2'
+                switch(e.details.watermark_position){
+                    case'tl'://top left
+                        watermarkPosition = '10:10'
+                    break;
+                    case'tr'://top right
+                        watermarkPosition = 'main_w-overlay_w-10:10'
+                    break;
+                    case'bl'://bottom left
+                        watermarkPosition = '10:main_h-overlay_h-10'
+                    break;
+                }
+                recordingFilters.push(`movie=${watermarkLocation}[watermark],[in][watermark]overlay=${watermarkPosition}[out]`);
+            }
+            if(e.details.rotate_record && e.details.rotate_record !== "no" && !videoCodecisCopy){
+                recordingFilters.push('transpose=' + e.details.rotate_record);
+            }
+            if(e.details.vf){
+                recordingFilters.push(e.details.vf)
+            }
+            if(recordingFilters.length > 0){
+               recordingFlags.push(`-vf "${recordingFilters.join(',')}"`)
+            }
+            if(e.details.preset_record){
+                recordingFlags.push(`-preset ${e.details.preset_record}`)
+            }
+            if(customRecordingFlags.length > 0){
+                recordingFlags.push(...customRecordingFlags)
+            }
+            //record - segmenting
+            recordingFlags.push(`-f segment -segment_atclocktime 1 -reset_timestamps 1 -strftime 1 -segment_list pipe:8 -segment_time ${(60 * segmentLengthInMinutes)} "${e.dir}%Y-%m-%dT%H-%M-%S.${e.ext || 'mp4'}"`);
+            x.pipe += ' ' + recordingFlags.join(' ')
         }
     }
     ffmpeg.buildAudioDetector = function(e,x){
@@ -963,7 +958,7 @@ module.exports = function(s,config,lang,onFinish){
             })
         }
         //add recording and stream outputs
-        x.ffmpegCommandString += x.record_string+x.pipe
+        x.ffmpegCommandString += x.pipe
     }
     ffmpeg.createPipeArray = function(e,x){
         //create additional pipes from ffmpeg
