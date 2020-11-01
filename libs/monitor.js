@@ -193,8 +193,8 @@ module.exports = function(s,config,lang){
                                 }else{
                                     snapProcess.kill()
                                 }
-                            },10000)
-                        },30000)
+                            },5000)
+                        },5000)
                     }catch(err){
                         console.log(err)
                     }
@@ -238,10 +238,14 @@ module.exports = function(s,config,lang){
                             })
                         }else{
                             s.readFile(streamDir + 's.jpg',function(err,snapBuffer){
-                                resolve({
-                                    screenShot: snapBuffer,
-                                    isStaticFile: true
-                                })
+                                if(err){
+                                    sendTempImage()
+                                }else{
+                                    resolve({
+                                        screenShot: snapBuffer,
+                                        isStaticFile: true
+                                    })
+                                }
                             })
                         }
                     })
@@ -1175,7 +1179,7 @@ module.exports = function(s,config,lang){
                         resetStreamCheck(e)
                     })
                 }
-                if(!activeMonitor.criticalErrors['453'])await s.cameraSendSnapshot({mid:e.id,ke:e.ke,mon:e},{useIcon: true})
+                if(!activeMonitor.criticalErrors['453'])s.cameraSendSnapshot({mid:e.id,ke:e.ke,mon:e},{useIcon: true})
                 //check host to see if has password and user in it
                 clearTimeout(activeMonitor.recordingChecker)
                 if(activeMonitor.isStarted === true){
@@ -1552,10 +1556,6 @@ module.exports = function(s,config,lang){
                     var wantedStatus = lang.Idle
                 }
                 s.sendMonitorStatus({id:e.id,ke:e.ke,status:wantedStatus})
-                s.orphanedVideoCheck({
-                    ke: e.ke,
-                    mid: e.id,
-                },2,null,true)
                 s.onMonitorStopExtensions.forEach(function(extender){
                     extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
                 })
