@@ -31,4 +31,12 @@ const mergeDeep = function(...objects) {
     return prev;
   }, {});
 }
+const arrayContains = (query,theArray) => {
+    var foundQuery = false
+    theArray.forEach((value) => {
+        if(value.indexOf(query) > -1)foundQuery = true
+    })
+    return foundQuery
+}
 exports.mergeDeep = mergeDeep
+exports.arrayContains = arrayContains
