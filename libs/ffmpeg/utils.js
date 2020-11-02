@@ -2,7 +2,10 @@ const exec = require('child_process').exec;
 const spawn = require('child_process').spawn;
 const treekill = require('tree-kill');
 module.exports = (s,config,lang) => {
-    const { mergeDeep } = require('../common.js')
+    const {
+        mergeDeep,
+        validateIntValue,
+    } = require('../common.js')
     const getPossibleWarnings = require('./possibleWarnings.js')
     const activeProbes = {}
     const runFFprobe = (url,auth,callback,forceOverlap) => {
@@ -169,6 +172,14 @@ module.exports = (s,config,lang) => {
         const timestampFontSize = monitor.details[`${prefix}timestamp_font_size`] ? monitor.details[`${prefix}timestamp_font_size`] : '10'
         return `'drawtext=fontfile=${timestampFont}:text=\'%{localtime}\':x=${timestampX}:y=${timestampY}:fontcolor=${timestampColor}:box=1:boxcolor=${timestampBackgroundColor}:fontsize=${timestampFontSize}`
     }
+    const validateDimensions = (oldWidth,oldHeight) => {
+        const width = validateIntValue(oldWidth)
+        const height = validateIntValue(oldHeight)
+        return {
+            videoWidth: width,
+            videoHeight: height,
+        }
+    }
     return {
         ffprobe: runFFprobe,
         probeMonitor: probeMonitor,
@@ -178,6 +189,7 @@ module.exports = (s,config,lang) => {
         applyPartialToConfiguration: applyPartialToConfiguration,
         repairConfiguration: repairConfiguration,
         buildTimestampFiltersFromConfiguration: buildTimestampFiltersFromConfiguration,
-        buildWatermarkFiltersFromConfiguration: buildWatermarkFiltersFromConfiguration
+        buildWatermarkFiltersFromConfiguration: buildWatermarkFiltersFromConfiguration,
+        validateDimensions: validateDimensions,
     }
 }

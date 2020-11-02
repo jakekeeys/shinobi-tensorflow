@@ -153,15 +153,18 @@ module.exports = (s,config,lang) => {
                 const detailKeys = Object.keys(updatedFields.details)
                 detailKeys.forEach((oldKey) => {
                     if(oldKey === 'stream_channels'){
-                        const channelUpdates = updatedFields.details.stream_channels
-                        const channelKeys = Object.keys(channelUpdates)
-                        monitor.details.stream_channels.forEach(function(channel,number){
-                            channelKeys.forEach((oldKey) => {
-                                const newKey = channelUpdates[oldKey]
-                                monitor.details.stream_channels[number][newKey] = monitor.details.stream_channels[number][oldKey]
-                                // delete(e.details.stream_channels[number][oldKey])
+                        if(monitor.details.stream_channels){
+                            const channelUpdates = updatedFields.details.stream_channels
+                            const channelKeys = Object.keys(channelUpdates)
+                            const streamChannels = s.parseJSON(monitor.details.stream_channels) || []
+                            streamChannels.forEach(function(channel,number){
+                                channelKeys.forEach((oldKey) => {
+                                    const newKey = channelUpdates[oldKey]
+                                    monitor.details.stream_channels[number][newKey] = streamChannels[number][oldKey]
+                                    // delete(e.details.stream_channels[number][oldKey])
+                                })
                             })
-                        })
+                        }
                     }else{
                         const newKey = updatedFields.details[oldKey]
                         monitor.details[newKey] = monitor.details[oldKey]

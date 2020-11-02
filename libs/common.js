@@ -1,14 +1,4 @@
 const async = require("async");
-exports.copyObject = (obj) => {
-  return Object.assign({},obj)
-}
-exports.createQueue = (timeoutInSeconds, queueItemsRunningInParallel) => {
-    return async.queue(function(action, callback) {
-        setTimeout(function(){
-            action(callback)
-        },timeoutInSeconds * 1000 || 1000)
-    },queueItemsRunningInParallel || 3)
-}
 const mergeDeep = function(...objects) {
   const isObject = obj => obj && typeof obj === 'object';
 
@@ -31,12 +21,27 @@ const mergeDeep = function(...objects) {
     return prev;
   }, {});
 }
-const arrayContains = (query,theArray) => {
-    var foundQuery = false
-    theArray.forEach((value) => {
-        if(value.indexOf(query) > -1)foundQuery = true
-    })
-    return foundQuery
+module.exports = {
+    mergeDeep: mergeDeep,
+    validateIntValue: (value) => {
+        const newValue = !isNaN(parseInt(value)) ? parseInt(value) : null
+        return newValue
+    },
+    arrayContains: (query,theArray) => {
+        var foundQuery = false
+        theArray.forEach((value) => {
+            if(value.indexOf(query) > -1)foundQuery = true
+        })
+        return foundQuery
+    },
+    createQueue: (timeoutInSeconds, queueItemsRunningInParallel) => {
+        return async.queue(function(action, callback) {
+            setTimeout(function(){
+                action(callback)
+            },timeoutInSeconds * 1000 || 1000)
+        },queueItemsRunningInParallel || 3)
+    },
+    copyObject: (obj) => {
+        return Object.assign({},obj)
+    }
 }
-exports.mergeDeep = mergeDeep
-exports.arrayContains = arrayContains

@@ -3,11 +3,12 @@ const spawn = require('child_process').spawn;
 const execSync = require('child_process').execSync;
 const {
     arrayContains,
-} = require('../common.js')
+} = require('./common.js')
 module.exports = function(s,config,lang,onFinish){
     const {
         buildTimestampFilters,
         buildWatermarkFiltersFromConfiguration,
+        validateDimensions,
     } = require('./ffmpeg/utils.js')(s,config,lang)
     if(config.ffmpegBinary)config.ffmpegDir = config.ffmpegBinary
     var ffmpeg = {}
@@ -497,12 +498,9 @@ module.exports = function(s,config,lang,onFinish){
         const outputCanHaveAudio = (streamType === 'hls' || streamType === 'mp4' || streamType === 'flv' || streamType === 'h265')
         const outputRequiresEncoding = streamType === 'mjpeg' || streamType === 'b64'
         const outputIsPresetCapable = outputCanHaveAudio
+        const { videoWidth, videoHeight } = validateDimensions(e.details.stream_scale_x,e.details.stream_scale_y)
         if(inputMap)streamFlags.push(inputMap)
-        if(e.details.cust_stream)customStreamFlags.push(...e.details.cust_stream.split(' '))
-        //
-        // if(e.details.stream_scale_x&&e.details.stream_scale_x!==''&&e.details.stream_scale_y&&e.details.stream_scale_y!==''){
-        //     x.dimensions = e.details.stream_scale_x+'x'+e.details.stream_scale_y;
-        // }
+        if(e.details.cust_stream)customStreamFlags.push(e.details.cust_stream)
         if(customStreamFlags.indexOf('-strict -2') === -1)customStreamFlags.push(`-strict -2`)
         //stream - timestamp
         if(e.details.stream_timestamp === "1" && !videoCodecisCopy){
@@ -515,19 +513,12 @@ module.exports = function(s,config,lang,onFinish){
         if(e.details.stream_rotate && e.details.stream_rotate !== "no" && e.details.stream_vcodec !== 'copy'){
             streamFilters.push(buildRotationFiltersFromConfiguration(`stream_`,e))
         }
-        if(videoCodec !== 'no'){
-            streamFlags.push(`-c:v ` + videoCodec)
-        }
         if(outputCanHaveAudio && audioCodec !== 'no'){
             streamFlags.push(`-c:a ` + videoCodec)
         }else{
             streamFlags.push(`-an`)
         }
         //stream - preset
-        if(streamType !== 'h265' && e.details.preset_stream){
-            streamFlags.push('-preset ' + e.details.preset_stream)
-        }
-
         if(videoCodec === 'h264_vaapi'){
             streamFilters.push('format=nv12,hwupload');
             if(e.details.stream_scale_x && e.details.stream_scale_y){
@@ -536,23 +527,21 @@ module.exports = function(s,config,lang,onFinish){
     	}else if(isCudaEnabled && (streamType === 'mjpeg' || streamType === 'b64')){
             streamFilters.push('hwdownload,format=nv12')
         }
-        if(!videoCodecisCopy){
-            // if(
-            //     !isNaN(parseInt(e.details.stream_scale_x)) &&
-            //     !isNaN(parseInt(e.details.stream_scale_y))
-            // ){
-            //     streamingFlags.push(`-s ${e.details.stream_scale_x}x${e.details.stream_scale_y}`)
-            // }
+        if(!outputRequiresEncoding && videoCodec !== 'no'){
+            streamFlags.push(`-c:v ` + videoCodec)
+        }
+        if(!videoCodecisCopy || outputRequiresEncoding){
+            if(videoWidth && videoHeight)streamFlags.push(`-s ${videoWidth}x${videoHeight}`)
             if(videoFps && streamType === 'mjpeg' || streamType === 'b64'){
                 streamFilters.push(`fps=${videoFps}`)
             }
         }
-        const streamPreset = streamType !== 'h265' && e.details.preset_stream ? e.details.preset_stream : null
         //stream - video filter
         if(e.details.stream_vf){
             streamFilters.push(e.details.stream_vf)
         }
         if(outputIsPresetCapable){
+            const streamPreset = streamType !== 'h265' && e.details.preset_stream ? e.details.preset_stream : null
             if(streamPreset){
                 streamFlags.push(`-preset ${streamPreset}`)
             }
@@ -563,7 +552,7 @@ module.exports = function(s,config,lang,onFinish){
             streamFlags.push(`-q:v ${videoQuality}`)
         }
         if((!videoCodecisCopy || outputRequiresEncoding) && streamFilters.length > 0){
-            streamFlags.push(`-vf ${streamFilters.join(',')}`)
+            streamFlags.push(`-vf "${streamFilters.join(',')}"`)
         }
         switch(streamType){
             case'mp4':
@@ -601,23 +590,29 @@ module.exports = function(s,config,lang,onFinish){
                 x.pipe += s.createStreamChannel(e,n+config.pipeAddition,v)
             })
         }
-        //api - snapshot bin/ cgi.bin (JPEG Mode)
-        if(e.details.snap === '1'){
-            x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.snap)
-            var snapVf = e.details.snap_vf ? e.details.snap_vf.split(',') : []
-            if(e.details.snap_vf === '')snapVf.shift()
-            if(e.cudaEnabled){
-                snapVf.push('hwdownload,format=nv12')
-            }
-            snapVf.push(`fps=${e.details.snap_fps || '1'}`)
-            //-vf "thumbnail_cuda=2,hwdownload,format=nv12"
-            x.pipe += ` -vf "${snapVf.join(',')}"`
-            if(e.details.snap_scale_x && e.details.snap_scale_x !== '' && e.details.snap_scale_y && e.details.snap_scale_y !== '')x.pipe += ' -s '+e.details.snap_scale_x+'x'+e.details.snap_scale_y
-            if(e.details.cust_snap)x.pipe += ' ' + e.details.cust_snap
-            x.pipe += ` -update 1 "${e.sdir}s.jpg" -y`
-        }
         //custom - output
         if(e.details.custom_output&&e.details.custom_output!==''){x.pipe+=' '+e.details.custom_output;}
+    }
+    ffmpeg.buildJpegApiOutput = function(e,x){
+        if(e.details.snap === '1'){
+            const isCudaEnabled = hasCudaEnabled(e)
+            const videoFlags = []
+            const videoFilters = []
+            const inputMap = s.createFFmpegMap(e,e.details.input_map_choices.stream)
+            const { videoWidth, videoHeight } = validateDimensions(e.details.snap_scale_x,e.details.snap_scale_y)
+            if(inputMap)streamFlags.push(inputMap)
+            if(e.details.snap_vf)videoFilters.push(e.details.snap_vf)
+            if(isCudaEnabled){
+                videoFilters.push('hwdownload,format=nv12')
+            }
+            videoFilters.push(`fps=${e.details.snap_fps || '1'}`)
+            //-vf "thumbnail_cuda=2,hwdownload,format=nv12"
+            videoFlags.push(`-vf "${videoFilters.join(',')}"`)
+            if(videoWidth && videoHeight)videoFlags.push(`-s ${videoWidth}x${videoHeight}`)
+            if(e.details.cust_snap)videoFlags.push(e.details.cust_snap)
+            videoFlags.push(`-update 1 "${e.sdir}s.jpg" -y`)
+            x.pipe += ' ' + videoFlags.join(' ')
+        }
     }
     ffmpeg.buildMainRecording = function(e,x){
         //e = monitor object
@@ -636,17 +631,15 @@ module.exports = function(s,config,lang,onFinish){
             const videoFps = !isNaN(parseFloat(e.fps)) && e.fps !== '0' ? parseFloat(e.fps) : null
             const segmentLengthInMinutes = !isNaN(parseFloat(e.details.cutoff)) ? parseFloat(e.details.cutoff) : '15'
             const inputMap = s.createFFmpegMap(e,e.details.input_map_choices.record)
+            const { videoWidth, videoHeight } = validateDimensions(e.details.record_scale_x,e.details.record_scale_y)
             if(inputMap)recordingFlags.push(inputMap)
-            if(e.details.cust_record)customRecordingFlags.push(...e.details.cust_record.split(' '))
+            if(e.details.cust_record)customRecordingFlags.push(e.details.cust_record)
             //record - resolution
             if(customRecordingFlags.indexOf('-strict -2') === -1)customRecordingFlags.push(`-strict -2`)
             // if(customRecordingFlags.indexOf('-threads') === -1)customRecordingFlags.push(`-threads 10`)
             if(!videoCodecisCopy){
-                if(
-                    !isNaN(parseInt(e.details.record_scale_x)) &&
-                    !isNaN(parseInt(e.details.record_scale_y))
-                ){
-                    recordingFlags.push(`-s ${e.details.record_scale_x}x${e.details.record_scale_y}`)
+                if(videoWidth && videoHeight){
+                    recordingFlags.push(`-s ${videoWidth}x${videoHeight}`)
                 }
                 if(videoExtIsMp4){
                     recordingFlags.push(`-crf ${videoQuality}`)
@@ -932,10 +925,11 @@ module.exports = function(s,config,lang,onFinish){
     }
     s.ffmpeg = function(e){
         //set X for temporary values so we don't break our main monitor object.
-        var x = {tmp : ''}
+        var x = {tmp : '', pipe: ''}
         //set some placeholding values to avoid "undefined" in ffmpeg string.
         ffmpeg.buildMainInput(e,x)
         ffmpeg.buildMainStream(e,x)
+        ffmpeg.buildJpegApiOutput(e,x)
         ffmpeg.buildMainRecording(e,x)
         ffmpeg.buildAudioDetector(e,x)
         ffmpeg.buildMainDetector(e,x)
