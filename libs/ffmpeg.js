@@ -241,183 +241,122 @@ module.exports = function(s,config,lang,onFinish){
         return x.hwaccel+x.cust_input+' -i "'+input.fulladdress+'"';
     }
     //create sub stream channel
-    s.createStreamChannel = function(e,number,channel){
+    const createStreamChannel = function(e,number,channel){
         //`e` is the monitor object
         //`x` is an object used to contain temporary values.
-        var x = {
-            pipe: '',
-            cust_stream: ' -strict -2'
+        const channelStreamDirectory = !isNaN(parseInt(number)) ? `${e.sdir}channel${number}/` : e.sdir
+        if(channelStreamDirectory !== e.sdir && !fs.existsSync(channelStreamDirectory)){
+            fs.mkdirSync(channelStreamDirectory)
         }
-        if(!number||number==''){
-            x.channel_sdir = e.sdir;
+        const channelNumber = number - config.pipeAddition
+        const isCudaEnabled = hasCudaEnabled(e)
+        const streamFlags = []
+        const streamFilters = []
+        const videoCodecisCopy = channel.stream_vcodec === 'copy'
+        const audioCodecisCopy = channel.stream_acodec === 'copy'
+        const videoCodec = channel.stream_vcodec ? channel.stream_vcodec : 'libx264'
+        const audioCodec = channel.stream_acodec ? channel.stream_acodec : 'aac'
+        const videoQuality = channel.stream_quality ? channel.stream_quality : '1'
+        const streamType = channel.stream_type ? channel.stream_type : 'hls'
+        const videoFps = !isNaN(parseFloat(channel.stream_fps)) && channel.stream_fps !== '0' ? parseFloat(channel.stream_fps) : streamType === 'rtmp' ? '30' : null
+        const inputMap = s.createFFmpegMap(e,e.details.input_map_choices[`stream_channel-${channelNumber}`])
+        const outputCanHaveAudio = (streamType === 'hls' || streamType === 'mp4' || streamType === 'flv' || streamType === 'h265' || streamType === 'rtmp')
+        const outputRequiresEncoding = streamType === 'mjpeg' || streamType === 'b64'
+        const outputIsPresetCapable = outputCanHaveAudio
+        const { videoWidth, videoHeight } = validateDimensions(channel.stream_scale_x,channel.stream_scale_y)
+        if(inputMap)streamFlags.push(inputMap)
+        if(channel.cust_stream)streamFlags.push(channel.cust_stream)
+        if(streamFlags.indexOf('-strict -2') === -1)streamFlags.push(`-strict -2`)
+        if(channel.stream_timestamp === "1" && !videoCodecisCopy){
+            streamFilters.push(buildTimestampFiltersFromConfiguration('stream_',e,`stream_channels`,channelNumber))
+        }
+        if(channel.stream_watermark === "1" && channel.stream_watermark_location){
+            streamFilters.push(buildWatermarkFiltersFromConfiguration(`stream_`,e,`stream_channels`,channelNumber))
+        }
+        if(channel.stream_rotate && channel.stream_rotate !== "no" && channel.stream_vcodec !== 'copy'){
+            streamFilters.push(buildRotationFiltersFromConfiguration(`stream_`,e,`stream_channels`,channelNumber))
+        }
+        if(outputCanHaveAudio && audioCodec !== 'no'){
+            streamFlags.push(`-c:a ` + audioCodec)
         }else{
-            x.channel_sdir = e.sdir+'channel'+number+'/';
-            if (!fs.existsSync(x.channel_sdir)){
-                fs.mkdirSync(x.channel_sdir);
+            streamFlags.push(`-an`)
+        }
+        if(videoCodec === 'h264_vaapi'){
+            streamFilters.push('format=nv12,hwupload');
+            if(channel.stream_scale_x && channel.stream_scale_y){
+                streamFilters.push('scale_vaapi=w='+channel.stream_scale_x+':h='+channel.stream_scale_y)
             }
         }
-        x.stream_video_filters=[]
-        //stream - frames per second
-        if(channel.stream_vcodec!=='copy'){
-            if(!channel.stream_fps||channel.stream_fps===''){
-                switch(channel.stream_type){
-                    case'rtmp':
-                        channel.stream_fps=30
-                    break;
-                    default:
-    //                        channel.stream_fps=5
-                    break;
-                }
+        if(isCudaEnabled && (streamType === 'mjpeg' || streamType === 'b64')){
+            streamFilters.push('hwdownload,format=nv12')
+        }
+        if(!outputRequiresEncoding && videoCodec !== 'no'){
+            streamFlags.push(`-c:v ${videoCodec === 'libx264' ? 'h264' : videoCodec}`)
+        }
+        if(!videoCodecisCopy || outputRequiresEncoding){
+            if(videoWidth && videoHeight)streamFlags.push(`-s ${videoWidth}x${videoHeight}`)
+            if(videoFps && streamType === 'mjpeg' || streamType === 'b64'){
+                streamFilters.push(`fps=${videoFps}`)
             }
         }
-        if(channel.stream_fps&&channel.stream_fps!==''){x.stream_fps=' -r '+channel.stream_fps}else{x.stream_fps=''}
-
-        //stream - hls vcodec
-        if(channel.stream_vcodec&&channel.stream_vcodec!=='no'){
-            if(channel.stream_vcodec!==''){x.stream_vcodec=' -c:v '+channel.stream_vcodec}else{x.stream_vcodec=' -c:v libx264'}
-        }else{
-            x.stream_vcodec='';
+        if(channel.stream_vf){
+            streamFilters.push(channel.stream_vf)
         }
-        //stream - hls acodec
-        if(channel.stream_acodec!=='no'){
-        if(channel.stream_acodec&&channel.stream_acodec!==''){x.stream_acodec=' -c:a '+channel.stream_acodec}else{x.stream_acodec=''}
-        }else{
-            x.stream_acodec=' -an';
-        }
-        //stream - resolution
-        if(channel.stream_scale_x&&channel.stream_scale_x!==''&&channel.stream_scale_y&&channel.stream_scale_y!==''){
-            x.dimensions = channel.stream_scale_x+'x'+channel.stream_scale_y;
-        }
-        //stream - hls segment time
-        if(channel.hls_time&&channel.hls_time!==''){x.hls_time=channel.hls_time}else{x.hls_time="2"}
-        //hls list size
-        if(channel.hls_list_size&&channel.hls_list_size!==''){x.hls_list_size=channel.hls_list_size}else{x.hls_list_size=2}
-        //stream - custom flags
-        if(channel.cust_stream&&channel.cust_stream!==''){x.cust_stream=' '+channel.cust_stream}
-        //stream - preset
-        if(channel.stream_type !== 'h265' && channel.preset_stream && channel.preset_stream!==''){x.preset_stream=' -preset '+channel.preset_stream;}else{x.preset_stream=''}
-        //hardware acceleration
-        if(e.details.accelerator&&e.details.accelerator==='1'){
-            if(e.details.hwaccel === 'auto')e.details.hwaccel = ''
-            if(e.details.hwaccel && e.details.hwaccel!==''){
-                x.hwaccel+=' -hwaccel '+e.details.hwaccel;
+        if(outputIsPresetCapable){
+            const streamPreset = streamType !== 'h265' && channel.preset_stream ? channel.preset_stream : null
+            if(streamPreset){
+                streamFlags.push(`-preset ${streamPreset}`)
             }
-            if(e.details.hwaccel_vcodec&&e.details.hwaccel_vcodec!==''){
-                x.hwaccel+=' -c:v '+e.details.hwaccel_vcodec;
-            }
-            if(e.details.hwaccel_device&&e.details.hwaccel_device!==''){
-                switch(e.details.hwaccel){
-                    case'vaapi':
-                        x.hwaccel+=' -vaapi_device '+e.details.hwaccel_device+' -hwaccel_output_format vaapi';
-                    break;
-                    default:
-                        x.hwaccel+=' -hwaccel_device '+e.details.hwaccel_device;
-                    break;
-                }
-            }
-    //        else{
-    //            if(e.details.hwaccel==='vaapi'){
-    //                x.hwaccel+=' -hwaccel_device 0';
-    //            }
-    //        }
-        }
-
-        if(channel.rotate_stream&&channel.rotate_stream!==""&&channel.rotate_stream!=="no"){
-            x.stream_video_filters.push('transpose='+channel.rotate_stream);
-        }
-        //stream - video filter
-        if(channel.svf&&channel.svf!==''){
-            x.stream_video_filters.push(channel.svf)
-        }
-        if(x.stream_video_filters.length>0){
-            var string = x.stream_video_filters.join(',').trim()
-            if(string===''){
-                x.stream_video_filters=''
-            }else{
-                x.stream_video_filters=' -vf '+string
+            if(!videoCodecisCopy){
+                streamFlags.push(`-crf ${videoQuality}`)
             }
         }else{
-            x.stream_video_filters=''
+            streamFlags.push(`-q:v ${videoQuality}`)
         }
-        x.pipe += s.createFFmpegMap(e,e.details.input_map_choices['stream_channel-'+(number-config.pipeAddition)])
-
-        if(channel.stream_vcodec !== 'copy' || channel.stream_type === 'mjpeg' || channel.stream_type === 'b64'){
-            x.cust_stream += x.stream_fps
+        if((!videoCodecisCopy || outputRequiresEncoding) && streamFilters.length > 0){
+            streamFlags.push(`-vf "${streamFilters.join(',')}"`)
         }
-        switch(channel.stream_type){
-            case'mp4':
-                x.cust_stream+=' -movflags +frag_keyframe+empty_moov+default_base_moof -metadata title="Poseidon Stream" -reset_timestamps 1'
-                if(channel.stream_vcodec!=='copy'){
-                    if(x.dimensions && x.cust_stream.indexOf('-s ')===-1){x.cust_stream+=' -s '+x.dimensions}
-                    if(channel.stream_quality && channel.stream_quality !== '')x.cust_stream+=' -crf '+channel.stream_quality;
-                    x.cust_stream+=x.preset_stream
-                    x.cust_stream+=x.stream_video_filters
-                }
-                x.pipe+=' -f mp4'+x.stream_acodec+x.stream_vcodec+x.cust_stream+' pipe:'+number;
-            break;
+        switch(streamType){
             case'rtmp':
-                x.rtmp_server_url=s.checkCorrectPathEnding(channel.rtmp_server_url);
-                if(channel.stream_vcodec!=='copy'){
-                    if(channel.stream_vcodec==='libx264'){
-                        channel.stream_vcodec = 'h264'
-                    }
-                    if(channel.stream_quality && channel.stream_quality !== '')x.cust_stream+=' -crf '+channel.stream_quality;
-                    x.cust_stream+=x.preset_stream
-                    if(channel.stream_v_br&&channel.stream_v_br!==''){x.cust_stream+=' -b:v '+channel.stream_v_br}
+                const rtmpServerUrl = s.checkCorrectPathEnding(channel.rtmp_server_url)
+                if(channel.stream_v_br && !videoCodecisCopy){
+                    streamFlags.push(`-b:v ${channel.stream_v_br}`)
                 }
-                if(channel.stream_vcodec!=='no'&&channel.stream_vcodec!==''){
-                    x.cust_stream+=' -vcodec '+channel.stream_vcodec
+                if(!audioCodecisCopy && audioCodec !== 'no'){
+                    streamFlags.push(`-ab ${channel.stream_a_br || '128k'}`)
                 }
-                if(channel.stream_acodec!=='copy'){
-                    if(!channel.stream_acodec||channel.stream_acodec===''||channel.stream_acodec==='no'){
-                        channel.stream_acodec = 'aac'
-                    }
-                    if(!channel.stream_a_br||channel.stream_a_br===''){channel.stream_a_br='128k'}
-                    x.cust_stream+=' -ab '+channel.stream_a_br
-                }
-                if(channel.stream_acodec!==''){
-                    x.cust_stream+=' -acodec '+channel.stream_acodec
-                }
-                x.pipe+=' -f flv'+x.stream_video_filters+x.cust_stream+' "'+x.rtmp_server_url+channel.rtmp_stream_key+'"';
+                streamFlags.push(`-f flv "${rtmpServerUrl + channel.rtmp_stream_key}"`)
             break;
-            case'h264':
-                if(channel.stream_vcodec!=='copy'){
-                    if(x.dimensions && x.cust_stream.indexOf('-s ')===-1){x.cust_stream+=' -s '+x.dimensions}
-                    if(channel.stream_quality && channel.stream_quality !== '')x.cust_stream+=' -crf '+channel.stream_quality;
-                    x.cust_stream+=x.preset_stream
-                    x.cust_stream+=x.stream_video_filters
-                }
-                x.pipe+=' -f mpegts'+x.stream_acodec+x.stream_vcodec+x.cust_stream+' pipe:'+number;
+            case'mp4':
+                streamFlags.push('-f mp4 -movflags +frag_keyframe+empty_moov+default_base_moof -metadata title="Poseidon Stream from Shinobi" -reset_timestamps 1 pipe:${number}')
             break;
             case'flv':
-                if(channel.stream_vcodec!=='copy'){
-                    if(x.dimensions && x.cust_stream.indexOf('-s ')===-1){x.cust_stream+=' -s '+x.dimensions}
-                    if(channel.stream_quality && channel.stream_quality !== '')x.cust_stream+=' -crf '+channel.stream_quality;
-                    x.cust_stream+=x.preset_stream
-                    x.cust_stream+=x.stream_video_filters
-                }
-                x.pipe+=' -f flv'+x.stream_acodec+x.stream_vcodec+x.cust_stream+' pipe:'+number;
+                streamFlags.push(`-f flv`,'pipe:${number}')
             break;
             case'hls':
-                if(channel.stream_vcodec!=='h264_vaapi'&&channel.stream_vcodec!=='copy'){
-                    if(channel.stream_quality && channel.stream_quality !== '')x.cust_stream+=' -crf '+channel.stream_quality;
-                    if(x.cust_stream.indexOf('-tune')===-1){x.cust_stream+=' -tune zerolatency'}
-                    if(x.cust_stream.indexOf('-g ')===-1){x.cust_stream+=' -g 1'}
-                    if(x.dimensions && x.cust_stream.indexOf('-s ')===-1){x.cust_stream+=' -s '+x.dimensions}
-                    x.cust_stream+=x.stream_video_filters
+                const hlsTime = !isNaN(parseInt(channel.hls_time)) ? `${parseInt(channel.hls_time)}` : '2'
+                const hlsListSize = !isNaN(parseInt(channel.hls_list_size)) ? `${parseInt(e.details.hls_list_size)}` : '2'
+                if(videoCodec !== 'h264_vaapi' && !videoCodecisCopy){
+                    if(arrayContains('-tune',streamFlags)){
+                        streamFlags.push(`-tune zerolatency`)
+                    }
+                    if(arrayContains('-g ',streamFlags)){
+                        streamFlags.push(`-g 1`)
+                    }
                 }
-                x.pipe+=x.preset_stream+x.stream_acodec+x.stream_vcodec+' -f hls'+x.cust_stream+' -hls_time '+x.hls_time+' -hls_list_size '+x.hls_list_size+' -start_number 0 -hls_allow_cache 0 -hls_flags +delete_segments+omit_endlist "'+x.channel_sdir+'s.m3u8"';
+                streamFlags.push(`-f hls -hls_time ${hlsTime} -hls_list_size ${hlsListSize} -start_number 0 -hls_allow_cache 0 -hls_flags +delete_segments+omit_endlist "${channelStreamDirectory}s.m3u8"`)
             break;
             case'mjpeg':
-                if(channel.stream_quality && channel.stream_quality !== '')x.cust_stream+=' -q:v '+channel.stream_quality;
-                if(x.dimensions && x.cust_stream.indexOf('-s ')===-1){x.cust_stream+=' -s '+x.dimensions}
-                x.pipe+=' -c:v mjpeg -f mpjpeg -boundary_tag shinobi'+x.cust_stream+x.stream_video_filters+' pipe:'+number;
+                streamFlags.push(`-an -c:v mjpeg -f mpjpeg -boundary_tag shinobi pipe:${number}`)
             break;
-            default:
-                x.pipe=''
+            case'h265':
+                streamFlags.push(`-movflags +frag_keyframe+empty_moov+default_base_moof -metadata title="Shinobi H.265 Stream" -reset_timestamps 1 -f hevc pipe:${number}`)
+            break;
+            case'b64':case'':case undefined:case null://base64
+                streamFlags.push(`-an -c:v mjpeg -f image2pipe pipe:${number}`)
             break;
         }
-        return x.pipe
+        return ' ' + streamFlags.join(' ')
     }
     ffmpeg.buildMainInput = function(e,x){
         //e = monitor object
@@ -487,7 +426,6 @@ module.exports = function(s,config,lang,onFinish){
         const isCudaEnabled = hasCudaEnabled(e)
         const streamFlags = []
         const streamFilters = []
-        const customStreamFlags = []
         const videoCodecisCopy = e.details.stream_vcodec === 'copy'
         const videoCodec = e.details.stream_vcodec ? e.details.stream_vcodec : 'no'
         const audioCodec = e.details.stream_acodec ? e.details.stream_acodec : 'no'
@@ -500,8 +438,8 @@ module.exports = function(s,config,lang,onFinish){
         const outputIsPresetCapable = outputCanHaveAudio
         const { videoWidth, videoHeight } = validateDimensions(e.details.stream_scale_x,e.details.stream_scale_y)
         if(inputMap)streamFlags.push(inputMap)
-        if(e.details.cust_stream)customStreamFlags.push(e.details.cust_stream)
-        if(customStreamFlags.indexOf('-strict -2') === -1)customStreamFlags.push(`-strict -2`)
+        if(e.details.cust_stream)streamFlags.push(e.details.cust_stream)
+        if(streamFlags.indexOf('-strict -2') === -1)streamFlags.push(`-strict -2`)
         //stream - timestamp
         if(e.details.stream_timestamp === "1" && !videoCodecisCopy){
             streamFilters.push(buildTimestampFiltersFromConfiguration('stream_',e))
@@ -514,17 +452,17 @@ module.exports = function(s,config,lang,onFinish){
             streamFilters.push(buildRotationFiltersFromConfiguration(`stream_`,e))
         }
         if(outputCanHaveAudio && audioCodec !== 'no'){
-            streamFlags.push(`-c:a ` + videoCodec)
+            streamFlags.push(`-c:a ` + audioCodec)
         }else{
             streamFlags.push(`-an`)
         }
-        //stream - preset
         if(videoCodec === 'h264_vaapi'){
             streamFilters.push('format=nv12,hwupload');
             if(e.details.stream_scale_x && e.details.stream_scale_y){
                 streamFilters.push('scale_vaapi=w='+e.details.stream_scale_x+':h='+e.details.stream_scale_y)
             }
-    	}else if(isCudaEnabled && (streamType === 'mjpeg' || streamType === 'b64')){
+    	}
+        if(isCudaEnabled && (streamType === 'mjpeg' || streamType === 'b64')){
             streamFilters.push('hwdownload,format=nv12')
         }
         if(!outputRequiresEncoding && videoCodec !== 'no'){
@@ -536,7 +474,6 @@ module.exports = function(s,config,lang,onFinish){
                 streamFilters.push(`fps=${videoFps}`)
             }
         }
-        //stream - video filter
         if(e.details.stream_vf){
             streamFilters.push(e.details.stream_vf)
         }
@@ -587,7 +524,7 @@ module.exports = function(s,config,lang,onFinish){
         x.pipe += ' ' + streamFlags.join(' ')
         if(e.details.stream_channels){
             e.details.stream_channels.forEach(function(v,n){
-                x.pipe += s.createStreamChannel(e,n+config.pipeAddition,v)
+                x.pipe += createStreamChannel(e,n+config.pipeAddition,v)
             })
         }
         //custom - output
@@ -685,7 +622,7 @@ module.exports = function(s,config,lang,onFinish){
             if(recordingFilters.length > 0){
                recordingFlags.push(`-vf "${recordingFilters.join(',')}"`)
             }
-            if(e.details.preset_record){
+            if(videoExtIsMp4 && e.details.preset_record){
                 recordingFlags.push(`-preset ${e.details.preset_record}`)
             }
             if(customRecordingFlags.length > 0){
@@ -710,6 +647,7 @@ module.exports = function(s,config,lang,onFinish){
     ffmpeg.buildMainDetector = function(e,x){
         //e = monitor object
         //x = temporary values
+        const isCudaEnabled = hasCudaEnabled(e)
         const detectorFlags = []
         const inputMapsRequired = (e.details.input_map_choices && e.details.input_map_choices.detector)
         const sendFramesGlobally = (e.details.detector_send_frames === '1')
@@ -723,7 +661,6 @@ module.exports = function(s,config,lang,onFinish){
         const baseFpsFilter = 'fps=' + baseFps
         const objectDetectorDimensionsFlag = `-s ${e.details.detector_scale_x_object ? e.details.detector_scale_x_object : baseWidth}x${e.details.detector_scale_y_object ? e.details.detector_scale_y_object : baseHeight}`
         const objectDetectorFpsFilter = 'fps=' + (e.details.detector_fps_object ? e.details.detector_fps_object : baseFps)
-        const isCudaEnabled = false || e.cudaEnabled
         const cudaVideoFilters = 'hwdownload,format=nv12'
         const videoFilters = []
         if(e.details.detector === '1' && (sendFramesGlobally || sendFramesToObjectDetector)){
@@ -782,7 +719,7 @@ module.exports = function(s,config,lang,onFinish){
                         e.details.detector_buffer_vcodec = 'copy'
                     break;
                     default:
-                        if(e.details.accelerator === '1' && e.cudaEnabled){
+                        if(e.details.accelerator === '1' && isCudaEnabled){
                                 e.details.detector_buffer_vcodec = 'h264_nvenc'
                         }else{
                             e.details.detector_buffer_vcodec = 'libx264'
@@ -839,38 +776,22 @@ module.exports = function(s,config,lang,onFinish){
     }
     ffmpeg.buildTimelapseOutput = function(e,x){
         if(e.details.record_timelapse === '1'){
-            var recordTimelapseVideoFilters = []
-            var flags = []
-            x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.record_timelapse)
-            recordTimelapseVideoFilters.push('fps=1/' + (e.details.record_timelapse_fps ? e.details.record_timelapse_fps : '900'))
-            if(e.details.record_timelapse_vf && e.details.record_timelapse_vf !== '')flags.push('-vf ' + e.details.record_timelapse_vf)
-            if(e.details.record_timelapse_scale_x && e.details.record_timelapse_scale_x !== '' && e.details.record_timelapse_scale_y && e.details.record_timelapse_scale_y !== '')flags.push(`-s ${e.details.record_timelapse_scale_x}x${e.details.record_timelapse_scale_y}`)
-            //record - watermark for -vf
-            if(e.details.record_timelapse_watermark&&e.details.record_timelapse_watermark=="1"&&e.details.record_timelapse_watermark_location&&e.details.record_timelapse_watermark_location!==''){
-                switch(e.details.record_timelapse_watermark_position){
-                    case'tl'://top left
-                        x.record_timelapse_watermark_position = '10:10'
-                    break;
-                    case'tr'://top right
-                        x.record_timelapse_watermark_position = 'main_w-overlay_w-10:10'
-                    break;
-                    case'bl'://bottom left
-                        x.record_timelapse_watermark_position = '10:main_h-overlay_h-10'
-                    break;
-                    default://bottom right
-                        x.record_timelapse_watermark_position = '(main_w-overlay_w-10)/2:(main_h-overlay_h-10)/2'
-                    break;
-                }
-                recordTimelapseVideoFilters.push(
-                    'movie=' + e.details.record_timelapse_watermark_location,
-                    `[watermark],[in][watermark]overlay=${x.record_timelapse_watermark_position}[out]`
-                )
+            const videoFilters = []
+            const videoFlags = []
+            const inputMap = s.createFFmpegMap(e,e.details.input_map_choices.record_timelapse)
+            const { videoWidth, videoHeight } = validateDimensions(e.details.record_scale_x,e.details.record_scale_y)
+            if(videoWidth && videoHeight)streamFlags.push(`-s ${videoWidth}x${videoHeight}`)
+            if(inputMap)recordingFlags.push(inputMap)
+            videoFilters.push('fps=1/' + (e.details.record_timelapse_fps ? e.details.record_timelapse_fps : '900'))
+            if(e.details.record_timelapse_vf)videoFilters.push(e.details.record_timelapse_vf)
+            if(e.details.record_timelapse_watermark === "1" && e.details.record_timelapse_watermark_location){
+                videoFilters.push(buildWatermarkFiltersFromConfiguration('record_timelapse_',e))
             }
-            if(recordTimelapseVideoFilters.length > 0){
-                var videoFilter = `-vf "${recordTimelapseVideoFilters.join(',').trim()}"`
-                flags.push(videoFilter)
+            if(videoFilters.length > 0){
+                videoFlags.push(`-vf "${videoFilters.join(',').trim()}"`)
             }
-            x.pipe += ` -f singlejpeg ${flags.join(' ')} -an -q:v 1 pipe:7`
+            videoFlags.push(`-f singlejpeg ${videoFlags.join(' ')} -an -q:v 1 pipe:7`)
+            x.pipe += ' ' + videoFlags.join(' ')
         }
     }
     ffmpeg.assembleMainPieces = function(e,x){
