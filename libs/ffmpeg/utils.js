@@ -127,6 +127,48 @@ module.exports = (s,config,lang) => {
             }
         })
     }
+    const buildWatermarkFiltersFromConfiguration = (prefix,monitor) => {
+        prefix = prefix ? prefix : ''
+        const watermarkLocation = monitor.details[`${prefix}watermark_location`]
+        //bottom right is default
+        var watermarkPosition = '(main_w-overlay_w-10)/2:(main_h-overlay_h-10)/2'
+        switch(monitor.details[`${prefix}watermark_position`]){
+            case'tl'://top left
+                watermarkPosition = '10:10'
+            break;
+            case'tr'://top right
+                watermarkPosition = 'main_w-overlay_w-10:10'
+            break;
+            case'bl'://bottom left
+                watermarkPosition = '10:main_h-overlay_h-10'
+            break;
+        }
+        return `movie=${watermarkLocation}[watermark],[in][watermark]overlay=${watermarkPosition}[out]`
+    }
+    const buildRotationFiltersFromConfiguration = (prefix,monitor) => {
+        prefix = prefix ? prefix : ''
+        const userChoice = monitor.details[`${prefix}rotate`]
+        switch(userChoice){
+            case'2,transpose=2':
+            case'0':
+            case'1':
+            case'2':
+            case'3':
+                return `transpose=${userChoice}`
+            break;
+        }
+        return ``
+    }
+    const buildTimestampFiltersFromConfiguration = (prefix,monitor) => {
+        prefix = prefix ? prefix : ''
+        const timestampFont = monitor.details[`${prefix}timestamp_font`] ? monitor.details[`${prefix}timestamp_font`] : '/usr/share/fonts/truetype/freefont/FreeSans.ttf'
+        const timestampX = monitor.details[`${prefix}timestamp_x`] ? monitor.details[`${prefix}timestamp_x`] : '(w-tw)/2'
+        const timestampY = monitor.details[`${prefix}timestamp_y`] ? monitor.details[`${prefix}timestamp_y`] : '0'
+        const timestampColor = monitor.details[`${prefix}timestamp_color`] ? monitor.details[`${prefix}timestamp_color`] : 'white'
+        const timestampBackgroundColor = monitor.details[`${prefix}timestamp_box_color`] ? monitor.details[`${prefix}timestamp_box_color`] : '0x00000000@1'
+        const timestampFontSize = monitor.details[`${prefix}timestamp_font_size`] ? monitor.details[`${prefix}timestamp_font_size`] : '10'
+        return `'drawtext=fontfile=${timestampFont}:text=\'%{localtime}\':x=${timestampX}:y=${timestampY}:fontcolor=${timestampColor}:box=1:boxcolor=${timestampBackgroundColor}:fontsize=${timestampFontSize}`
+    }
     return {
         ffprobe: runFFprobe,
         probeMonitor: probeMonitor,
@@ -134,6 +176,8 @@ module.exports = (s,config,lang) => {
         createWarningsForConfiguration: createWarningsForConfiguration,
         buildMonitorConfigPartialFromWarnings: buildMonitorConfigPartialFromWarnings,
         applyPartialToConfiguration: applyPartialToConfiguration,
-        repairConfiguration: repairConfiguration
+        repairConfiguration: repairConfiguration,
+        buildTimestampFiltersFromConfiguration: buildTimestampFiltersFromConfiguration,
+        buildWatermarkFiltersFromConfiguration: buildWatermarkFiltersFromConfiguration
     }
 }

@@ -19,7 +19,10 @@ module.exports = function(s,config,lang){
         createWarningsForConfiguration,
         buildMonitorConfigPartialFromWarnings,
     } = require('./ffmpeg/utils.js')(s,config,lang)
-    const { cameraDestroy } = require('./monitor/utils.js')(s,config,lang)
+    const {
+        cameraDestroy,
+        monitorConfigurationMigrator,
+    } = require('./monitor/utils.js')(s,config,lang)
     const {
         setPresetForCurrentPosition
     } = require('./control/ptz.js')(s,config,lang)
@@ -1562,13 +1565,14 @@ module.exports = function(s,config,lang){
                             ke: e.ke,
                             mid: e.id,
                         },2,null,true)
-                    },2000)    
+                    },2000)
                 }
                 s.onMonitorStopExtensions.forEach(function(extender){
                     extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
                 })
             break;
             case'start':case'record'://watch or record monitor url
+                monitorConfigurationMigrator(e)
                 s.initiateMonitorObject({ke:e.ke,mid:e.id})
                 const activeMonitor = s.group[e.ke].activeMonitors[e.id]
                 if(!s.group[e.ke].rawMonitorConfigurations[e.id]){s.group[e.ke].rawMonitorConfigurations[e.id]=s.cleanMonitorObject(e);}
