@@ -144,9 +144,41 @@ module.exports = (s,config,lang) => {
         urlParts[0] = 'http'
         return ['rtsp','://',`${username}:${password}@`,urlParts[1]].join('')
     }
+    const monitorConfigurationMigrator = (monitor) => {
+        // converts the old style to the new style.
+        const updatedFields = require('./updatedFields.js')()
+        const fieldKeys = Object.keys(updatedFields)
+        fieldKeys.forEach((oldKey) => {
+            if(oldKey === 'details'){
+                const detailKeys = Object.keys(updatedFields.details)
+                detailKeys.forEach((oldKey) => {
+                    if(oldKey === 'stream_channels'){
+                        const channelUpdates = updatedFields.details.stream_channels
+                        const channelKeys = Object.keys(channelUpdates)
+                        monitor.details.stream_channels.forEach(function(channel,number){
+                            channelKeys.forEach((oldKey) => {
+                                const newKey = channelUpdates[oldKey]
+                                monitor.details.stream_channels[number][newKey] = monitor.details.stream_channels[number][oldKey]
+                                // delete(e.details.stream_channels[number][oldKey])
+                            })
+                        })
+                    }else{
+                        const newKey = updatedFields.details[oldKey]
+                        monitor.details[newKey] = monitor.details[oldKey]
+                        // delete(monitor.details[oldKey])
+                    }
+                })
+            }else{
+                const newKey = updatedFields[oldKey]
+                monitor[newKey] = monitor[oldKey]
+                // delete(monitor[oldKey])
+            }
+        })
+    }
     return {
         cameraDestroy: cameraDestroy,
         createSnapshot: createSnapshot,
         addCredentialsToStreamLink: addCredentialsToStreamLink,
+        monitorConfigurationMigrator: monitorConfigurationMigrator,
     }
 }
