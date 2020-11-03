@@ -133,6 +133,7 @@ module.exports = function(s,config,lang){
             var url = options.url
             var secondsInward = options.secondsInward || '0'
             if(secondsInward.length === 1)secondsInward = '0' + secondsInward
+	    var dynamicTimeout = (secondsInward * 1000) + 5000
             if(options.flags)outputOptions.push(options.flags)
             const checkExists = function(streamDir,callback){
                 s.fileStats(streamDir,function(err){
@@ -196,8 +197,8 @@ module.exports = function(s,config,lang){
                                 }else{
                                     snapProcess.kill()
                                 }
-                            },5000)
-                        },5000)
+                            },dynamicTimeout)
+                        },dynamicTimeout)
                     }catch(err){
                         console.log(err)
                     }
