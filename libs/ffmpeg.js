@@ -187,7 +187,7 @@ module.exports = function(s,config,lang,onFinish){
             inputFlags.push(`-rtsp_transport ${input.rtsp_transport}`)
         }
         //hardware acceleration
-        if(hardwareAccelerationEnabled && !isStreamer){
+        if(hardwareAccelerationEnabled){
             if(input.hwaccel){
                 inputFlags.push(`-hwaccel ${input.hwaccel}`)
             }
