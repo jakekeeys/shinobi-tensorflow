@@ -99,8 +99,6 @@ module.exports = (s,config,lang) => {
     const createWarningsForConfiguration = (monitor,probeResult) => {
         const warnings = []
         const possibleWarnings = getPossibleWarnings(monitor,probeResult,config,lang)
-        console.log(Object.keys(monitor))
-        console.log(`monitor.protocol`,monitor.protocol)
         possibleWarnings.forEach((warning) => {
             if(warning.isTrue)warnings.push(warning)
         })
