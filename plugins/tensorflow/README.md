@@ -10,9 +10,23 @@ cd /home/Shinobi/plugins/tensorflow
 
 Copy the config file.
 
+- To run the install script interactively:
 ```
 sh INSTALL.sh
 ```
+- To run the install script non-interactively:
+
+```
+sh INSTALL.sh
+```
+*WITH* the appropriate flags
+
+| Flag      | Purpose |
+| ----------- | ----------- |
+| `--jetson`| Install for Jetson Nano|
+| `--arm`| Install for ARM Processors (like Raspberry Pi Model 3 B+)|
+| `--gpu`| Install for GPU support|
+| `--dont-create-key`| Don't generate random plugin key|
 
 Start the plugin.
 
