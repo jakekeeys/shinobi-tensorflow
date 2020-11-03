@@ -767,7 +767,7 @@ module.exports = function(s,config,lang,onFinish){
             const inputMap = buildInputMap(e,e.details.input_map_choices.record_timelapse)
             const { videoWidth, videoHeight } = validateDimensions(e.details.record_scale_x,e.details.record_scale_y)
             if(videoWidth && videoHeight)streamFlags.push(`-s ${videoWidth}x${videoHeight}`)
-            if(inputMap)recordingFlags.push(inputMap)
+            if(inputMap)videoFlags.push(inputMap)
             videoFilters.push('fps=1/' + (e.details.record_timelapse_fps ? e.details.record_timelapse_fps : '900'))
             if(e.details.record_timelapse_vf)videoFilters.push(e.details.record_timelapse_vf)
             if(e.details.record_timelapse_watermark === "1" && e.details.record_timelapse_watermark_location){
