@@ -987,7 +987,7 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
-                      "name": "detail=rotate_stream",
+                      "name": "detail=stream_rotate",
                       "field": lang["Rotate"],
                       "description": "Change the viewing angle of the video stream.",
                       "default": "",
@@ -1048,7 +1048,7 @@ module.exports = function(s,config,lang){
                       ]
                    },
                    {
-                      "name": "detail=svf",
+                      "name": "detail=stream_vf",
                       "field": lang["Video Filter"],
                       "description": "Place FFMPEG video filters in this box to affect the streaming portion. No spaces.",
                       "default": "",
@@ -1587,7 +1587,7 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
-                      "name": "detail=rotate_record",
+                      "name": "detail=rotate",
                       "field": lang["Rotate"],
                       "description": "Change the recording angle of the video stream.",
                       "default": "copy",
