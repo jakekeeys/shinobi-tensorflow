@@ -167,7 +167,7 @@ module.exports = function(s,config,lang,onFinish){
         const casualDecodingRequired = input.type === 'mp4' || input.type === 'mjpeg'
         if(input.cust_input)inputFlags.push(input.cust_input)
         if(monitorCaptureRate){
-            inputFlags.push(`-r ${videoFps}`)
+            inputFlags.push(`-r ${monitorCaptureRate}`)
         }
         if(input.aduration){
             inputFlags.push(`-analyzeduration ${input.aduration}`)
