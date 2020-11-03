@@ -130,6 +130,71 @@ module.exports = (s,config,lang) => {
             }
         })
     }
+    const getInputTypeFlags = (inputType) => {
+        switch(inputType){
+            case'socket':case'jpeg':case'pipe'://case'webpage':
+                return `-pattern_type glob -f image2pipe -vcodec mjpeg`
+            break;
+            case'mjpeg':
+                return `-reconnect 1 -f mjpeg`
+            break;
+            case'mxpeg':
+                return `-reconnect 1 -f mxg`
+            break;
+            default:
+                return ``
+            break;
+        }
+    }
+    const buildConnectionFlagsFromConfiguration = (monitor) => {
+        const url = s.buildMonitorUrl(monitor);
+        switch(monitor.type){
+            case'dashcam':
+                return `-i -`
+            break;
+            case'socket':case'jpeg':case'pipe'://case'webpage':
+                return `-pattern_type glob -f image2pipe -vcodec mjpeg -i -`
+            break;
+            case'mjpeg':
+                return `-reconnect 1 -f mjpeg -i "${url}"`
+            break;
+            case'mxpeg':
+                return `-reconnect 1 -f mxg -i "${url}"`
+            break;
+            case'rtmp':
+                if(!monitor.details.rtmp_key)monitor.details.rtmp_key = ''
+                return `-i "rtmp://127.0.0.1:1935/${monitor.ke}_${monitor.mid}_${monitor.details.rtmp_key}"`
+            break;
+            case'h264':case'hls':case'mp4':
+                return `-i "${url}"`
+            break;
+            case'local':
+                return `-i "${monitor.path}"`
+            break;
+        }
+    }
+    const hasInputMaps = (e) => {
+        return (e.details.input_maps && e.details.input_maps.length > 0)
+    }
+    const buildInputMap = function(e,arrayOfMaps){
+        //`e` is the monitor object
+        var string = '';
+        if(hasInputMaps(e)){
+            if(arrayOfMaps && arrayOfMaps instanceof Array && arrayOfMaps.length>0){
+                arrayOfMaps.forEach(function(v){
+                    if(v.map==='')v.map='0'
+                    string += ' -map '+v.map
+                })
+            }else{
+                var primaryMap = '0:0'
+                if(e.details.primary_input && e.details.primary_input !== ''){
+                    var primaryMap = e.details.primary_input || '0:0'
+                    string += ' -map ' + primaryMap
+                }
+            }
+        }
+        return string;
+    }
     const buildWatermarkFiltersFromConfiguration = (prefix,monitor,detail,detailKey) => {
         prefix = prefix ? prefix : ''
         const parameterContainer = detail ? detailKey ?  monitor.details[detail][detailKey] :  monitor.details[detail] : monitor.details
@@ -194,5 +259,8 @@ module.exports = (s,config,lang) => {
         buildTimestampFiltersFromConfiguration: buildTimestampFiltersFromConfiguration,
         buildWatermarkFiltersFromConfiguration: buildWatermarkFiltersFromConfiguration,
         validateDimensions: validateDimensions,
+        buildConnectionFlagsFromConfiguration: buildConnectionFlagsFromConfiguration,
+        buildInputMap: buildInputMap,
+        getInputTypeFlags: getInputTypeFlags,
     }
 }

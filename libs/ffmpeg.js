@@ -6,9 +6,12 @@ const {
 } = require('./common.js')
 module.exports = function(s,config,lang,onFinish){
     const {
-        buildTimestampFilters,
+        buildTimestampFiltersFromConfiguration,
         buildWatermarkFiltersFromConfiguration,
+        buildConnectionFlagsFromConfiguration,
         validateDimensions,
+        getInputTypeFlags,
+        buildInputMap,
     } = require('./ffmpeg/utils.js')(s,config,lang)
     if(config.ffmpegBinary)config.ffmpegDir = config.ffmpegBinary
     var ffmpeg = {}
@@ -20,7 +23,7 @@ module.exports = function(s,config,lang,onFinish){
         return monitor.type === 'dashcam'|| monitor.type === 'socket'
     }
     //check local ffmpeg
-    ffmpeg.checkForWindows = function(failback){
+    const checkForWindows = function(failback){
         if (s.isWin && fs.existsSync(s.mainDirectory+'/ffmpeg/ffmpeg.exe')) {
             config.ffmpegDir = s.mainDirectory+'/ffmpeg/ffmpeg.exe'
         }else{
@@ -28,7 +31,7 @@ module.exports = function(s,config,lang,onFinish){
         }
     }
     //check local ffmpeg
-    ffmpeg.checkForUnix = function(failback){
+    const checkForUnix = function(failback){
         if(s.isWin === false){
             if (fs.existsSync('/usr/bin/ffmpeg')) {
                 config.ffmpegDir = '/usr/bin/ffmpeg'
@@ -44,7 +47,7 @@ module.exports = function(s,config,lang,onFinish){
         }
     }
     //check node module : ffmpeg-static
-    ffmpeg.checkForNpmStatic = function(failback){
+    const checkForNpmStatic = function(failback){
         try{
             var staticFFmpeg = require('ffmpeg-static').path;
             if (fs.statSync(staticFFmpeg)) {
@@ -60,7 +63,7 @@ module.exports = function(s,config,lang,onFinish){
         }
     }
     //check node module : ffbinaries
-    ffmpeg.checkForFfbinary = function(failback){
+    const checkForFfbinary = function(failback){
         try{
             ffbinaries = require('ffbinaries')
             var ffbinaryDir = s.mainDirectory + '/ffmpeg/'
@@ -73,7 +76,7 @@ module.exports = function(s,config,lang,onFinish){
                 },function () {
                     config.ffmpegDir = ffbinaryDir + 'ffmpeg'
                     console.log('ffbinaries : FFmpeg Downloaded.');
-                    ffmpeg.completeCheck()
+                    completeCheck()
                 })
             }
             if (!fs.existsSync(ffbinaryDir + 'ffmpeg')) {
@@ -88,7 +91,7 @@ module.exports = function(s,config,lang,onFinish){
         }
     }
     //ffmpeg version
-    ffmpeg.checkVersion = function(callback){
+    const checkVersion = function(callback){
         try{
             s.ffmpegVersion = execSync(config.ffmpegDir+" -version").toString().split('Copyright')[0].replace('ffmpeg version','').trim()
             if(s.ffmpegVersion.indexOf(': 2.')>-1){
@@ -102,7 +105,7 @@ module.exports = function(s,config,lang,onFinish){
         callback()
     }
     //check available hardware acceleration methods
-    ffmpeg.checkHwAccelMethods = function(callback){
+    const checkHwAccelMethods = function(callback){
         if(config.availableHWAccels === undefined){
             hwAccels = execSync(config.ffmpegDir+" -loglevel quiet -hwaccels").toString().split('\n')
             hwAccels.shift()
@@ -139,9 +142,9 @@ module.exports = function(s,config,lang,onFinish){
         }
         callback()
     }
-    ffmpeg.completeCheck = function(){
-        ffmpeg.checkVersion(function(){
-            ffmpeg.checkHwAccelMethods(function(){
+    const completeCheck = function(){
+        checkVersion(function(){
+            checkHwAccelMethods(function(){
                 s.onFFmpegLoadedExtensions.forEach(function(extender){
                     extender(ffmpeg)
                 })
@@ -162,83 +165,58 @@ module.exports = function(s,config,lang,onFinish){
             return  p;
         }, {a: ['']}).a
     };
-    const hasInputMaps = (e) => {
-        return (e.details.input_maps && e.details.input_maps.length > 0)
-    }
-    s.createFFmpegMap = function(e,arrayOfMaps){
-        //`e` is the monitor object
-        var string = '';
-        if(hasInputMaps(e)){
-            if(arrayOfMaps && arrayOfMaps instanceof Array && arrayOfMaps.length>0){
-                arrayOfMaps.forEach(function(v){
-                    if(v.map==='')v.map='0'
-                    string += ' -map '+v.map
-                })
-            }else{
-                var primaryMap = '0:0'
-                if(e.details.primary_input && e.details.primary_input !== ''){
-                    var primaryMap = e.details.primary_input || '0:0'
-                    string += ' -map ' + primaryMap
-                }
-            }
-        }
-        return string;
-    }
-    s.createInputMap = function(e,number,input){
+    const createInputMap = (e, number, input) => {
         //`e` is the monitor object
         //`x` is an object used to contain temporary values.
-        var x = {}
-        x.cust_input = ''
-        x.hwaccel = ''
-        if(input.cust_input&&input.cust_input!==''){x.cust_input+=' '+input.cust_input}
-        //input - analyze duration
-        if(input.aduration&&input.aduration!==''){x.cust_input+=' -analyzeduration '+input.aduration}
-        //input - probe size
-        if(input.probesize&&input.probesize!==''){x.cust_input+=' -probesize '+input.probesize}
-        //input - stream loop (good for static files/lists)
-        if(input.stream_loop === '1'){x.cust_input+=' -stream_loop -1'}
-        //input - fps
-        if(x.cust_input.indexOf('-r ')===-1&&input.sfps&&input.sfps!==''){
-            input.sfps=parseFloat(input.sfps);
-            if(isNaN(input.sfps)){input.sfps=1}
-            x.cust_input+=' -r '+input.sfps
+        const inputFlags = []
+        const inputTypeIsH264 = input.type === 'h264'
+        const inputTypeCanLoop = input.type === 'mp4' || input.type === 'local'
+        const hardwareAccelerationEnabled = input.accelerator==='1'
+        const rtspTransportIsManual = input.rtsp_transport && input.rtsp_transport !== 'no'
+        const monitorCaptureRate = !isNaN(parseFloat(input.sfps)) && input.sfps !== '0' ? parseFloat(input.sfps) : null
+        const casualDecodingRequired = input.type === 'mp4' || input.type === 'mjpeg'
+        if(input.cust_input)inputFlags.push(input.cust_input)
+        if(monitorCaptureRate){
+            inputFlags.push(`-r ${videoFps}`)
         }
-        //input - is mjpeg
-        if(input.type==='mjpeg'){
-            if(x.cust_input.indexOf('-f ')===-1){
-                x.cust_input+=' -f mjpeg'
-            }
-            //input - frames per second
-            x.cust_input+=' -reconnect 1'
-        }else
-        //input - is h264 has rtsp in address and transport method is chosen
-        if((input.type==='h264'||input.type==='mp4')&&input.fulladdress.indexOf('rtsp://')>-1&&input.rtsp_transport!==''&&input.rtsp_transport!=='no'){
-            x.cust_input += ' -rtsp_transport '+input.rtsp_transport
-        }else
-        if((input.type==='mp4'||input.type==='mjpeg')&&x.cust_input.indexOf('-re')===-1){
-            x.cust_input += ' -re'
+        if(input.aduration){
+            inputFlags.push(`-analyzeduration ${input.aduration}`)
+        }
+        if(input.probesize){
+            inputFlags.push(`-probesize ${input.probesize}`)
+        }
+        if(input.stream_loop === '1' && inputTypeCanLoop){
+            inputFlags.push(`-stream_loop -1`)
+        }
+        if(
+            (input.type === 'h264' || input.type === 'mp4') &&
+            input.fulladdress.indexOf('rtsp://') >- 1 &&
+            input.rtsp_transport &&
+            input.rtsp_transport !== 'no'
+        ){
+            inputFlags.push(`-rtsp_transport ${input.rtsp_transport}`)
         }
         //hardware acceleration
-        if(input.accelerator&&input.accelerator==='1'){
-            if(input.hwaccel&&input.hwaccel!==''){
-                x.hwaccel+=' -hwaccel '+input.hwaccel;
+        if(hardwareAccelerationEnabled && !isStreamer){
+            if(input.hwaccel){
+                inputFlags.push(`-hwaccel ${input.hwaccel}`)
             }
-            if(input.hwaccel_vcodec&&input.hwaccel_vcodec!==''&&input.hwaccel_vcodec!=='auto'&&input.hwaccel_vcodec!=='no'){
-                x.hwaccel+=' -c:v '+input.hwaccel_vcodec;
+            if(input.hwaccel_vcodec){
+                inputFlags.push(`-c:v ${input.hwaccel_vcodec}`)
             }
-            if(input.hwaccel_device&&input.hwaccel_device!==''){
+            if(input.hwaccel_device){
                 switch(input.hwaccel){
                     case'vaapi':
-                        x.hwaccel+=' -vaapi_device '+input.hwaccel_device+' -hwaccel_output_format vaapi';
+                        inputFlags.push(`-vaapi_device ${input.hwaccel_device}`)
                     break;
                     default:
-                        x.hwaccel+=' -hwaccel_device '+input.hwaccel_device;
+                        inputFlags.push(`-hwaccel_device ${input.hwaccel_device}`)
                     break;
                 }
             }
         }
         //custom - input flags
-        return x.hwaccel+x.cust_input+' -i "'+input.fulladdress+'"';
+        return `${getInputTypeFlags(input.type)} ${inputFlags.join(' ')} -i "${input.fulladdress}"`
     }
     //create sub stream channel
     const createStreamChannel = function(e,number,channel){
@@ -259,7 +237,7 @@ module.exports = function(s,config,lang,onFinish){
         const videoQuality = channel.stream_quality ? channel.stream_quality : '1'
         const streamType = channel.stream_type ? channel.stream_type : 'hls'
         const videoFps = !isNaN(parseFloat(channel.stream_fps)) && channel.stream_fps !== '0' ? parseFloat(channel.stream_fps) : streamType === 'rtmp' ? '30' : null
-        const inputMap = s.createFFmpegMap(e,e.details.input_map_choices[`stream_channel-${channelNumber}`])
+        const inputMap = buildInputMap(e,e.details.input_map_choices[`stream_channel-${channelNumber}`])
         const outputCanHaveAudio = (streamType === 'hls' || streamType === 'mp4' || streamType === 'flv' || streamType === 'h265' || streamType === 'rtmp')
         const outputRequiresEncoding = streamType === 'mjpeg' || streamType === 'b64'
         const outputIsPresetCapable = outputCanHaveAudio
@@ -335,7 +313,7 @@ module.exports = function(s,config,lang,onFinish){
             break;
             case'hls':
                 const hlsTime = !isNaN(parseInt(channel.hls_time)) ? `${parseInt(channel.hls_time)}` : '2'
-                const hlsListSize = !isNaN(parseInt(channel.hls_list_size)) ? `${parseInt(e.details.hls_list_size)}` : '2'
+                const hlsListSize = !isNaN(parseInt(channel.hls_list_size)) ? `${parseInt(channel.hls_list_size)}` : '2'
                 if(videoCodec !== 'h264_vaapi' && !videoCodecisCopy){
                     if(arrayContains('-tune',streamFlags)){
                         streamFlags.push(`-tune zerolatency`)
@@ -358,69 +336,76 @@ module.exports = function(s,config,lang,onFinish){
         }
         return ' ' + streamFlags.join(' ')
     }
-    ffmpeg.buildMainInput = function(e,x){
+    const buildMainInput = function(e,x){
         //e = monitor object
         //x = temporary values
         const isStreamer = inputTypeIsStreamer(e)
         const isCudaEnabled = hasCudaEnabled(e)
-        //
-        x.hwaccel = ''
-        x.cust_input = ''
-        //wallclock fix for strangely long, single frame videos
-        if((config.wallClockTimestampAsDefault || e.details.wall_clock_timestamp_ignore !== '1') && e.type === 'h264' && x.cust_input.indexOf('-use_wallclock_as_timestamps 1') === -1){x.cust_input+=' -use_wallclock_as_timestamps 1';}
-        //input - frame rate (capture rate)
-        if(e.details.sfps && e.details.sfps!==''){x.input_fps=' -r '+e.details.sfps}else{x.input_fps=''}
-        //input - analyze duration
-        if(e.details.aduration&&e.details.aduration!==''){x.cust_input+=' -analyzeduration '+e.details.aduration};
-        //input - probe size
-        if(e.details.probesize&&e.details.probesize!==''){x.cust_input+=' -probesize '+e.details.probesize};
-        //input - stream loop (good for static files/lists)
-        if(e.details.stream_loop === '1' && (e.type === 'mp4' || e.type === 'local')){x.cust_input+=' -stream_loop -1'};
-        //input
-        if(e.details.cust_input.indexOf('-fflags') === -1){x.cust_input+=' -fflags +igndts'}
-        switch(e.type){
-            case'h264':
-                switch(e.protocol){
-                    case'rtsp':
-                        if(e.details.rtsp_transport&&e.details.rtsp_transport!==''&&e.details.rtsp_transport!=='no'){x.cust_input+=' -rtsp_transport '+e.details.rtsp_transport;}
-                    break;
-                }
-            break;
+        const inputFlags = []
+        const useWallclockTimestamp = config.wallClockTimestampAsDefault || e.details.wall_clock_timestamp_ignore !== '1'
+        const inputTypeIsH264 = e.type === 'h264'
+        const protocolIsRtsp = e.protocol === 'rtsp'
+        const inputTypeCanLoop = e.type === 'mp4' || e.type === 'local'
+        const hardwareAccelerationEnabled = e.details.accelerator==='1'
+        const rtspTransportIsManual = e.details.rtsp_transport && e.details.rtsp_transport !== 'no'
+        const monitorCaptureRate = !isNaN(parseFloat(e.details.sfps)) && e.details.sfps !== '0' ? parseFloat(e.details.sfps) : null
+        const logLevel = e.details.loglevel ? e.details.loglevel : 'warning'
+        const casualDecodingRequired = e.type === 'mp4' || e.type === 'mjpeg'
+        if(e.details.cust_input)inputFlags.push(e.details.cust_input)
+        if(useWallclockTimestamp && inputTypeIsH264 && !arrayContains('-use_wallclock_as_timestamps',inputFlags)){
+            inputFlags.push('-use_wallclock_as_timestamps 1')
+        }
+        if(monitorCaptureRate){
+            inputFlags.push(`-r ${videoFps}`)
+        }
+        if(e.details.aduration){
+            inputFlags.push(`-analyzeduration ${e.details.aduration}`)
+        }
+        if(e.details.probesize){
+            inputFlags.push(`-probesize ${e.details.probesize}`)
+        }
+        if(e.details.stream_loop === '1' && inputTypeCanLoop){
+            inputFlags.push(`-stream_loop -1`)
+        }
+        if(!arrayContains('-fflags',inputFlags)){
+            inputFlags.push(`-fflags +igndts`)
+        }
+        if(inputTypeIsH264 && protocolIsRtsp && rtspTransportIsManual){
+            inputFlags.push(`-rtsp_transport ${e.details.rtsp_transport}`)
         }
         //hardware acceleration
-        if(e.details.accelerator && e.details.accelerator==='1' && !isStreamer){
-            if(e.details.hwaccel&&e.details.hwaccel!==''){
-                x.hwaccel+=' -hwaccel '+e.details.hwaccel;
+        if(hardwareAccelerationEnabled && !isStreamer){
+            if(e.details.hwaccel){
+                inputFlags.push(`-hwaccel ${e.details.hwaccel}`)
             }
-            if(e.details.hwaccel_vcodec&&e.details.hwaccel_vcodec!==''){
-                x.hwaccel+=' -c:v '+e.details.hwaccel_vcodec;
+            if(e.details.hwaccel_vcodec){
+                inputFlags.push(`-c:v ${e.details.hwaccel_vcodec}`)
             }
-            if(e.details.hwaccel_device&&e.details.hwaccel_device!==''){
+            if(e.details.hwaccel_device){
                 switch(e.details.hwaccel){
                     case'vaapi':
-                        x.hwaccel+=' -vaapi_device '+e.details.hwaccel_device;
+                        inputFlags.push(`-vaapi_device ${e.details.hwaccel_device}`)
                     break;
                     default:
-                        x.hwaccel+=' -hwaccel_device '+e.details.hwaccel_device;
+                        inputFlags.push(`-hwaccel_device ${e.details.hwaccel_device}`)
                     break;
                 }
             }
-    //        else{
-    //            if(e.details.hwaccel==='vaapi'){
-    //                x.hwaccel+=' -hwaccel_device 0';
-    //            }
-    //        }
         }
-        //logging - level
-        if(e.details.loglevel&&e.details.loglevel!==''){x.loglevel='-loglevel '+e.details.loglevel;}else{x.loglevel='-loglevel error'}
-        //custom - input flags
-        if(e.details.cust_input&&e.details.cust_input!==''){x.cust_input+=' '+e.details.cust_input;}
+        inputFlags.push(`-loglevel ${logLevel}`)
         //add main input
-        if((e.type === 'mp4' || e.type === 'mjpeg') && x.cust_input.indexOf('-re') === -1){
-            x.cust_input += ' -re'
+        if(casualDecodingRequired && !arrayContains('-re',inputFlags)){
+            inputFlags.push(`-re`)
         }
+        inputFlags.push(buildConnectionFlagsFromConfiguration(e))
+        if(e.details.input_maps){
+            e.details.input_maps.forEach(function(v,n){
+                inputFlags.push(createInputMap(e,n+1,v))
+            })
+        }
+        x.pipe += ' ' + inputFlags.join(' ')
     }
-    ffmpeg.buildMainStream = function(e,x){
+    const buildMainStream = function(e,x){
         //e = monitor object
         //x = temporary values
         const isCudaEnabled = hasCudaEnabled(e)
@@ -432,7 +417,7 @@ module.exports = function(s,config,lang,onFinish){
         const videoQuality = e.details.stream_quality ? e.details.stream_quality : '1'
         const streamType = e.details.stream_type ? e.details.stream_type : 'hls'
         const videoFps = !isNaN(parseFloat(e.details.stream_fps)) && e.details.stream_fps !== '0' ? parseFloat(e.details.stream_fps) : null
-        const inputMap = s.createFFmpegMap(e,e.details.input_map_choices.stream)
+        const inputMap = buildInputMap(e,e.details.input_map_choices.stream)
         const outputCanHaveAudio = (streamType === 'hls' || streamType === 'mp4' || streamType === 'flv' || streamType === 'h265')
         const outputRequiresEncoding = streamType === 'mjpeg' || streamType === 'b64'
         const outputIsPresetCapable = outputCanHaveAudio
@@ -524,18 +509,18 @@ module.exports = function(s,config,lang,onFinish){
         x.pipe += ' ' + streamFlags.join(' ')
         if(e.details.stream_channels){
             e.details.stream_channels.forEach(function(v,n){
-                x.pipe += createStreamChannel(e,n+config.pipeAddition,v)
+                x.pipe += createStreamChannel(e,n + config.pipeAddition,v)
             })
         }
         //custom - output
         if(e.details.custom_output&&e.details.custom_output!==''){x.pipe+=' '+e.details.custom_output;}
     }
-    ffmpeg.buildJpegApiOutput = function(e,x){
+    const buildJpegApiOutput = function(e,x){
         if(e.details.snap === '1'){
             const isCudaEnabled = hasCudaEnabled(e)
             const videoFlags = []
             const videoFilters = []
-            const inputMap = s.createFFmpegMap(e,e.details.input_map_choices.stream)
+            const inputMap = buildInputMap(e,e.details.input_map_choices.stream)
             const { videoWidth, videoHeight } = validateDimensions(e.details.snap_scale_x,e.details.snap_scale_y)
             if(inputMap)streamFlags.push(inputMap)
             if(e.details.snap_vf)videoFilters.push(e.details.snap_vf)
@@ -551,7 +536,7 @@ module.exports = function(s,config,lang,onFinish){
             x.pipe += ' ' + videoFlags.join(' ')
         }
     }
-    ffmpeg.buildMainRecording = function(e,x){
+    const buildMainRecording = function(e,x){
         //e = monitor object
         //x = temporary values
         if(e.mode === 'record'){
@@ -567,7 +552,7 @@ module.exports = function(s,config,lang,onFinish){
             const videoQuality = e.details.crf ? e.details.crf : '1'
             const videoFps = !isNaN(parseFloat(e.fps)) && e.fps !== '0' ? parseFloat(e.fps) : null
             const segmentLengthInMinutes = !isNaN(parseFloat(e.details.cutoff)) ? parseFloat(e.details.cutoff) : '15'
-            const inputMap = s.createFFmpegMap(e,e.details.input_map_choices.record)
+            const inputMap = buildInputMap(e,e.details.input_map_choices.record)
             const { videoWidth, videoHeight } = validateDimensions(e.details.record_scale_x,e.details.record_scale_y)
             if(inputMap)recordingFlags.push(inputMap)
             if(e.details.cust_record)customRecordingFlags.push(e.details.cust_record)
@@ -633,18 +618,18 @@ module.exports = function(s,config,lang,onFinish){
             x.pipe += ' ' + recordingFlags.join(' ')
         }
     }
-    ffmpeg.buildAudioDetector = function(e,x){
+    const buildAudioDetector = function(e,x){
         if(e.details.detector_audio === '1'){
             if(e.details.input_map_choices&&e.details.input_map_choices.detector_audio){
                 //add input feed map
-                x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector_audio)
+                x.pipe += buildInputMap(e,e.details.input_map_choices.detector_audio)
             }else{
                 x.pipe += ' -map 0:a'
             }
             x.pipe += ' -acodec pcm_s16le -f s16le -ac 1 -ar 16000 pipe:6'
         }
     }
-    ffmpeg.buildMainDetector = function(e,x){
+    const buildMainDetector = function(e,x){
         //e = monitor object
         //x = temporary values
         const isCudaEnabled = hasCudaEnabled(e)
@@ -668,10 +653,10 @@ module.exports = function(s,config,lang,onFinish){
                 if(videoFilters.length > 0)detectorFlags.push(' -vf "' + videoFilters.join(',') + '"')
             }
             const addInputMap = () => {
-                detectorFlags.push(s.createFFmpegMap(e,e.details.input_map_choices.detector))
+                detectorFlags.push(buildInputMap(e,e.details.input_map_choices.detector))
             }
             const addObjectDetectorInputMap = () => {
-                detectorFlags.push(s.createFFmpegMap(e,e.details.input_map_choices.detector_object || e.details.input_map_choices.detector))
+                detectorFlags.push(buildInputMap(e,e.details.input_map_choices.detector_object || e.details.input_map_choices.detector))
             }
             const addObjectDetectValues = () => {
                 const objVideoFilters = [objectDetectorFpsFilter]
@@ -711,7 +696,7 @@ module.exports = function(s,config,lang,onFinish){
         //Traditional Recording Buffer
         if(e.details.detector === '1' && e.details.detector_trigger === '1' && e.details.detector_record_method === 'sip'){
             if(e.details.cust_sip_record && e.details.cust_sip_record !== ''){x.pipe += ' ' + e.details.cust_sip_record}
-            x.pipe += s.createFFmpegMap(e,e.details.input_map_choices.detector_sip_buffer || e.details.input_map_choices.detector)
+            x.pipe += buildInputMap(e,e.details.input_map_choices.detector_sip_buffer || e.details.input_map_choices.detector)
             x.detector_buffer_filters=[]
             if(!e.details.detector_buffer_vcodec||e.details.detector_buffer_vcodec===''||e.details.detector_buffer_vcodec==='auto'){
                 switch(e.type){
@@ -774,11 +759,11 @@ module.exports = function(s,config,lang,onFinish){
             x.pipe += x.detector_buffer_fps+x.detector_buffer_acodec+' -c:v '+e.details.detector_buffer_vcodec+' -f hls -tune '+e.details.detector_buffer_tune+' -g '+e.details.detector_buffer_g+' -hls_time '+e.details.detector_buffer_hls_time+' -hls_list_size '+e.details.detector_buffer_hls_list_size+' -start_number '+e.details.detector_buffer_start_number+' -live_start_index '+e.details.detector_buffer_live_start_index+' -hls_allow_cache 0 -hls_flags +delete_segments+omit_endlist "'+e.sdir+'detectorStream.m3u8"'
         }
     }
-    ffmpeg.buildTimelapseOutput = function(e,x){
+    const buildTimelapseOutput = function(e,x){
         if(e.details.record_timelapse === '1'){
             const videoFilters = []
             const videoFlags = []
-            const inputMap = s.createFFmpegMap(e,e.details.input_map_choices.record_timelapse)
+            const inputMap = buildInputMap(e,e.details.input_map_choices.record_timelapse)
             const { videoWidth, videoHeight } = validateDimensions(e.details.record_scale_x,e.details.record_scale_y)
             if(videoWidth && videoHeight)streamFlags.push(`-s ${videoWidth}x${videoHeight}`)
             if(inputMap)recordingFlags.push(inputMap)
@@ -794,46 +779,10 @@ module.exports = function(s,config,lang,onFinish){
             x.pipe += ' ' + videoFlags.join(' ')
         }
     }
-    ffmpeg.assembleMainPieces = function(e,x){
-        //create executeable FFMPEG command
-        x.ffmpegCommandString = x.loglevel+x.input_fps;
-        //progress pipe
-        x.ffmpegCommandString += ' -progress pipe:5';
-        const url = s.buildMonitorUrl(e);
-        switch(e.type){
-            case'dashcam':
-                x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i -';
-            break;
-            case'socket':case'jpeg':case'pipe'://case'webpage':
-                x.ffmpegCommandString += ' -pattern_type glob -f image2pipe'+x.record_fps+' -vcodec mjpeg'+x.cust_input+x.hwaccel+' -i -';
-            break;
-            case'mjpeg':
-                x.ffmpegCommandString += ' -reconnect 1 -f mjpeg'+x.cust_input+x.hwaccel+' -i "'+url+'"';
-            break;
-            case'mxpeg':
-                x.ffmpegCommandString += ' -reconnect 1 -f mxg'+x.cust_input+x.hwaccel+' -i "'+url+'"';
-            break;
-            case'rtmp':
-                if(!e.details.rtmp_key)e.details.rtmp_key = ''
-                x.ffmpegCommandString += x.cust_input+x.hwaccel+` -i "rtmp://127.0.0.1:1935/${e.ke + '_' + e.mid + '_' + e.details.rtmp_key}"`;
-            break;
-            case'h264':case'hls':case'mp4':
-                x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i "'+url+'"';
-            break;
-            case'local':
-                x.ffmpegCommandString += x.cust_input+x.hwaccel+' -i "'+e.path+'"';
-            break;
-        }
-        //add extra input maps
-        if(e.details.input_maps){
-            e.details.input_maps.forEach(function(v,n){
-                x.ffmpegCommandString += s.createInputMap(e,n+1,v)
-            })
-        }
-        //add recording and stream outputs
+    const assembleMainPieces = function(e,x){
         x.ffmpegCommandString += x.pipe
     }
-    ffmpeg.createPipeArray = function(e,x){
+    const createPipeArray = function(e,x){
         //create additional pipes from ffmpeg
         x.stdioPipes = [];
         var times = config.pipeAddition;
@@ -846,20 +795,20 @@ module.exports = function(s,config,lang,onFinish){
     }
     s.ffmpeg = function(e){
         //set X for temporary values so we don't break our main monitor object.
-        var x = {tmp : '', pipe: ''}
+        var x = {tmp : '', pipe: '', ffmpegCommandString: '-progress pipe:5'}
         //set some placeholding values to avoid "undefined" in ffmpeg string.
-        ffmpeg.buildMainInput(e,x)
-        ffmpeg.buildMainStream(e,x)
-        ffmpeg.buildJpegApiOutput(e,x)
-        ffmpeg.buildMainRecording(e,x)
-        ffmpeg.buildAudioDetector(e,x)
-        ffmpeg.buildMainDetector(e,x)
-        ffmpeg.buildTimelapseOutput(e,x)
+        buildMainInput(e,x)
+        buildMainStream(e,x)
+        buildJpegApiOutput(e,x)
+        buildMainRecording(e,x)
+        buildAudioDetector(e,x)
+        buildMainDetector(e,x)
+        buildTimelapseOutput(e,x)
         s.onFfmpegCameraStringCreationExtensions.forEach(function(extender){
             extender(e,x)
         })
-        ffmpeg.assembleMainPieces(e,x)
-        ffmpeg.createPipeArray(e,x)
+        assembleMainPieces(e,x)
+        createPipeArray(e,x)
         //hold ffmpeg command for log stream
         var sanitizedCmd = x.ffmpegCommandString
         if(e.details.muser && e.details.mpass){
@@ -897,10 +846,10 @@ module.exports = function(s,config,lang,onFinish){
         return spawn('node',cameraCommandParams,{detached: true,stdio:x.stdioPipes})
     }
     if(!config.ffmpegDir){
-        ffmpeg.checkForWindows(function(){
-            ffmpeg.checkForFfbinary(function(){
-                ffmpeg.checkForNpmStatic(function(){
-                    ffmpeg.checkForUnix(function(){
+        checkForWindows(function(){
+            checkForFfbinary(function(){
+                checkForNpmStatic(function(){
+                    checkForUnix(function(){
                         console.log('No FFmpeg found.')
                     })
                 })
@@ -909,7 +858,7 @@ module.exports = function(s,config,lang,onFinish){
     }
     if(downloadingFfmpeg === false){
         //not downloading ffmpeg
-        ffmpeg.completeCheck()
+        completeCheck()
     }
     return ffmpeg
 }

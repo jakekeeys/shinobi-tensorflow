@@ -271,44 +271,48 @@ module.exports = function(s,config,lang,io){
                 }
                 if (cb) cb(null, true);
                 cn.on('MP4Command',function(msg){
-                    switch (msg) {
-                        case 'mime' ://client is requesting mime
-                            var mime = mp4frag.mime;
-                            if (mime) {
-                                cn.emit('mime', mime);
-                            } else {
-                                mp4frag.on('initialized', onInitialized);
-                            }
-                        break;
-                        case 'initialization' ://client is requesting initialization segment
-                            cn.emit('initialization', mp4frag.initialization);
-                        break;
-                        case 'segment' ://client is requesting a SINGLE segment
-                            var segment = mp4frag.segment;
-                            if (segment) {
-                                cn.emit('segment', segment);
-                            } else {
-                                mp4frag.once('segment', onSegment);
-                            }
-                        break;
-                        case 'segments' ://client is requesting ALL segments
-                            //send current segment first to start video asap
-                            var segment = mp4frag.segment;
-                            if (segment) {
-                                cn.emit('segment', segment);
-                            }
-                            //add listener for segments being dispatched by mp4frag
-                            mp4frag.on('segment', onSegment);
-                        break;
-                        case 'pause' :
-                            mp4frag.removeListener('segment', onSegment);
-                        break;
-                        case 'resume' :
-                            mp4frag.on('segment', onSegment);
-                        break;
-                        case 'stop' ://client requesting to stop receiving segments
-                            cn.closeSocketVideoStream()
-                        break;
+                    try{
+                        switch (msg) {
+                            case 'mime' ://client is requesting mime
+                                var mime = mp4frag.mime;
+                                if (mime) {
+                                    cn.emit('mime', mime);
+                                } else {
+                                    mp4frag.on('initialized', onInitialized);
+                                }
+                            break;
+                            case 'initialization' ://client is requesting initialization segment
+                                cn.emit('initialization', mp4frag.initialization);
+                            break;
+                            case 'segment' ://client is requesting a SINGLE segment
+                                var segment = mp4frag.segment;
+                                if (segment) {
+                                    cn.emit('segment', segment);
+                                } else {
+                                    mp4frag.once('segment', onSegment);
+                                }
+                            break;
+                            case 'segments' ://client is requesting ALL segments
+                                //send current segment first to start video asap
+                                var segment = mp4frag.segment;
+                                if (segment) {
+                                    cn.emit('segment', segment);
+                                }
+                                //add listener for segments being dispatched by mp4frag
+                                mp4frag.on('segment', onSegment);
+                            break;
+                            case 'pause' :
+                                mp4frag.removeListener('segment', onSegment);
+                            break;
+                            case 'resume' :
+                                mp4frag.on('segment', onSegment);
+                            break;
+                            case 'stop' ://client requesting to stop receiving segments
+                                cn.closeSocketVideoStream()
+                            break;
+                        }
+                    }catch(err){
+                        onFail(err)
                     }
                 })
             }
