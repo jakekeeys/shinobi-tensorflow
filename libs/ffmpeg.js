@@ -346,7 +346,7 @@ module.exports = function(s,config,lang,onFinish){
             inputFlags.push('-use_wallclock_as_timestamps 1')
         }
         if(monitorCaptureRate){
-            inputFlags.push(`-r ${videoFps}`)
+            inputFlags.push(`-r ${monitorCaptureRate}`)
         }
         if(e.details.aduration){
             inputFlags.push(`-analyzeduration ${e.details.aduration}`)
