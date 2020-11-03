@@ -472,11 +472,11 @@ module.exports = function(s,config,lang){
                       "form-group-class": "input-mapping",
                       "possible": [
                            {
-                              "name": lang['All streams in first feed'] + "(0)",
+                              "name": lang['All streams in first feed'] + '(0, ' + lang.Default + ')',
                               "value": "0"
                            },
                            {
-                              "name": lang['First stream in feed'] + '(0:0, ' + lang.Default + ')',
+                              "name": lang['First stream in feed'] + '(0:0)',
                               "value": "0:0"
                            },
                            {

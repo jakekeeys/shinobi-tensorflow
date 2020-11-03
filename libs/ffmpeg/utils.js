@@ -184,9 +184,9 @@ module.exports = (s,config,lang) => {
                     string += ' -map '+v.map
                 })
             }else{
-                var primaryMap = '0:0'
+                var primaryMap = '0'
                 if(e.details.primary_input && e.details.primary_input !== ''){
-                    var primaryMap = e.details.primary_input || '0:0'
+                    var primaryMap = e.details.primary_input || '0'
                     string += ' -map ' + primaryMap
                 }
             }
