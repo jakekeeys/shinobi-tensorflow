@@ -18,6 +18,7 @@ module.exports = function(s,config,lang){
         applyPartialToConfiguration,
         createWarningsForConfiguration,
         buildMonitorConfigPartialFromWarnings,
+        splitForFFPMEG,
     } = require('./ffmpeg/utils.js')(s,config,lang)
     const {
         cameraDestroy,
@@ -162,7 +163,7 @@ module.exports = function(s,config,lang){
                         var snapBuffer = []
                         var temporaryImageFile = streamDir + s.gid(5) + '.jpg'
                         var iconImageFile = streamDir + 'icon.jpg'
-                        var ffmpegCmd = s.splitForFFPMEG(`-loglevel warning -re -probesize 100000 -analyzeduration 100000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -f image2 -an -vf "fps=1" -vframes 1 "${temporaryImageFile}"`)
+                        var ffmpegCmd = splitForFFPMEG(`-loglevel warning -re -probesize 100000 -analyzeduration 100000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -f image2 -an -vf "fps=1" -vframes 1 "${temporaryImageFile}"`)
                         fs.writeFileSync(s.getStreamsDirectory(monitor) + 'snapCmd.txt',JSON.stringify({
                           cmd: ffmpegCmd,
                           temporaryImageFile: temporaryImageFile,
@@ -288,7 +289,7 @@ module.exports = function(s,config,lang){
                         //not exist
                         var cat = 'cat '+copiedItems.join(' ')+' > '+allts
                         exec(cat,function(){
-                            var merger = spawn(config.ffmpegDir,s.splitForFFPMEG(('-re -i '+allts+' -acodec copy -vcodec copy -t 00:00:' + videoLength + ' '+pathDir+mergedFile)))
+                            var merger = spawn(config.ffmpegDir,splitForFFPMEG(('-re -i '+allts+' -acodec copy -vcodec copy -t 00:00:' + videoLength + ' '+pathDir+mergedFile)))
                             merger.stderr.on('data',function(data){
                                 s.userLog(monitor,{type:"Buffer Merge",msg:data.toString()})
                             })
@@ -368,7 +369,7 @@ module.exports = function(s,config,lang){
                         ke: groupKey,
                         mid: '$USER'
                     },{type:lang['Videos Merge'],msg:mergedFile})
-                    var merger = spawn(config.ffmpegDir,s.splitForFFPMEG(('-re -loglevel warning -i ' + mergedRawFilepath + ' -acodec copy -vcodec copy ' + mergedFilepath)))
+                    var merger = spawn(config.ffmpegDir,splitForFFPMEG(('-re -loglevel warning -i ' + mergedRawFilepath + ' -acodec copy -vcodec copy ' + mergedFilepath)))
                     merger.stderr.on('data',function(data){
                         s.userLog({
                             ke: groupKey,
@@ -1124,32 +1125,32 @@ module.exports = function(s,config,lang){
                     s.setNoEventsDetector(e)
                 }
                 if(e.details.snap === '1'){
-                    var resetSnapCheck = function(){
-                        clearTimeout(activeMonitor.checkSnap)
-                        activeMonitor.checkSnap = setTimeout(function(){
-                            if(activeMonitor.isStarted === true){
-                                s.fileStats(e.sdir+'s.jpg',function(err,snap){
-                                    var notStreaming = function(){
-                                        launchMonitorProcesses(e)
-                                        s.userLog(e,{type:lang['Camera is not streaming'],msg:{msg:lang['Restarting Process']}})
-                                        s.orphanedVideoCheck(e,2,null,true)
-                                    }
-                                    if(err){
-                                        notStreaming()
-                                    }else{
-                                        if(!e.checkSnapTime)e.checkSnapTime = snap.mtime
-                                        if(err || e.checkSnapTime === snap.mtime){
-                                            e.checkSnapTime = snap.mtime
-                                            notStreaming()
-                                        }else{
-                                            resetSnapCheck()
-                                        }
-                                    }
-                                })
-                            }
-                        },60000*1);
-                    }
-                    resetSnapCheck()
+                    // var resetSnapCheck = function(){
+                    //     clearTimeout(activeMonitor.checkSnap)
+                    //     activeMonitor.checkSnap = setTimeout(function(){
+                    //         if(activeMonitor.isStarted === true){
+                    //             s.fileStats(e.sdir+'s.jpg',function(err,snap){
+                    //                 var notStreaming = function(){
+                    //                     launchMonitorProcesses(e)
+                    //                     s.userLog(e,{type:lang['Camera is not streaming'],msg:{msg:lang['Restarting Process']}})
+                    //                     s.orphanedVideoCheck(e,2,null,true)
+                    //                 }
+                    //                 if(err){
+                    //                     notStreaming()
+                    //                 }else{
+                    //                     if(!activeMonitor.checkSnapTime)activeMonitor.checkSnapTime = snap.mtime
+                    //                     if(err || activeMonitor.checkSnapTime === snap.mtime){
+                    //                         activeMonitor.checkSnapTime = snap.mtime
+                    //                         notStreaming()
+                    //                     }else{
+                    //                         resetSnapCheck()
+                    //                     }
+                    //                 }
+                    //             })
+                    //         }
+                    //     },60000*1);
+                    // }
+                    // resetSnapCheck()
                 }
                 if(config.childNodes.mode !== 'child' && s.platform!=='darwin' && (e.functionMode === 'record' || (e.functionMode === 'start'&&e.details.detector_record_method==='sip'))){
                     if(activeMonitor.fswatch && activeMonitor.fswatch.close){

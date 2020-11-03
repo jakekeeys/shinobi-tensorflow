@@ -12,6 +12,9 @@ module.exports = function(s,config,lang,onFinish){
         validateDimensions,
         getInputTypeFlags,
         buildInputMap,
+        sanitizedFfmpegCommand,
+        createPipeArray,
+        splitForFFPMEG,
     } = require('./ffmpeg/utils.js')(s,config,lang)
     if(config.ffmpegBinary)config.ffmpegDir = config.ffmpegBinary
     var ffmpeg = {}
@@ -152,19 +155,6 @@ module.exports = function(s,config,lang,onFinish){
             })
         })
     }
-    //ffmpeg string cleaner, splits for use with spawn()
-    s.splitForFFPMEG = function (ffmpegCommandAsString) {
-        return ffmpegCommandAsString.replace(/\s+/g,' ').trim().match(/\\?.|^$/g).reduce((p, c) => {
-            if(c === '"'){
-                p.quote ^= 1;
-            }else if(!p.quote && c === ' '){
-                p.a.push('');
-            }else{
-                p.a[p.a.length-1] += c.replace(/\\(.)/,"$1");
-            }
-            return  p;
-        }, {a: ['']}).a
-    };
     const createInputMap = (e, number, input) => {
         //`e` is the monitor object
         //`x` is an object used to contain temporary values.
@@ -315,10 +305,10 @@ module.exports = function(s,config,lang,onFinish){
                 const hlsTime = !isNaN(parseInt(channel.hls_time)) ? `${parseInt(channel.hls_time)}` : '2'
                 const hlsListSize = !isNaN(parseInt(channel.hls_list_size)) ? `${parseInt(channel.hls_list_size)}` : '2'
                 if(videoCodec !== 'h264_vaapi' && !videoCodecisCopy){
-                    if(arrayContains('-tune',streamFlags)){
+                    if(!arrayContains('-tune',streamFlags)){
                         streamFlags.push(`-tune zerolatency`)
                     }
-                    if(arrayContains('-g ',streamFlags)){
+                    if(!arrayContains('-g ',streamFlags)){
                         streamFlags.push(`-g 1`)
                     }
                 }
@@ -336,7 +326,7 @@ module.exports = function(s,config,lang,onFinish){
         }
         return ' ' + streamFlags.join(' ')
     }
-    const buildMainInput = function(e,x){
+    const buildMainInput = function(e){
         //e = monitor object
         //x = temporary values
         const isStreamer = inputTypeIsStreamer(e)
@@ -403,9 +393,9 @@ module.exports = function(s,config,lang,onFinish){
                 inputFlags.push(createInputMap(e,n+1,v))
             })
         }
-        x.pipe += ' ' + inputFlags.join(' ')
+        return inputFlags.join(' ')
     }
-    const buildMainStream = function(e,x){
+    const buildMainStream = function(e){
         //e = monitor object
         //x = temporary values
         const isCudaEnabled = hasCudaEnabled(e)
@@ -487,10 +477,10 @@ module.exports = function(s,config,lang,onFinish){
                 const hlsTime = !isNaN(parseInt(e.details.hls_time)) ? `${parseInt(e.details.hls_time)}` : '2'
                 const hlsListSize = !isNaN(parseInt(e.details.hls_list_size)) ? `${parseInt(e.details.hls_list_size)}` : '2'
                 if(videoCodec !== 'h264_vaapi' && !videoCodecisCopy){
-                    if(arrayContains('-tune',streamFlags)){
+                    if(!arrayContains('-tune',streamFlags)){
                         streamFlags.push(`-tune zerolatency`)
                     }
-                    if(arrayContains('-g ',streamFlags)){
+                    if(!arrayContains('-g ',streamFlags)){
                         streamFlags.push(`-g 1`)
                     }
                 }
@@ -506,16 +496,17 @@ module.exports = function(s,config,lang,onFinish){
                 streamFlags.push(`-an -c:v mjpeg -f image2pipe pipe:1`)
             break;
         }
-        x.pipe += ' ' + streamFlags.join(' ')
+        if(e.details.custom_output){
+            streamFlags.push(e.details.custom_output)
+        }
         if(e.details.stream_channels){
             e.details.stream_channels.forEach(function(v,n){
-                x.pipe += createStreamChannel(e,n + config.pipeAddition,v)
+                streamFlags.push(createStreamChannel(e,n + config.pipeAddition,v))
             })
         }
-        //custom - output
-        if(e.details.custom_output&&e.details.custom_output!==''){x.pipe+=' '+e.details.custom_output;}
+        return streamFlags.join(' ')
     }
-    const buildJpegApiOutput = function(e,x){
+    const buildJpegApiOutput = function(e){
         if(e.details.snap === '1'){
             const isCudaEnabled = hasCudaEnabled(e)
             const videoFlags = []
@@ -533,10 +524,11 @@ module.exports = function(s,config,lang,onFinish){
             if(videoWidth && videoHeight)videoFlags.push(`-s ${videoWidth}x${videoHeight}`)
             if(e.details.cust_snap)videoFlags.push(e.details.cust_snap)
             videoFlags.push(`-update 1 "${e.sdir}s.jpg" -y`)
-            x.pipe += ' ' + videoFlags.join(' ')
+            return videoFlags.join(' ')
         }
+        return ``
     }
-    const buildMainRecording = function(e,x){
+    const buildMainRecording = function(e){
         //e = monitor object
         //x = temporary values
         if(e.mode === 'record'){
@@ -615,21 +607,24 @@ module.exports = function(s,config,lang,onFinish){
             }
             //record - segmenting
             recordingFlags.push(`-f segment -segment_atclocktime 1 -reset_timestamps 1 -strftime 1 -segment_list pipe:8 -segment_time ${(60 * segmentLengthInMinutes)} "${e.dir}%Y-%m-%dT%H-%M-%S.${e.ext || 'mp4'}"`);
-            x.pipe += ' ' + recordingFlags.join(' ')
+            return recordingFlags.join(' ')
         }
+        return ``
     }
-    const buildAudioDetector = function(e,x){
+    const buildAudioDetector = function(e){
+        const outputFlags = []
         if(e.details.detector_audio === '1'){
             if(e.details.input_map_choices&&e.details.input_map_choices.detector_audio){
                 //add input feed map
-                x.pipe += buildInputMap(e,e.details.input_map_choices.detector_audio)
+                outputFlags.push(buildInputMap(e,e.details.input_map_choices.detector_audio))
             }else{
-                x.pipe += ' -map 0:a'
+                outputFlags.push('-map 0:a')
             }
-            x.pipe += ' -acodec pcm_s16le -f s16le -ac 1 -ar 16000 pipe:6'
+            outputFlags.push('-acodec pcm_s16le -f s16le -ac 1 -ar 16000 pipe:6')
         }
+        return outputFlags.join(' ')
     }
-    const buildMainDetector = function(e,x){
+    const buildMainDetector = function(e){
         //e = monitor object
         //x = temporary values
         const isCudaEnabled = hasCudaEnabled(e)
@@ -691,75 +686,81 @@ module.exports = function(s,config,lang,onFinish){
                 addObjectDetectValues()
                 detectorFlags.push('-an -f singlejpeg pipe:4')
             }
-            x.pipe += ' ' + detectorFlags.join(' ')
+            return detectorFlags.join(' ')
         }
-        //Traditional Recording Buffer
-        if(e.details.detector === '1' && e.details.detector_trigger === '1' && e.details.detector_record_method === 'sip'){
-            if(e.details.cust_sip_record && e.details.cust_sip_record !== ''){x.pipe += ' ' + e.details.cust_sip_record}
-            x.pipe += buildInputMap(e,e.details.input_map_choices.detector_sip_buffer || e.details.input_map_choices.detector)
-            x.detector_buffer_filters=[]
-            if(!e.details.detector_buffer_vcodec||e.details.detector_buffer_vcodec===''||e.details.detector_buffer_vcodec==='auto'){
-                switch(e.type){
-                    case'h264':case'hls':case'mp4':
-                        e.details.detector_buffer_vcodec = 'copy'
-                    break;
-                    default:
-                        if(e.details.accelerator === '1' && isCudaEnabled){
-                                e.details.detector_buffer_vcodec = 'h264_nvenc'
-                        }else{
-                            e.details.detector_buffer_vcodec = 'libx264'
-                        }
-                    break;
-                }
-            }
-            if(!e.details.detector_buffer_acodec||e.details.detector_buffer_acodec===''||e.details.detector_buffer_acodec==='auto'){
-                switch(e.type){
-                    case'mjpeg':case'jpeg':case'socket':
-                        e.details.detector_buffer_acodec = 'no'
-                    break;
-                    case'h264':case'hls':case'mp4':
-                        e.details.detector_buffer_acodec = 'copy'
-                    break;
-                    default:
-                        e.details.detector_buffer_acodec = 'aac'
-                    break;
-                }
-            }
-            if(e.details.detector_buffer_acodec === 'no'){
-                x.detector_buffer_acodec = ' -an'
-            }else{
-                x.detector_buffer_acodec = ' -c:a '+e.details.detector_buffer_acodec
-            }
-            if(!e.details.detector_buffer_tune||e.details.detector_buffer_tune===''){e.details.detector_buffer_tune='zerolatency'}
-            if(!e.details.detector_buffer_g||e.details.detector_buffer_g===''){e.details.detector_buffer_g='1'}
-            if(!e.details.detector_buffer_hls_time||e.details.detector_buffer_hls_time===''){e.details.detector_buffer_hls_time='2'}
-            if(!e.details.detector_buffer_hls_list_size||e.details.detector_buffer_hls_list_size===''){e.details.detector_buffer_hls_list_size='4'}
-            if(!e.details.detector_buffer_start_number||e.details.detector_buffer_start_number===''){e.details.detector_buffer_start_number='0'}
-            if(!e.details.detector_buffer_live_start_index||e.details.detector_buffer_live_start_index===''){e.details.detector_buffer_live_start_index='-3'}
-            if(e.details.detector_buffer_vcodec.indexOf('_vaapi')>-1){
-                if(x.hwaccel.indexOf('-vaapi_device')>-1){
-                    x.detector_buffer_filters.push('format=nv12')
-                    x.detector_buffer_filters.push('hwupload')
-                }else{
-                    e.details.detector_buffer_vcodec='libx264'
-                }
-            }
-            if(e.details.detector_buffer_vcodec!=='copy'){
-                if(e.details.detector_buffer_fps&&e.details.detector_buffer_fps!==''){
-                    x.detector_buffer_fps=' -r '+e.details.detector_buffer_fps
-                }else{
-                    x.detector_buffer_fps=' -r 30'
-                }
-            }else{
-                x.detector_buffer_fps=''
-            }
-            if(x.detector_buffer_filters.length>0){
-                x.pipe+=' -vf '+x.detector_buffer_filters.join(',')
-            }
-            x.pipe += x.detector_buffer_fps+x.detector_buffer_acodec+' -c:v '+e.details.detector_buffer_vcodec+' -f hls -tune '+e.details.detector_buffer_tune+' -g '+e.details.detector_buffer_g+' -hls_time '+e.details.detector_buffer_hls_time+' -hls_list_size '+e.details.detector_buffer_hls_list_size+' -start_number '+e.details.detector_buffer_start_number+' -live_start_index '+e.details.detector_buffer_live_start_index+' -hls_allow_cache 0 -hls_flags +delete_segments+omit_endlist "'+e.sdir+'detectorStream.m3u8"'
-        }
+        return ``
     }
-    const buildTimelapseOutput = function(e,x){
+    const buildEventRecordingOutput = (e) => {
+        const outputFlags = []
+        if(e.details.detector === '1' && e.details.detector_trigger === '1' && e.details.detector_record_method === 'sip'){
+            const isCudaEnabled = hasCudaEnabled(e)
+            const outputFilters = []
+            var videoCodec = e.details.detector_buffer_vcodec
+            var audioCodec = e.details.detector_buffer_acodec ? e.details.detector_buffer_acodec : 'no'
+            const videoCodecisCopy = videoCodec === 'copy'
+            const videoFps = !isNaN(parseFloat(e.details.stream_fps)) && e.details.stream_fps !== '0' ? parseFloat(e.details.stream_fps) : null
+            const inputMap = buildInputMap(e,e.details.input_map_choices.detector_sip_buffer)
+            const { videoWidth, videoHeight } = validateDimensions(e.details.record_scale_x,e.details.record_scale_y)
+            const hlsTime = !isNaN(parseInt(e.details.detector_buffer_hls_list_time)) ? `${parseInt(e.details.detector_buffer_hls_list_time)}` : '2'
+            const hlsListSize = !isNaN(parseInt(e.details.detector_buffer_hls_list_size)) ? `${parseInt(e.details.detector_buffer_hls_list_size)}` : '4'
+            if(inputMap)outputFlags.push(inputMap)
+            if(e.details.cust_record)outputFlags.push(e.details.cust_sip_record)
+            if(videoCodec === 'auto'){
+                if(e.type === 'h264' || e.type === 'hls' || e.type === 'mp4'){
+                    videoCodec = `copy`
+                }else if(e.details.accelerator === '1' && isCudaEnabled){
+                    videoCodec = 'h264_nvenc'
+                }else{
+                    videoCodec = 'libx264'
+                }
+            }
+            if(audioCodec === 'auto'){
+                if(e.type === 'mjpeg' || e.type === 'jpeg' || e.type === 'socket'){
+                    videoCodec = `no`
+                }else if(e.type === 'h264' || e.type === 'hls' || e.type === 'mp4'){
+                    videoCodec = 'copy'
+                }else{
+                    videoCodec = 'aac'
+                }
+            }
+            if(videoCodec !== 'copy'){
+                if(videoCodec.indexOf('_vaapi') >- 1){
+                    if(!arrayContains('-vaapi_device',outputFlags)){
+                        outputFilters.push('format=nv12')
+                        outputFilters.push('hwupload')
+                    }
+                }
+                if(videoFps){
+                    outputFilters.push(`fps=${videoFps}`)
+                }
+                if(videoWidth && videoHeight){
+                    outputFlags.push(`-s ${videoWidth}x${videoHeight}`)
+                }
+            }
+            if(videoCodec !== 'none'){
+                outputFlags.push(`-vcodec ` + videoCodec)
+            }
+            if(audioCodec === 'no'){
+                outputFlags.push(`-an`)
+            }else if(audioCodec){
+                outputFlags.push(`-c:a ` + audioCodec)
+            }
+            if(outputFilters.length > 0){
+                outputFlags.push(outputFilters.join(','))
+            }
+            if(videoCodec !== 'h264_vaapi' && !videoCodecisCopy){
+                if(!arrayContains('-tune',outputFlags)){
+                    outputFlags.push(`-tune zerolatency`)
+                }
+                if(!arrayContains('-g ',outputFlags)){
+                    outputFlags.push(`-g 1`)
+                }
+            }
+            outputFlags.push(`-f hls -live_start_index -3 -hls_time ${hlsTime} -hls_list_size ${hlsListSize} -start_number 0 -hls_allow_cache 0 -hls_flags +delete_segments+omit_endlist "${e.sdir}detectorStream.m3u8"`)
+        }
+        return outputFlags.join(' ')
+    }
+    const buildTimelapseOutput = function(e){
         if(e.details.record_timelapse === '1'){
             const videoFilters = []
             const videoFlags = []
@@ -776,74 +777,54 @@ module.exports = function(s,config,lang,onFinish){
                 videoFlags.push(`-vf "${videoFilters.join(',').trim()}"`)
             }
             videoFlags.push(`-f singlejpeg ${videoFlags.join(' ')} -an -q:v 1 pipe:7`)
-            x.pipe += ' ' + videoFlags.join(' ')
+            return videoFlags.join(' ')
         }
-    }
-    const assembleMainPieces = function(e,x){
-        x.ffmpegCommandString += x.pipe
-    }
-    const createPipeArray = function(e,x){
-        //create additional pipes from ffmpeg
-        x.stdioPipes = [];
-        var times = config.pipeAddition;
-        if(e.details.stream_channels){
-            times+=e.details.stream_channels.length
-        }
-        for(var i=0; i < times; i++){
-            x.stdioPipes.push('pipe')
-        }
+        return ``
     }
     s.ffmpeg = function(e){
-        //set X for temporary values so we don't break our main monitor object.
-        var x = {tmp : '', pipe: '', ffmpegCommandString: '-progress pipe:5'}
+        const ffmpegCommand = [`-progress pipe:5`];
         //set some placeholding values to avoid "undefined" in ffmpeg string.
-        buildMainInput(e,x)
-        buildMainStream(e,x)
-        buildJpegApiOutput(e,x)
-        buildMainRecording(e,x)
-        buildAudioDetector(e,x)
-        buildMainDetector(e,x)
-        buildTimelapseOutput(e,x)
-        s.onFfmpegCameraStringCreationExtensions.forEach(function(extender){
-            extender(e,x)
+        ([
+            buildMainInput(e),
+            buildMainStream(e),
+            buildJpegApiOutput(e),
+            buildMainRecording(e),
+            buildAudioDetector(e),
+            buildMainDetector(e),
+            buildEventRecordingOutput(e),
+            buildTimelapseOutput(e),
+        ]).forEach(function(commandStringPart){
+            ffmpegCommand.push(commandStringPart)
         })
-        assembleMainPieces(e,x)
-        createPipeArray(e,x)
+        s.onFfmpegCameraStringCreationExtensions.forEach(function(extender){
+            extender(e,ffmpegCommand)
+        })
+        const stdioPipes = createPipeArray(e)
+        const ffmpegCommandString = ffmpegCommand.join(' ')
         //hold ffmpeg command for log stream
-        var sanitizedCmd = x.ffmpegCommandString
-        if(e.details.muser && e.details.mpass){
-            sanitizedCmd = sanitizedCmd
-                .replace(`//${e.details.muser}:${e.details.mpass}@`,'//')
-                .replace(`=${e.details.muser}`,'=USERNAME')
-                .replace(`=${e.details.mpass}`,'=PASSWORD')
-        }else if(e.details.muser){
-            sanitizedCmd = sanitizedCmd.replace(`//${e.details.muser}:@`,'//').replace(`=${e.details.muser}`,'=USERNAME')
-        }
-        s.group[e.ke].activeMonitors[e.mid].ffmpeg = sanitizedCmd
+        s.group[e.ke].activeMonitors[e.mid].ffmpeg = sanitizedFfmpegCommand(e,ffmpegCommandString)
         //clean the string of spatial impurities and split for spawn()
-        x.ffmpegCommandString = s.splitForFFPMEG(x.ffmpegCommandString)
-        //launch that bad boy
-        // return spawn(config.ffmpegDir,x.ffmpegCommandString,{detached: true,stdio:x.stdioPipes})
+        const ffmpegCommandParsed = splitForFFPMEG(ffmpegCommandString)
         try{
-          fs.unlinkSync(e.sdir + 'cmd.txt')
+            fs.unlinkSync(e.sdir + 'cmd.txt')
         }catch(err){
 
         }
         fs.writeFileSync(e.sdir + 'cmd.txt',JSON.stringify({
-          cmd: x.ffmpegCommandString,
-          pipes: x.stdioPipes.length,
-          rawMonitorConfig: s.group[e.ke].rawMonitorConfigurations[e.id],
-          globalInfo: {
-            config: config,
-            isAtleatOneDetectorPluginConnected: s.isAtleatOneDetectorPluginConnected
-          }
+            cmd: ffmpegCommandParsed,
+            pipes: stdioPipes.length,
+            rawMonitorConfig: s.group[e.ke].rawMonitorConfigurations[e.id],
+            globalInfo: {
+                config: config,
+                isAtleatOneDetectorPluginConnected: s.isAtleatOneDetectorPluginConnected
+            }
         },null,3),'utf8')
         var cameraCommandParams = [
           './libs/cameraThread/singleCamera.js',
           config.ffmpegDir,
           e.sdir + 'cmd.txt'
         ]
-        return spawn('node',cameraCommandParams,{detached: true,stdio:x.stdioPipes})
+        return spawn('node',cameraCommandParams,{detached: true,stdio: stdioPipes})
     }
     if(!config.ffmpegDir){
         checkForWindows(function(){

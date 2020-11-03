@@ -23,7 +23,7 @@ module.exports = (s,config,lang) => {
         activeProbes[auth] = 1
         var stderr = ''
         var stdout = ''
-        const probeCommand = s.splitForFFPMEG(`-analyzeduration 100000 probesize 100000 -v quiet -print_format json -show_format -show_streams -i "${url}"`)
+        const probeCommand = splitForFFPMEG(`-analyzeduration 100000 probesize 100000 -v quiet -print_format json -show_format -show_streams -i "${url}"`)
         var processTimeout = null
         var ffprobeLocation = config.ffmpegDir.split('/')
         ffprobeLocation[ffprobeLocation.length - 1] = 'ffprobe'
@@ -248,6 +248,41 @@ module.exports = (s,config,lang) => {
             videoHeight: height,
         }
     }
+    const sanitizedFfmpegCommand = (e,ffmpegCommandString) => {
+        var sanitizedCmd = `${ffmpegCommandString}`
+        if(e.details.muser && e.details.mpass){
+            sanitizedCmd = ffmpegCommandString
+                .replace(`//${e.details.muser}:${e.details.mpass}@`,'//')
+                .replace(`=${e.details.muser}`,'=USERNAME')
+                .replace(`=${e.details.mpass}`,'=PASSWORD')
+        }else if(e.details.muser){
+            sanitizedCmd = ffmpegCommandString.replace(`//${e.details.muser}:@`,'//').replace(`=${e.details.muser}`,'=USERNAME')
+        }
+        return sanitizedCmd
+    }
+    const createPipeArray = function(e){
+        const stdioPipes = [];
+        var times = config.pipeAddition;
+        if(e.details.stream_channels){
+            times+=e.details.stream_channels.length
+        }
+        for(var i=0; i < times; i++){
+            stdioPipes.push('pipe')
+        }
+        return stdioPipes
+    }
+    const splitForFFPMEG = function(ffmpegCommandAsString) {
+        return ffmpegCommandAsString.replace(/\s+/g,' ').trim().match(/\\?.|^$/g).reduce((p, c) => {
+            if(c === '"'){
+                p.quote ^= 1;
+            }else if(!p.quote && c === ' '){
+                p.a.push('');
+            }else{
+                p.a[p.a.length-1] += c.replace(/\\(.)/,"$1");
+            }
+            return  p;
+        }, {a: ['']}).a
+    }
     return {
         ffprobe: runFFprobe,
         probeMonitor: probeMonitor,
@@ -262,5 +297,8 @@ module.exports = (s,config,lang) => {
         buildConnectionFlagsFromConfiguration: buildConnectionFlagsFromConfiguration,
         buildInputMap: buildInputMap,
         getInputTypeFlags: getInputTypeFlags,
+        sanitizedFfmpegCommand: sanitizedFfmpegCommand,
+        createPipeArray: createPipeArray,
+        splitForFFPMEG: splitForFFPMEG,
     }
 }

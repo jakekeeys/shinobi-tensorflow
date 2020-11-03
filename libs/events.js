@@ -13,6 +13,9 @@ module.exports = function(s,config,lang){
     const {
         moveCameraPtzToMatrix,
     } = require('./control/ptz.js')(s,config,lang)
+    const {
+        splitForFFPMEG,
+    } = require('./ffmpeg/utils.js')(s,config,lang)
     const countObjects = async (event) => {
         const matrices = event.details.matrices
         const eventsCounted = s.group[event.ke].activeMonitors[event.id].eventsCounted || {}
@@ -461,7 +464,7 @@ module.exports = function(s,config,lang){
                 var filename = fileTime+'.mp4'
                 s.userLog(d,{type:lang["Traditional Recording"],msg:lang["Started"]})
                 //-t 00:'+s.timeObject(new Date(detector_timeout * 1000 * 60)).format('mm:ss')+'
-                s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process = spawn(config.ffmpegDir,s.splitForFFPMEG(('-loglevel warning -analyzeduration 1000000 -probesize 1000000 -re -i "'+s.dir.streams+'/'+d.ke+'/'+d.id+'/detectorStream.m3u8" -c:v copy -strftime 1 "'+s.getVideoDirectory(d.mon) + filename + '"')))
+                s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process = spawn(config.ffmpegDir,splitForFFPMEG(('-loglevel warning -analyzeduration 1000000 -probesize 1000000 -re -i "'+s.dir.streams+'/'+d.ke+'/'+d.id+'/detectorStream.m3u8" -c:v copy -strftime 1 "'+s.getVideoDirectory(d.mon) + filename + '"')))
                 var ffmpegError='';
                 var error
                 s.group[d.ke].activeMonitors[d.id].eventBasedRecording.process.stderr.on('data',function(data){

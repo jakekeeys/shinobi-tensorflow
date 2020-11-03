@@ -2,6 +2,9 @@ const fs = require('fs');
 const treekill = require('tree-kill');
 const spawn = require('child_process').spawn;
 module.exports = (s,config,lang) => {
+    const {
+        splitForFFPMEG,
+    } = require('../ffmpeg/utils.js')(s,config,lang)
     const cameraDestroy = function(e,p){
         if(
             s.group[e.ke] &&
@@ -109,7 +112,7 @@ module.exports = (s,config,lang) => {
                 })
             }
             const temporaryImageFile = streamDir + s.gid(5) + '.jpg'
-            const ffmpegCmd = s.splitForFFPMEG(`-loglevel warning -re -probesize 100000 -analyzeduration 100000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -f image2 -an -vf "fps=1" -vframes 1 "${temporaryImageFile}"`)
+            const ffmpegCmd = splitForFFPMEG(`-loglevel warning -re -probesize 100000 -analyzeduration 100000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -f image2 -an -vf "fps=1" -vframes 1 "${temporaryImageFile}"`)
             const snapProcess = spawn('ffmpeg',ffmpegCmd,{detached: true})
             snapProcess.stderr.on('data',function(data){
                 // s.debugLog(data.toString())
