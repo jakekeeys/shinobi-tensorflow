@@ -1,5 +1,8 @@
 $(document).ready(function(e){
     //onvif probe
+    var currentUsername = ''
+    var currentPassword = ''
+    var loadedResults = {}
     var onvifScannerWindow = $('#onvif_probe')
     var scanForm = onvifScannerWindow.find('form');
     var outputBlock = onvifScannerWindow.find('.onvif_result');
@@ -36,8 +39,65 @@ $(document).ready(function(e){
                 </div>
             </div>
         `)
+        if(!options.error){
+            var theLocation = getLocationFromUri(options.uri)
+            var pathLocation = theLocation.location
+            loadedResults[tempID] = {
+                mid: tempID + `${options.port}`,
+                host: pathLocation.hostname,
+                port: pathLocation.port,
+                path: pathLocation.pathname,
+                protocol: theLocation.protocol,
+                details: {
+                    auto_host: streamUrl,
+                    muser: currentUsername,
+                    mpass: currentPassword,
+                    is_onvif: '1',
+                    onvif_port: options.port,
+                },
+            }
+            console.log(loadedResults[tempID])
+        }
+    }
+    var filterOutMonitorsThatAreAlreadyAdded = function(listOfCameras,callback){
+        $.get($.ccio.init('location',$user)+$user.auth_token+'/monitor/'+$user.ke,function(monitors){
+            var monitorsNotExisting = []
+            $.each(listOfCameras,function(n,camera){
+                var matches = false
+                $.each(monitors,function(m,monitor){
+                    if(monitor.host === camera.host){
+                        matches = true
+                    }
+                })
+                if(!matches){
+                    monitorsNotExisting.push(camera)
+                }
+            })
+            callback(monitorsNotExisting)
+        })
+    }
+    var getLocationFromUri = function(uri){
+        var newString = uri.split('://')
+        var protocol = `${newString[0]}`
+        newString[0] = 'http'
+        newString = newString.join('://')
+        var uriLocation = new URL(newString)
+        // uriLocation.protocol = protocol
+        return {
+            location: uriLocation,
+            protocol: protocol
+        }
+    }
+    var postMonitor = function(monitorToPost){
+        var newMon = mergeDeep($.aM.generateDefaultMonitorSettings(),monitorToPost)
+        $.post($.ccio.init('location',$user)+$user.auth_token+'/configureMonitor/'+$user.ke+'/'+monitorToPost.mid,{data:JSON.stringify(newMon,null,3)},function(d){
+            $.ccio.log(d)
+        })
     }
     scanForm.submit(function(e){
+        currentUsername = onvifScannerWindow.find('[name="user"]').val()
+        currentPassword = onvifScannerWindow.find('[name="pass"]').val()
+        loadedResults = {}
         e.preventDefault();
         $.oB.foundMonitors = {}
         var el = $(this)
@@ -74,6 +134,14 @@ $(document).ready(function(e){
         $.aM.e.find('[name="mode"]').val('start')
         onvifScannerWindow.modal('hide')
     })
+    onvifScannerWindow.on('click','.add-all',function(){
+        filterOutMonitorsThatAreAlreadyAdded(loadedResults,function(importableCameras){
+            $.each(importableCameras,function(n,camera){
+                // console.log(camera)
+                postMonitor(camera)
+            })
+        })
+    })
 
     var currentOptions = $.ccio.op()
     $.each(['ip','port','user'],function(n,key){
@@ -86,6 +154,13 @@ $(document).ready(function(e){
         }
     })
     delete(currentOptions)
+    $user.ws.on('f',function (d){
+        switch(d.f){
+            case'onvif':
+                drawProbeResult(d)
+            break;
+        }
+    })
 
     $.oB = {}
     $.oB.drawProbeResult = drawProbeResult

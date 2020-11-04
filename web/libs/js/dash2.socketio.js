@@ -1,3 +1,4 @@
+window.onWebsocketConnection = []
 $(document).ready(function(e){
 //websocket functions
 $.users = {}
@@ -867,10 +868,10 @@ $user.ws.on('f',function (d){
 //                $.oB.o.append('<td class="text-center _notfound">Sorry, nothing was found.</td>')
 //            }
 //        break;
-        case'onvif':
-            $.oB.drawProbeResult(d)
-        break;
     }
     delete(d);
 });
+$.each(onWebsocketConnection,function(n,extender){
+    extender()
+})
 })

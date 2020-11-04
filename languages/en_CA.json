@@ -525,6 +525,7 @@
    "Enable": "Enable",
    "Disable": "Disable",
    "Delete": "Delete",
+   "Add All": "Add All",
    "Name": "Name",
    "Skip Ping": "Skip Ping",
    "Retry Connection": "Retry Connection <small>Number of times allowed to fail</small>",
