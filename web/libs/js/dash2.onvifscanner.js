@@ -154,14 +154,6 @@ $(document).ready(function(e){
         }
     })
     delete(currentOptions)
-    $user.ws.on('f',function (d){
-        switch(d.f){
-            case'onvif':
-                drawProbeResult(d)
-            break;
-        }
-    })
-
     $.oB = {}
     $.oB.drawProbeResult = drawProbeResult
     $.oB.e = onvifScannerWindow

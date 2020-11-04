@@ -156,11 +156,6 @@
 </html>
 <!---->
 <div class="hidden" id="temp"></div>
-<script src="<%-window.libURL%>libs/js/basic.js"></script>
-<script><% include ../libs/js/dash2.config.js %></script>
-<script src="<%-window.libURL%>libs/js/dash2.basic.js"></script>
-<script src="<%-window.libURL%>libs/js/dash2.confirm.js"></script>
-<script src="<%-window.libURL%>libs/js/dash2.socketio.js"></script>
 <% include blocks/multimon.ejs %>
 <% include blocks/api.ejs %>
 <% include blocks/logs.ejs %>
@@ -185,6 +180,11 @@
 <script type="text/javascript" src="https://www.dropbox.com/static/api/2/dropins.js" id="dropboxjs" data-app-key="<%= config.DropboxAppKey %>"></script>
 <!--Dropbox End-->
 <% } %>
+<script src="<%-window.libURL%>libs/js/basic.js"></script>
+<script><% include ../libs/js/dash2.config.js %></script>
+<script src="<%-window.libURL%>libs/js/dash2.basic.js"></script>
+<script src="<%-window.libURL%>libs/js/dash2.confirm.js"></script>
+<script src="<%-window.libURL%>libs/js/dash2.socketio.js"></script>
 <script src="<%-window.libURL%>libs/js/material.min.js"></script>
 <script src="<%-window.libURL%>libs/js/pnotify.custom.min.js"></script>
 <script><% include ../libs/js/moment.js %></script>

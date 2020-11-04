@@ -868,6 +868,9 @@ $user.ws.on('f',function (d){
 //                $.oB.o.append('<td class="text-center _notfound">Sorry, nothing was found.</td>')
 //            }
 //        break;
+        case'onvif':
+            $.oB.drawProbeResult(d)
+        break;
     }
     delete(d);
 });
