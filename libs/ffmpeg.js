@@ -774,9 +774,9 @@ module.exports = function(s,config,lang,onFinish){
                 videoFilters.push(buildWatermarkFiltersFromConfiguration('record_timelapse_',e))
             }
             if(videoFilters.length > 0){
-                videoFlags.push(`-vf "${videoFilters.join(',').trim()}"`)
+                videoFlags.push(`-vf "${videoFilters.join(',')}"`)
             }
-            videoFlags.push(`-f singlejpeg ${videoFlags.join(' ')} -an -q:v 1 pipe:7`)
+            videoFlags.push(`-f singlejpeg -an -q:v 1 pipe:7`)
             return videoFlags.join(' ')
         }
         return ``
