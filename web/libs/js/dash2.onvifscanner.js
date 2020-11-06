@@ -56,8 +56,15 @@ $(document).ready(function(e){
                     onvif_port: options.port,
                 },
             }
-            console.log(loadedResults[tempID])
+            if(options.isPTZ){
+                loadedResults[tempID].details = Object.assign(loadedResults[tempID].details,{
+                    control: '1',
+                    control_url_method: 'ONVIF',
+                    control_stop: '1',
+                })
+            }
         }
+        // console.log(loadedResults[tempID])
     }
     var filterOutMonitorsThatAreAlreadyAdded = function(listOfCameras,callback){
         $.get($.ccio.init('location',$user)+$user.auth_token+'/monitor/'+$user.ke,function(monitors){
@@ -95,10 +102,10 @@ $(document).ready(function(e){
         })
     }
     scanForm.submit(function(e){
+        e.preventDefault();
         currentUsername = onvifScannerWindow.find('[name="user"]').val()
         currentPassword = onvifScannerWindow.find('[name="pass"]').val()
         loadedResults = {}
-        e.preventDefault();
         $.oB.foundMonitors = {}
         var el = $(this)
         var form = el.serializeObject();
@@ -124,14 +131,17 @@ $(document).ready(function(e){
         $('.hidden-xs [monitor="edit"]').click();
         el = $(this).parents('[onvif_row]');
         var id = el.attr('onvif_row');
-        var onvifRecord = $.oB.foundMonitors[id];
-        var streamURL = onvifRecord.uri;
-        if(onvifScannerWindow.find('[name="user"]').val()!==''){
-            streamURL = streamURL.split('://')
-            streamURL = streamURL[0]+'://'+onvifScannerWindow.find('[name="user"]').val()+':'+onvifScannerWindow.find('[name="pass"]').val()+'@'+streamURL[1];
-        }
-        $.aM.e.find('[detail="auto_host"]').val(streamURL).change()
-        $.aM.e.find('[name="mode"]').val('start')
+        var onvifRecord = loadedResults[id];
+        var streamURL = onvifRecord.details.auto_host
+        $.each(onvifRecord,function(key,value){
+            if(key === `details`){
+                $.each(value,function(dkey,dvalue){
+                    $.aM.e.find(`[detail="${dkey}"]`).val(dvalue).change()
+                })
+            }else{
+                $.aM.e.find(`[name="${key}"]`).val(value).change()
+            }
+        })
         onvifScannerWindow.modal('hide')
     })
     onvifScannerWindow.on('click','.add-all',function(){

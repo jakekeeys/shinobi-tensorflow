@@ -117,6 +117,20 @@ module.exports = function(s,config,lang,app,io){
                     date: date,
                     uri: stream.data.GetStreamUriResponse.MediaUri.Uri
                 }
+                try{
+                    const camPtzConfigs = (await device.services.ptz.getConfigurations()).data.GetConfigurationsResponse
+                    if(
+                        camPtzConfigs.PTZConfiguration &&
+                        (
+                            camPtzConfigs.PTZConfiguration.PanTiltLimits ||
+                            camPtzConfigs.PTZConfiguration.ZoomLimits
+                        )
+                    ){
+                        cameraResponse.isPTZ = true
+                    }
+                }catch(err){
+                    s.debugLog(err)
+                }
                 responseList.push(cameraResponse)
                 var imageSnap
                 if(cameraResponse.uri){
