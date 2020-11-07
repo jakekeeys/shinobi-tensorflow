@@ -409,7 +409,7 @@ module.exports = function(s,config,lang){
                     }
                     fiveRecentFiles.forEach(function(filename){
                         if(/T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]./.test(filename)){
-                            fs.stat(filename,(err,stats) => {
+                            fs.stat(videosDirectory + filename,(err,stats) => {
                                 if(!err && stats.size > 10){
                                     s.knexQuery({
                                         action: "select",
