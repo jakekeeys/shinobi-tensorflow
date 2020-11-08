@@ -6,6 +6,9 @@ module.exports = function(s,config,lang,app,io){
         createSnapshot,
         addCredentialsToStreamLink,
      } = require('./monitor/utils.js')(s,config,lang)
+    const {
+        splitForFFPMEG,
+    } = require('./ffmpeg/utils.js')(s,config,lang)
     const activeProbes = {}
     const runFFprobe = (url,auth,callback) => {
         var endData = {ok: false}
@@ -20,7 +23,7 @@ module.exports = function(s,config,lang,app,io){
             return
         }
         activeProbes[auth] = 1
-        const probeCommand = s.splitForFFPMEG(`-v quiet -print_format json -show_format -show_streams -i "${url}"`).join(' ')
+        const probeCommand = splitForFFPMEG(`-v quiet -print_format json -show_format -show_streams -i "${url}"`).join(' ')
         exec('ffprobe ' + probeCommand,function(err,stdout,stderr){
             delete(activeProbes[auth])
             if(err){
