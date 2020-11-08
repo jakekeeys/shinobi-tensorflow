@@ -81,9 +81,11 @@ module.exports = (s,config,lang) => {
         var completedCheck = 0
         if(frames){
             frames.forEach(function(frame){
+                const details = s.parseJSON(frame.details)
                 var selectedDate = frame.filename.split('T')[0]
                 var dir = s.getTimelapseFrameDirectory(frame)
-                var fileLocationMid = `${dir}` + frame.filename
+                var timeFolder = s.formattedTime(new Date(frame.time),'YYYY-MM-DD')
+                var fileLocationMid = `${dir}${timeFolder}/` + frame.filename
                 const queryGroup = {
                     mid: frame.mid,
                     time: frame.time,
