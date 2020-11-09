@@ -1780,7 +1780,9 @@ module.exports = function(s,config,lang,app,io){
                 limit: 1
             },(err,r) => {
                 if(r && r[0]){
-                    r=r[0];r.filename=s.formattedTime(r.time)+'.'+r.ext;
+                    r=r[0];
+                    r.filename=s.formattedTime(r.time)+'.'+r.ext;
+                    var details = s.parseJSON(r.details) || {}
                     switch(req.params.mode){
                         case'fix':
                             response.ok = true;
@@ -1817,7 +1819,7 @@ module.exports = function(s,config,lang,app,io){
                             response.ok = true;
                             switch(videoParam){
                                 case'cloudVideos':
-                                    s.deleteVideoFromCloud(r)
+                                    s.deleteVideoFromCloud(r,details.type || 's3')
                                 break;
                                 default:
                                     s.deleteVideo(r)

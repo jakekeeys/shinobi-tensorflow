@@ -342,7 +342,7 @@ module.exports = function(s,config,lang){
     s.deleteVideoFromCloudExtensionsRunner = function(e,storageType,video){
         // e = user
         if(!storageType){
-            var videoDetails = JSON.parse(r.details)
+            var videoDetails = JSON.parse(video.details)
             videoDetails.type = videoDetails.type || 's3'
         }
         if(s.deleteVideoFromCloudExtensions[storageType]){
@@ -373,12 +373,13 @@ module.exports = function(s,config,lang){
         },(err,r) => {
             if(r&&r[0]){
                 r = r[0]
+                var details = s.parseJSON(r.details) || {}
                 s.knexQuery({
                     action: "delete",
                     table: "Cloud Videos",
                     where: whereQuery
-                },(err,r) => {
-                    s.deleteVideoFromCloudExtensionsRunner(e,r)
+                },(err) => {
+                    s.deleteVideoFromCloudExtensionsRunner(e,details.type || 's3',r)
                 })
             }else{
 //                    console.log('Delete Failed',e)

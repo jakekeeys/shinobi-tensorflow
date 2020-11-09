@@ -88,7 +88,7 @@ module.exports = (s,config,lang,app,io) => {
             }else{
                 oAuth2Client = s.group[e.ke].googleDriveOAuth2Client
             }
-            if(userDetails.googd_code && userDetails.googd_code !== 'Authorized. Token Set.' && !s.group[e.ke].googleDrive){
+            if(userDetails.googd_code && userDetails.googd_code !== 'Authorized. Token Set.' && userDetails.googd_code !== '***************' && !s.group[e.ke].googleDrive){
                 oAuth2Client.getToken(userDetails.googd_code, (err, token) => {
                     if (err) return console.error('Error retrieving access token', err)
                     oAuth2Client.setCredentials(token)
@@ -97,7 +97,7 @@ module.exports = (s,config,lang,app,io) => {
                         uid: e.uid,
                         form: {
                             details: JSON.stringify(Object.assign(userDetails,{
-                                googd_code: 'Authorized. Token Set.',
+                                googd_code: '***************',
                                 googd_token: token,
                             }))
                         },
@@ -115,10 +115,10 @@ module.exports = (s,config,lang,app,io) => {
         s.group[user.ke].googleDrive = null
         s.group[user.ke].googleDriveOAuth2Client = null
     }
-    var deleteVideoFromGoogleDrive = function(e,video,callback){
+    var deleteVideoFromGoogleDrive = function(groupKey,video,callback){
         // e = user
         var videoDetails = s.parseJSON(video.details)
-        s.group[e.ke].googleDrive.files.delete({
+        s.group[groupKey].googleDrive.files.delete({
             fileId: videoDetails.id
         }, function(err, resp){
             if (err) {
