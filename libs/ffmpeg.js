@@ -746,7 +746,7 @@ module.exports = function(s,config,lang,onFinish){
                 outputFlags.push(`-c:a ` + audioCodec)
             }
             if(outputFilters.length > 0){
-                outputFlags.push(outputFilters.join(','))
+                outputFlags.push(`-vf "${outputFilters.join(',')}"`)
             }
             if(videoCodec !== 'h264_vaapi' && !videoCodecisCopy){
                 if(!arrayContains('-tune',outputFlags)){
