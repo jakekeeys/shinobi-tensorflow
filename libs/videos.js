@@ -39,7 +39,10 @@ module.exports = function(s,config,lang){
             }else{
                 queryString = ''
             }
-            if(!v.ext && v.href){
+            if(details.type === 'googd'){
+                v.ext = v.ext ? v.ext : 'mp4'
+                v.href = undefined
+            }else if(!v.ext && v.href){
                 v.ext = v.href.split('.')
                 v.ext = v.ext[v.ext.length - 1]
             }

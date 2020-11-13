@@ -1,4 +1,3 @@
-window.onWebsocketConnection = []
 $(document).ready(function(e){
 //websocket functions
 $.users = {}
@@ -874,7 +873,4 @@ $user.ws.on('f',function (d){
     }
     delete(d);
 });
-$.each(onWebsocketConnection,function(n,extender){
-    extender()
-})
 })

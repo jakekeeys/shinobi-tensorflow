@@ -520,6 +520,7 @@ module.exports = function(s,config,lang,io){
                             case'get':
                                 switch(d.fff){
                                     case'videos&events':
+                                        const videoSet = d.videoSet
                                         if(!d.eventLimit){
                                             d.eventLimit = 500
                                         }else{
@@ -625,7 +626,7 @@ module.exports = function(s,config,lang,io){
                                             s.knexQuery({
                                                 action: "select",
                                                 columns: "*",
-                                                table: "Videos",
+                                                table: videoSet === 'cloud' ? `Cloud Videos` : "Videos",
                                                 where: videoWhereQuery,
                                                 orderBy: ['time','desc'],
                                                 limit: d.videoLimit || '100'
@@ -637,6 +638,7 @@ module.exports = function(s,config,lang,io){
                                                     },2000)
                                                 }else{
                                                     s.buildVideoLinks(r,{
+                                                        videoParam :  videoSet === 'cloud' ? `cloudVideos` : "videos",
                                                         auth : cn.auth
                                                     })
                                                     callback({total:r.length,limit:d.videoLimit,videos:r})
