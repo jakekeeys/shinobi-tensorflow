@@ -503,15 +503,15 @@ const clearCronInterval = function(){
     clearInterval(theCronInterval)
 }
 const doCronJobs = function(){
-    s.cx({f:'start',time:moment()})
-    s.sqlQuery('SELECT ke,uid,details,mail FROM Users WHERE details NOT LIKE \'%"sub"%\'', function(err,rows) {
-        if(err){
-            console.error(err)
-        }
-        if(rows&&rows[0]){
-            processUser(0,rows)
-        }
-    })
+    // s.cx({f:'start',time:moment()})
+    // s.sqlQuery('SELECT ke,uid,details,mail FROM Users WHERE details NOT LIKE \'%"sub"%\'', function(err,rows) {
+    //     if(err){
+    //         console.error(err)
+    //     }
+    //     if(rows&&rows[0]){
+    //         processUser(0,rows)
+    //     }
+    // })
 }
 setIntervalForCron()
 doCronJobs()
