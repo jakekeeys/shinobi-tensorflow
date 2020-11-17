@@ -1,4 +1,6 @@
+const fs = require('fs');
 const exec = require('child_process').exec;
+const execSync = require('child_process').execSync;
 const spawn = require('child_process').spawn;
 const treekill = require('tree-kill');
 module.exports = (s,config,lang) => {
@@ -8,7 +10,7 @@ module.exports = (s,config,lang) => {
     } = require('../common.js')
     const getPossibleWarnings = require('./possibleWarnings.js')
     const activeProbes = {}
-    const runFFprobe = (url,auth,callback,forceOverlap) => {
+    const runFFprobe = (url,auth,callback,forceOverlap,customInput) => {
         var endData = {ok: false, result: {}}
         if(!url){
             endData.error = 'Missing URL'
@@ -23,7 +25,7 @@ module.exports = (s,config,lang) => {
         activeProbes[auth] = 1
         var stderr = ''
         var stdout = ''
-        const probeCommand = splitForFFPMEG(`-analyzeduration 100000 probesize 100000 -v quiet -print_format json -show_format -show_streams -i "${url}"`)
+        const probeCommand = splitForFFPMEG(`${customInput ? customInput + ' ' : ''}-analyzeduration 10000 -probesize 10000 -v quiet -print_format json -show_format -show_streams -i "${url}"`)
         var processTimeout = null
         var ffprobeLocation = config.ffmpegDir.split('/')
         ffprobeLocation[ffprobeLocation.length - 1] = 'ffprobe'
@@ -57,12 +59,16 @@ module.exports = (s,config,lang) => {
     }
     const probeMonitor = (monitor,timeoutAmount,forceOverlap) => {
         return new Promise((resolve,reject) => {
+            const inputTypeIsH264 = monitor.type === 'h264'
+            const protocolIsRtsp = monitor.protocol === 'rtsp'
+            const rtspTransportIsManual = monitor.details.rtsp_transport && monitor.details.rtsp_transport !== 'no'
             const url = s.buildMonitorUrl(monitor);
             runFFprobe(url,`${monitor.ke}${monitor.mid}`,(response) => {
                 setTimeout(() => {
                     resolve(response)
                 },timeoutAmount || 1000)
-            },forceOverlap)
+            },forceOverlap,
+            inputTypeIsH264 && protocolIsRtsp && rtspTransportIsManual ? `-rtsp_transport ${monitor.details.rtsp_transport}` : null)
         })
     }
     const getStreamInfoFromProbe = (probeResult) => {
@@ -128,116 +134,6 @@ module.exports = (s,config,lang) => {
             }
         })
     }
-    const getInputTypeFlags = (inputType) => {
-        switch(inputType){
-            case'socket':case'jpeg':case'pipe'://case'webpage':
-                return `-pattern_type glob -f image2pipe -vcodec mjpeg`
-            break;
-            case'mjpeg':
-                return `-reconnect 1 -f mjpeg`
-            break;
-            case'mxpeg':
-                return `-reconnect 1 -f mxg`
-            break;
-            default:
-                return ``
-            break;
-        }
-    }
-    const buildConnectionFlagsFromConfiguration = (monitor) => {
-        const url = s.buildMonitorUrl(monitor);
-        switch(monitor.type){
-            case'dashcam':
-                return `-i -`
-            break;
-            case'socket':case'jpeg':case'pipe'://case'webpage':
-                return `-pattern_type glob -f image2pipe -vcodec mjpeg -i -`
-            break;
-            case'mjpeg':
-                return `-reconnect 1 -f mjpeg -i "${url}"`
-            break;
-            case'mxpeg':
-                return `-reconnect 1 -f mxg -i "${url}"`
-            break;
-            case'rtmp':
-                if(!monitor.details.rtmp_key)monitor.details.rtmp_key = ''
-                return `-i "rtmp://127.0.0.1:1935/${monitor.ke}_${monitor.mid}_${monitor.details.rtmp_key}"`
-            break;
-            case'h264':case'hls':case'mp4':
-                return `-i "${url}"`
-            break;
-            case'local':
-                return `-i "${monitor.path}"`
-            break;
-        }
-    }
-    const hasInputMaps = (e) => {
-        return (e.details.input_maps && e.details.input_maps.length > 0)
-    }
-    const buildInputMap = function(e,arrayOfMaps){
-        //`e` is the monitor object
-        var string = '';
-        if(hasInputMaps(e)){
-            if(arrayOfMaps && arrayOfMaps instanceof Array && arrayOfMaps.length>0){
-                arrayOfMaps.forEach(function(v){
-                    if(v.map==='')v.map='0'
-                    string += ' -map '+v.map
-                })
-            }else{
-                var primaryMap = '0'
-                if(e.details.primary_input && e.details.primary_input !== ''){
-                    var primaryMap = e.details.primary_input || '0'
-                    string += ' -map ' + primaryMap
-                }
-            }
-        }
-        return string;
-    }
-    const buildWatermarkFiltersFromConfiguration = (prefix,monitor,detail,detailKey) => {
-        prefix = prefix ? prefix : ''
-        const parameterContainer = detail ? detailKey ?  monitor.details[detail][detailKey] :  monitor.details[detail] : monitor.details
-        const watermarkLocation = parameterContainer[`${prefix}watermark_location`]
-        //bottom right is default
-        var watermarkPosition = '(main_w-overlay_w-10)/2:(main_h-overlay_h-10)/2'
-        switch(parameterContainer[`${prefix}watermark_position`]){
-            case'tl'://top left
-                watermarkPosition = '10:10'
-            break;
-            case'tr'://top right
-                watermarkPosition = 'main_w-overlay_w-10:10'
-            break;
-            case'bl'://bottom left
-                watermarkPosition = '10:main_h-overlay_h-10'
-            break;
-        }
-        return `movie=${watermarkLocation}[watermark],[in][watermark]overlay=${watermarkPosition}[out]`
-    }
-    const buildRotationFiltersFromConfiguration = (prefix,monitor,detail,detailKey) => {
-        prefix = prefix ? prefix : ''
-        const parameterContainer = detail ? detailKey ?  monitor.details[detail][detailKey] :  monitor.details[detail] : monitor.details
-        const userChoice = parameterContainer[`${prefix}rotate`]
-        switch(userChoice){
-            case'2,transpose=2':
-            case'0':
-            case'1':
-            case'2':
-            case'3':
-                return `transpose=${userChoice}`
-            break;
-        }
-        return ``
-    }
-    const buildTimestampFiltersFromConfiguration = (prefix,monitor,detail,detailKey) => {
-        prefix = prefix ? prefix : ''
-        const parameterContainer = detail ? detailKey ?  monitor.details[detail][detailKey] :  monitor.details[detail] : monitor.details
-        const timestampFont = parameterContainer[`${prefix}timestamp_font`] ? parameterContainer[`${prefix}timestamp_font`] : '/usr/share/fonts/truetype/freefont/FreeSans.ttf'
-        const timestampX = parameterContainer[`${prefix}timestamp_x`] ? parameterContainer[`${prefix}timestamp_x`] : '(w-tw)/2'
-        const timestampY = parameterContainer[`${prefix}timestamp_y`] ? parameterContainer[`${prefix}timestamp_y`] : '0'
-        const timestampColor = parameterContainer[`${prefix}timestamp_color`] ? parameterContainer[`${prefix}timestamp_color`] : 'white'
-        const timestampBackgroundColor = parameterContainer[`${prefix}timestamp_box_color`] ? parameterContainer[`${prefix}timestamp_box_color`] : '0x00000000@1'
-        const timestampFontSize = parameterContainer[`${prefix}timestamp_font_size`] ? parameterContainer[`${prefix}timestamp_font_size`] : '10'
-        return `'drawtext=fontfile=${timestampFont}:text=\'%{localtime}\':x=${timestampX}:y=${timestampY}:fontcolor=${timestampColor}:box=1:boxcolor=${timestampBackgroundColor}:fontsize=${timestampFontSize}`
-    }
     const validateDimensions = (oldWidth,oldHeight) => {
         const width = validateIntValue(oldWidth)
         const height = validateIntValue(oldHeight)
@@ -281,6 +177,177 @@ module.exports = (s,config,lang) => {
             return  p;
         }, {a: ['']}).a
     }
+    //check local ffmpeg
+    const checkForWindows = function(){
+        s.debugLog('ffmpeg.js : checkForWindows')
+        const ffmpegPath = s.mainDirectory + '/ffmpeg/ffmpeg.exe'
+        const hasFfmpeg = s.isWin && fs.existsSync(ffmpegPath)
+        const response = {
+            ok: hasFfmpeg
+        }
+        if (hasFfmpeg) {
+            config.ffmpegDir = ffmpegPath
+        }
+        return response
+    }
+    //check local ffmpeg
+    const checkForUnix = function(){
+        s.debugLog('ffmpeg.js : checkForUnix')
+        const response = {
+            ok: false
+        }
+        if(s.isWin === false){
+            if (fs.existsSync('/usr/bin/ffmpeg')) {
+                response.ok = true
+                config.ffmpegDir = '/usr/bin/ffmpeg'
+            }else{
+                if (fs.existsSync('/usr/local/bin/ffmpeg')) {
+                    response.ok = true
+                    config.ffmpegDir = '/usr/local/bin/ffmpeg'
+                }
+            }
+        }
+        return response
+    }
+    //check node module : ffmpeg-static
+    const checkForNpmStatic = function(){
+        s.debugLog('ffmpeg.js : checkForNpmStatic')
+        const response = {
+            ok: false
+        }
+        try{
+            var staticFFmpeg = require('ffmpeg-static');
+            staticFFmpeg = staticFFmpeg.path ? staticFFmpeg.path : staticFFmpeg
+            if (fs.statSync(staticFFmpeg)) {
+                response.ok = true
+                config.ffmpegDir = staticFFmpeg
+            }else{
+                response.msg = `"ffmpeg-static" from NPM has failed to provide a compatible library or has been corrupted.
+Run "npm uninstall ffmpeg-static" to remove it.
+Run "npm install ffbinaries" to get a different static FFmpeg downloader.`
+            }
+        }catch(err){
+            response.error = err
+            response.msg = 'No "ffmpeg-static".'
+        }
+        return response
+    }
+    //check node module : ffbinaries
+    const checkForFfbinary = function(){
+        s.debugLog('ffmpeg.js : checkForFfbinary')
+        const response = {
+            ok: false
+        }
+        return new Promise((resolve,reject) => {
+            try{
+                ffbinaries = require('ffbinaries')
+                var ffbinaryDir = s.mainDirectory + '/ffmpeg/'
+                if (!fs.existsSync(ffbinaryDir + 'ffmpeg')) {
+                    console.log('ffbinaries : Downloading FFmpeg. Please Wait...');
+                    ffbinaries.downloadBinaries(['ffmpeg', 'ffprobe'], {
+                        destination: ffbinaryDir,
+                        version : '3.4'
+                    },function () {
+                        config.ffmpegDir = ffbinaryDir + 'ffmpeg'
+                        response.msg = 'ffbinaries : FFmpeg Downloaded.'
+                        response.ok = true
+                        resolve(response)
+                    })
+                }else{
+                    response.msg = 'ffbinaries : Found.'
+                    response.ok = true
+                    config.ffmpegDir = ffbinaryDir + 'ffmpeg'
+                    resolve(response)
+                }
+            }catch(err){
+                response.msg = `No "ffbinaries". Continuing.
+Run "npm install ffbinaries" to get this static FFmpeg downloader.`
+                resolve(response)
+            }
+        })
+    }
+    const checkStaticBuilds = async () => {
+        s.debugLog('ffmpeg.js : checkStaticBuilds')
+        const response = {
+            ok: false,
+            msg: []
+        }
+        const ffbinaryCheck = await checkForFfbinary()
+        if(!ffbinaryCheck.ok){
+            // needs ffprobe solution
+            // const npmStaticCheck = checkForNpmStatic()
+            // if(npmStaticCheck.ok){
+            //     response.ok = true
+            // }
+            // if(npmStaticCheck.msg)response.msg.push(npmStaticCheck.msg)
+        }else{
+            response.ok = true
+        }
+        if(ffbinaryCheck.msg)response.msg.push(ffbinaryCheck.msg)
+        return response
+    }
+    //ffmpeg version
+    const checkVersion = function(callback){
+        s.debugLog('ffmpeg.js : checkVersion')
+        const response = {
+            ok: false
+        }
+        try{
+            s.ffmpegVersion = execSync(config.ffmpegDir+" -version").toString().split('Copyright')[0].replace('ffmpeg version','').trim()
+            if(s.ffmpegVersion.indexOf(': 2.')>-1){
+                s.systemLog('FFMPEG is too old : '+s.ffmpegVersion+', Needed : 3.2+',err)
+                throw (new Error())
+            }else{
+                response.ok = true
+            }
+        }catch(err){
+            console.log('No FFmpeg found.')
+            // process.exit()
+        }
+        return response
+    }
+    //check available hardware acceleration methods
+    const checkHwAccelMethods = function(){
+        s.debugLog('ffmpeg.js : checkHwAccelMethods')
+        const response = {
+            ok: true
+        }
+        if(config.availableHWAccels === undefined){
+            const hwAccels = execSync(config.ffmpegDir+" -loglevel quiet -hwaccels").toString().split('\n')
+            hwAccels.shift()
+            availableHWAccels = []
+            hwAccels.forEach(function(method){
+                if(method && method !== '')availableHWAccels.push(method.trim())
+            })
+            config.availableHWAccels = availableHWAccels
+            config.availableHWAccels = ['auto'].concat(config.availableHWAccels)
+            console.log('Available Hardware Acceleration Methods : ',availableHWAccels.join(', '))
+            var methods = {
+                auto: {label:lang['Auto'],value:'auto'},
+                drm: {label:lang['drm'],value:'drm'},
+                cuvid: {label:lang['cuvid'],value:'cuvid'},
+                cuda: {label:lang['cuda'],value:'cuda'},
+                opencl: {label:lang['opencl'],value:'opencl'},
+                vaapi: {label:lang['vaapi'],value:'vaapi'},
+                qsv: {label:lang['qsv'],value:'qsv'},
+                vdpau: {label:lang['vdpau'],value:'vdpau'},
+                dxva2: {label:lang['dxva2'],value:'dxva2'},
+                vdpau: {label:lang['vdpau'],value:'vdpau'},
+                videotoolbox: {label:lang['videotoolbox'],value:'videotoolbox'}
+            }
+            s.listOfHwAccels = []
+            config.availableHWAccels.forEach(function(availibleMethod){
+                if(methods[availibleMethod]){
+                    var method = methods[availibleMethod]
+                    s.listOfHwAccels.push({
+                        name: method.label,
+                        value: method.value,
+                    })
+                 }
+            })
+        }
+        return response
+    }
     return {
         ffprobe: runFFprobe,
         probeMonitor: probeMonitor,
@@ -289,14 +356,16 @@ module.exports = (s,config,lang) => {
         buildMonitorConfigPartialFromWarnings: buildMonitorConfigPartialFromWarnings,
         applyPartialToConfiguration: applyPartialToConfiguration,
         repairConfiguration: repairConfiguration,
-        buildTimestampFiltersFromConfiguration: buildTimestampFiltersFromConfiguration,
-        buildWatermarkFiltersFromConfiguration: buildWatermarkFiltersFromConfiguration,
         validateDimensions: validateDimensions,
-        buildConnectionFlagsFromConfiguration: buildConnectionFlagsFromConfiguration,
-        buildInputMap: buildInputMap,
-        getInputTypeFlags: getInputTypeFlags,
         sanitizedFfmpegCommand: sanitizedFfmpegCommand,
         createPipeArray: createPipeArray,
         splitForFFPMEG: splitForFFPMEG,
+        checkForWindows: checkForWindows,
+        checkForUnix: checkForUnix,
+        checkForNpmStatic: checkForNpmStatic,
+        checkForFfbinary: checkForFfbinary,
+        checkStaticBuilds: checkStaticBuilds,
+        checkVersion: checkVersion,
+        checkHwAccelMethods: checkHwAccelMethods,
     }
 }

@@ -7,35 +7,10 @@ module.exports = function(s,config,lang,app,io){
         addCredentialsToStreamLink,
      } = require('./monitor/utils.js')(s,config,lang)
     const {
+        ffprobe,
         splitForFFPMEG,
     } = require('./ffmpeg/utils.js')(s,config,lang)
     const activeProbes = {}
-    const runFFprobe = (url,auth,callback) => {
-        var endData = {ok: false}
-        if(!url){
-            endData.error = 'Missing URL'
-            callback(endData)
-            return
-        }
-        if(activeProbes[auth]){
-            endData.error = 'Account is already probing'
-            callback(endData)
-            return
-        }
-        activeProbes[auth] = 1
-        const probeCommand = splitForFFPMEG(`-v quiet -print_format json -show_format -show_streams -i "${url}"`).join(' ')
-        exec('ffprobe ' + probeCommand,function(err,stdout,stderr){
-            delete(activeProbes[auth])
-            if(err){
-                endData.error = (err)
-            }else{
-                endData.ok = true
-                endData.result = s.parseJSON(stdout)
-            }
-            endData.probe = probeCommand
-            callback(endData)
-        })
-    }
     const runOnvifScanner = (options,foundCameraCallback) => {
         var ip = options.ip.replace(/ /g,'')
         var ports = options.port.replace(/ /g,'')
@@ -201,7 +176,7 @@ module.exports = function(s,config,lang,app,io){
      */
     app.get(config.webPaths.apiPrefix+':auth/probe/:ke',function (req,res){
         s.auth(req.params,function(user){
-            runFFprobe(req.query.url,req.params.auth,(endData) => {
+            ffprobe(req.query.url,req.params.auth,(endData) => {
                 s.closeJsonResponse(res,endData)
             })
         },res,req);
