@@ -43,5 +43,10 @@ module.exports = {
     },
     copyObject: (obj) => {
         return Object.assign({},obj)
+    },
+    stringContains: (find,string,toLowerCase) => {
+        var newString = string + ''
+        if(toLowerCase)newString = newString.toLowerCase()
+        return newString.indexOf(find) > -1
     }
 }
