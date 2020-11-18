@@ -91,7 +91,7 @@ module.exports = (s,config,lang) => {
                 streamIndex.all.push(simpleInfo)
                 streamIndex[codecType].push(simpleInfo)
             }catch(err){
-                console.log(err)
+                s.debugLog(err)
             }
         })
         if(streamIndex.video.length === 0){

@@ -3,6 +3,9 @@ var execSync = require('child_process').execSync;
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var jsonfile = require("jsonfile");
+const {
+    stringToSqlTime,
+} = require('./common.js')
 module.exports = function(s,config,lang,io){
     const {
         ptzControl
@@ -527,10 +530,10 @@ module.exports = function(s,config,lang,io){
                                             d.eventLimit = parseInt(d.eventLimit);
                                         }
                                         if(!d.eventStartDate&&d.startDate){
-                                            d.eventStartDate = s.stringToSqlTime(d.startDate)
+                                            d.eventStartDate = stringToSqlTime(d.startDate)
                                         }
                                         if(!d.eventEndDate&&d.endDate){
-                                            d.eventEndDate = s.stringToSqlTime(d.endDate)
+                                            d.eventEndDate = stringToSqlTime(d.endDate)
                                         }
                                         var monitorRestrictions = []
                                         var permissions = s.group[d.ke].users[cn.auth].details;
@@ -591,10 +594,10 @@ module.exports = function(s,config,lang,io){
                                             d.videoLimit=d.limit
                                         }
                                         if(!d.videoStartDate&&d.startDate){
-                                            d.videoStartDate = s.stringToSqlTime(d.startDate)
+                                            d.videoStartDate = stringToSqlTime(d.startDate)
                                         }
                                         if(!d.videoEndDate&&d.endDate){
-                                            d.videoEndDate = s.stringToSqlTime(d.endDate)
+                                            d.videoEndDate = stringToSqlTime(d.endDate)
                                         }
                                          var getVideos = function(callback){
                                             var videoWhereQuery = [

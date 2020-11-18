@@ -48,5 +48,9 @@ module.exports = {
         var newString = string + ''
         if(toLowerCase)newString = newString.toLowerCase()
         return newString.indexOf(find) > -1
+    },
+    stringToSqlTime: (value) => {
+        newValue = new Date(value.replace('T',' '))
+        return newValue
     }
 }
