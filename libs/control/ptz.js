@@ -102,7 +102,7 @@ module.exports = function(s,config,lang){
                                         id: options.id,
                                     },(response) => {
                                         if(!response.ok){
-                                            console.log(error)
+                                            s.systemLog(response)
                                         }
                                     })
                                     callback({type: 'Control Triggered'})
@@ -345,6 +345,9 @@ module.exports = function(s,config,lang){
         const largestMatrix = getLargestMatrix(matrices.filter(matrix => matrix.tag === (trackingTarget || 'person')))
         // console.log(matrices.find(matrix => matrix.tag === 'person'))
         if(!largestMatrix)return;
+        const monitorConfig = s.group[event.ke].rawMonitorConfigurations[event.id]
+        const invertedVerticalAxis = monitorConfig.details.control_invert_y === '1'
+        const turnSpeed = parseFloat(monitorConfig.details.control_turn_speed) || 0.1
         const matrixCenterX = largestMatrix.x + (largestMatrix.width / 2)
         const matrixCenterY = largestMatrix.y + (largestMatrix.height / 2)
         const rawDistanceX = (matrixCenterX - imageCenterX)
@@ -356,8 +359,8 @@ module.exports = function(s,config,lang){
         if(axisX !== 0 || axisY !== 0){
             ptzControl({
                 axis: [
-                    {direction: 'x', amount: axisX === 0 ? 0 : axisX > 0 ? 0.01 : -0.01},
-                    {direction: 'y', amount: axisY === 0 ? 0 : axisY > 0 ? 0.01 : -0.01},
+                    {direction: 'x', amount: axisX === 0 ? 0 : axisX > 0 ? turnSpeed : -turnSpeed},
+                    {direction: 'y', amount: axisY === 0 ? 0 : axisY > 0 ? invertedVerticalAxis ? -turnSpeed : turnSpeed : invertedVerticalAxis ? turnSpeed : -turnSpeed},
                     {direction: 'z', amount: 0},
                 ],
                 // axis: [{direction: 'x', amount: 1.0}],
