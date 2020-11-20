@@ -23,6 +23,16 @@ try{
         return console.log(config.plug,'Plugin start has failed. pluginBase.js was not found.')
     }
 }
+const {
+    haltMessage,
+    checkStartTime,
+    setStartTime,
+} = require('../pluginCheck.js')
+if(!checkStartTime()){
+    console.log(haltMessage,new Date())
+    return
+}
+setStartTime()
 // Base Init />>
 
 const ObjectDetectors = require('./ObjectDetectors.js')(config);
