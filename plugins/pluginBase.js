@@ -331,6 +331,9 @@ module.exports = function(__dirname, config){
                 delete(s.connectedClients[cn.id])
             })
         });
+        s.disconnectWebSocket = () => {
+
+        }
     }else{
         //start plugin as client
         var retryConnection = 0
@@ -343,6 +346,11 @@ module.exports = function(__dirname, config){
           var io = require('socket.io-client')('ws://'+config.host+':'+config.port,{
               transports: ['websocket']
           });
+          s.disconnectWebSocket = () => {
+              allowDisconnect = true
+              io.disconnect()
+              console.log('Disconnected Websocket')
+          }
           const onDisconnect = (err) => {
               clearTimeout(clearRetryConnectionTimeout)
               if(io.connected){

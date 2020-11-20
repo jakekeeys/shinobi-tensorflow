@@ -30,6 +30,7 @@ const {
 } = require('../pluginCheck.js')
 if(!checkStartTime()){
     console.log(haltMessage,new Date())
+    s.disconnectWebSocket()
     return
 }
 setStartTime()
