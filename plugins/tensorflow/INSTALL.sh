@@ -102,12 +102,12 @@ else
 		installJetson
 		armAfterInstall
 	fi
-	
+
 	if [ "$installArmFlag" = true ]; then
 		installArm
 		armAfterInstall
 	fi
-	
+
 	if [ "$installGpuFlag" = true ]; then
 		installGpuRoute
 	else
@@ -131,9 +131,9 @@ if [ "$dontCreateKeyFlag" = false ]; then
 	if [ "$installGpuFlag" = true ]; then
 		tfjsBuildVal="gpu"
 	fi
-	
+
 	echo "Adding Random Plugin Key to Main Configuration"
-	node /tools/modifyConfigurationForPlugin.js tensorflow key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}') tfjsBuild=$tfjsBuildVal
+	node $DIR/../../tools/modifyConfigurationForPlugin.js tensorflow key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}') tfjsBuild=$tfjsBuildVal
 fi
 
 echo "TF_FORCE_GPU_ALLOW_GROWTH=true" > "$DIR/.env"
