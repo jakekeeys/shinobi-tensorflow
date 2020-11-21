@@ -1,4 +1,7 @@
 const async = require("async");
+const {
+    stringToSqlTime,
+} = require('../common.js')
 module.exports = function(s,config){
     const runQuery = async.queue(function(data, callback) {
         s.databaseEngine

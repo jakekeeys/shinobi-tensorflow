@@ -1,7 +1,4 @@
 var fs = require('fs');
-const {
-    stringToSqlTime,
-} = require('./common.js')
 module.exports = function(s,config){
     //sql/database connection with knex
     s.databaseOptions = {
