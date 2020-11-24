@@ -1,3 +1,4 @@
+const fs = require('fs');
 const exec = require('child_process').exec;
 const spawn = require('child_process').spawn;
 const treekill = require('tree-kill');
