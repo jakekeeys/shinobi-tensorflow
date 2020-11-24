@@ -422,18 +422,18 @@ $.ccio.tm=function(x,d,z,user){
         break;
         case 'input-map-selector'://Input Map Selector
             if(!d.map){d.map=''}
-            tmp+='     <div class="form-group map-row">'
-            tmp+='        <label><div><span>'+lang['Map']+'</span></div>'
-            tmp+='            <div>'
-            tmp+='            <div class="input-group input-group-sm">'
-            tmp+='<input class="form-control" map-input="map" value="'+d.map+'" placeholder="0">'
-            tmp+='              <div class="input-group-btn">'
-            tmp+='                  <a class="btn btn-danger delete_map_row">&nbsp;<i class="fa fa-trash-o"></i>&nbsp;</a>'
-            tmp+='              </div>'
-            tmp+='            </div>'
-            tmp+='            </div>'
-            tmp+='        </label>'
-            tmp+='      </div>'
+            tmp+=`<div class="form-group map-row">
+              <label><div><span>${lang['Map']}</span></div>
+                  <div>
+                  <div class="input-group input-group-sm">
+                    <input class="form-control" map-input="map" value="${d.map}" placeholder="0">
+                    <div class="input-group-btn">
+                        <a class="btn btn-danger delete_map_row">&nbsp;<i class="fa fa-trash-o"></i>&nbsp;</a>
+                    </div>
+                  </div>
+                  </div>
+              </label>
+            </div>`
         break;
         case 'input-map'://Input Map Options
             var tempID = $.ccio.gid();

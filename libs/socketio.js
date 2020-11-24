@@ -3,6 +3,9 @@ var execSync = require('child_process').execSync;
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var jsonfile = require("jsonfile");
+const {
+    stringToSqlTime,
+} = require('./common.js')
 module.exports = function(s,config,lang,io){
     const {
         ptzControl
@@ -271,44 +274,48 @@ module.exports = function(s,config,lang,io){
                 }
                 if (cb) cb(null, true);
                 cn.on('MP4Command',function(msg){
-                    switch (msg) {
-                        case 'mime' ://client is requesting mime
-                            var mime = mp4frag.mime;
-                            if (mime) {
-                                cn.emit('mime', mime);
-                            } else {
-                                mp4frag.on('initialized', onInitialized);
-                            }
-                        break;
-                        case 'initialization' ://client is requesting initialization segment
-                            cn.emit('initialization', mp4frag.initialization);
-                        break;
-                        case 'segment' ://client is requesting a SINGLE segment
-                            var segment = mp4frag.segment;
-                            if (segment) {
-                                cn.emit('segment', segment);
-                            } else {
-                                mp4frag.once('segment', onSegment);
-                            }
-                        break;
-                        case 'segments' ://client is requesting ALL segments
-                            //send current segment first to start video asap
-                            var segment = mp4frag.segment;
-                            if (segment) {
-                                cn.emit('segment', segment);
-                            }
-                            //add listener for segments being dispatched by mp4frag
-                            mp4frag.on('segment', onSegment);
-                        break;
-                        case 'pause' :
-                            mp4frag.removeListener('segment', onSegment);
-                        break;
-                        case 'resume' :
-                            mp4frag.on('segment', onSegment);
-                        break;
-                        case 'stop' ://client requesting to stop receiving segments
-                            cn.closeSocketVideoStream()
-                        break;
+                    try{
+                        switch (msg) {
+                            case 'mime' ://client is requesting mime
+                                var mime = mp4frag.mime;
+                                if (mime) {
+                                    cn.emit('mime', mime);
+                                } else {
+                                    mp4frag.on('initialized', onInitialized);
+                                }
+                            break;
+                            case 'initialization' ://client is requesting initialization segment
+                                cn.emit('initialization', mp4frag.initialization);
+                            break;
+                            case 'segment' ://client is requesting a SINGLE segment
+                                var segment = mp4frag.segment;
+                                if (segment) {
+                                    cn.emit('segment', segment);
+                                } else {
+                                    mp4frag.once('segment', onSegment);
+                                }
+                            break;
+                            case 'segments' ://client is requesting ALL segments
+                                //send current segment first to start video asap
+                                var segment = mp4frag.segment;
+                                if (segment) {
+                                    cn.emit('segment', segment);
+                                }
+                                //add listener for segments being dispatched by mp4frag
+                                mp4frag.on('segment', onSegment);
+                            break;
+                            case 'pause' :
+                                mp4frag.removeListener('segment', onSegment);
+                            break;
+                            case 'resume' :
+                                mp4frag.on('segment', onSegment);
+                            break;
+                            case 'stop' ://client requesting to stop receiving segments
+                                cn.closeSocketVideoStream()
+                            break;
+                        }
+                    }catch(err){
+                        onFail(err)
                     }
                 })
             }
@@ -516,16 +523,17 @@ module.exports = function(s,config,lang,io){
                             case'get':
                                 switch(d.fff){
                                     case'videos&events':
+                                        const videoSet = d.videoSet
                                         if(!d.eventLimit){
                                             d.eventLimit = 500
                                         }else{
                                             d.eventLimit = parseInt(d.eventLimit);
                                         }
                                         if(!d.eventStartDate&&d.startDate){
-                                            d.eventStartDate = s.stringToSqlTime(d.startDate)
+                                            d.eventStartDate = stringToSqlTime(d.startDate)
                                         }
                                         if(!d.eventEndDate&&d.endDate){
-                                            d.eventEndDate = s.stringToSqlTime(d.endDate)
+                                            d.eventEndDate = stringToSqlTime(d.endDate)
                                         }
                                         var monitorRestrictions = []
                                         var permissions = s.group[d.ke].users[cn.auth].details;
@@ -586,10 +594,10 @@ module.exports = function(s,config,lang,io){
                                             d.videoLimit=d.limit
                                         }
                                         if(!d.videoStartDate&&d.startDate){
-                                            d.videoStartDate = s.stringToSqlTime(d.startDate)
+                                            d.videoStartDate = stringToSqlTime(d.startDate)
                                         }
                                         if(!d.videoEndDate&&d.endDate){
-                                            d.videoEndDate = s.stringToSqlTime(d.endDate)
+                                            d.videoEndDate = stringToSqlTime(d.endDate)
                                         }
                                          var getVideos = function(callback){
                                             var videoWhereQuery = [
@@ -621,7 +629,7 @@ module.exports = function(s,config,lang,io){
                                             s.knexQuery({
                                                 action: "select",
                                                 columns: "*",
-                                                table: "Videos",
+                                                table: videoSet === 'cloud' ? `Cloud Videos` : "Videos",
                                                 where: videoWhereQuery,
                                                 orderBy: ['time','desc'],
                                                 limit: d.videoLimit || '100'
@@ -633,6 +641,7 @@ module.exports = function(s,config,lang,io){
                                                     },2000)
                                                 }else{
                                                     s.buildVideoLinks(r,{
+                                                        videoParam :  videoSet === 'cloud' ? `cloudVideos` : "videos",
                                                         auth : cn.auth
                                                     })
                                                     callback({total:r.length,limit:d.videoLimit,videos:r})
@@ -687,7 +696,12 @@ module.exports = function(s,config,lang,io){
                                 if(cn.jpeg_on !== true){
                                     cn.join('MON_STREAM_'+d.ke+d.id);
                                 }
-                                tx({f:'monitor_watch_on',id:d.id,ke:d.ke})
+                                tx({
+                                    f: 'monitor_watch_on',
+                                    id: d.id,
+                                    ke: d.ke,
+                                    warnings: s.group[d.ke].activeMonitors[d.id].warnings || []
+                                })
                                 s.camera('watch_on',d,cn)
                             break;
                             case'watch_off':

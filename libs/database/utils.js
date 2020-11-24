@@ -1,0 +1,421 @@
+const async = require("async");
+const {
+    stringToSqlTime,
+} = require('../common.js')
+module.exports = function(s,config){
+    const runQuery = async.queue(function(data, callback) {
+        s.databaseEngine
+        .raw(data.query,data.values)
+        .asCallback(callback)
+    }, 4);
+    const mergeQueryValues = function(query,values){
+        if(!values){values=[]}
+        var valuesNotFunction = true;
+        if(typeof values === 'function'){
+            var values = [];
+            valuesNotFunction = false;
+        }
+        if(values&&valuesNotFunction){
+            var splitQuery = query.split('?')
+            var newQuery = ''
+            splitQuery.forEach(function(v,n){
+                newQuery += v
+                var value = values[n]
+                if(value){
+                    if(isNaN(value) || value instanceof Date){
+                        newQuery += "'"+value+"'"
+                    }else{
+                        newQuery += value
+                    }
+                }
+            })
+        }else{
+            newQuery = query
+        }
+        return newQuery
+    }
+    const cleanSqlWhereObject = (where) => {
+        const newWhere = {}
+        Object.keys(where).forEach((key) => {
+            if(key !== '__separator'){
+                const value = where[key]
+                newWhere[key] = value
+            }
+        })
+        return newWhere
+    }
+    const processSimpleWhereCondition = (dbQuery,where,didOne) => {
+        var whereIsArray = where instanceof Array;
+        if(where[0] === 'or' || where.__separator === 'or'){
+            if(whereIsArray){
+                where.shift()
+                dbQuery.orWhere(...where)
+            }else{
+                where = cleanSqlWhereObject(where)
+                dbQuery.orWhere(where)
+            }
+        }else if(!didOne){
+            didOne = true
+            whereIsArray ? dbQuery.where(...where) : dbQuery.where(where)
+        }else{
+            whereIsArray ? dbQuery.andWhere(...where) : dbQuery.andWhere(where)
+        }
+    }
+    const processWhereCondition = (dbQuery,where,didOne) => {
+        var whereIsArray = where instanceof Array;
+        if(!where[0])return;
+        if(where[0] && where[0] instanceof Array){
+            dbQuery.where(function() {
+                var _this = this
+                var didOneInsideGroup = false
+                where.forEach((whereInsideGroup) => {
+                    processWhereCondition(_this,whereInsideGroup,didOneInsideGroup)
+                })
+            })
+        }else if(where[0] && where[0] instanceof Object){
+            dbQuery.where(function() {
+                var _this = this
+                var didOneInsideGroup = false
+                where.forEach((whereInsideGroup) => {
+                    processSimpleWhereCondition(_this,whereInsideGroup,didOneInsideGroup)
+                })
+            })
+        }else{
+            processSimpleWhereCondition(dbQuery,where,didOne)
+        }
+    }
+    const knexError = (dbQuery,options,err) => {
+        console.error('knexError----------------------------------- START')
+        if(config.debugLogVerbose && config.debugLog === true){
+            s.debugLog('s.knexQuery QUERY',JSON.stringify(options,null,3))
+            s.debugLog('STACK TRACE, NOT AN ',new Error())
+        }
+        console.error(err)
+        console.error(dbQuery.toString())
+        console.error('knexError----------------------------------- END')
+    }
+    const knexQuery = (options,callback) => {
+        try{
+            if(!s.databaseEngine)return// console.log('Database Not Set');
+            // options = {
+            //     action: "",
+            //     columns: "",
+            //     table: ""
+            // }
+            var dbQuery
+            switch(options.action){
+                case'select':
+                    options.columns = options.columns.indexOf(',') === -1 ? [options.columns] : options.columns.split(',');
+                    dbQuery = s.databaseEngine.select(...options.columns).from(options.table)
+                break;
+                case'count':
+                    options.columns = options.columns.indexOf(',') === -1 ? [options.columns] : options.columns.split(',');
+                    dbQuery = s.databaseEngine(options.table)
+                    dbQuery.count(options.columns)
+                break;
+                case'update':
+                    dbQuery = s.databaseEngine(options.table).update(options.update)
+                break;
+                case'delete':
+                    dbQuery = s.databaseEngine(options.table)
+                break;
+                case'insert':
+                    dbQuery = s.databaseEngine(options.table).insert(options.insert)
+                break;
+            }
+            if(options.where instanceof Array){
+                var didOne = false;
+                options.where.forEach((where) => {
+                    processWhereCondition(dbQuery,where,didOne)
+                })
+            }else if(options.where instanceof Object){
+                dbQuery.where(options.where)
+            }
+            if(options.action === 'delete'){
+                dbQuery.del()
+            }
+            if(options.orderBy){
+                dbQuery.orderBy(...options.orderBy)
+            }
+            if(options.groupBy){
+                dbQuery.groupBy(options.groupBy)
+            }
+            if(options.limit){
+                if(`${options.limit}`.indexOf(',') === -1){
+                    dbQuery.limit(options.limit)
+                }else{
+                    const limitParts = `${options.limit}`.split(',')
+                    dbQuery.limit(limitParts[1]).offset(limitParts[0])
+                }
+            }
+            if(config.debugLog === true){
+                console.log(dbQuery.toString())
+            }
+            if(callback || options.update || options.insert || options.action === 'delete'){
+                dbQuery.asCallback(function(err,r) {
+                    if(err){
+                        knexError(dbQuery,options,err)
+                    }
+                    if(callback)callback(err,r)
+                    if(config.debugLogVerbose && config.debugLog === true){
+                        s.debugLog('s.knexQuery QUERY',JSON.stringify(options,null,3))
+                        s.debugLog('s.knexQuery RESPONSE',JSON.stringify(r,null,3))
+                        s.debugLog('STACK TRACE, NOT AN ',new Error())
+                    }
+                })
+            }
+            return dbQuery
+        }catch(err){
+            if(callback)callback(err,[])
+            knexError(dbQuery,options,err)
+        }
+    }
+    const getDatabaseRows = function(options,callback){
+        //current cant handle `end` time
+       var whereQuery = [
+           ['ke','=',options.groupKey],
+       ]
+       const monitorRestrictions = options.monitorRestrictions
+       var frameLimit = options.limit
+       const endIsStartTo = options.endIsStartTo
+       const chosenDate = options.date
+       const startDate = options.startDate ? stringToSqlTime(options.startDate) : null
+       const endDate = options.endDate ? stringToSqlTime(options.endDate) : null
+       const startOperator = options.startOperator || '>='
+       const endOperator = options.endOperator || '<='
+       const rowType = options.rowType || 'rows'
+       if(chosenDate){
+           if(chosenDate.indexOf('-') === -1 && !isNaN(chosenDate)){
+               chosenDate = parseInt(chosenDate)
+           }
+           var selectedDate = chosenDate
+           if(typeof chosenDate === 'string' && chosenDate.indexOf('.') > -1){
+               selectedDate = chosenDate.split('.')[0]
+           }
+           selectedDate = new Date(selectedDate)
+           var utcSelectedDate = new Date(selectedDate.getTime() + selectedDate.getTimezoneOffset() * 60000)
+           startDate = moment(utcSelectedDate).format('YYYY-MM-DD HH:mm:ss')
+           var dayAfter = utcSelectedDate
+           dayAfter.setDate(dayAfter.getDate() + 1)
+           endDate = moment(dayAfter).format('YYYY-MM-DD HH:mm:ss')
+       }
+       if(startDate){
+           if(endDate){
+               whereQuery.push(['time',startOperator,startDate])
+               whereQuery.push([endIsStartTo ? 'time' : 'end',endOperator,endDate])
+           }else{
+               whereQuery.push(['time',startOperator,startDate])
+           }
+       }
+       if(monitorRestrictions && monitorRestrictions.length > 0){
+           whereQuery.push(monitorRestrictions)
+       }
+       if(options.archived){
+           whereQuery.push(['details','LIKE',`%"archived":"1"%`])
+       }
+       if(options.filename){
+           whereQuery.push(['filename','=',options.filename])
+           frameLimit = "1";
+       }
+       options.orderBy = options.orderBy ? options.orderBy : ['time','desc']
+       if(options.count)options.groupBy = options.groupBy ? options.groupBy : options.orderBy[0]
+       knexQuery({
+           action: options.count ? "count" : "select",
+           columns: options.columns || "*",
+           table: options.table,
+           where: whereQuery,
+           orderBy: options.orderBy,
+           groupBy: options.groupBy,
+           limit: frameLimit || '500'
+       },(err,r) => {
+           if(err){
+               callback({
+                   ok: false,
+                   total: 0,
+                   limit: frameLimit,
+                   [rowType]: []
+               })
+           }else{
+               r.forEach(function(file){
+                   file.details = s.parseJSON(file.details)
+               })
+               callback({
+                   ok: true,
+                   total: r.length,
+                   limit: frameLimit,
+                   [rowType]: r
+               })
+           }
+       })
+    }
+    const sqlQuery = (query,values,onMoveOn,hideLog) => {
+        if(!values){values=[]}
+        if(typeof values === 'function'){
+            var onMoveOn = values;
+            var values = [];
+        }
+        if(!onMoveOn){onMoveOn=function(){}}
+        // if(s.databaseOptions.client === 'pg'){
+        //     query = query
+        //         .replace(/ NOT LIKE /g," NOT ILIKE ")
+        //         .replace(/ LIKE /g," ILIKE ")
+        // }
+        if(config.debugLog === true){
+            var mergedQuery = mergeQueryValues(query,values)
+            s.debugLog('s.sqlQuery QUERY',mergedQuery)
+        }
+        if(!s.databaseEngine || !s.databaseEngine.raw){
+            s.connectDatabase()
+        }
+        return runQuery.push({
+            query: query,
+            values: values
+        },function(err,r){
+            if(err && !hideLog){
+                console.log('s.sqlQuery QUERY ERRORED',query)
+                console.log('s.sqlQuery ERROR',err)
+            }
+            if(onMoveOn && typeof onMoveOn === 'function'){
+                switch(s.databaseOptions.client){
+                    case'sqlite3':
+                        if(!r)r=[]
+                    break;
+                    default:
+                        if(r)r=r[0]
+                    break;
+                }
+                onMoveOn(err,r)
+            }
+        })
+    }
+    const sqlQueryBetweenTimesWithPermissions = (options,callback) => {
+        // options = {
+        //     table: 'Events Counts',
+        //     user: user,
+        //     monitorId: req.params.id,
+        //     startTime: req.query.start,
+        //     endTime: req.query.end,
+        //     startTimeOperator: req.query.startOperator,
+        //     endTimeOperator: req.query.endOperator,
+        //     limit: req.query.limit,
+        //     archived: req.query.archived,
+        //     endIsStartTo: !!req.query.endIsStartTo,
+        //     parseRowDetails: true,
+        //     rowName: 'counts'
+        // }
+        const rowName = options.rowName || 'rows'
+        const preliminaryValidationFailed = options.preliminaryValidationFailed || false
+        if(preliminaryValidationFailed){
+            if(options.noFormat){
+                callback([]);
+            }else{
+                callback({
+                    ok: true,
+                    [rowName]: [],
+                })
+            }
+            return
+        }
+        const user = options.user
+        const groupKey = options.groupKey
+        const monitorId = options.monitorId
+        const archived = options.archived
+        const theTableSelected = options.table
+        const endIsStartTo = options.endIsStartTo
+        const userDetails = user.details
+        var endTime = options.endTime
+        var startTimeOperator = options.startTimeOperator
+        var endTimeOperator = options.endTimeOperator
+        var startTime = options.startTime
+        var limitString = `${options.limit}`
+        const monitorRestrictions = s.getMonitorRestrictions(options.user.details,monitorId)
+        getDatabaseRows({
+            monitorRestrictions: monitorRestrictions,
+            table: theTableSelected,
+            groupKey: groupKey,
+            startDate: startTime,
+            endDate: endTime,
+            startOperator: startTimeOperator,
+            endOperator: endTimeOperator,
+            limit: options.limit,
+            archived: archived,
+            rowType: rowName,
+            endIsStartTo: endIsStartTo
+        },(response) => {
+            const limit = response.limit
+            const r = response[rowName];
+            if(!r){
+                callback({
+                    total: 0,
+                    limit: response.limit,
+                    skip: 0,
+                    [rowName]: []
+                });
+                return
+            }
+            if(options.parseRowDetails){
+                r.forEach((row) => {
+                    row.details = JSON.parse(row.details)
+                })
+            }
+            if(options.noCount){
+                if(options.noFormat){
+                    callback(r)
+                }else{
+                    callback({
+                        ok: true,
+                        limit: response.limit,
+                        [rowName]: r,
+                        endIsStartTo: endIsStartTo
+                    })
+                }
+            }else{
+                getDatabaseRows({
+                    monitorRestrictions: monitorRestrictions,
+                    columns: 'time',
+                    count: true,
+                    table: theTableSelected,
+                    groupKey: groupKey,
+                    startDate: startTime,
+                    endDate: endTime,
+                    startOperator: startTimeOperator,
+                    endOperator: endTimeOperator,
+                    archived: archived,
+                    type: 'count',
+                    endIsStartTo: endIsStartTo
+                },(response) => {
+                    const count = response.count
+                    var skipOver = 0
+                    if(limitString.indexOf(',') > -1){
+                        skipOver = parseInt(limitString.split(',')[0])
+                        limitString = parseInt(limitString.split(',')[1])
+                    }else{
+                        limitString = parseInt(limitString)
+                    }
+                    callback({
+                        total: response['count(*)'],
+                        limit: response.limit,
+                        skip: skipOver,
+                        [rowName]: r,
+                        endIsStartTo: endIsStartTo
+                    })
+                })
+            }
+        })
+    }
+    const connectDatabase = function(){
+        s.databaseEngine = require('knex')(s.databaseOptions)
+    }
+    return {
+        knexQuery: knexQuery,
+        knexError: knexError,
+        cleanSqlWhereObject: cleanSqlWhereObject,
+        processSimpleWhereCondition: processSimpleWhereCondition,
+        processWhereCondition: processWhereCondition,
+        mergeQueryValues: mergeQueryValues,
+        getDatabaseRows: getDatabaseRows,
+        sqlQuery: sqlQuery,
+        connectDatabase: connectDatabase,
+        sqlQueryBetweenTimesWithPermissions: sqlQueryBetweenTimesWithPermissions,
+    }
+}

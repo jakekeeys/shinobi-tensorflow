@@ -1,16 +1,16 @@
 //
-// Shinobi
+// Shinobi - Open Source Video Management System
 // Copyright (C) 2020 Moe Alam, moeiscool
 //
+// # Supporting Shinobi Development
 //
-// # Donate
-//
-// If you like what I am doing here and want me to continue please consider donating :)
+// If you would like to support Shinobi please consider subscribing to a Mobile License :)
+// Subscribe : https://licenses.shinobi.video/subscribe?planSubscribe=plan_G31AZ9mknNCa6z
 // PayPal : paypal@m03.ca
 //
-var io = new (require('socket.io'))()
+const io = new (require('socket.io'))()
 //process handlers
-var s = require('./libs/process.js')(process,__dirname)
+const s = require('./libs/process.js')(process,__dirname)
 //load extender functions
 require('./libs/extenders.js')(s)
 //configuration loader
@@ -22,19 +22,17 @@ var lang = require('./libs/language.js')(s,config)
 //working directories : videos, streams, fileBin..
 require('./libs/folders.js')(s,config,lang)
 //code test module
-require('./libs/codeTester.js')(s,config,lang)
+// require('./libs/codeTester.js')(s,config,lang)
 //get version
 require('./libs/version.js')(s,config,lang)
 //video processing engine
-require('./libs/ffmpeg.js')(s,config,lang,async function(ffmpeg){
-    //ffmpeg coProcessor
-    require('./libs/ffmpegCoProcessor.js')(s,config,lang,ffmpeg)
+require('./libs/ffmpeg.js')(s,config,lang, async () => {
     //database connection : mysql, sqlite3..
     require('./libs/sql.js')(s,config)
     //authenticator functions : API, dashboard login..
     require('./libs/auth.js')(s,config,lang)
     //express web server with ejs
-    var app = require('./libs/webServer.js')(s,config,lang,io)
+    const app = require('./libs/webServer.js')(s,config,lang,io)
     //web server routes : page handling..
     require('./libs/webServerPaths.js')(s,config,lang,app,io)
     //web server routes for streams : streams..

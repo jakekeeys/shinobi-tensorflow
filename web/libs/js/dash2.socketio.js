@@ -269,8 +269,20 @@ $.ccio.globalWebsocket=function(d,user){
             if(d.e.length === 1){
                 $.ccio.init('closeVideo',{mid:d.id,ke:d.ke},user);
             }
+            console.log(d.warnings)
             if(d.e.length === 0){
                 $.ccio.tm(2,$.ccio.mon[d.ke+d.id+user.auth_token],'#monitors_live',user);
+                $.each(d.warnings,function(n,warning){
+                    console.log(warning)
+                    $.logWriter.draw('[mid="'+d.id+'"][ke="'+d.ke+'"][auth="'+user.auth_token+'"]',{
+                        mid: d.id,
+                        ke: d.ke,
+                        log: {
+                            type: warning.title,
+                            msg: warning.text,
+                        }
+                    },user)
+                })
             }
             d.d=JSON.parse($.ccio.mon[d.ke+d.id+user.auth_token].details);
             $.ccio.tm('stream-element',$.ccio.mon[d.ke+d.id+user.auth_token],null,user);

@@ -39,7 +39,10 @@ module.exports = function(s,config,lang){
             }else{
                 queryString = ''
             }
-            if(!v.ext && v.href){
+            if(details.type === 'googd'){
+                v.ext = v.ext ? v.ext : 'mp4'
+                v.href = undefined
+            }else if(!v.ext && v.href){
                 v.ext = v.href.split('.')
                 v.ext = v.ext[v.ext.length - 1]
             }
@@ -262,8 +265,7 @@ module.exports = function(s,config,lang){
                     })
                 })
             }else{
-                console.log(new Error())
-                console.log(lang['Database row does not exist'],queryValues)
+                console.log(lang['Database row does not exist'],whereQuery)
             }
         })
     }
@@ -343,7 +345,7 @@ module.exports = function(s,config,lang){
     s.deleteVideoFromCloudExtensionsRunner = function(e,storageType,video){
         // e = user
         if(!storageType){
-            var videoDetails = JSON.parse(r.details)
+            var videoDetails = JSON.parse(video.details)
             videoDetails.type = videoDetails.type || 's3'
         }
         if(s.deleteVideoFromCloudExtensions[storageType]){
@@ -374,12 +376,13 @@ module.exports = function(s,config,lang){
         },(err,r) => {
             if(r&&r[0]){
                 r = r[0]
+                var details = s.parseJSON(r.details) || {}
                 s.knexQuery({
                     action: "delete",
                     table: "Cloud Videos",
                     where: whereQuery
-                },(err,r) => {
-                    s.deleteVideoFromCloudExtensionsRunner(e,r)
+                },(err) => {
+                    s.deleteVideoFromCloudExtensionsRunner(e,details.type || 's3',r)
                 })
             }else{
 //                    console.log('Delete Failed',e)
@@ -410,27 +413,31 @@ module.exports = function(s,config,lang){
                     }
                     fiveRecentFiles.forEach(function(filename){
                         if(/T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]./.test(filename)){
-                            s.knexQuery({
-                                action: "select",
-                                columns: "*",
-                                table: "Videos",
-                                where: [
-                                    ['ke','=',monitor.ke],
-                                    ['mid','=',monitor.mid],
-                                    ['time','=',s.nameToTime(filename)],
-                                ],
-                                limit: 1
-                            },(err,rows) => {
-                                if(!err && (!rows || !rows[0])){
-                                    ++orphanedFilesCount
-                                    var video = rows[0]
-                                    s.insertCompletedVideo(monitor,{
-                                        file : filename
-                                    },() => {
-                                        fileComplete()
+                            fs.stat(videosDirectory + filename,(err,stats) => {
+                                if(!err && stats.size > 10){
+                                    s.knexQuery({
+                                        action: "select",
+                                        columns: "*",
+                                        table: "Videos",
+                                        where: [
+                                            ['ke','=',monitor.ke],
+                                            ['mid','=',monitor.mid],
+                                            ['time','=',s.nameToTime(filename)],
+                                        ],
+                                        limit: 1
+                                    },(err,rows) => {
+                                        if(!err && (!rows || !rows[0])){
+                                            ++orphanedFilesCount
+                                            var video = rows[0]
+                                            s.insertCompletedVideo(monitor,{
+                                                file : filename
+                                            },() => {
+                                                fileComplete()
+                                            })
+                                        }else{
+                                            fileComplete()
+                                        }
                                     })
-                                }else{
-                                    fileComplete()
                                 }
                             })
                         }

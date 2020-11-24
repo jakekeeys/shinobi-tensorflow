@@ -472,11 +472,11 @@ module.exports = function(s,config,lang){
                       "form-group-class": "input-mapping",
                       "possible": [
                            {
-                              "name": lang['All streams in first feed'] + "(0)",
+                              "name": lang['All streams in first feed'] + '(0, ' + lang.Default + ')',
                               "value": "0"
                            },
                            {
-                              "name": lang['First stream in feed'] + '(0:0, ' + lang.Default + ')',
+                              "name": lang['First stream in feed'] + '(0:0)',
                               "value": "0:0"
                            },
                            {
@@ -681,25 +681,6 @@ module.exports = function(s,config,lang){
                          "example": "",
                          "form-group-class": "h_gpud_input h_gpud_1",
                          "possible": ""
-                     },
-                     {
-                         "name": "detail=use_coprocessor",
-                         "field": lang['Use coProcessor'],
-                         "description": "",
-                         "default": "",
-                         "example": "",
-                         "fieldType": "select",
-                         "form-group-class": "h_gpud_input h_gpud_1",
-                         "possible": [
-                            {
-                               "name": lang.No,
-                               "value": "0",
-                            },
-                            {
-                               "name": lang.Yes,
-                               "value": "1",
-                            }
-                         ]
                      },
                      {
                          "fieldType": 'div',
@@ -1006,7 +987,7 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
-                      "name": "detail=rotate_stream",
+                      "name": "detail=stream_rotate",
                       "field": lang["Rotate"],
                       "description": "Change the viewing angle of the video stream.",
                       "default": "",
@@ -1067,7 +1048,7 @@ module.exports = function(s,config,lang){
                       ]
                    },
                    {
-                      "name": "detail=svf",
+                      "name": "detail=stream_vf",
                       "field": lang["Video Filter"],
                       "description": "Place FFMPEG video filters in this box to affect the streaming portion. No spaces.",
                       "default": "",
@@ -1606,7 +1587,7 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
-                      "name": "detail=rotate_record",
+                      "name": "detail=rotate",
                       "field": lang["Rotate"],
                       "description": "Change the recording angle of the video stream.",
                       "default": "copy",
@@ -2587,7 +2568,7 @@ module.exports = function(s,config,lang){
                    },
                    {
                       "name": "detail=use_detector_filters",
-                      "field": lang['Detector Filters'],
+                      "field": lang['Event Filters'],
                       "description": "",
                       "default": "0",
                       "example": "",
@@ -2997,6 +2978,7 @@ module.exports = function(s,config,lang){
                       headerTitle: `${lang['Object Detection']} <small><b class="shinobi-detector_name"></b> <b class="shinobi-detector-invert">${lang['Not Connected']}</b><b class="shinobi-detector" style="display:none">${lang['Connected']}</b></small>`,
                       isFormGroupGroup: true,
                       isSection: true,
+                      "input-mapping": "detector_object",
                       "section-class": "h_det_input h_det_1",
                       "info": [
                           {
@@ -3204,7 +3186,7 @@ module.exports = function(s,config,lang){
                    {
                        hidden: true,
                       "name": lang['Traditional Recording'],
-
+                      "input-mapping": "detector_sip_buffer",
                       "color": "orange",
                       id: "monSectionDetectorTraditionalRecording",
                       isSection: true,
@@ -3435,6 +3417,15 @@ module.exports = function(s,config,lang){
                        "field": lang['URL Stop Timeout'],
                        "description": "",
                        "default": "1000",
+                       "example": "",
+                       "form-group-class": "h_cs_input h_cs_1",
+                       "possible": ""
+                    },
+                    {
+                       "name": "detail=control_turn_speed",
+                       "field": lang['Turn Speed'],
+                       "description": "",
+                       "default": "0.1",
                        "example": "",
                        "form-group-class": "h_cs_input h_cs_1",
                        "possible": ""

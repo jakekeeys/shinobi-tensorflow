@@ -82,7 +82,7 @@ RUN apt install -y \
 
 WORKDIR /home/Shinobi
 COPY . .
-RUN rm -rf /home/Shinobiplugins
+#RUN rm -rf /home/Shinobi/plugins
 COPY ./plugins  /home/Shinobi/plugins
 RUN chmod -R 777 /home/Shinobi/plugins
 RUN npm i npm@latest -g && \

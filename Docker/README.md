@@ -46,14 +46,25 @@ More Information about this plugin :
 git clone -b dev https://gitlab.com/Shinobi-Systems/Shinobi.git ShinobiSource
 ```
 
-2. Enter Repo and Build Image.
+2. Enter repository.
 
 ```
 cd ShinobiSource
+```
+
+3. Build Image.
+
+```
 docker build --tag shinobi-image:1.0 .
 ```
 
-3. Create a container with the image.
+**Running on ARM32v7?** Run this instead.
+
+```
+docker build -f Dockerfile.arm32v7 --tag shinobi-image:1.0 .
+```
+
+4. Create a container with the image.
 
 > This command only works on Linux because of the temporary directory used. This location must exist in RAM. `-v "/dev/shm/shinobiStreams":'/dev/shm/streams':'rw'`. The timezone is also acquired from the host by the volume declaration of `-v '/etc/localtime':'/etc/localtime':'ro'`.
 

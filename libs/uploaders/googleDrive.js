@@ -88,7 +88,7 @@ module.exports = (s,config,lang,app,io) => {
             }else{
                 oAuth2Client = s.group[e.ke].googleDriveOAuth2Client
             }
-            if(userDetails.googd_code && userDetails.googd_code !== 'Authorized. Token Set.' && !s.group[e.ke].googleDrive){
+            if(userDetails.googd_code && userDetails.googd_code !== 'Authorized. Token Set.' && userDetails.googd_code !== '***************' && !s.group[e.ke].googleDrive){
                 oAuth2Client.getToken(userDetails.googd_code, (err, token) => {
                     if (err) return console.error('Error retrieving access token', err)
                     oAuth2Client.setCredentials(token)
@@ -97,7 +97,7 @@ module.exports = (s,config,lang,app,io) => {
                         uid: e.uid,
                         form: {
                             details: JSON.stringify(Object.assign(userDetails,{
-                                googd_code: 'Authorized. Token Set.',
+                                googd_code: '***************',
                                 googd_token: token,
                             }))
                         },
@@ -115,10 +115,10 @@ module.exports = (s,config,lang,app,io) => {
         s.group[user.ke].googleDrive = null
         s.group[user.ke].googleDriveOAuth2Client = null
     }
-    var deleteVideoFromGoogleDrive = function(e,video,callback){
+    var deleteVideoFromGoogleDrive = function(groupKey,video,callback){
         // e = user
         var videoDetails = s.parseJSON(video.details)
-        s.group[e.ke].googleDrive.files.delete({
+        s.group[groupKey].googleDrive.files.delete({
             fileId: videoDetails.id
         }, function(err, resp){
             if (err) {
@@ -334,7 +334,7 @@ module.exports = (s,config,lang,app,io) => {
            {
                "hidden": true,
               "fieldType": "btn",
-              "attribute": `style="margin-bottom:1em" href="javascript:$.get(getApiPrefix() + '/googleDriveOAuthRequest/' + $user.ke,function(data){if(data.ok)window.open(data.authUrl, 'Google Drive Authentication', 'width=800,height=400');})"`,
+              "attribute": `style="margin-bottom:1em" href="javascript:$.get(getApiPrefix() + '/googleDriveOAuthRequest/' + $user.ke,function(data){window.open(data.ok ? data.authUrl : 'https://hub.shinobi.video/articles/view/oEIDEGXLlzmSsCk', 'Google Drive', 'width=800,height=400');})"`,
               "class": `btn-success`,
               "form-group-class": "autosave_googd_input autosave_googd_1",
               "btnContent": `<i class="fa fa-plus"></i> &nbsp; ${lang['Get Code']}`,

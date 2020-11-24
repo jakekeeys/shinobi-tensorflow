@@ -52,11 +52,6 @@ module.exports = function(s,config){
         }
         return json
     }
-    s.stringContains = function(find,string,toLowerCase){
-        var newString = string + ''
-        if(toLowerCase)newString = newString.toLowerCase()
-        return newString.indexOf(find) > -1
-    }
     s.addUserPassToUrl = function(url,user,pass){
         var splitted = url.split('://')
         splitted[1] = user + ':' + pass + '@' + splitted[1]
@@ -148,44 +143,6 @@ module.exports = function(s,config){
         }
     }else{
         s.timeObject = moment
-    }
-    s.ipRange=function(start_ip, end_ip) {
-      var start_long = s.toLong(start_ip);
-      var end_long = s.toLong(end_ip);
-      if (start_long > end_long) {
-        var tmp=start_long;
-        start_long=end_long
-        end_long=tmp;
-      }
-      var range_array = [];
-      var i;
-      for (i=start_long; i<=end_long;i++) {
-        range_array.push(s.fromLong(i));
-      }
-      return range_array;
-    }
-    s.portRange=function(lowEnd,highEnd){
-        var list = [];
-        for (var i = lowEnd; i <= highEnd; i++) {
-            list.push(i);
-        }
-        return list;
-    }
-    //toLong taken from NPM package 'ip'
-    s.toLong=function(ip) {
-      var ipl = 0;
-      ip.split('.').forEach(function(octet) {
-        ipl <<= 8;
-        ipl += parseInt(octet);
-      });
-      return(ipl >>> 0);
-    }
-    //fromLong taken from NPM package 'ip'
-    s.fromLong=function(ipl) {
-      return ((ipl >>> 24) + '.' +
-          (ipl >> 16 & 255) + '.' +
-          (ipl >> 8 & 255) + '.' +
-          (ipl & 255) );
     }
     s.getFunctionParamNames = function(func) {
       var fnStr = func.toString().replace(/((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg, '');
