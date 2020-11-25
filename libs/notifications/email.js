@@ -10,7 +10,9 @@ module.exports = function(s,config,lang){
             if(config.mail.from === undefined){config.mail.from = '"ShinobiCCTV" <no-reply@shinobi.video>'}
             s.nodemailer = require('nodemailer').createTransport(config.mail);
         }
-        const sendMessage = s.nodemailer.sendMail
+        const sendMessage = (...args) => {
+            return s.nodemailer.sendMail(...args)
+        }
         const onDetectorNoTriggerTimeoutForEmail = function(e){
             //e = monitor object
             if(config.mail && e.details.detector_notrigger_mail === '1'){
