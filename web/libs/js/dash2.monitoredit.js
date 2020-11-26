@@ -401,6 +401,105 @@ var drawList = function(){
     })
     list.html(html)
 }
+var getAllFieldsFromDefintions = function(){
+    var container = $.ccio.definitions['Monitor Settings']
+    var fieldIndex = {}
+    var blocks = container.blocks
+    $.each(blocks,function(n,block){
+        var info = block.info
+        if(info){
+            $.each(info,function(n,fieldItem){
+                var fieldName = fieldItem.name
+                if(fieldName && fieldItem.field){
+                    // if(fieldName.indexOf('detail=') > -1){
+                    //     fieldIndex.details[fieldName.split('detail=')[1]] = fieldItem
+                    // }else{
+                        fieldIndex[fieldName] = fieldItem
+                    // }
+                }
+            })
+        }
+    })
+    return fieldIndex
+}
+var getSelectorsThatHideThings = function(fieldIndex){
+    var selectors = []
+    $.each(fieldIndex,function(name,fieldItem){
+        var selectorKey = fieldItem.selector
+        if(selectorKey){
+            selectors.push(selectorKey)
+        }
+    })
+    return selectors
+}
+var isFieldItemHidden = function(fieldItem,chosenFieldValue){
+    if(!fieldItem) return true;
+    var classWrapper = fieldItem['form-group-class']
+    var classWrapper2 = fieldItem['form-group-class-pre-layer']
+    var classWrapper3 = fieldItem['form-group-class-pre-pre-layer']
+    var isDetail = fieldItem.name.indexOf('detail=') > -1
+    var isHidden = true
+    var checkClassWrapper = function(classString){
+        var inputClassMatch = false
+        var valueClassMatch = false
+        var pieces = classString.split(' ')
+        $.each(selectorHideKeys,function(n,hideKey){
+            $.each(pieces,function(n,piece){
+                if(piece.indexOf(hideKey + '_input') > -1){
+                    inputClassMatch = true
+                }
+                if(inputClassMatch && piece.indexOf(hideKey + '_' + chosenFieldValue) > -1){
+                    valueClassMatch = true
+                }
+            })
+        })
+        return valueClassMatch
+    }
+    if(classWrapper || classWrapper2 || classWrapper3){
+        $.each([
+            classWrapper,
+            classWrapper2,
+            classWrapper3,
+        ],function(n,classString){
+            if(classString && !checkClassWrapper(classString)){
+                isHidden = false
+            }
+        })
+    }else if(!fieldItem.hidden){
+        isHidden = false
+    }
+    console.log(fieldItem,isHidden)
+    return isHidden
+}
+var showRelevantFormFields = function(monitorConfig){
+    var cleanedMonitorConfig = $.ccio.init('cleanMon',monitorConfig)
+    $.each(cleanedMonitorConfig,function(key,value){
+        if(key === 'details'){
+            $.each($.parseJSON(value),function(detailKey,detailValue){
+                var fieldItem = currentFields['detail=' + detailKey]
+                console.log(detailKey,fieldItem)
+                var fieldElement = editorForm.find(`[detail=${detailKey}]`).parent('.form-group')
+                if(isFieldItemHidden(fieldItem,detailValue)){
+                    fieldElement.hide()
+                }else{
+                    fieldElement.show()
+                }
+            })
+        }else{
+            var fieldItem = currentFields[key]
+            console.log(key,fieldItem)
+            var fieldElement = editorForm.find(`[name=${key}]`).parent('.form-group')
+            if(isFieldItemHidden(fieldItem,value)){
+                fieldElement.hide()
+            }else{
+                fieldElement.show()
+            }
+        }
+    })
+}
+var currentFields = getAllFieldsFromDefintions()
+console.log(currentFields)
+var selectorHideKeys = getSelectorsThatHideThings(currentFields)
 monitorEditorWindow.on('shown.bs.modal', function () {
     drawList()
 })
@@ -412,7 +511,7 @@ $.aM.import = function(options){
     monitorEditorWindow.find('.edit_id').text(monitorConfig.mid);
     monitorEditorWindow.attr('mid',monitorConfig.mid).attr('ke',monitorConfig.ke).attr('auth',monitorConfig.auth || $user.auth_token)
     $.each(monitorConfig,function(n,v){
-        monitorEditorWindow.find('[name="'+n+'"]').val(v).change()
+        monitorEditorWindow.find('[name="'+n+'"]').val(v)
     })
     var monitorDetails = $.parseJSON(monitorConfig.details);
     //get maps
@@ -430,7 +529,7 @@ $.aM.import = function(options){
                 var tempID = $.ccio.tm('input-map')
                 var parent = $('#monSectionMap'+tempID)
                 $.each(v,function(m,b){
-                    parent.find('[map-detail="'+m+'"]').val(b).change()
+                    parent.find('[map-detail="'+m+'"]').val(b)
                 })
             })
         }else{
@@ -478,7 +577,7 @@ $.aM.import = function(options){
         if(v instanceof Object){
             theVal = JSON.stringify(v);
         }
-        monitorEditorWindow.find('[detail="'+n+'"]').val(theVal).change();
+        monitorEditorWindow.find('[detail="'+n+'"]').val(theVal);
     });
     $.each(monitorDetails,function(n,v){
         try{
@@ -547,6 +646,7 @@ $.aM.import = function(options){
     })
     monitorsForCopy.find('optgroup').html(tmp)
     drawList()
+    showRelevantFormFields(monitorConfig)
 }
 //parse "Automatic" field in "Input" Section
 monitorEditorWindow.on('change','.auto_host_fill input,.auto_host_fill select',function(e){
@@ -576,7 +676,7 @@ monitorEditorWindow.on('change','[detail="auto_host"]',function(e){
         return
     }
     if(inputType === 'local'){
-        monitorEditorWindow.find('[name="path"]').val(url).change()
+        monitorEditorWindow.find('[name="path"]').val(url)
     }else{
         var urlSplitByDots = url.split('.')
         var has = function(query,searchIn){if(!searchIn){searchIn=url;};return url.indexOf(query)>-1}
@@ -602,17 +702,17 @@ monitorEditorWindow.on('change','[detail="auto_host"]',function(e){
         if(url.indexOf('?') > -1){
             pathname += '?'+url.split('?')[1]
         }
-        monitorEditorWindow.find('[name="protocol"]').val(protocol).change()
+        monitorEditorWindow.find('[name="protocol"]').val(protocol)
         if(isRTSP){
-            monitorEditorWindow.find('[detail="rtsp_transport"]').val('tcp').change()
-            monitorEditorWindow.find('[detail="aduration"]').val(1000000).change()
-            monitorEditorWindow.find('[detail="probesize"]').val(1000000).change()
+            monitorEditorWindow.find('[detail="rtsp_transport"]').val('tcp')
+            monitorEditorWindow.find('[detail="aduration"]').val(1000000)
+            monitorEditorWindow.find('[detail="probesize"]').val(1000000)
         }
-        monitorEditorWindow.find('[detail="muser"]').val(parsedURL.username).change()
-        monitorEditorWindow.find('[detail="mpass"]').val(parsedURL.password).change()
-        monitorEditorWindow.find('[name="host"]').val(parsedURL.hostname).change()
-        monitorEditorWindow.find('[name="port"]').val(parsedURL.port).change()
-        monitorEditorWindow.find('[name="path"]').val(pathname).change()
+        monitorEditorWindow.find('[detail="muser"]').val(parsedURL.username)
+        monitorEditorWindow.find('[detail="mpass"]').val(parsedURL.password)
+        monitorEditorWindow.find('[name="host"]').val(parsedURL.hostname)
+        monitorEditorWindow.find('[name="port"]').val(parsedURL.port)
+        monitorEditorWindow.find('[name="path"]').val(pathname)
         delete(parsedURL)
     }
 })
@@ -685,7 +785,7 @@ monitorEditorWindow.on('change','[map-detail]',function(){
         });
         selectedMaps.push(map)
     });
-    monitorEditorWindow.find('[detail="input_maps"]').val(JSON.stringify(selectedMaps)).change()
+    monitorEditorWindow.find('[detail="input_maps"]').val(JSON.stringify(selectedMaps))
 })
 monitorEditorWindow.on('click','[input-mapping] .add_map_row',function(){
     $.ccio.tm('input-map-selector',{},$(this).parents('[input-mapping]').find('.choices'))
@@ -865,29 +965,32 @@ monitorEditorWindow.find('.add_map').click(function(e){
 monitorEditorWindow.find('.add_channel').click(function(e){
     $.ccio.tm('stream-channel')
 });
-editorForm.find('[detail="stream_type"]').change(function(e){
-    var el = $(this);
-    if(el.val()==='jpeg')editorForm.find('[detail="snap"]').val('1').change()
-})
-editorForm.find('[name="type"]').change(function(e){
-    var el = $(this);
-    if(el.val()==='h264')editorForm.find('[name="protocol"]').val('rtsp').change()
-})
+// editorForm.find('[detail="stream_type"]').change(function(e){
+//     var el = $(this);
+//     if(el.val()==='jpeg')editorForm.find('[detail="snap"]').val('1').change()
+// })
+// editorForm.find('[name="type"]').change(function(e){
+//     var el = $(this);
+//     if(el.val()==='h264')editorForm.find('[name="protocol"]').val('rtsp').change()
+// })
 editorForm.find('[detail]').change($.ccio.form.details)
 editorForm.on('change','[selector]',function(){
-    var el = $(this);
-    var key = el.attr('selector')
-    var value = el.val();
-    e.triggerChange = el.attr('triggerchange')
-    e.triggerChangeIgnore = el.attr('triggerChangeIgnore')
-    editorForm.find('.' + key + '_input').hide()
-    editorForm.find('.' + key + '_' + value).show();
-    editorForm.find('.' + key + '_text').text($(this).find('option:selected').text())
-    if(e.triggerChange && e.triggerChange !== '' && !e.triggerChangeIgnore || (e.triggerChangeIgnore && e.triggerChangeIgnore.split(',').indexOf(value) === -1)){
-        console.log(e.triggerChange)
-        $(e.triggerChange).trigger('change')
-    }
+    // var el = $(this);
+    // var key = el.attr('selector')
+    // var value = el.val();
+    // e.triggerChange = el.attr('triggerchange')
+    // e.triggerChangeIgnore = el.attr('triggerChangeIgnore')
+    // editorForm.find('.' + key + '_input').hide()
+    // editorForm.find('.' + key + '_' + value).show();
+    // editorForm.find('.' + key + '_text').text($(this).find('option:selected').text())
+    // if(e.triggerChange && e.triggerChange !== '' && !e.triggerChangeIgnore || (e.triggerChangeIgnore && e.triggerChangeIgnore.split(',').indexOf(value) === -1)){
+    //     console.log(e.triggerChange)
+    //     $(e.triggerChange).trigger('change')
+    // }
+    var validation = getMonitorEditFormFields()
+    var monitorConfig = validation.monitorConfig
     drawList()
+    if(monitorConfig)showRelevantFormFields(monitorConfig)
 });
 editorForm.find('[name="type"]').change(function(e){
     var el = $(this);
