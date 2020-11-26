@@ -402,6 +402,7 @@ var drawList = function(){
     list.html(html)
 }
 monitorEditorWindow.on('shown.bs.modal', function () {
+    triggerSecondaryChangeOnAll()
     drawList()
 })
 $.aM.import = function(options){
@@ -546,6 +547,7 @@ $.aM.import = function(options){
         }
     })
     monitorsForCopy.find('optgroup').html(tmp)
+    triggerSecondaryChangeOnAll()
     drawList()
 }
 //parse "Automatic" field in "Input" Section
@@ -755,7 +757,27 @@ var showInputMappingFields = function(showMaps){
     }else{
         el.hide()
     }
+    triggerSecondaryChangeOnAll()
     drawList()
+}
+var triggerSecondaryChange = function(el){
+    var key = el.attr('selector')
+    var value = el.val();
+    var triggerChange = el.attr('triggerchange')
+    var triggerChangeIgnore = el.attr('triggerChangeIgnore')
+    editorForm.find('.' + key + '_input').hide()
+    editorForm.find('.' + key + '_' + value).show();
+    editorForm.find('.' + key + '_text').text($(this).find('option:selected').text())
+    if(triggerChange && triggerChange !== '' && !triggerChangeIgnore || (triggerChangeIgnore && triggerChangeIgnore.split(',').indexOf(value) === -1)){
+        console.log(triggerChange)
+        $(triggerChange).trigger('change')
+    }
+}
+var triggerSecondaryChangeOnAll = function(){
+    monitorEditorWindow.find('[selector]').each(function(){
+        var el = $(this);
+        triggerSecondaryChange(el)
+    })
 }
 monitorStreamChannels.on('click','.delete',function(){
     $(this).parents('.stream-channel').remove()
@@ -876,17 +898,7 @@ editorForm.find('[name="type"]').change(function(e){
 editorForm.find('[detail]').change($.ccio.form.details)
 editorForm.on('change','[selector]',function(){
     var el = $(this);
-    var key = el.attr('selector')
-    var value = el.val();
-    e.triggerChange = el.attr('triggerchange')
-    e.triggerChangeIgnore = el.attr('triggerChangeIgnore')
-    editorForm.find('.' + key + '_input').hide()
-    editorForm.find('.' + key + '_' + value).show();
-    editorForm.find('.' + key + '_text').text($(this).find('option:selected').text())
-    if(e.triggerChange && e.triggerChange !== '' && !e.triggerChangeIgnore || (e.triggerChangeIgnore && e.triggerChangeIgnore.split(',').indexOf(value) === -1)){
-        console.log(e.triggerChange)
-        $(e.triggerChange).trigger('change')
-    }
+    triggerSecondaryChange(el)
     drawList()
 });
 editorForm.find('[name="type"]').change(function(e){
@@ -938,6 +950,7 @@ monitorEditorWindow.find('.monitor-section-header').click(function(e){
             $('.shinobi-detector_name').empty()
             $('.shinobi-detector_plug').hide()
             $('.shinobi-detector-invert').show()
+            triggerSecondaryChangeOnAll()
             drawList()
         }else{
             var pluginTitle = []
@@ -953,6 +966,7 @@ monitorEditorWindow.find('.monitor-section-header').click(function(e){
             $('.shinobi-detector-invert').hide()
             $('.shinobi-detector_name').text(pluginTitle.join(', '))
             if(pluginNotice.length > 0)$('.shinobi-detector-msg').text(pluginNotice.join('<br>'))
+            triggerSecondaryChangeOnAll()
             drawList()
         }
     }
