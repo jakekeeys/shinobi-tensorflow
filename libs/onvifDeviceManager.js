@@ -31,6 +31,12 @@ const getDeviceInformation = async (onvifDevice,options) => {
         if(options.users){
             response.users = await onvifDevice.getUsers().GetUsersResponse.User
         }
+        if(options.hostname){
+            response.hostname = await onvifDevice.getHostname().GetHostnameResponse.HostnameInformation.Name
+        }
+        if(options.videoEncoders){
+            response.videoEncoders = await onvifDevice.getVideoEncoderConfigurations().GetVideoEncoderConfigurationsResponse.Configurations
+        }
     }catch(err){
         response.ok = false
         response.error = err
@@ -174,6 +180,25 @@ const setNTP = async (onvifDevice,options) => {
     }
     return response
 }
+const setHostname = async (onvifDevice,options) => {
+    // const options = {
+    //     name: 'hostname',
+    // }
+    const response = {
+        ok: false
+    }
+    try{
+        const hostname = options.name || await getDeviceInformation(onvifDevice,{hostname: true})
+        const onvifResponse = await onvifDevice.setHostname({
+            Name: hostname
+        })
+        response.ok = true
+        response.onvifResponse = onvifResponse
+    }catch(err){
+        response.error = err
+    }
+    return response
+}
 const rebootCamera = async (onvifDevice,options) => {
     const response = {
         ok: false
@@ -252,8 +277,29 @@ const deleteUser = async (onvifDevice,options) => {
     }
     return response
 }
+// const setVideoConfiguration = async (onvifDevice,options) => {
+//     // const options = {
+//     //     name: 'user1',
+//     // }
+//     const response = {
+//         ok: false
+//     }
+//     try{
+//         const onvifResponse = await onvifDevice.deleteUsers({
+//             'User' : [
+//                 {'Username': options.name}
+//             ]
+//         })
+//         response.ok = true
+//         response.onvifResponse = onvifResponse
+//     }catch(err){
+//         response.error = err
+//     }
+//     return response
+// }
 module.exports = {
     getDeviceInformation: getDeviceInformation,
+    setHostname: setHostname,
     setPotocols: setPotocols,
     setGateway: setGateway,
     setDNS: setDNS,
