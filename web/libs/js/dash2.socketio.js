@@ -76,7 +76,7 @@ $.ccio.globalWebsocket=function(d,user){
                             $.ccio.soundAlarmed = false
                         },user.details.audio_delay * 1000)
                     }
-                    if($.ccio.windowFocus === true){
+                    if($.ccio.windowFocus = true){
                         audio.play()
                     }else{
                         clearInterval($.ccio.soundAlarmInterval)
