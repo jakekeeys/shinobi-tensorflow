@@ -1582,16 +1582,18 @@ module.exports = function(s,config,lang){
                     //stop action, monitor already started or recording
                     return
                 }
-                const probeResponse = await probeMonitor(s.group[e.ke].rawMonitorConfigurations[e.id],2000,true)
-                const probeStreams = getStreamInfoFromProbe(probeResponse.result)
-                activeMonitor.probeResult = probeStreams
-                const warnings = createWarningsForConfiguration(s.group[e.ke].rawMonitorConfigurations[e.id],probeStreams)
-                activeMonitor.warnings = warnings
-                if(warnings.length > 0){
-                    const configPartial = buildMonitorConfigPartialFromWarnings(warnings)
-                    applyPartialToConfiguration(e,configPartial)
-                    applyPartialToConfiguration(activeMonitor,configPartial)
-                    applyPartialToConfiguration(s.group[e.ke].rawMonitorConfigurations[e.id],configPartial)
+                if(config.probeMonitorOnStart === true){
+                    const probeResponse = await probeMonitor(s.group[e.ke].rawMonitorConfigurations[e.id],2000,true)
+                    const probeStreams = getStreamInfoFromProbe(probeResponse.result)
+                    activeMonitor.probeResult = probeStreams
+                    const warnings = createWarningsForConfiguration(s.group[e.ke].rawMonitorConfigurations[e.id],probeStreams)
+                    activeMonitor.warnings = warnings
+                    if(warnings.length > 0){
+                        const configPartial = buildMonitorConfigPartialFromWarnings(warnings)
+                        applyPartialToConfiguration(e,configPartial)
+                        applyPartialToConfiguration(activeMonitor,configPartial)
+                        applyPartialToConfiguration(s.group[e.ke].rawMonitorConfigurations[e.id],configPartial)
+                    }
                 }
                 s.sendMonitorStatus({
                     id: e.id,
