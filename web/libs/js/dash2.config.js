@@ -97,8 +97,10 @@ $.ccio.form.details=function(e){
     });
     e.f.find('[name="details"]').val(JSON.stringify(e.ar));
 };
+$('body').one('click',function(){
+    window.hadFocus = true
+})
 $(document).ready(function(e){
-
     //check switch UI
     e.o=$.ccio.op().switches;
     if(e.o){
