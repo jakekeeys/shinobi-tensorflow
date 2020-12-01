@@ -154,7 +154,7 @@ $.ccio.tm=function(x,d,z,user){
                       "class": "default",
                       "icon": "external-link"
                    },
-                   "Pop": {
+                   "Zoom In": {
                       "label": lang['Zoom In'],
                       "attr": "monitor=\"zoomStreamWithMouse\"",
                       "class": "default",

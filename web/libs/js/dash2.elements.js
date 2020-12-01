@@ -409,25 +409,7 @@ $(document).ready(function(e){
                 }
             break;
             case'pop':
-                e.fin=function(img){
-                    if($.ccio.mon[e.ke+e.mid+user.auth_token].popOut){
-                        $.ccio.mon[e.ke+e.mid+user.auth_token].popOut.close()
-                    }
-                    $.ccio.mon[e.ke+e.mid+user.auth_token].popOut = window.open(getApiPrefix() + '/embed/'+e.ke+'/'+e.mid+'/fullscreen|jquery|relative|gui','pop_'+e.mid+user.auth_token,'height='+img.height+',width='+img.width);
-                }
-                if(e.mon.watch===1){
-                    $.ccio.snapshot(e,function(url){
-                        $('#temp').html('<img>')
-                        var img=$('#temp img')[0]
-                        img.onload=function(){
-                            e.fin(img)
-                        }
-                        img.src=url
-                    })
-                }else{
-                    var img={height:720,width:1280}
-                    e.fin(img)
-                }
+                popOutMonitor(e.mid)
             break;
             case'mode':
                 e.mode=e.e.attr('mode')
