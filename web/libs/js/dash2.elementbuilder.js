@@ -303,27 +303,15 @@ $.ccio.tm=function(x,d,z,user){
                     el.muted = "muted"
                 })
             }else{
-                var hasFocus = $.ccio.windowFocus && hadFocus
-                $.each($.ccio.mon,function(frontId,monitor){
-                    setTimeout(() => {
-                        var monitorId = monitor.mid
-                        var muted = monitorMutes[monitorId]
+                $.each(monitorMutes,function(monitorId,choice){
+                    if(choice === 1){
                         try{
                             var vidEl = $('.monitor_item[mid="' + monitorId + '"] video')[0]
-                            if(vidEl.length === 0)return;
-                            if(muted === 1){
-                                vidEl.muted = true
-                            }else{
-                                if(hasFocus){
-                                    vidEl.muted = false
-                                }else{
-                                    console.error('User must have window active to unmute.')
-                                }
-                            }
+                            vidEl.muted = true
                         }catch(err){
-                            // console.log(err)
+
                         }
-                    },2000)
+                    }
                 })
             }
         break;
