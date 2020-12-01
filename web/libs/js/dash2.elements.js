@@ -258,7 +258,11 @@ $(document).ready(function(e){
                     vidEl.muted = true
                 }else{
                     if(masterMute !== 1){
-                        vidEl.muted = false
+                        if($.ccio.windowFocus && hadFocus){
+                            vidEl.muted = false
+                        }else{
+                            console.error('User must have window active to unmute.')
+                        }
                     }
                 }
                 var volumeIcon = monitorMutes[monitorId] !== 1 ? 'volume-up' : 'volume-off'
