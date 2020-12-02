@@ -3,7 +3,7 @@
   "author": "Shinob Systems, Moinul Alam | dermodmaster, Levent Koch",
   "version": "1.0.0",
   "description": "Object Detection plugin based on tensorflow using Google Coral USB Accelerator",
-  "main": "shinobi-tensorflow.js",
+  "main": "shinobi-tensorflow-coral.js",
   "dependencies": {
     "dotenv": "^8.2.0",
     "express": "^4.16.2",
@@ -12,7 +12,7 @@
     "socket.io-client": "^1.7.4"
   },
   "devDependencies": {},
-  "bin": "shinobi-tensorflow.js",
+  "bin": "shinobi-tensorflow-coral.js",
   "scripts": {
     "package": "pkg package.json -t linux,macos,win --out-path dist",
     "package-x64": "pkg package.json -t linux-x64,macos-x64,win-x64 --out-path dist/x64",
