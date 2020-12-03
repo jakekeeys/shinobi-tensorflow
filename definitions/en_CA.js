@@ -4650,6 +4650,288 @@ module.exports = function(s,config,lang){
                 ]
              }
           }
-       }
+      },
+      "ONVIF Device Manager": {
+          "section": "Account Settings",
+          "blocks": {
+             "Network": {
+                 "name": lang["Network"],
+                 "color": "purple",
+                 "info": [
+                     {
+                        "name": "DHCP",
+                        "selector":"onvif_dhcp",
+                        "field": lang.DHCP,
+                        "description": "",
+                        "default": "true",
+                        "example": "",
+                        "fieldType": "select",
+                        "possible": [
+                            {
+                               "name": lang.Yes,
+                               "value": "true"
+                            },
+                            {
+                               "name": lang.No,
+                               "value": "false"
+                            }
+                        ]
+                     },
+                     {
+                        "field": lang['IP Address'],
+                        "name": "setNetworkInterface:ipv4",
+                        "placeholder": "xxx.xxx.xxx.xxx",
+                        "form-group-class": "onvif_dhcp_input onvif_dhcp_1",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Gateway'],
+                        "name": "setGateway:ipv4",
+                        "placeholder": "xxx.xxx.xxx.xxx",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Hostname'],
+                        "name": "setHostname:name",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['DNS'],
+                        "name": "setDNS:dns",
+                        "placeholder": "1.1.1.1,8.8.8.8",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['NTP Servers'],
+                        "name": "setNTP:ipv4",
+                        "placeholder": "1.1.1.1,8.8.8.8",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['HTTP'] + ' ' + lang['Port'],
+                        "name": "setPotocols:HTTP",
+                        "placeholder": "80",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['RTSP'] + ' ' + lang['Port'],
+                        "name": "setPotocols:RTSP",
+                        "placeholder": "554",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                 ]
+             },
+             "NTP": {
+                 "name": lang["NTP"],
+                 "color": "purple",
+                 "info": [
+                     {
+                        "field": lang['UTCDateTime'],
+                        "name": "utcDateTime",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['DateTimeType'],
+                        "name": "dateTimeType",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                         "field": lang.DaylightSavings,
+                        "name": "daylightSavings",
+                        "selector":"onvif_dhcp",
+                        "description": "",
+                        "default": "true",
+                        "example": "",
+                        "fieldType": "select",
+                        "possible": [
+                            {
+                               "name": lang.Yes,
+                               "value": "true"
+                            },
+                            {
+                               "name": lang.No,
+                               "value": "false"
+                            }
+                        ]
+                     },
+                     {
+                         "field": lang.TimeZone,
+                        "name": "timezone",
+                        "selector":"onvif_dhcp",
+                        "description": "",
+                        "default": "true",
+                        "example": "",
+                        "fieldType": "select",
+                        "possible": [
+                            {
+                               "name": lang.Yes,
+                               "value": "true"
+                            },
+                            {
+                               "name": lang.No,
+                               "value": "false"
+                            }
+                        ]
+                     },
+                 ]
+             },
+             "Imaging": {
+                 "name": lang["Imaging"],
+                 "color": "purple",
+                 "info": [
+                     {
+                        "field": lang['Brightness'],
+                        "name": "Brightness",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['ColorSaturation'],
+                        "name": "ColorSaturation",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Contrast'],
+                        "name": "Contrast",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Exposure'] + ' : ' + lang['Mode'],
+                        "name": "Exposure:Mode",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Exposure'] + ' : ' + lang['MinExposureTime'],
+                        "name": "Exposure:MinExposureTime",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Exposure'] + ' : ' + lang['MaxExposureTime'],
+                        "name": "Exposure:MaxExposureTime",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Exposure'] + ' : ' + lang['MinGain'],
+                        "name": "Exposure:MinGain",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Exposure'] + ' : ' + lang['MaxGain'],
+                        "name": "Exposure:MaxGain",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['IrCutFilter'],
+                        "name": "IrCutFilter",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Sharpness'],
+                        "name": "Sharpness",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['WideDynamicRange'] + ' : ' + lang['Mode'],
+                        "name": "WideDynamicRange:Mode",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['WhiteBalance'] + ' : ' + lang['Mode'],
+                        "name": "WhiteBalance:Mode",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                 ]
+             },
+         }
+      }
     }
 }

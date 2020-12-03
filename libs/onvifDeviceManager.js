@@ -59,20 +59,22 @@ const getDeviceInformation = async (onvifDevice,options) => {
     return response
 }
 const setPotocols = async (onvifDevice,saveSet) => {
-    // const saveSet = [
-    //     {'Name': 'HTTP', 'Enabled': true, 'Port': 80},
-    //     {'Name': 'RTSP', 'Enabled': true, 'Port': 554},
-    //   ]
+    // const saveSet = {
+    //     "HTTP": "80",
+    //     "RTSP": "554",
+    // }
     const response = {
         ok: false
     }
     try{
+        const saveKeys = Object.keys(saveSet)
         const protocols = await getDeviceInformation(onvifDevice,{protocols: true}).protocols
         protocols.forEach((item) => {
-            saveSet.forEach((saveItem) => {
-                if(item.Name === saveItem.Name.toUpperCase()){
-                    item.Port = `${saveItem.Port}`
-                    item.Enabled = `${saveItem.Enabled ? 'true' : 'false'}`
+            saveKeys.forEach((key) => {
+                if(item.Name === key.toUpperCase()){
+                    const port = saveSet[key]
+                    item.Port = port
+                    item.Enabled = true
                 }
             })
         })
