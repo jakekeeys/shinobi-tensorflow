@@ -4652,7 +4652,7 @@ module.exports = function(s,config,lang){
           }
       },
       "ONVIF Device Manager": {
-          "section": "Account Settings",
+          "section": "ONVIF Device Manager",
           "blocks": {
              "Network": {
                  "name": lang["Network"],
@@ -4743,8 +4743,8 @@ module.exports = function(s,config,lang){
                      },
                  ]
              },
-             "NTP": {
-                 "name": lang["NTP"],
+             "Date and Time": {
+                 "name": lang["Date and Time"],
                  "color": "purple",
                  "info": [
                      {
@@ -4929,6 +4929,13 @@ module.exports = function(s,config,lang){
                         "form-group-class": "imaging-field",
                         "possible": ""
                      },
+                 ]
+             },
+             "Video Configuration": {
+                 "name": lang["Video Configuration"],
+                 "color": "purple",
+                 "info": [
+
                  ]
              },
          }
