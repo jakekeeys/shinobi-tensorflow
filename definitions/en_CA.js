@@ -4897,7 +4897,24 @@ module.exports = function(s,config,lang){
                         "default": "",
                         "example": "",
                         "form-group-class": "imaging-field",
-                        "possible": ""
+                        "fieldType": "select",
+                        "possible": [
+                           {
+                              "name": lang.On,
+                              "value": "ON",
+                              "info": "Enable Ir cut fiter. Typically Day mode."
+                           },
+                           {
+                              "name": lang.Off,
+                              "value": "OFF",
+                              "info": "Disable Ir cut fiter. Typically Night mode."
+                           },
+                           {
+                              "name": lang.Auto,
+                              "value": "AUTO",
+                              "info": "Ir cut filter is automatically activated by the device."
+                           },
+                       ]
                      },
                      {
                         "field": lang['Sharpness'],
@@ -4989,6 +5006,7 @@ module.exports = function(s,config,lang){
                      {
                         "field": lang['Quality'],
                         "name": "Quality",
+                        "fieldType": "number",
                         "placeholder": "",
                         "description": "",
                         "default": "",
@@ -4998,6 +5016,7 @@ module.exports = function(s,config,lang){
                      {
                         "field": lang['FrameRateLimit'],
                         "name": "RateControl:FrameRateLimit",
+                        "fieldType": "number",
                         "placeholder": "",
                         "description": "",
                         "default": "",
@@ -5007,6 +5026,7 @@ module.exports = function(s,config,lang){
                      {
                         "field": lang['EncodingInterval'],
                         "name": "RateControl:EncodingInterval",
+                        "fieldType": "number",
                         "placeholder": "",
                         "description": "",
                         "default": "",

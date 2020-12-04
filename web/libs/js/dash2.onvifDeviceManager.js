@@ -43,6 +43,7 @@ $(document).ready(function(){
             setIntegerGuider('name="H264:GovLength"',encoderOptions.H264.GovLengthRange)
             setIntegerGuider('name="RateControl:FrameRateLimit"',encoderOptions.H264.FrameRateRange)
             setIntegerGuider('name="RateControl:EncodingInterval"',encoderOptions.H264.EncodingIntervalRange)
+            setIntegerGuider('name="Quality"',encoderOptions.QualityRange)
         }
         if(onvifData.videoEncoders){
             loadedVideoEncoders = {}
@@ -83,9 +84,10 @@ $(document).ready(function(){
             formFields["setHostname:name"] = onvifData.hostname
         }
         if(onvifData.dns && onvifData.dns.DNSManual){
-            var dnsList = onvifData.dns.DNSManual.map((item) => {
+            var dnsList = onvifData.dns.DNSManual
+            dnsList = typeof dnsList === 'array' ? dnsList.map((item) => {
                 return item.IPv4Address
-            }).join(',')
+            }).join(',') : typeof dnsList === 'object' ? dnsList.IPv4Address : dnsList
             formFields["setDNS:dns"] = dnsList
         }
         if(onvifData.ntp && onvifData.ntp.NTPManual){
@@ -102,7 +104,14 @@ $(document).ready(function(){
             setFieldsFromOnvifKeys(onvifData.videoEncoders[0])
         }
         if(onvifData.imagingSettings && onvifData.imagingSettings.ok !== false){
+            $('#Imaging').find('.form-group').hide()
             setFieldsFromOnvifKeys(onvifData.imagingSettings)
+            $.each(onvifData.imagingSettings,function(key){
+                $('#Imaging').find(`[name="${key}"]`).parents('.form-group').show()
+            })
+            $('#Imaging').show()
+        }else{
+            $('#Imaging').hide()
         }
         Object.keys(formFields).forEach((key) => {
             var value = formFields[key]
@@ -113,7 +122,7 @@ $(document).ready(function(){
         var formFields = converObjectKeysToFormFieldName(encoder)
         Object.keys(formFields).forEach((key) => {
             var value = formFields[key]
-            blockForm.find(`[name="${key}"]`).val(value)
+            blockForm.find(`[name="${key}"]`).val(value).parents('.form-group')
         })
     }
     var getUIFieldValues = function(monitorId){
@@ -131,7 +140,7 @@ $(document).ready(function(){
         getUIFieldValues(monitorId)
     })
     blockForm.on('change','[name="videoToken"]',function(){
-        selectVideoEncoder(loadedVideoEncoders[$(this).val()])
+        setFieldsFromOnvifKeys(loadedVideoEncoders[$(this).val()])
     })
     blockForm.on('change','[detail="Resolution"]',function(){
         var resolution = $(this).val().split('x')

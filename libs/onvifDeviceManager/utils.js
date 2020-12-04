@@ -140,10 +140,10 @@ const getDeviceInformation = async (onvifDevice,options) => {
             const imagingSettings = (await runOnvifMethod({
                 device: onvifDevice,
                 action: 'getImagingSettings',
-                service: 'media',
+                service: 'imaging',
                 options: {"ConfigurationToken":"__CURRENT_TOKEN"}
             }));
-            response.imagingSettings = imagingSettings.responseFromDevice ? imagingSettings.responseFromDevice : imagingSettings
+            response.imagingSettings = imagingSettings.responseFromDevice ? imagingSettings.responseFromDevice.GetImagingSettingsResponse.ImagingSettings : imagingSettings
         }
     }catch(err){
         response.ok = false

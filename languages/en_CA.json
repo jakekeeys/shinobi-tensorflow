@@ -1096,6 +1096,8 @@
    "MaxExposureTime": "Maximum Exposure Time",
    "MinExposureTime": "Minimum Exposure Time",
    "ColorSaturation": "Color Saturation",
+   "On": "On",
+   "Off": "Off",
    "Encoding": "Encoding",
    "Brightness": "Brightness",
    "Resolution": "Resolution",
