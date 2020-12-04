@@ -4935,7 +4935,116 @@ module.exports = function(s,config,lang){
                  "name": lang["Video Configuration"],
                  "color": "purple",
                  "info": [
+                     {
+                         "field": lang.Token,
+                        "name": "videoToken",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "fieldType": "select",
+                        "possible": [
 
+                        ]
+                     },
+                     {
+                        "field": lang['Name'],
+                        "name": "Name",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Width'],
+                        "name": "Resolution:Width",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Height'],
+                        "name": "Resolution:Height",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Quality'],
+                        "name": "Quality",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['FrameRateLimit'],
+                        "name": "RateControl:FrameRateLimit",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['EncodingInterval'],
+                        "name": "RateControl:EncodingInterval",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['BitrateLimit'],
+                        "name": "RateControl:BitrateLimit",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['GovLength'],
+                        "name": "H264:GovLength",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Encoding'],
+                        "name": "Encoding",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "H264",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['H264Profile'],
+                        "name": "H264:H264Profile",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['UseCount'],
+                        "name": "UseCount",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
                  ]
              },
          }

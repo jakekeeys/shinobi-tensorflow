@@ -1,409 +1,82 @@
-// relies on https://gitlab.com/Shinobi-Systems/shinobi-onvif
 const {
-    mergeDeep
-} = require('./common.js')
-const getDeviceInformation = async (onvifDevice,options) => {
-    // const options = {
-    //     protocols: true,
-    //     networkInterface: true,
-    //     gateway: true,
-    //     dns: true,
-    //     ntp: true,
-    // }
-    const response = {
-        ok: true,
-    }
-    try{
-        if(options.protocols){
-            response.protocols = await onvifDevice.services.device.getNetworkProtocols().GetNetworkProtocolsResponse.NetworkProtocols
-        }
-        if(options.networkInterface){
-            response.networkInterface = await onvifDevice.services.device.getNetworkInterfaces().GetNetworkInterfacesResponse.NetworkInterfaces
-        }
-        if(options.gatewayAddress){
-            response.gateway = await onvifDevice.services.device.getNetworkDefaultGateway().GetNetworkDefaultGatewayResponse.NetworkGateway.IPv4Address
-        }
-        if(options.dns){
-            response.dns = await onvifDevice.services.device.getDNS().GetDNSResponse.DNSInformation
-        }
-        if(options.ntp){
-            response.ntp = await onvifDevice.services.device.getNTP().GetNTPResponse.NTPInformation
-        }
-        if(options.date){
-            response.date = await onvifDevice.services.device.getSystemDateAndTime().GetSystemDateAndTimeResponse.SystemDateAndTime
-        }
-        if(options.users){
-            response.users = await onvifDevice.services.device.getUsers().GetUsersResponse.User
-        }
-        if(options.hostname){
-            response.hostname = await onvifDevice.services.device.getHostname().GetHostnameResponse.HostnameInformation.Name
-        }
-        if(options.discoveryMode){
-            response.discoveryMode = await onvifDevice.services.device.getDiscoveryMode().GetDiscoveryModeResponse.DiscoveryMode
-        }
-        if(options.videoEncoders){
-            response.videoEncoders = await onvifDevice.services.media.getVideoEncoderConfigurations().GetVideoEncoderConfigurationsResponse.Configurations
-        }
-        if(options.videoEncoderOptions){
-            response.videoEncoderOptions = await onvifDevice.services.media.getVideoEncoderConfigurationOptions().GetVideoEncoderConfigurationOptionsResponse.Options
-        }
-        if(options.imagingSettings){
-            response.imagingSettings = await onvifDevice.services.imaging.getImagingSettings({
-                ConfigurationToken: options.token || onvifDevice.current_profile.token
-            }).GetImagingSettingsResponse.ImagingSettings
-        }
-    }catch(err){
-        response.ok = false
-        response.error = err
-    }
-    return response
-}
-const setPotocols = async (onvifDevice,saveSet) => {
-    // const saveSet = {
-    //     "HTTP": "80",
-    //     "RTSP": "554",
-    // }
-    const response = {
-        ok: false
-    }
-    try{
-        const saveKeys = Object.keys(saveSet)
-        const protocols = await getDeviceInformation(onvifDevice,{protocols: true}).protocols
-        protocols.forEach((item) => {
-            saveKeys.forEach((key) => {
-                if(item.Name === key.toUpperCase()){
-                    const port = saveSet[key]
-                    item.Port = port
-                    item.Enabled = true
-                }
-            })
-        })
-        const onvifResponse = await onvifDevice.services.device.setNetworkProtocols({
-            NetworkProtocols: protocols
-        })
-        response.ok = true
-        response.onvifResponse = onvifResponse
-    }catch(err){
-        response.error = err
-    }
-    return response
-}
-const setNetworkInterface = async (onvifDevice,options) => {
-    // const options = {
-    //     interface: 'eth0',
-    //     ipv4: '10.1.103.158',
-    //     dhcp: false,
-    // }
-    const response = {
-        ok: false
-    }
-    try{
-        const networkInterfaces = await getDeviceInformation(onvifDevice,{networkInterface: true}).networkInterface
-        const onvifResponse = await onvifDevice.services.device.setNetworkInterfaces ({
-            SetNetworkInterfaces: {
-                InterfaceToken: options.interface || networkInterfaces.$.token,
-                NetworkInterface: {
-                    Enabled: true,
-                    IPv4: {
-                        Enabled: true,
-                        Manual: {
-                            Address: options.ipv4 || networkInterfaces.IPv4.Config.Manual.Address,
-                            PrefixLength: '24',
-                        },
-                        'DHCP': options.dhcp === undefined || options.dhcp === null ? networkInterfaces.IPv4.Config.DHCP === 'true' ? true : false : options.dhcp,
-                    }
-                }
+    getDeviceInformation,
+    setHostname,
+    setPotocols,
+    setGateway,
+    setDNS,
+    setNTP,
+    rebootCamera,
+    setDateAndTime,
+    createUser,
+    deleteUser,
+    setVideoConfiguration,
+    setImagingSettings,
+    setDiscoveryMode,
+    getUIFieldValues,
+} = require('./onvifDeviceManager/utils.js')
+
+module.exports = function(s,config,lang,app,io){
+    /**
+    * API : Get ONVIF Data from Camera
+     */
+    app.get(config.webPaths.apiPrefix+':auth/onvifDeviceManager/:ke/:id',function (req,res){
+        s.auth(req.params,async (user) => {
+            const endData = {ok: true}
+            try{
+                const groupKey = req.params.ke
+                const monitorId = req.params.id
+                const onvifDevice = s.group[groupKey].activeMonitors[monitorId].onvifConnection
+                const cameraInfo = await getUIFieldValues(onvifDevice)
+                endData.onvifData = cameraInfo
+            }catch(err){
+                endData.ok = false
+                endData.err = err
+                s.debugLog(err)
             }
-        })
-        response.ok = true
-        response.onvifResponse = onvifResponse
-    }catch(err){
-        response.error = err
-    }
-    return response
-}
-const setGateway = async (onvifDevice,options) => {
-    // const options = {
-    //     ipv4: '1.1.1.1,8.8.8.8',
-    // }
-    const response = {
-        ok: false
-    }
-    try{
-        const gatewayAddress = await getDeviceInformation(onvifDevice,{gateway: true}).gateway
-        const onvifResponse = await onvifDevice.services.device.setNetworkDefaultGateway({
-            'NetworkGateway': [
-              {'IPv4Address': options.ipv4 || gatewayAddress}
-            ]
-        })
-        response.ok = true
-        response.onvifResponse = onvifResponse
-    }catch(err){
-        response.error = err
-    }
-    return response
-}
-const setDNS = async (onvifDevice,options) => {
-    // const options = {
-    //     dns: '1.1.1.1,8.8.8.8',
-    //     searchDomain: '',
-    //     dhcp: false,
-    // }
-    const response = {
-        ok: false
-    }
-    try{
-        const dnsArray = []
-        const searchDomain = (options.searchDomain || '').split(',')
-        const dnsList = (options.dns || '1.1.1.1').split(',')
-        dnsList.forEach((item) => {
-            dnsArray.push({
-                Type: 'IPv4',
-                IPv4Address: item,
-            })
-        })
-        const dnsInfo = await getDeviceInformation(onvifDevice,{dns: true}).dns
-        const onvifResponse = await onvifDevice.services.device.setDNS({
-          'FromDHCP'    : !options.dhcp ? false : true,
-          'SearchDomain': searchDomain,
-          'DNSManual'   : dnsArray
-        })
-        response.ok = true
-        response.onvifResponse = onvifResponse
-    }catch(err){
-        response.error = err
-    }
-    return response
-}
-const setNTP = async (onvifDevice,options) => {
-    // const options = {
-    //     ipv4: '1.1.1.1,8.8.8.8',
-    //     dhcp: false,
-    // }
-    const response = {
-        ok: false
-    }
-    try{
-        const ntpInfo = await getDeviceInformation(onvifDevice,{ntp: true}).ntp
-        const ipv4 = options.ipv4 || ntpInfo.NTPManual.IPv4Address
-        const onvifResponse = await onvifDevice.services.device.setNTP({
-            FromDHCP: !options.dhcp ? false : true,
-            NTPManual: {'Type': "IPv4", 'IPv4Address': ipv4}
-        })
-        response.ok = true
-        response.onvifResponse = onvifResponse
-    }catch(err){
-        response.error = err
-    }
-    return response
-}
-const setHostname = async (onvifDevice,options) => {
-    // const options = {
-    //     name: 'hostname',
-    // }
-    const response = {
-        ok: false
-    }
-    try{
-        const hostname = options.name || await getDeviceInformation(onvifDevice,{hostname: true}).hostname
-        const onvifResponse = await onvifDevice.services.device.setHostname({
-            Name: hostname
-        })
-        response.ok = true
-        response.onvifResponse = onvifResponse
-    }catch(err){
-        response.error = err
-    }
-    return response
-}
-const rebootCamera = async (onvifDevice,options) => {
-    const response = {
-        ok: false
-    }
-    try{
-        const onvifResponse = await onvifDevice.services.device.reboot()
-        response.ok = true
-        response.onvifResponse = onvifResponse
-    }catch(err){
-        response.error = err
-    }
-    return response
-}
-const setDateAndTime = async (onvifDevice,options) => {
-    // const options = {
-    //     ntp: false,
-    //     daylightSavings: false,
-    // }
-    const response = {
-        ok: false
-    }
-    try{
-        // const dateInfo = await onvifDevice.services.device.getSystemDateAndTime().GetSystemDateAndTimeResponse.SystemDateAndTime
-        const onvifResponse = await onvifDevice.services.device.setSystemDateAndTime ({
-            DateTimeType: options.dateTimeType ? "NTP" : "Manual",
-            DaylightSavings: !options.daylightSavings ? false : true,
-            TimeZone: options.timezone,
-            UTCDateTime: options.utcDateTime,
-        })
-        response.ok = true
-        response.onvifResponse = onvifResponse
-    }catch(err){
-        response.error = err
-    }
-    return response
-}
-const createUser = async (onvifDevice,options) => {
-    // const options = {
-    //     name: 'user1',
-    //     password: '123',
-    //     level: 'Administrator' || 'Operator' || 'User',
-    // }
-    const response = {
-        ok: false
-    }
-    try{
-        const onvifResponse = await onvifDevice.services.device.createUsers({
-            'User' : [
-                {'Username': options.name, 'Password' : options.password, 'UserLevel': options.level}
-            ]
-        })
-        response.ok = true
-        response.onvifResponse = onvifResponse
-    }catch(err){
-        response.error = err
-    }
-    return response
-}
-const deleteUser = async (onvifDevice,options) => {
-    // const options = {
-    //     name: 'user1',
-    // }
-    const response = {
-        ok: false
-    }
-    try{
-        const onvifResponse = await onvifDevice.services.device.deleteUsers({
-            'User' : [
-                {'Username': options.name}
-            ]
-        })
-        response.ok = true
-        response.onvifResponse = onvifResponse
-    }catch(err){
-        response.error = err
-    }
-    return response
-}
-const validateEncoderOptions = (chosenOptions, videoEncoderOptions) => {
-    const resolutions = []
-    const minQuality = parseInt(videoEncoderOptions.QualityRange.Min) || 1
-    const maxQuality = parseInt(videoEncoderOptions.QualityRange.Max) || 6
-    const quality = !isNaN(chosenOptions.Quality) ? parseInt(chosenOptions.Quality) : 1
-    const minGovLength = parseInt(videoEncoderOptions.H264.GovLengthRange.Min) || 0
-    const maxGovLength = parseInt(videoEncoderOptions.H264.GovLengthRange.Max) || 100
-    const govLength = !isNaN(chosenOptions.H264.GovLength) ? parseInt(chosenOptions.H264.GovLength) : 10
-    const minFrameRateLimit = parseInt(videoEncoderOptions.H264.FrameRateRange.Min) || 1
-    const maxFrameRateLimit = parseInt(videoEncoderOptions.H264.FrameRateRange.Max) || 30
-    const frameRateLimit = !isNaN(chosenOptions.RateControl.FrameRateLimit) ? parseInt(chosenOptions.RateControl.FrameRateLimit) : 15
-    const minEncodingInterval = parseInt(videoEncoderOptions.H264.EncodingIntervalRange.Min) || 1
-    const maxEncodingInterval = parseInt(videoEncoderOptions.H264.EncodingIntervalRange.Max) || 30
-    const encodingInterval = !isNaN(chosenOptions.RateControl.EncodingInterval) ? parseInt(chosenOptions.RateControl.EncodingInterval) : 1
-    videoEncoderOptions.H264.ResolutionsAvailable.forEach((resolution) => {
-        resolutions.push(`${resolution.Width}x${resolution.Height}`)
+            s.closeJsonResponse(res,endData)
+        },res,req);
     })
-    if(resolutions.indexOf(`${chosenOptions.Resolution.Width}x${chosenOptions.Resolution.Height}`) > -1){
-        chosenOptions.Resolution.Width = resolution[0].Width
-        chosenOptions.Resolution.Height = resolution[0].Height
-    }
-    if(quality < minQuality || quality > maxQuality){
-        chosenOptions.Quality = 1
-    }
-    if(govLength < minGovLength || govLength > maxGovLength){
-        chosenOptions.H264.GovLength = 10
-    }
-    if(frameRateLimit < minFrameRateLimit || frameRateLimit > maxFrameRateLimit){
-        chosenOptions.RateControl.FrameRateLimit = 15
-    }
-    if(encodingInterval < minEncodingInterval || encodingInterval > maxEncodingInterval){
-        chosenOptions.RateControl.EncodingInterval = 1
-    }
-}
-const setVideoConfiguration = async (onvifDevice,options) => {
-    const response = {
-        ok: false
-    }
-    try{
-        const {
-            videoEncoders,
-            videoEncoderOptions
-        } = await getDeviceInformation(onvifDevice,{
-            videoEncoders: true,
-            videoEncoderOptions: true
-        })
-        const videoEncoderIndex = {}
-        videoEncoders.forEach((encoder) => {videoEncoderIndex[encoder.$.token] = encoder})
-        const chosenToken = `${options.ConfigurationToken || videoEncoders[0].$.token}`
-        const videoEncoder = videoEncoderIndex[chosenToken] || {}
-        const onvifParams = mergeDeep(videoEncoder,options,{
-            Multicast: {
-                AutoStart: !options.Multicast.AutoStart ? 'false' : 'true'
-            },
-            ConfigurationToken: chosenToken
-        })
-        const validatedEncoderOptions = validateEncoderOptions(onvifParams, videoEncoderOptions)
-        const onvifResponse = await onvifDevice.services.media.setVideoEncoderConfiguration({
-            Configuration: onvifParams
-        })
-        response.ok = true
-        response.onvifResponse = onvifResponse
-    }catch(err){
-        response.error = err
-    }
-    return response
-}
-const setImagingSettings = async (onvifDevice,options) => {
-    const response = {
-        ok: false
-    }
-    try{
-        const { imagingSettings } = await getDeviceInformation(onvifDevice,{imagingSettings: true})
-        const onvifParams = mergeDeep(imagingSettings,options)
-        const onvifResponse = await onvifDevice.services.imaging.setImagingSettings({
-            ConfigurationToken: options.ConfigurationToken,
-            Configuration: onvifParams
-        })
-        response.ok = true
-        response.onvifResponse = onvifResponse
-    }catch(err){
-        response.error = err
-    }
-    return response
-}
-const setDiscoveryMode = async (onvifDevice,options) => {
-    const response = {
-        ok: false
-    }
-    try{
-        const onvifResponse = await onvifDevice.services.device.setDiscoveryMode(options.mode === 'Discoverable' || options.mode === 'NonDiscoverable' ? options.mode : 'Discoverable')
-        response.ok = true
-        response.onvifResponse = onvifResponse
-    }catch(err){
-        response.error = err
-    }
-    return response
-}
-module.exports = {
-    getDeviceInformation: getDeviceInformation,
-    setHostname: setHostname,
-    setPotocols: setPotocols,
-    setGateway: setGateway,
-    setDNS: setDNS,
-    setNTP: setNTP,
-    rebootCamera: rebootCamera,
-    setDateAndTime: setDateAndTime,
-    createUser: createUser,
-    deleteUser: deleteUser,
-    setVideoConfiguration: setVideoConfiguration,
-    setImagingSettings: setImagingSettings,
-    setDiscoveryMode: setDiscoveryMode,
+    /**
+    * API : Save ONVIF Data to Camera
+     */
+    app.post(config.webPaths.apiPrefix+':auth/onvifDeviceManager/:ke/:id/save',function (req,res){
+        s.auth(req.params,async (user) => {
+            const endData = {ok: true, responses: {}}
+            try{
+                const groupKey = req.params.ke
+                const monitorId = req.params.id
+                const onvifDevice = s.group[groupKey].activeMonitors[monitorId].onvifConnection
+                const form = s.getPostData(req)
+                if(form.setHostname){
+                    responses.setHostname = await setHostname(onvifDevice,form.setHostname)
+                }
+                if(form.setPotocols){
+                    responses.setPotocols = await setPotocols(onvifDevice,form.setPotocols)
+                }
+                if(form.setGateway){
+                    responses.setGateway = await setGateway(onvifDevice,form.setGateway)
+                }
+                if(form.setDNS){
+                    responses.setDNS = await setDNS(onvifDevice,form.setDNS)
+                }
+                if(form.setNTP){
+                    responses.setNTP = await setNTP(onvifDevice,form.setNTP)
+                }
+                if(form.setDateAndTime){
+                    responses.setDateAndTime = await setDateAndTime(onvifDevice,form.setDateAndTime)
+                }
+                if(form.setVideoConfiguration){
+                    responses.setVideoConfiguration = await setVideoConfiguration(onvifDevice,form.setVideoConfiguration)
+                }
+                if(form.setImagingSettings){
+                    responses.setImagingSettings = await setImagingSettings(onvifDevice,form.setImagingSettings)
+                }
+            }catch(err){
+                endData.ok = false
+                endData.err = err
+                s.debugLog(err)
+            }
+            s.closeJsonResponse(res,endData)
+        },res,req);
+    })
 }
