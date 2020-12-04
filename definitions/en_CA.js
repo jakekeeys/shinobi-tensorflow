@@ -3269,6 +3269,28 @@ module.exports = function(s,config,lang){
                              "possible": ""
                           },
                           {
+                             "name": "detail=event_record_scale_x",
+                             "field": lang.Width,
+                             "description": "Width of the Event-based Recording image that is output after processing.",
+                             "default": "",
+                             "fieldType": "number",
+                             "numberMin": "1",
+                             "example": "640",
+                             "form-group-class": "h_buff_input h_buff_libx264 h_buff_h264_vaapi h_buff_hevc_vaapi",
+                             "possible": ""
+                          },
+                          {
+                             "name": "detail=event_record_scale_y",
+                             "field": lang.Height,
+                             "description": "Height of the Event-based Recording image that is output after processing.",
+                             "default": "",
+                             "fieldType": "number",
+                             "numberMin": "1",
+                             "example": "480",
+                             "form-group-class": "h_buff_input h_buff_libx264 h_buff_h264_vaapi h_buff_hevc_vaapi",
+                             "possible": ""
+                          },
+                          {
                              "name": "detail=detector_buffer_hls_time",
                              "field": lang['HLS Segment Length'],
                              "description": "How long each video segment should be, in seconds. Each segment will be drawn by the client through an m3u8 file. Shorter segments take less space.",
