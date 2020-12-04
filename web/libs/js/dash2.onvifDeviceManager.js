@@ -71,6 +71,15 @@ $(document).ready(function(){
     }
     var writeOnvifDataToFormFields = function(onvifData){
         var formFields = {}
+        if(onvifData.date){
+            //'04 Dec 1995 00:12:00 GMT'
+            var utcDatePieces = onvifData.date.UTCDateTime
+            var parsedDate = Date.parse(`${utcDatePieces.Date.Day}-${utcDatePieces.Date.Month}-${utcDatePieces.Date.Year} ${utcDatePieces.Time.Hour}:${utcDatePieces.Time.Minute}:${utcDatePieces.Time.Second} UTC`);
+            formFields["utcDateTime"] = parsedDate
+            formFields["dateTimeType"] = onvifData.date.DateTimeType
+            formFields["daylightSavings"] = onvifData.date.DaylightSavings
+            formFields["timezone"] = onvifData.date.TimeZone.TZ
+        }
         if(onvifData.networkInterface){
             var ipConfig = onvifData.networkInterface.IPv4.Config
             console.log(ipConfig.LinkLocal)
@@ -140,7 +149,9 @@ $(document).ready(function(){
         getUIFieldValues(monitorId)
     })
     blockForm.on('change','[name="videoToken"]',function(){
-        setFieldsFromOnvifKeys(loadedVideoEncoders[$(this).val()])
+        var selectedEncoder = loadedVideoEncoders[$(this).val()]
+        setFieldsFromOnvifKeys(selectedEncoder)
+        blockForm.find('[detail="Resolution"]').val(`${selectedEncoder['Resolution:Width']}x${selectedEncoder['Resolution:Height']}`)
     })
     blockForm.on('change','[detail="Resolution"]',function(){
         var resolution = $(this).val().split('x')

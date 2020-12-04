@@ -4715,15 +4715,6 @@ module.exports = function(s,config,lang){
                         "possible": ""
                      },
                      {
-                        "field": lang['NTP Servers'],
-                        "name": "setNTP:ipv4",
-                        "placeholder": "1.1.1.1,8.8.8.8",
-                        "description": "",
-                        "default": "",
-                        "example": "",
-                        "possible": ""
-                     },
-                     {
                         "field": lang['HTTP'] + ' ' + lang['Port'],
                         "name": "setPotocols:HTTP",
                         "placeholder": "80",
@@ -4757,13 +4748,32 @@ module.exports = function(s,config,lang){
                         "possible": ""
                      },
                      {
-                        "field": lang['DateTimeType'],
-                        "name": "dateTimeType",
-                        "placeholder": "",
+                        "field": lang['NTP Servers'],
+                        "name": "setNTP:ipv4",
+                        "placeholder": "1.1.1.1,8.8.8.8",
                         "description": "",
                         "default": "",
                         "example": "",
                         "possible": ""
+                     },
+                     {
+                        "field": lang['DateTimeType'],
+                        "name": "dateTimeType",
+                        "fieldType": "select",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": [
+                            {
+                               "name": lang.NTP,
+                               "value": "NTP"
+                            },
+                            {
+                               "name": lang.Manual,
+                               "value": "Manual"
+                            }
+                        ]
                      },
                      {
                          "field": lang.DaylightSavings,
@@ -4785,23 +4795,13 @@ module.exports = function(s,config,lang){
                         ]
                      },
                      {
+                         hidden: true,
                          "field": lang.TimeZone,
                         "name": "timezone",
-                        "selector":"onvif_dhcp",
                         "description": "",
-                        "default": "true",
+                        "default": "",
                         "example": "",
-                        "fieldType": "select",
-                        "possible": [
-                            {
-                               "name": lang.Yes,
-                               "value": "true"
-                            },
-                            {
-                               "name": lang.No,
-                               "value": "false"
-                            }
-                        ]
+                        "possible": ""
                      },
                  ]
              },
@@ -4953,6 +4953,7 @@ module.exports = function(s,config,lang){
                  "color": "purple",
                  "info": [
                      {
+                         hidden: true,
                          "field": lang.Token,
                         "name": "videoToken",
                         "description": "",

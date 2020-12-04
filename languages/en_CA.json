@@ -1088,7 +1088,7 @@
    "Sharpness": "Sharpness",
    "BacklightCompensation": "Backlight Compensation",
    "IrCutFilter": "IR Cut Filter",
-   "UTCDateTime": "Date",
+   "UTCDateTime": "Date (UTC)",
    "Exposure": "Exposure",
    "Contrast": "Contrast",
    "MaxGain": "Maximum Gain",
