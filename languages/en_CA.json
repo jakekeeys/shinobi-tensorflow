@@ -1098,6 +1098,7 @@
    "ColorSaturation": "Color Saturation",
    "Encoding": "Encoding",
    "Brightness": "Brightness",
+   "Resolution": "Resolution",
    "Imaging": "Imaging",
    "Hostname": "Hostname",
    "Network": "Network",

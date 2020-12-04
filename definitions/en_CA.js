@@ -4956,6 +4956,18 @@ module.exports = function(s,config,lang){
                         "possible": ""
                      },
                      {
+                         "field": lang.Resolution,
+                        "name": "detail=Resolution",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "fieldType": "select",
+                        "possible": [
+
+                        ]
+                     },
+                     {
+                         hidden: true,
                         "field": lang['Width'],
                         "name": "Resolution:Width",
                         "placeholder": "",
@@ -4965,6 +4977,7 @@ module.exports = function(s,config,lang){
                         "possible": ""
                      },
                      {
+                         hidden: true,
                         "field": lang['Height'],
                         "name": "Resolution:Height",
                         "placeholder": "",
@@ -5003,6 +5016,7 @@ module.exports = function(s,config,lang){
                      {
                         "field": lang['BitrateLimit'],
                         "name": "RateControl:BitrateLimit",
+                        "fieldType": "number",
                         "placeholder": "",
                         "description": "",
                         "default": "",
@@ -5012,6 +5026,7 @@ module.exports = function(s,config,lang){
                      {
                         "field": lang['GovLength'],
                         "name": "H264:GovLength",
+                        "fieldType": "number",
                         "placeholder": "",
                         "description": "",
                         "default": "",
@@ -5025,18 +5040,24 @@ module.exports = function(s,config,lang){
                         "description": "",
                         "default": "H264",
                         "example": "",
-                        "possible": ""
+                        "fieldType": "select",
+                        "possible": [
+
+                        ]
                      },
                      {
-                        "field": lang['H264Profile'],
-                        "name": "H264:H264Profile",
-                        "placeholder": "",
+                         "field": lang['H264Profile'],
+                         "name": "H264:H264Profile",
                         "description": "",
                         "default": "",
                         "example": "",
-                        "possible": ""
+                        "fieldType": "select",
+                        "possible": [
+
+                        ]
                      },
                      {
+                         hidden: true,
                         "field": lang['UseCount'],
                         "name": "UseCount",
                         "placeholder": "",
