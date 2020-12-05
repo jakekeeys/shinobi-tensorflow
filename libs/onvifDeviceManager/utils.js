@@ -329,8 +329,10 @@ const rebootCamera = async (onvifDevice,options) => {
 }
 const setDateAndTime = async (onvifDevice,options) => {
     // const options = {
-    //     ntp: false,
+    //     dateTimeType: 'ntp',
     //     daylightSavings: false,
+    //     timezone: 'XXXX',
+    //     utcDateTime: 'XXXX',
     // }
     const response = {
         ok: false
@@ -340,8 +342,8 @@ const setDateAndTime = async (onvifDevice,options) => {
         const onvifResponse = await onvifDevice.services.device.setSystemDateAndTime ({
             DateTimeType: options.dateTimeType ? "NTP" : "Manual",
             DaylightSavings: !options.daylightSavings ? false : true,
-            TimeZone: options.timezone,
-            UTCDateTime: options.utcDateTime,
+            // TimeZone: options.timezone,
+            UTCDateTime: new Date(options.utcDateTime),
         })
         response.ok = true
         response.onvifResponse = onvifResponse
