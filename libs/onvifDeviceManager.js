@@ -1,7 +1,7 @@
 const {
     getDeviceInformation,
     setHostname,
-    setPotocols,
+    setProtocols,
     setGateway,
     setDNS,
     setNTP,
@@ -49,6 +49,7 @@ module.exports = function(s,config,lang,app,io){
                 const monitorId = req.params.id
                 const onvifDevice = s.group[groupKey].activeMonitors[monitorId].onvifConnection
                 const form = s.getPostData(req)
+                const videoToken = form.VideoConfiguration && form.VideoConfiguration.videoToken ? form.VideoConfiguration.videoToken : null
                 if(form.DateandTime){
                     const dateAndTime = form.DateandTime
                     if(dateAndTime.setNTP){
@@ -57,15 +58,15 @@ module.exports = function(s,config,lang,app,io){
                     responses.setDateAndTime = await setDateAndTime(onvifDevice,dateAndTime)
                 }
                 if(form.Imaging){
-                    responses.setImagingSettings = await setImagingSettings(onvifDevice,form.Imaging)
+                    responses.setImagingSettings = await setImagingSettings(onvifDevice,Object.assign({videoToken: videoToken},form.Imaging))
                 }
                 if(form.Network){
                     const network = form.Network
                     if(network.setHostname){
                         responses.setHostname = await setHostname(onvifDevice,network.setHostname)
                     }
-                    if(network.setPotocols){
-                        responses.setPotocols = await setPotocols(onvifDevice,network.setPotocols)
+                    if(network.setProtocols){
+                        responses.setProtocols = await setProtocols(onvifDevice,network.setProtocols)
                     }
                     if(network.setGateway){
                         responses.setGateway = await setGateway(onvifDevice,network.setGateway)

@@ -1,4 +1,4 @@
-$(document).ready(function(){
+setProtocols$(document).ready(function(){
     var selectedMonitorId
     var loadedVideoEncoders = {}
     var blockWindow = $('#onvifDeviceManager')
@@ -124,7 +124,7 @@ $(document).ready(function(){
         if(onvifData.protocols){
             onvifData.protocols.forEach((protocol) => {
                 //RTSP, HTTP
-                formFields[`setPotocols:${protocol.Name}`] = protocol.Port
+                formFields[`setProtocols:${protocol.Name}`] = protocol.Port
             })
         }
         if(onvifData.videoEncoders){
@@ -198,6 +198,7 @@ $(document).ready(function(){
     blockForm.submit(function(e){
         e.preventDefault()
         var postData = convertFormFieldNameToObjectKeys(getUIFieldValuesFromForm())
+        console.log('postData',postData)
         $.post($.ccio.init('location',$user)+$user.auth_token+'/onvifDeviceManager/'+$user.ke + '/' + selectedMonitorId + '/save',{
             data: JSON.stringify(postData)
         },function(response){

@@ -4716,7 +4716,7 @@ module.exports = function(s,config,lang){
                      },
                      {
                         "field": lang['HTTP'] + ' ' + lang['Port'],
-                        "name": "setPotocols:HTTP",
+                        "name": "setProtocols:HTTP",
                         "placeholder": "80",
                         "description": "",
                         "default": "",
@@ -4725,7 +4725,7 @@ module.exports = function(s,config,lang){
                      },
                      {
                         "field": lang['RTSP'] + ' ' + lang['Port'],
-                        "name": "setPotocols:RTSP",
+                        "name": "setProtocols:RTSP",
                         "placeholder": "554",
                         "description": "",
                         "default": "",
@@ -4832,6 +4832,16 @@ module.exports = function(s,config,lang){
                      {
                         "field": lang['Contrast'],
                         "name": "Contrast",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['BacklightCompensation'] + ' : ' + lang['Mode'],
+                        "name": "BacklightCompensation:Mode",
                         "placeholder": "",
                         "description": "",
                         "default": "",
