@@ -4,6 +4,7 @@ $(document).ready(function(){
     var blockWindow = $('#onvifDeviceManager')
     var blockWindowInfo = $('#onvifDeviceManagerInfo')
     var blockForm = blockWindow.find('form')
+    var dateRangePicker = blockForm.find('[name="utcDateTime"]')
     var convertFormFieldNameToObjectKeys = function(formFields){
         var newObject = {}
         $.each(formFields,function(key,value){
@@ -93,11 +94,14 @@ $(document).ready(function(){
         var formFields = {}
         if(onvifData.date){
             var utcDatePieces = onvifData.date.UTCDateTime
-            var parsedDate = new Date(`${utcDatePieces.Date.Day}-${utcDatePieces.Date.Month}-${utcDatePieces.Date.Year} ${utcDatePieces.Time.Hour}:${utcDatePieces.Time.Minute}:${utcDatePieces.Time.Second} UTC`);
+            var dateString = `${utcDatePieces.Date.Year}-${utcDatePieces.Date.Month}-${utcDatePieces.Date.Day} ${utcDatePieces.Time.Hour}:${utcDatePieces.Time.Minute}:${utcDatePieces.Time.Second} UTC`
+            var parsedDate = new Date(dateString);
+            console.log(dateString,parsedDate)
             formFields["utcDateTime"] = parsedDate
             formFields["dateTimeType"] = onvifData.date.DateTimeType
             formFields["daylightSavings"] = onvifData.date.DaylightSavings
             formFields["timezone"] = onvifData.date.TimeZone.TZ
+
         }
         if(onvifData.networkInterface){
             var ipConfig = onvifData.networkInterface.IPv4.Config
@@ -112,9 +116,15 @@ $(document).ready(function(){
         }
         if(onvifData.dns && onvifData.dns.DNSManual){
             var dnsList = onvifData.dns.DNSManual
-            dnsList = typeof dnsList === 'array' ? dnsList.map((item) => {
-                return item.IPv4Address
-            }).join(',') : typeof dnsList === 'object' ? dnsList.IPv4Address : dnsList
+            if(dnsList.IPv4Address){
+                dnsList = dnsList.IPv4Address
+            }else if(dnsList[0]){
+                dnsList = dnsList.map((item) => {
+                    return item.IPv4Address
+                }).join(',')
+            }else{
+                dnsList = ''
+            }
             formFields["setDNS:dns"] = dnsList
         }
         if(onvifData.ntp && onvifData.ntp.NTPManual){
@@ -144,6 +154,7 @@ $(document).ready(function(){
             var value = formFields[key]
             blockForm.find(`[name="${key}"]`).val(value)
         })
+        if(onvifData.date)dateRangePicker.data('daterangepicker').setStartDate(dateString)
     }
     var setFieldsFromOnvifKeys = function(encoder){
         var formFields = converObjectKeysToFormFieldName(encoder)
@@ -155,6 +166,7 @@ $(document).ready(function(){
     var getUIFieldValuesFromCamera = function(monitorId){
         $.get($.ccio.init('location',$user)+$user.auth_token+'/onvifDeviceManager/'+$user.ke + '/' + monitorId,function(response){
             var onvifData = response.onvifData
+            console.log(onvifData)
             if(onvifData && onvifData.ok === true){
                 blockWindowInfo.html(JSON.stringify(onvifData,null,3))
                 setGuidersInFormFields(onvifData)
@@ -174,10 +186,28 @@ $(document).ready(function(){
         var formOptions = blockForm.serializeObject()
         $.each(formOptions,function(key,value){
             var enclosingObject = blockForm.find(`[name="${key}"]`).parents('.form-group-group').attr("id")
-            newObject[enclosingObject + ':' + key] = value
+            if(key === 'utcDateTime'){
+                //dateRangePicker
+                newObject[enclosingObject + ':' + key] = dateRangePicker.data('daterangepicker').startDate._d
+                console.log(`dateRangePicker.data('daterangepicker').startDate._d`,dateRangePicker.data('daterangepicker').startDate._d)
+            }else{
+                newObject[enclosingObject + ':' + key] = value
+            }
         })
         return newObject
     }
+    dateRangePicker.daterangepicker({
+        singleDatePicker: true,
+        timePicker: true,
+        timePicker24Hour: true,
+        timePickerSeconds: true,
+        // timePickerIncrement: 30,
+        locale: {
+            format: 'YYYY-MM-DD HH:mm:ss'
+        }
+    },function(start, end, label){
+        console.log(start)
+    });
     $('body').on('click','[open-onvif-device-manager]',function(){
         var monitorId = $(this).attr('open-onvif-device-manager')
         selectedMonitorId = `${monitorId}`
