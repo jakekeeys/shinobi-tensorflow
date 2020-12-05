@@ -1,4 +1,4 @@
-setProtocols$(document).ready(function(){
+$(document).ready(function(){
     var selectedMonitorId
     var loadedVideoEncoders = {}
     var blockWindow = $('#onvifDeviceManager')
