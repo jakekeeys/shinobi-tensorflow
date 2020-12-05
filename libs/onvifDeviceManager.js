@@ -91,4 +91,24 @@ module.exports = function(s,config,lang,app,io){
             s.closeJsonResponse(res,endData)
         },res,req);
     })
+    /**
+    * API : Reboot Camera
+     */
+    app.get(config.webPaths.apiPrefix+':auth/onvifDeviceManager/:ke/:id/reboot',function (req,res){
+        s.auth(req.params,async (user) => {
+            const endData = {ok: true}
+            try{
+                const groupKey = req.params.ke
+                const monitorId = req.params.id
+                const onvifDevice = s.group[groupKey].activeMonitors[monitorId].onvifConnection
+                const cameraInfo = await rebootCamera(onvifDevice)
+                endData.onvifData = cameraInfo
+            }catch(err){
+                endData.ok = false
+                endData.err = err
+                s.debugLog(err)
+            }
+            s.closeJsonResponse(res,endData)
+        },res,req);
+    })
 }

@@ -453,6 +453,13 @@ module.exports = function(s,config,lang){
                        "class": `btn-success probe_config`,
                        "btnContent": `<i class="fa fa-search"></i> &nbsp; ${lang.FFprobe}`,
                     },
+                    {
+                       "fieldType": "btn",
+                       "attribute": `style="margin-top:1rem"`,
+                       "form-group-class-pre-layer": "h_onvif_input h_onvif_1",
+                       "class": `btn-warning am_notice_edit open-onvif-device-manager`,
+                       "btnContent": `<i class="fa fa-gears"></i> &nbsp; ${lang['ONVIF Device Manager']}`,
+                    },
                 ]
             },
              "Input": {
@@ -4655,14 +4662,21 @@ module.exports = function(s,config,lang){
           "section": "ONVIF Device Manager",
           "blocks": {
              "Notice": {
+                 "id": "Notice",
                  "name": lang["Notice"],
                  "color": "warning",
                  "blockquoteClass": "global_tip",
                  "blockquote": lang.onvifdeviceManagerGlobalTip,
                  "info": [
+                     {
+                        "fieldType": "btn",
+                        "class": `btn-warning onvif-device-reboot`,
+                        "btnContent": `<i class="fa fa-refresh"></i> &nbsp; ${lang['Reboot Camera']}`,
+                     },
                  ]
              },
              "Network": {
+                 "id": "Network",
                  "name": lang["Network"],
                  "color": "purple",
                  "info": [
@@ -4743,6 +4757,7 @@ module.exports = function(s,config,lang){
                  ]
              },
              "Date and Time": {
+                 "id": "DateandTime",
                  "name": lang["Date and Time"],
                  "color": "purple",
                  "info": [
@@ -4814,6 +4829,7 @@ module.exports = function(s,config,lang){
                  ]
              },
              "Imaging": {
+                 "id": "Imaging",
                  "name": lang["Imaging"],
                  "color": "purple",
                  "info": [
@@ -4967,6 +4983,7 @@ module.exports = function(s,config,lang){
                  ]
              },
              "Video Configuration": {
+                 "id": "VideoConfiguration",
                  "name": lang["Video Configuration"],
                  "color": "purple",
                  "info": [

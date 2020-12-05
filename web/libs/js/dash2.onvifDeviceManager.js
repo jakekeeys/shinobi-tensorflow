@@ -163,6 +163,25 @@ $(document).ready(function(){
             blockForm.find(`[name="${key}"]`).val(value).parents('.form-group')
         })
     }
+    var rebootCamera = function(monitorId){
+        $.confirm.create({
+            title: lang['Reboot Camera'],
+            body: lang.noUndoForAction,
+            clickOptions: {
+                title: lang['Reboot'],
+                class: 'btn-warning'
+            },
+            clickCallback: function(){
+                $.get($.ccio.init('location',$user)+$user.auth_token+'/onvifDeviceManager/'+$user.ke + '/' + monitorId + '/reboot',function(response){
+                    new PNotify({
+                        title: lang.rebootingCamera,
+                        text: JSON.stringify(response),
+                        type: 'warning'
+                    })
+                })
+            }
+        })
+    }
     var getUIFieldValuesFromCamera = function(monitorId){
         $.get($.ccio.init('location',$user)+$user.auth_token+'/onvifDeviceManager/'+$user.ke + '/' + monitorId,function(response){
             var onvifData = response.onvifData
@@ -208,10 +227,13 @@ $(document).ready(function(){
     },function(start, end, label){
         console.log(start)
     });
-    $('body').on('click','[open-onvif-device-manager]',function(){
-        var monitorId = $(this).attr('open-onvif-device-manager')
+    $.aM.e.on('click','.open-onvif-device-manager',function(){
+        var monitorId = $.aM.e.attr('mid')
         selectedMonitorId = `${monitorId}`
         getUIFieldValuesFromCamera(monitorId)
+    })
+    blockWindow.on('click','.onvif-device-reboot',function(){
+        rebootCamera(selectedMonitorId)
     })
     blockForm.on('change','[name="videoToken"]',function(){
         var selectedEncoder = loadedVideoEncoders[$(this).val()]
@@ -227,12 +249,37 @@ $(document).ready(function(){
     })
     blockForm.submit(function(e){
         e.preventDefault()
-        var postData = convertFormFieldNameToObjectKeys(getUIFieldValuesFromForm())
-        console.log('postData',postData)
-        $.post($.ccio.init('location',$user)+$user.auth_token+'/onvifDeviceManager/'+$user.ke + '/' + selectedMonitorId + '/save',{
-            data: JSON.stringify(postData)
-        },function(response){
-            console.log(response)
+        $.confirm.create({
+            title: lang.updateCamerasInternalSettings,
+            body: lang.noUndoForAction,
+            clickOptions: {
+                title: lang['Save'],
+                class:'btn-success'
+            },
+            clickCallback: function(){
+                var postData = convertFormFieldNameToObjectKeys(getUIFieldValuesFromForm())
+                console.log('postData',postData)
+                $.post($.ccio.init('location',$user)+$user.auth_token+'/onvifDeviceManager/'+$user.ke + '/' + selectedMonitorId + '/save',{
+                    data: JSON.stringify(postData)
+                },function(response){
+                    var notifyTitle = lang['Settings Changed']
+                    var notifyText = lang.onvifdeviceSavedText
+                    var notifyTextError = ''
+                    var notifyType = 'success'
+                    $.each(response.responses,function(key,response){
+                        if(!response.ok){
+                            notifyTextError = lang.onvifdeviceSavedFoundErrorText
+                            notifyType = 'warning'
+                        }
+                    })
+                    notifyText = notifyTextError ? notifyText + ' ' + notifyTextError : notifyText;
+                    new PNotify({
+                        title: notifyTitle,
+                        text: notifyText,
+                        type: notifyType,
+                    })
+                })
+            }
         })
         return false;
     })

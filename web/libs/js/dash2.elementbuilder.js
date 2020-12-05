@@ -202,12 +202,6 @@ $.ccio.tm=function(x,d,z,user){
                       "class": "default",
                       "icon": "arrows-alt"
                    },
-                   "Fullscreen": {
-                      "label": lang['ONVIF'],
-                      "attr": `open-onvif-device-manager="${d.mid}"`,
-                      "class": "warning",
-                      "icon": "gears"
-                   },
                    "Close": {
                       "label": lang['Close'],
                       "attr": "monitor=\"watch_off\"",
