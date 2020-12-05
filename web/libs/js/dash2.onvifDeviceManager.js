@@ -3,6 +3,39 @@ $(document).ready(function(){
     var blockWindow = $('#onvifDeviceManager')
     var blockWindowInfo = $('#onvifDeviceManagerInfo')
     var blockForm = blockWindow.find('form')
+    var convertFormFieldNameToObjectKeys = function(formFields){
+        var newObject = {}
+        $.each(formFields,function(key,value){
+            var keyPieces = key.split(':')
+            var parent = null
+            $.each(keyPieces,function(n,piece){
+                if(!parent){
+                    parent = newObject
+                }
+                if(keyPieces[n + 1]){
+                    if(!parent[piece])parent[piece] = {}
+                    parent = parent[piece]
+                }else{
+                    parent[piece] = value
+                }
+            })
+        })
+        return newObject
+    }
+    var converObjectKeysToFormFieldName = (object,parentKey) => {
+        parentKey = parentKey ? parentKey : ''
+        var theList = {}
+        Object.keys(object).forEach((key) => {
+            var value = object[key]
+            var newKey = parentKey ? parentKey + ':' + key : key
+            if(typeof value === 'string'){
+                theList[newKey] = value
+            }else if(value instanceof Object || value instanceof Array){
+                theList = Object.assign(theList,converObjectKeysToFormFieldName(value,newKey))
+            }
+        })
+        return theList
+    }
     var setIntegerGuider = function(fieldName,theRange){
         blockForm.find(`[${fieldName}]`)
             .attr('min',theRange.Min)
@@ -55,26 +88,11 @@ $(document).ready(function(){
             blockForm.find('[name=videoToken]').html(html)
         }
     }
-    var converObjectKeysToFormFieldName = (object,parentKey) => {
-        parentKey = parentKey ? parentKey : ''
-        var theList = {}
-        Object.keys(object).forEach((key) => {
-            var value = object[key]
-            var newKey = parentKey ? parentKey + ':' + key : key
-            if(typeof value === 'string'){
-                theList[newKey] = value
-            }else if(value instanceof Object || value instanceof Array){
-                theList = Object.assign(theList,converObjectKeysToFormFieldName(value,newKey))
-            }
-        })
-        return theList
-    }
     var writeOnvifDataToFormFields = function(onvifData){
         var formFields = {}
         if(onvifData.date){
-            //'04 Dec 1995 00:12:00 GMT'
             var utcDatePieces = onvifData.date.UTCDateTime
-            var parsedDate = Date.parse(`${utcDatePieces.Date.Day}-${utcDatePieces.Date.Month}-${utcDatePieces.Date.Year} ${utcDatePieces.Time.Hour}:${utcDatePieces.Time.Minute}:${utcDatePieces.Time.Second} UTC`);
+            var parsedDate = new Date(`${utcDatePieces.Date.Day}-${utcDatePieces.Date.Month}-${utcDatePieces.Date.Year} ${utcDatePieces.Time.Hour}:${utcDatePieces.Time.Minute}:${utcDatePieces.Time.Second} UTC`);
             formFields["utcDateTime"] = parsedDate
             formFields["dateTimeType"] = onvifData.date.DateTimeType
             formFields["daylightSavings"] = onvifData.date.DaylightSavings
@@ -82,7 +100,6 @@ $(document).ready(function(){
         }
         if(onvifData.networkInterface){
             var ipConfig = onvifData.networkInterface.IPv4.Config
-            console.log(ipConfig.LinkLocal)
             var ipv4 = ipConfig.DHCP === 'true' ? ipConfig.LinkLocal.Address : ipConfig.Manual.Address || ipConfig.LinkLocal.Address
             formFields["setNetworkInterface:ipv4"] = ipv4
         }
@@ -134,19 +151,35 @@ $(document).ready(function(){
             blockForm.find(`[name="${key}"]`).val(value).parents('.form-group')
         })
     }
-    var getUIFieldValues = function(monitorId){
+    var getUIFieldValuesFromCamera = function(monitorId){
         $.get($.ccio.init('location',$user)+$user.auth_token+'/onvifDeviceManager/'+$user.ke + '/' + monitorId,function(response){
             var onvifData = response.onvifData
-            console.log(response)
-            blockWindowInfo.html(JSON.stringify(onvifData,null,3))
-            setGuidersInFormFields(onvifData)
-            writeOnvifDataToFormFields(onvifData)
-            blockWindow.modal('show')
+            if(onvifData && onvifData.ok === true){
+                blockWindowInfo.html(JSON.stringify(onvifData,null,3))
+                setGuidersInFormFields(onvifData)
+                writeOnvifDataToFormFields(onvifData)
+                blockWindow.modal('show')
+            }else{
+                new PNotify({
+                    title: lang.ONVIFEventsNotAvailable,
+                    text: lang.ONVIFEventsNotAvailableText1,
+                    type: 'warning'
+                })
+            }
         })
+    }
+    var getUIFieldValuesFromForm = function(){
+        var newObject = {}
+        var formOptions = blockForm.serializeObject()
+        $.each(formOptions,function(key,value){
+            var enclosingObject = blockForm.find(`[name="${key}"]`).parents('.form-group-group').attr("id")
+            newObject[enclosingObject + ':' + key] = value
+        })
+        return newObject
     }
     $('body').on('click','[open-onvif-device-manager]',function(){
         var monitorId = $(this).attr('open-onvif-device-manager')
-        getUIFieldValues(monitorId)
+        getUIFieldValuesFromCamera(monitorId)
     })
     blockForm.on('change','[name="videoToken"]',function(){
         var selectedEncoder = loadedVideoEncoders[$(this).val()]
@@ -162,8 +195,7 @@ $(document).ready(function(){
     })
     blockForm.submit(function(e){
         e.preventDefault()
-        var formOptions = blockForm.serializeObject()
-        console.log(formOptions)
+        console.log(convertFormFieldNameToObjectKeys(getUIFieldValuesFromForm()))
         return false;
     })
 })

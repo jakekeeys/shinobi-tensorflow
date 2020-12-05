@@ -4659,7 +4659,7 @@ module.exports = function(s,config,lang){
                  "color": "purple",
                  "info": [
                      {
-                        "name": "DHCP",
+                        "name": "setNetworkInterface:DHCP",
                         "selector":"onvif_dhcp",
                         "field": lang.DHCP,
                         "description": "",

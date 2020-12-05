@@ -10,6 +10,7 @@ const {
     createUser,
     deleteUser,
     setVideoConfiguration,
+    setNetworkInterface,
     setImagingSettings,
     setDiscoveryMode,
     getUIFieldValues,

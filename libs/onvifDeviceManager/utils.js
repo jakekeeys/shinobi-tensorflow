@@ -505,5 +505,6 @@ module.exports = {
     setVideoConfiguration: setVideoConfiguration,
     setImagingSettings: setImagingSettings,
     setDiscoveryMode: setDiscoveryMode,
+    setNetworkInterface: setNetworkInterface,
     getUIFieldValues: getUIFieldValues,
 }
