@@ -402,7 +402,7 @@ var drawList = function(){
     list.html(html)
 }
 monitorEditorWindow.on('shown.bs.modal', function () {
-    triggerSecondaryChangeOnAll()
+    triggerSecondaryHideCheckOnAll()
     drawList()
 })
 $.aM.import = function(options){
@@ -547,7 +547,7 @@ $.aM.import = function(options){
         }
     })
     monitorsForCopy.find('optgroup').html(tmp)
-    triggerSecondaryChangeOnAll()
+    triggerSecondaryHideCheckOnAll()
     drawList()
 }
 //parse "Automatic" field in "Input" Section
@@ -757,10 +757,10 @@ var showInputMappingFields = function(showMaps){
     }else{
         el.hide()
     }
-    triggerSecondaryChangeOnAll()
+    triggerSecondaryHideCheckOnAll()
     drawList()
 }
-var triggerSecondaryChange = function(el){
+var triggerSecondaryHideCheck = function(el){
     var key = el.attr('selector')
     var value = el.val();
     var triggerChange = el.attr('triggerchange')
@@ -773,10 +773,10 @@ var triggerSecondaryChange = function(el){
         $(triggerChange).trigger('change')
     }
 }
-var triggerSecondaryChangeOnAll = function(){
+var triggerSecondaryHideCheckOnAll = function(){
     monitorEditorWindow.find('[selector]').each(function(){
         var el = $(this);
-        triggerSecondaryChange(el)
+        triggerSecondaryHideCheck(el)
     })
 }
 monitorStreamChannels.on('click','.delete',function(){
@@ -898,7 +898,7 @@ editorForm.find('[name="type"]').change(function(e){
 editorForm.find('[detail]').change($.ccio.form.details)
 editorForm.on('change','[selector]',function(){
     var el = $(this);
-    triggerSecondaryChange(el)
+    triggerSecondaryHideCheck(el)
     drawList()
 });
 editorForm.find('[name="type"]').change(function(e){
@@ -913,20 +913,6 @@ editorForm.find('[name="type"]').change(function(e){
             pathField.attr('placeholder','/videostream.cgi?1')
         break;
     }
-});
-var boxWrappersHidden = $.ccio.op().boxWrappersHidden || {}
-$.each(boxWrappersHidden,function(boxId,hide){
-    if(hide){
-        $(`#${boxId}`).addClass('hide-box-wrapper')
-    }
-})
-monitorEditorWindow.find('.monitor-section-header').click(function(e){
-    var parent = $(this).parent('.form-group-group')
-    var boxWrapper = parent.attr('id')
-    parent.toggleClass('hide-box-wrapper')
-    var hideBoxWrapper = parent.hasClass('hide-box-wrapper')
-    boxWrappersHidden[boxWrapper] = hideBoxWrapper
-    $.ccio.op('boxWrappersHidden',boxWrappersHidden)
 });
     $.aM.connectedDetectorPlugins = {}
     $.aM.addDetectorPlugin = function(name,d){
@@ -950,7 +936,7 @@ monitorEditorWindow.find('.monitor-section-header').click(function(e){
             $('.shinobi-detector_name').empty()
             $('.shinobi-detector_plug').hide()
             $('.shinobi-detector-invert').show()
-            triggerSecondaryChangeOnAll()
+            triggerSecondaryHideCheckOnAll()
             drawList()
         }else{
             var pluginTitle = []
@@ -966,7 +952,7 @@ monitorEditorWindow.find('.monitor-section-header').click(function(e){
             $('.shinobi-detector-invert').hide()
             $('.shinobi-detector_name').text(pluginTitle.join(', '))
             if(pluginNotice.length > 0)$('.shinobi-detector-msg').text(pluginNotice.join('<br>'))
-            triggerSecondaryChangeOnAll()
+            triggerSecondaryHideCheckOnAll()
             drawList()
         }
     }

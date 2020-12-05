@@ -818,7 +818,20 @@ $(document).ready(function(e){
             e.e.resize()
         }
     });
-
+    $('body').find('.monitor-section-header').click(function(e){
+        var parent = $(this).parent('.form-group-group')
+        var boxWrapper = parent.attr('id')
+        parent.toggleClass('hide-box-wrapper')
+        var hideBoxWrapper = parent.hasClass('hide-box-wrapper')
+        boxWrappersHidden[boxWrapper] = hideBoxWrapper
+        $.ccio.op('boxWrappersHidden',boxWrappersHidden)
+    });
+    var boxWrappersHidden = $.ccio.op().boxWrappersHidden || {}
+    $.each(boxWrappersHidden,function(boxId,hide){
+        if(hide){
+            $(`#${boxId}`).addClass('hide-box-wrapper')
+        }
+    })
     $('body')
     .on('click','.scrollTo',function(ee){
         ee.preventDefault()

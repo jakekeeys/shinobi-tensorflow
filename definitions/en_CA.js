@@ -4654,6 +4654,14 @@ module.exports = function(s,config,lang){
       "ONVIF Device Manager": {
           "section": "ONVIF Device Manager",
           "blocks": {
+             "Notice": {
+                 "name": lang["Notice"],
+                 "color": "warning",
+                 "blockquoteClass": "global_tip",
+                 "blockquote": lang.onvifdeviceManagerGlobalTip,
+                 "info": [
+                 ]
+             },
              "Network": {
                  "name": lang["Network"],
                  "color": "purple",
@@ -4810,6 +4818,33 @@ module.exports = function(s,config,lang){
                  "color": "purple",
                  "info": [
                      {
+                        "field": lang['IrCutFilter'],
+                        "name": "IrCutFilter",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "fieldType": "select",
+                        "possible": [
+                           {
+                              "name": lang.On,
+                              "value": "ON",
+                              "info": "Enable Ir cut fiter. Typically Day mode."
+                           },
+                           {
+                              "name": lang.Off,
+                              "value": "OFF",
+                              "info": "Disable Ir cut fiter. Typically Night mode."
+                           },
+                           {
+                              "name": lang.Auto,
+                              "value": "AUTO",
+                              "info": "Ir cut filter is automatically activated by the device."
+                           },
+                       ]
+                     },
+                     {
                         "field": lang['Brightness'],
                         "name": "Brightness",
                         "placeholder": "",
@@ -4898,33 +4933,6 @@ module.exports = function(s,config,lang){
                         "example": "",
                         "form-group-class": "imaging-field",
                         "possible": ""
-                     },
-                     {
-                        "field": lang['IrCutFilter'],
-                        "name": "IrCutFilter",
-                        "placeholder": "",
-                        "description": "",
-                        "default": "",
-                        "example": "",
-                        "form-group-class": "imaging-field",
-                        "fieldType": "select",
-                        "possible": [
-                           {
-                              "name": lang.On,
-                              "value": "ON",
-                              "info": "Enable Ir cut fiter. Typically Day mode."
-                           },
-                           {
-                              "name": lang.Off,
-                              "value": "OFF",
-                              "info": "Disable Ir cut fiter. Typically Night mode."
-                           },
-                           {
-                              "name": lang.Auto,
-                              "value": "AUTO",
-                              "info": "Ir cut filter is automatically activated by the device."
-                           },
-                       ]
                      },
                      {
                         "field": lang['Sharpness'],

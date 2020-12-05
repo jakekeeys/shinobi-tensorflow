@@ -340,7 +340,7 @@ const setDateAndTime = async (onvifDevice,options) => {
     try{
         // const dateInfo = await onvifDevice.services.device.getSystemDateAndTime().GetSystemDateAndTimeResponse.SystemDateAndTime
         const onvifResponse = await onvifDevice.services.device.setSystemDateAndTime ({
-            DateTimeType: options.dateTimeType ? "NTP" : "Manual",
+            DateTimeType: options.dateTimeType,
             DaylightSavings: !options.daylightSavings ? false : true,
             // TimeZone: options.timezone,
             UTCDateTime: new Date(options.utcDateTime),
