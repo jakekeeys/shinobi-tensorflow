@@ -1,4 +1,5 @@
 $(document).ready(function(){
+    var selectedMonitorId
     var loadedVideoEncoders = {}
     var blockWindow = $('#onvifDeviceManager')
     var blockWindowInfo = $('#onvifDeviceManagerInfo')
@@ -179,6 +180,7 @@ $(document).ready(function(){
     }
     $('body').on('click','[open-onvif-device-manager]',function(){
         var monitorId = $(this).attr('open-onvif-device-manager')
+        selectedMonitorId = `${monitorId}`
         getUIFieldValuesFromCamera(monitorId)
     })
     blockForm.on('change','[name="videoToken"]',function(){
@@ -195,7 +197,12 @@ $(document).ready(function(){
     })
     blockForm.submit(function(e){
         e.preventDefault()
-        console.log(convertFormFieldNameToObjectKeys(getUIFieldValuesFromForm()))
+        var postData = convertFormFieldNameToObjectKeys(getUIFieldValuesFromForm())
+        $.post($.ccio.init('location',$user)+$user.auth_token+'/onvifDeviceManager/'+$user.ke + '/' + selectedMonitorId + '/save',{
+            data: JSON.stringify(postData)
+        },function(response){
+            console.log(response)
+        })
         return false;
     })
 })
