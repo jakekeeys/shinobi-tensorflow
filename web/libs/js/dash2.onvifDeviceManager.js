@@ -175,7 +175,7 @@ $(document).ready(function(){
                 $.get($.ccio.init('location',$user)+$user.auth_token+'/onvifDeviceManager/'+$user.ke + '/' + monitorId + '/reboot',function(response){
                     new PNotify({
                         title: lang.rebootingCamera,
-                        text: JSON.stringify(response),
+                        text: lang['Please Wait...'],
                         type: 'warning'
                     })
                 })
