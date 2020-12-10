@@ -123,7 +123,7 @@ module.exports = (s,config,lang) => {
         const timestampColor = parameterContainer[`${prefix}timestamp_color`] ? parameterContainer[`${prefix}timestamp_color`] : 'white'
         const timestampBackgroundColor = parameterContainer[`${prefix}timestamp_box_color`] ? parameterContainer[`${prefix}timestamp_box_color`] : '0x00000000@1'
         const timestampFontSize = parameterContainer[`${prefix}timestamp_font_size`] ? parameterContainer[`${prefix}timestamp_font_size`] : '10'
-        return `'drawtext=fontfile=${timestampFont}:text=\'%{localtime}\':x=${timestampX}:y=${timestampY}:fontcolor=${timestampColor}:box=1:boxcolor=${timestampBackgroundColor}:fontsize=${timestampFontSize}`
+        return `drawtext=fontfile=${timestampFont}:text='%{localtime}':x=${timestampX}:y=${timestampY}:fontcolor=${timestampColor}:box=1:boxcolor=${timestampBackgroundColor}:fontsize=${timestampFontSize}`
     }
     const createInputMap = (e, number, input) => {
         //`e` is the monitor object
