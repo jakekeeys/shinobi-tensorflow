@@ -303,7 +303,7 @@ $.ccio.tm=function(x,d,z,user){
                     el.muted = "muted"
                 })
             }else{
-                var hasFocus = $.ccio.windowFocus && hadFocus
+                var hasFocus = $.ccio.windowFocus && window.hadFocus
                 $.each($.ccio.mon,function(frontId,monitor){
                     setTimeout(() => {
                         var monitorId = monitor.mid
