@@ -1,5 +1,5 @@
 var os = require('os');
-var onvif = require("node-onvif");
+const onvif = require("shinobi-onvif");
 const {
     stringContains,
 } = require('../common.js')

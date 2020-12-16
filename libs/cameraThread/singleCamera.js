@@ -22,7 +22,7 @@ var writeToStderr = function(text){
       // stdioWriters[2].write(Buffer.from(`${new Error('writeToStderr').stack}`, 'utf8' ))
   }catch(err){
   }
-  fs.appendFileSync('/home/Shinobi/test.log',text + '\n','utf8')
+  // fs.appendFileSync('/home/Shinobi/test.log',text + '\n','utf8')
 }
 
 const buildMonitorUrl = function(e,noPath){

@@ -453,19 +453,24 @@ module.exports = function(s,config,lang){
     s.streamMp4FileOverHttp = function(filePath,req,res,pureStream){
         var ext = filePath.split('.')
         ext = ext[ext.length - 1]
-        var total = fs.statSync(filePath).size;
+        const total = fs.statSync(filePath).size;
         if (req.headers['range'] && !pureStream) {
             try{
-                var range = req.headers.range;
-                var parts = range.replace(/bytes=/, "").split("-");
-                var partialstart = parts[0];
-                var partialend = parts[1];
-                var start = parseInt(partialstart, 10);
-                var end = partialend ? parseInt(partialend, 10) : total-1;
-                var chunksize = (end-start)+1;
-                var file = fs.createReadStream(filePath, {start: start, end: end});
-                req.headerWrite={ 'Content-Range': 'bytes ' + start + '-' + end + '/' + total, 'Accept-Ranges': 'bytes', 'Content-Length': chunksize, 'Content-Type': 'video/'+ext }
-                req.writeCode=206
+                const range = req.headers.range;
+                const parts = range.replace(/bytes=/, "").split("-");
+                const partialstart = parts[0];
+                const partialend = parts[1];
+                const start = parseInt(partialstart, 10);
+                const end = partialend ? parseInt(partialend, 10) : total-1;
+                const chunksize = (end-start)+1;
+                const file = fs.createReadStream(filePath, {start: start, end: end});
+                req.headerWrite = {
+                    'Content-Range': 'bytes ' + start + '-' + end + '/' + total,
+                    'Accept-Ranges': 'bytes',
+                    'Content-Length': chunksize,
+                    'Content-Type': 'video/'+ext
+                }
+                req.writeCode = 206
             }catch(err){
                 req.headerWrite={ 'Content-Length': total, 'Content-Type': 'video/'+ext};
                 var file = fs.createReadStream(filePath)
