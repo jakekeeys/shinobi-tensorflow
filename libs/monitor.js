@@ -60,7 +60,7 @@ module.exports = function(s,config,lang){
         })
     }
     s.sendMonitorStatus = function(e){
-        s.group[e.ke].activeMonitors[e.id].monitorStatus = e.status
+        s.group[e.ke].activeMonitors[e.id].monitorStatus = `${e.status}`
         s.tx(Object.assign(e,{f:'monitor_status'}),'GRP_'+e.ke)
     }
     s.getMonitorCpuUsage = function(e,callback){
@@ -1219,9 +1219,12 @@ module.exports = function(s,config,lang){
                                     catchNewSegmentNames(e)
                                     cameraFilterFfmpegLog(e)
                                 }
-                                s.onMonitorStartExtensions.forEach(function(extender){
-                                    extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
-                                })
+                                clearTimeout(activeMonitor.onMonitorStartTimer)
+                                activeMonitor.onMonitorStartTimer = setTimeout(() => {
+                                    s.onMonitorStartExtensions.forEach(function(extender){
+                                        extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
+                                    })
+                                },10000)
                             }catch(err){
                                 console.log('Failed to Load',e.id,e.ke)
                                 console.log(err)
@@ -1330,7 +1333,7 @@ module.exports = function(s,config,lang){
         }
     }
     const fatalError = function(e,errorMessage){
-      const activeMonitor = s.group[e.ke].activeMonitors[e.id]
+        const activeMonitor = s.group[e.ke].activeMonitors[e.id]
         clearTimeout(activeMonitor.err_fatal_timeout);
         ++activeMonitor.errorFatalCount;
         if(activeMonitor.isStarted === true){
@@ -1345,6 +1348,7 @@ module.exports = function(s,config,lang){
             cameraDestroy(e)
         }
         s.sendMonitorStatus({id:e.id,ke:e.ke,status:lang.Died})
+        clearTimeout(activeMonitor.onMonitorStartTimer)
         s.onMonitorDiedExtensions.forEach(function(extender){
             extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
         })
@@ -1569,6 +1573,7 @@ module.exports = function(s,config,lang){
                         },2,null,true)
                     },2000)
                 }
+                clearTimeout(s.group[e.ke].activeMonitors[e.id].onMonitorStartTimer)
                 s.onMonitorStopExtensions.forEach(function(extender){
                     extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
                 })
@@ -1582,16 +1587,18 @@ module.exports = function(s,config,lang){
                     //stop action, monitor already started or recording
                     return
                 }
-                const probeResponse = await probeMonitor(s.group[e.ke].rawMonitorConfigurations[e.id],2000,true)
-                const probeStreams = getStreamInfoFromProbe(probeResponse.result)
-                activeMonitor.probeResult = probeStreams
-                const warnings = createWarningsForConfiguration(s.group[e.ke].rawMonitorConfigurations[e.id],probeStreams)
-                activeMonitor.warnings = warnings
-                if(warnings.length > 0){
-                    const configPartial = buildMonitorConfigPartialFromWarnings(warnings)
-                    applyPartialToConfiguration(e,configPartial)
-                    applyPartialToConfiguration(activeMonitor,configPartial)
-                    applyPartialToConfiguration(s.group[e.ke].rawMonitorConfigurations[e.id],configPartial)
+                if(config.probeMonitorOnStart === true){
+                    const probeResponse = await probeMonitor(s.group[e.ke].rawMonitorConfigurations[e.id],2000,true)
+                    const probeStreams = getStreamInfoFromProbe(probeResponse.result)
+                    activeMonitor.probeResult = probeStreams
+                    const warnings = createWarningsForConfiguration(s.group[e.ke].rawMonitorConfigurations[e.id],probeStreams)
+                    activeMonitor.warnings = warnings
+                    if(warnings.length > 0){
+                        const configPartial = buildMonitorConfigPartialFromWarnings(warnings)
+                        applyPartialToConfiguration(e,configPartial)
+                        applyPartialToConfiguration(activeMonitor,configPartial)
+                        applyPartialToConfiguration(s.group[e.ke].rawMonitorConfigurations[e.id],configPartial)
+                    }
                 }
                 s.sendMonitorStatus({
                     id: e.id,

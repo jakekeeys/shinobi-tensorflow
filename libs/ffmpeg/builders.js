@@ -123,7 +123,7 @@ module.exports = (s,config,lang) => {
         const timestampColor = parameterContainer[`${prefix}timestamp_color`] ? parameterContainer[`${prefix}timestamp_color`] : 'white'
         const timestampBackgroundColor = parameterContainer[`${prefix}timestamp_box_color`] ? parameterContainer[`${prefix}timestamp_box_color`] : '0x00000000@1'
         const timestampFontSize = parameterContainer[`${prefix}timestamp_font_size`] ? parameterContainer[`${prefix}timestamp_font_size`] : '10'
-        return `'drawtext=fontfile=${timestampFont}:text=\'%{localtime}\':x=${timestampX}:y=${timestampY}:fontcolor=${timestampColor}:box=1:boxcolor=${timestampBackgroundColor}:fontsize=${timestampFontSize}`
+        return `drawtext=fontfile=${timestampFont}:text='%{localtime}':x=${timestampX}:y=${timestampY}:fontcolor=${timestampColor}:box=1:boxcolor=${timestampBackgroundColor}:fontsize=${timestampFontSize}`
     }
     const createInputMap = (e, number, input) => {
         //`e` is the monitor object
@@ -184,7 +184,11 @@ module.exports = (s,config,lang) => {
         //`x` is an object used to contain temporary values.
         const channelStreamDirectory = !isNaN(parseInt(number)) ? `${e.sdir}channel${number}/` : e.sdir
         if(channelStreamDirectory !== e.sdir && !fs.existsSync(channelStreamDirectory)){
-            fs.mkdirSync(channelStreamDirectory)
+            try{
+                fs.mkdirSync(channelStreamDirectory)
+            }catch(err){
+                // s.debugLog(err)
+            }
         }
         const channelNumber = number - config.pipeAddition
         const isCudaEnabled = hasCudaEnabled(e)
@@ -266,10 +270,10 @@ module.exports = (s,config,lang) => {
                 streamFlags.push(`-f flv "${rtmpServerUrl + channel.rtmp_stream_key}"`)
             break;
             case'mp4':
-                streamFlags.push('-f mp4 -movflags +frag_keyframe+empty_moov+default_base_moof -metadata title="Poseidon Stream from Shinobi" -reset_timestamps 1 pipe:${number}')
+                streamFlags.push(`-f mp4 -movflags +frag_keyframe+empty_moov+default_base_moof -metadata title="Poseidon Stream from Shinobi" -reset_timestamps 1 pipe:${number}`)
             break;
             case'flv':
-                streamFlags.push(`-f flv`,'pipe:${number}')
+                streamFlags.push(`-f flv pipe:${number}`)
             break;
             case'hls':
                 const hlsTime = !isNaN(parseInt(channel.hls_time)) ? `${parseInt(channel.hls_time)}` : '2'
@@ -483,7 +487,7 @@ module.exports = (s,config,lang) => {
             const videoFilters = []
             const inputMap = buildInputMap(e,e.details.input_map_choices.stream)
             const { videoWidth, videoHeight } = validateDimensions(e.details.snap_scale_x,e.details.snap_scale_y)
-            if(inputMap)streamFlags.push(inputMap)
+            if(inputMap)videoFlags.push(inputMap)
             if(e.details.snap_vf)videoFilters.push(e.details.snap_vf)
             if(isCudaEnabled){
                 videoFilters.push('hwdownload,format=nv12')
@@ -670,7 +674,7 @@ module.exports = (s,config,lang) => {
             const videoCodecisCopy = videoCodec === 'copy'
             const videoFps = !isNaN(parseFloat(e.details.stream_fps)) && e.details.stream_fps !== '0' ? parseFloat(e.details.stream_fps) : null
             const inputMap = buildInputMap(e,e.details.input_map_choices.detector_sip_buffer)
-            const { videoWidth, videoHeight } = validateDimensions(e.details.record_scale_x,e.details.record_scale_y)
+            const { videoWidth, videoHeight } = validateDimensions(e.details.event_record_scale_x,e.details.event_record_scale_y)
             const hlsTime = !isNaN(parseInt(e.details.detector_buffer_hls_list_time)) ? `${parseInt(e.details.detector_buffer_hls_list_time)}` : '2'
             const hlsListSize = !isNaN(parseInt(e.details.detector_buffer_hls_list_size)) ? `${parseInt(e.details.detector_buffer_hls_list_size)}` : '4'
             if(inputMap)outputFlags.push(inputMap)
@@ -735,8 +739,8 @@ module.exports = (s,config,lang) => {
             const videoFilters = []
             const videoFlags = []
             const inputMap = buildInputMap(e,e.details.input_map_choices.record_timelapse)
-            const { videoWidth, videoHeight } = validateDimensions(e.details.record_scale_x,e.details.record_scale_y)
-            if(videoWidth && videoHeight)streamFlags.push(`-s ${videoWidth}x${videoHeight}`)
+            const { videoWidth, videoHeight } = validateDimensions(e.details.record_timelapse_scale_x,e.details.record_timelapse_scale_y)
+            if(videoWidth && videoHeight)videoFlags.push(`-s ${videoWidth}x${videoHeight}`)
             if(inputMap)videoFlags.push(inputMap)
             videoFilters.push(`fps=${(1 / (!isNaN(parseFloat(e.details.record_timelapse_fps)) ? parseFloat(e.details.record_timelapse_fps) : 900)).toFixed(3)}`)
             if(e.details.record_timelapse_vf)videoFilters.push(e.details.record_timelapse_vf)

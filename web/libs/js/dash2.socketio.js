@@ -76,7 +76,7 @@ $.ccio.globalWebsocket=function(d,user){
                             $.ccio.soundAlarmed = false
                         },user.details.audio_delay * 1000)
                     }
-                    if($.ccio.windowFocus = true){
+                    if($.ccio.windowFocus === true){
                         audio.play()
                     }else{
                         clearInterval($.ccio.soundAlarmInterval)
@@ -91,7 +91,7 @@ $.ccio.globalWebsocket=function(d,user){
                     }
                 }
                 if(user.details.event_mon_pop === '1' && (!$.ccio.mon[d.ke+d.id+user.auth_token].popOut || $.ccio.mon[d.ke+d.id+user.auth_token].popOut.closed === true)){
-                    d.e.find('[monitor="pop"]').click()
+                    popOutMonitor(d.id)
                 }
             }
         break;

@@ -26,19 +26,23 @@ module.exports = function(s,config,lang){
     }
     const stopMove = function(options,callback){
         const device = s.group[options.ke].activeMonitors[options.id].onvifConnection
-        s.runOnvifMethod({
-            auth: {
-                ke: options.ke,
-                id: options.id,
-                action: 'stop',
-                service: 'ptz',
-            },
-            options: {
-                'PanTilt': true,
-                'Zoom': true,
-                ProfileToken: device.current_profile.token
-            },
-        },callback)
+        try{
+            s.runOnvifMethod({
+                auth: {
+                    ke: options.ke,
+                    id: options.id,
+                    action: 'stop',
+                    service: 'ptz',
+                },
+                options: {
+                    'PanTilt': true,
+                    'Zoom': true,
+                    ProfileToken: device.current_profile.token
+                },
+            },callback)
+        }catch(err){
+            callback({ok: false})
+        }
     }
     const moveOnvifCamera = function(options,callback){
         const monitorConfig = s.group[options.ke].rawMonitorConfigurations[options.id]
@@ -47,10 +51,12 @@ module.exports = function(s,config,lang){
         const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
         switch(options.direction){
             case'center':
+                moveLock[options.ke + options.id] = true
                 moveToPresetPosition({
                     ke: options.ke,
                     id: options.id,
                 },(endData) => {
+                    moveLock[options.ke + options.id] = false
                     callback({type:'Moving to Home Preset', response: endData})
                 })
             break;
@@ -60,7 +66,7 @@ module.exports = function(s,config,lang){
                     ke: options.ke,
                     id: options.id,
                 },(response) => {
-
+                    moveLock[options.ke + options.id] = false
                 })
             break;
             default:
@@ -89,6 +95,7 @@ module.exports = function(s,config,lang){
                         controlOptions.Velocity[axis] = 0
                 })
                 if(monitorConfig.details.control_stop === '1'){
+                    moveLock[options.ke + options.id] = true
                     startMove({
                         ke: options.ke,
                         id: options.id,
@@ -104,6 +111,7 @@ module.exports = function(s,config,lang){
                                         if(!response.ok){
                                             s.systemLog(response)
                                         }
+                                        moveLock[options.ke + options.id] = false
                                     })
                                     callback({type: 'Control Triggered'})
                                 },controlUrlStopTimeout)
@@ -116,6 +124,7 @@ module.exports = function(s,config,lang){
                     controlOptions.Speed = {'x': 1, 'y': 1, 'z': 1}
                     controlOptions.Translation = Object.assign(controlOptions.Velocity,{})
                     delete(controlOptions.Velocity)
+                    moveLock[options.ke + options.id] = true
                     s.runOnvifMethod({
                         auth: {
                             ke: options.ke,
@@ -130,6 +139,7 @@ module.exports = function(s,config,lang){
                         }else{
                             callback({type: 'Control Triggered', error: response.error})
                         }
+                        moveLock[options.ke + options.id] = false
                     })
                 }
             }catch(err){
@@ -228,6 +238,7 @@ module.exports = function(s,config,lang){
                         msg.type = 'Control Error'
                         msg.msg = err
                     }
+                    moveLock[options.ke + options.id] = false
                     callback(msg)
                     s.userLog(e,msg);
                 })
@@ -248,6 +259,7 @@ module.exports = function(s,config,lang){
                 if(monitorConfig.details.control_digest_auth === '1'){
                     requestOptions.sendImmediately = true
                 }
+                moveLock[options.ke + options.id] = true
                 request(requestOptions,function(err,data){
                     if(err){
                         callback({ok:false,type:'Control Error',msg:err})
@@ -261,6 +273,7 @@ module.exports = function(s,config,lang){
                             },controlUrlStopTimeout)
                         }
                     }else{
+                        moveLock[options.ke + options.id] = false
                         callback({ok:true,type:'Control Triggered'})
                     }
                 })
@@ -322,6 +335,17 @@ module.exports = function(s,config,lang){
             },
         },callback)
     }
+    const setHomePositionTimeout = (event) => {
+        clearTimeout(ptzTimeoutsUntilResetToHome[event.ke + event.id])
+        ptzTimeoutsUntilResetToHome[event.ke + event.id] = setTimeout(() => {
+            moveToPresetPosition({
+                ke: event.ke,
+                id: event.id,
+            },(endData) => {
+                s.debugLog(endData)
+            })
+        },7000)
+    }
     const getLargestMatrix = (matrices) => {
         var largestMatrix = {width: 0, height: 0}
         matrices.forEach((matrix) => {
@@ -331,10 +355,6 @@ module.exports = function(s,config,lang){
     }
     const moveCameraPtzToMatrix = function(event,trackingTarget){
         if(moveLock[event.ke + event.id])return;
-        clearTimeout(moveLock[event.ke + event.id])
-        moveLock[event.ke + event.id] = setTimeout(() => {
-            delete(moveLock[event.ke + event.id])
-        },1000)
         const imgHeight = event.details.imgHeight
         const imgWidth = event.details.imgWidth
         const thresholdX = imgWidth * 0.125
@@ -369,16 +389,10 @@ module.exports = function(s,config,lang){
             },(msg) => {
                 s.userLog(event,msg)
                 // console.log(msg)
-                clearTimeout(ptzTimeoutsUntilResetToHome[event.ke + event.id])
-                ptzTimeoutsUntilResetToHome[event.ke + event.id] = setTimeout(() => {
-                    moveToPresetPosition({
-                        ke: event.ke,
-                        id: event.id,
-                    },(endData) => {
-                        console.log(endData)
-                    })
-                },7000)
+                setHomePositionTimeout(event)
             })
+        }else{
+            setHomePositionTimeout(event)
         }
     }
     return {

@@ -59,3 +59,22 @@ form.modal-body{margin:0}
 
 .btn-group-justified {display: flex}
 .btn-group-justified .btn {flex: 1}
+
+.form-group-group > h4{
+    cursor: pointer;
+}
+.form-group-group > h4 small{
+    cursor: pointer;
+    font-size: 8pt;
+}
+
+.hide-box-wrapper.form-group-group > h4{
+    margin: 0;
+}
+.hide-box-wrapper.form-group-group{
+    padding: 0;
+}
+.hide-box-wrapper .box-wrapper{
+    height: 0;
+    overflow: hidden;
+}

@@ -258,7 +258,11 @@ $(document).ready(function(e){
                     vidEl.muted = true
                 }else{
                     if(masterMute !== 1){
-                        vidEl.muted = false
+                        if($.ccio.windowFocus && hadFocus){
+                            vidEl.muted = false
+                        }else{
+                            console.error('User must have window active to unmute.')
+                        }
                     }
                 }
                 var volumeIcon = monitorMutes[monitorId] !== 1 ? 'volume-up' : 'volume-off'
@@ -405,25 +409,7 @@ $(document).ready(function(e){
                 }
             break;
             case'pop':
-                e.fin=function(img){
-                    if($.ccio.mon[e.ke+e.mid+user.auth_token].popOut){
-                        $.ccio.mon[e.ke+e.mid+user.auth_token].popOut.close()
-                    }
-                    $.ccio.mon[e.ke+e.mid+user.auth_token].popOut = window.open(getApiPrefix() + '/embed/'+e.ke+'/'+e.mid+'/fullscreen|jquery|relative|gui','pop_'+e.mid+user.auth_token,'height='+img.height+',width='+img.width);
-                }
-                if(e.mon.watch===1){
-                    $.ccio.snapshot(e,function(url){
-                        $('#temp').html('<img>')
-                        var img=$('#temp img')[0]
-                        img.onload=function(){
-                            e.fin(img)
-                        }
-                        img.src=url
-                    })
-                }else{
-                    var img={height:720,width:1280}
-                    e.fin(img)
-                }
+                popOutMonitor(e.mid)
             break;
             case'mode':
                 e.mode=e.e.attr('mode')
@@ -818,7 +804,20 @@ $(document).ready(function(e){
             e.e.resize()
         }
     });
-
+    $('body').find('.monitor-section-header').click(function(e){
+        var parent = $(this).parent('.form-group-group')
+        var boxWrapper = parent.attr('id')
+        parent.toggleClass('hide-box-wrapper')
+        var hideBoxWrapper = parent.hasClass('hide-box-wrapper')
+        boxWrappersHidden[boxWrapper] = hideBoxWrapper
+        $.ccio.op('boxWrappersHidden',boxWrappersHidden)
+    });
+    var boxWrappersHidden = $.ccio.op().boxWrappersHidden || {}
+    $.each(boxWrappersHidden,function(boxId,hide){
+        if(hide){
+            $(`#${boxId}`).addClass('hide-box-wrapper')
+        }
+    })
     $('body')
     .on('click','.scrollTo',function(ee){
         ee.preventDefault()

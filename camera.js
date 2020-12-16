@@ -83,6 +83,8 @@ require('./libs/ffmpeg.js')(s,config,lang, async () => {
     require('./libs/scanners.js')(s,config,lang,app,io)
     //scheduling engine
     require('./libs/scheduler.js')(s,config,lang,app,io)
+    //onvif device manager
+    require('./libs/onvifDeviceManager.js')(s,config,lang,app,io)
     //on-start actions, daemon(s) starter
     await require('./libs/startup.js')(s,config,lang)
     //p2p, commander

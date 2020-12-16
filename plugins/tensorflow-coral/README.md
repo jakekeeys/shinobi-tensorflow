@@ -29,7 +29,7 @@ IF YOU DON'T HAVE INSTALLED CORAL DEPENDENCIES BEFORE, YOU NEED TO PLUG OUT AND 
 Start the plugin.
 
 ```
-pm2 start shinobi-tensorflow.js
+pm2 start shinobi-tensorflow-coral.js
 ```
 
 Doing this will reveal options in the monitor configuration. Shinobi does not need to be restarted when a plugin is initiated or stopped.
