@@ -184,7 +184,11 @@ module.exports = (s,config,lang) => {
         //`x` is an object used to contain temporary values.
         const channelStreamDirectory = !isNaN(parseInt(number)) ? `${e.sdir}channel${number}/` : e.sdir
         if(channelStreamDirectory !== e.sdir && !fs.existsSync(channelStreamDirectory)){
-            fs.mkdirSync(channelStreamDirectory)
+            try{
+                fs.mkdirSync(channelStreamDirectory)
+            }catch(err){
+                // s.debugLog(err)
+            }
         }
         const channelNumber = number - config.pipeAddition
         const isCudaEnabled = hasCudaEnabled(e)
@@ -266,10 +270,10 @@ module.exports = (s,config,lang) => {
                 streamFlags.push(`-f flv "${rtmpServerUrl + channel.rtmp_stream_key}"`)
             break;
             case'mp4':
-                streamFlags.push('-f mp4 -movflags +frag_keyframe+empty_moov+default_base_moof -metadata title="Poseidon Stream from Shinobi" -reset_timestamps 1 pipe:${number}')
+                streamFlags.push(`-f mp4 -movflags +frag_keyframe+empty_moov+default_base_moof -metadata title="Poseidon Stream from Shinobi" -reset_timestamps 1 pipe:${number}`)
             break;
             case'flv':
-                streamFlags.push(`-f flv`,'pipe:${number}')
+                streamFlags.push(`-f flv pipe:${number}`)
             break;
             case'hls':
                 const hlsTime = !isNaN(parseInt(channel.hls_time)) ? `${parseInt(channel.hls_time)}` : '2'
