@@ -454,7 +454,6 @@ module.exports = function(s,config,lang){
         var ext = filePath.split('.')
         ext = ext[ext.length - 1]
         const total = fs.statSync(filePath).size;
-        console.log(req.headers['range'])
         if (req.headers['range'] && !pureStream) {
             try{
                 const range = req.headers.range;
