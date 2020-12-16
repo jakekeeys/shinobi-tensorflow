@@ -1193,8 +1193,9 @@ module.exports = function(s,config,lang){
                     }catch(err){
 
                     }
-                    startVideoProcessor = function(err,o){
-                        if(o.success === true){
+                    startVideoProcessor = function(err,pingResponse){
+                        pingResponse = pingResponse ? pingResponse : {success: false}
+                        if(pingResponse.success === true){
                             activeMonitor.isRecording = true
                             try{
                                 createCameraFfmpegProcess(e)
@@ -1247,10 +1248,10 @@ module.exports = function(s,config,lang){
                         try{
                             connectionTester.test(strippedHost,e.port,2000,startVideoProcessor);
                         }catch(err){
-                            startVideoProcessor(null,{success:true})
+                            startVideoProcessor()
                         }
                     }else{
-                        startVideoProcessor(null,{success:true})
+                        startVideoProcessor()
                     }
                 }else{
                     cameraDestroy(e)
@@ -1276,17 +1277,7 @@ module.exports = function(s,config,lang){
                 e.type !== 'local' &&
                 e.details.skip_ping !== '1'
             ){
-                connectionTester.test(strippedHost,e.port,2000,function(err,o){
-                    if(o.success === true){
-                        startVideoProcessor()
-                    }else{
-                        s.onMonitorPingFailedExtensions.forEach(function(extender){
-                            extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
-                        })
-                        s.userLog(e,{type:lang["Ping Failed"],msg:lang.skipPingText1});
-                        fatalError(e,"Ping Failed");return;
-                    }
-                })
+                connectionTester.test(strippedHost,e.port,2000,startVideoProcessor)
             }else{
                 startVideoProcessor()
             }
