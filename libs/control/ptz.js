@@ -150,13 +150,12 @@ module.exports = function(s,config,lang){
         }
     }
     const ptzControl = async function(options,callback){
-        console.log(options)
         if(!s.group[options.ke] || !s.group[options.ke].activeMonitors[options.id]){return}
         const monitorConfig = s.group[options.ke].rawMonitorConfigurations[options.id]
         const controlUrlMethod = monitorConfig.details.control_url_method || 'GET'
         const controlBaseUrl = monitorConfig.details.control_base_url || s.buildMonitorUrl(monitorConfig, true)
         if(monitorConfig.details.control !== "1"){
-            s.userLog(e,{type:lang['Control Error'],msg:lang.ControlErrorText1});
+            s.userLog(monitorConfig,{type:lang['Control Error'],msg:lang.ControlErrorText1});
             return
         }
         if(monitorConfig.details.control_url_stop_timeout === '0' && monitorConfig.details.control_stop === '1' && s.group[options.ke].activeMonitors[options.id].ptzMoving === true){
@@ -188,7 +187,7 @@ module.exports = function(s,config,lang){
                             callback(msg)
                         })
                     }else{
-                        s.userLog(e,{type:lang['Control Error'],msg:response.error})
+                        s.userLog(options,{type:lang['Control Error'],msg:response.error})
                     }
                 }else{
                     moveOnvifCamera({
@@ -240,7 +239,7 @@ module.exports = function(s,config,lang){
                     }
                     moveLock[options.ke + options.id] = false
                     callback(msg)
-                    s.userLog(e,msg);
+                    s.userLog(monitorConfig,msg);
                 })
             }
             if(options.direction === 'stopMove'){
@@ -266,7 +265,7 @@ module.exports = function(s,config,lang){
                         return
                     }
                     if(monitorConfig.details.control_stop == '1' && options.direction !== 'center' ){
-                        s.userLog(e,{type:'Control Triggered Started'});
+                        s.userLog(monitorConfig,{type:'Control Triggered Started'});
                         if(controlUrlStopTimeout > 0){
                             setTimeout(function(){
                                 stopCamera()
