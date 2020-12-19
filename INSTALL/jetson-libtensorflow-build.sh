@@ -21,4 +21,5 @@ cp ${HOME}/src/bazel-3.1.0-dist/output/bazel /usr/local/bin/bazel
 cd ${HOME}/bazel/jetson_nano
 export PIP_FORMAT=legacy
 apt install python3-h5py-dbg -y
+sed -i 's/h5py//g' ./install_tensorflow-2.3.0.sh
 sh ./install_tensorflow-2.3.0.sh
