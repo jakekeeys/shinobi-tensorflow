@@ -30,8 +30,8 @@ $(document).ready(function(e){
     }
     var getSelectedTime = function(asUtc){
         var dateRange = dateSelector.data('daterangepicker')
-        var startDate = dateRange.startDate
-        var endDate = dateRange.endDate
+        var startDate = dateRange.startDate.clone()
+        var endDate = dateRange.endDate.clone()
         if(asUtc){
             startDate = startDate.utc()
             endDate = endDate.utc()

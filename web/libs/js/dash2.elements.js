@@ -486,7 +486,7 @@ $(document).ready(function(e){
                         videoSet = 'cloudVideos'
                     break;
                 }
-                e.videoURL=getApiPrefix() + '/'+videoSet+'/'+e.ke+'/'+e.mid+'?limit='+e.limit+'&start='+e.dateRange.startDate.utc().format('YYYY-MM-DDTHH:mm:ss')+'&end='+e.dateRange.endDate.utc().format('YYYY-MM-DDTHH:mm:ss');
+                e.videoURL=getApiPrefix() + '/'+videoSet+'/'+e.ke+'/'+e.mid+'?limit='+e.limit+'&start='+e.dateRange.startDate.clone().utc().format('YYYY-MM-DDTHH:mm:ss')+'&end='+e.dateRange.endDate.clone().utc().format('YYYY-MM-DDTHH:mm:ss');
                 $.getJSON(e.videoURL,function(d){
                     d.pages=d.total/100;
                     $('.video_viewer_total').text(d.total)
