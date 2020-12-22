@@ -5,7 +5,7 @@ if [[ ! $(head -1 /etc/nv_tegra_release) =~ R32.*4\.[34] ]] ; then
 fi
 
 
-DIR=`dirname $0`
+DIR="$(pwd)"
 echo "Replacing package.json for tfjs 2.3.0..."
 wget -O $DIR/package.json https://cdn.shinobi.video/binaries/tensorflow/2.3.0/package.json
 echo "ARM CPU Installation is currently NOT supported! Jetson Nano with GPU enabled is currently only supported."
