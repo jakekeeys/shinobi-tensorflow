@@ -34,7 +34,7 @@ var tf = require('@tensorflow/tfjs-node-gpu')
 
   async function loadCocoSsdModal() {
       const modal = await cocossd.load({
-          base: 'mobilenet_v2', //lite_mobilenet_v2
+          base: 'lite_mobilenet_v2', //lite_mobilenet_v2
           modelUrl: null,
       })
       return modal;
@@ -64,36 +64,30 @@ var tf = require('@tensorflow/tfjs-node-gpu')
       loadCocoSsdModel =  await loadCocoSsdModal();
   }
   init()
-  var ObjectDetectors = class ObjectDetectors {
-      constructor(image, type) {
-          this.startTime = new Date();
-          this.inputImage = image;
-          this.type = type;
-      }
+  const runDetection = async (inputImage,type) => {
 
-      async process() {
-          const tensor3D = getTensor3dObject(3,(this.inputImage));
-          let predictions = await loadCocoSsdModel.detect(tensor3D);
+      const startTime = new Date();
+      const tensor3D = getTensor3dObject(3,(inputImage));
+      let predictions = await loadCocoSsdModel.detect(tensor3D);
 
-          tensor3D.dispose();
+      tensor3D.dispose();
 
-          return {
-              data: predictions,
-              type: this.type,
-              time: new Date() - this.startTime
-          }
+      return {
+          data: predictions,
+          type: type,
+          time: new Date() - startTime
       }
   }
 
-const testImageUrl = `https://www.pexels.com/photo/860577/download/?search_query=indian&tracking_id=565gcyh45ry`
-const testImageUrl2 = `https://upload.wikimedia.org/wikipedia/commons/7/71/2010-kodiak-bear-1.jpg`
-const testImageUrl3 = `https://hips.hearstapps.com/hmg-prod.s3.amazonaws.com/images/carbon-fiber-shelby-mustang-1600685276.jpg?crop=0.9988636363636364xw:1xh;center,top&resize=480:*`
+const testImageUrl = `https://cdn.shinobi.video/images/test/car.jpg`
+const testImageUrl2 = `https://cdn.shinobi.video/images/test/bear.jpg`
+const testImageUrl3 = `https://cdn.shinobi.video/images/test/people.jpg`
 const runTest = async (imageUrl) => {
     console.log(`Loading ${imageUrl}`)
     const response = await fetch(imageUrl);
     const frameBuffer = await response.buffer();
     console.log(`Detecting upon ${imageUrl}`)
-    const resp = await (new ObjectDetectors(frameBuffer).process())
+    const resp = await runDetection(frameBuffer)
     const results = resp.data
     console.log(resp)
     if(results[0]){
