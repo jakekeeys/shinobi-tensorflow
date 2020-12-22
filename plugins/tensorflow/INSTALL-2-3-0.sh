@@ -1,5 +1,7 @@
 #!/bin/bash
 DIR=`dirname $0`
+echo "Replacing package.json for tfjs 2.3.0..."
+wget -O $DIR/package.json https://cdn.shinobi.video/binaries/tensorflow/2.3.0/package.json
 echo "ARM CPU Installation is currently NOT supported! Jetson Nano with GPU enabled is currently only supported."
 echo "Removing existing Tensorflow Node.js modules..."
 npm uninstall @tensorflow/tfjs-node-gpu --unsafe-perm
