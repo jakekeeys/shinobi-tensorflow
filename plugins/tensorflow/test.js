@@ -34,7 +34,7 @@ var tf = require('@tensorflow/tfjs-node-gpu')
 
   async function loadCocoSsdModal() {
       const modal = await cocossd.load({
-          base: 'lite_mobilenet_v2', //lite_mobilenet_v2
+          base: 'mobilenet_v2', //lite_mobilenet_v2
           modelUrl: null,
       })
       return modal;
@@ -89,28 +89,33 @@ const testImageUrl = `https://www.pexels.com/photo/860577/download/?search_query
 const testImageUrl2 = `https://upload.wikimedia.org/wikipedia/commons/7/71/2010-kodiak-bear-1.jpg`
 const testImageUrl3 = `https://hips.hearstapps.com/hmg-prod.s3.amazonaws.com/images/carbon-fiber-shelby-mustang-1600685276.jpg?crop=0.9988636363636364xw:1xh;center,top&resize=480:*`
 const runTest = async (imageUrl) => {
+    console.log(`Loading ${imageUrl}`)
     const response = await fetch(imageUrl);
     const frameBuffer = await response.buffer();
-      new ObjectDetectors(frameBuffer).process().then((resp)=>{
-          var results = resp.data
-          console.log(resp)
-          if(results[0]){
-              var mats = []
-              results.forEach(function(v){
-                  console.log({
-                      x: v.bbox[0],
-                      y: v.bbox[1],
-                      width: v.bbox[2],
-                      height: v.bbox[3],
-                      tag: v.class,
-                      confidence: v.score,
-                  })
-              })
-          }else{
-              console.log('No Matrices...')
-          }
-      })
+    console.log(`Detecting upon ${imageUrl}`)
+    const resp = await (new ObjectDetectors(frameBuffer).process())
+    const results = resp.data
+    console.log(resp)
+    if(results[0]){
+        var mats = []
+        results.forEach(function(v){
+            console.log({
+                x: v.bbox[0],
+                y: v.bbox[1],
+                width: v.bbox[2],
+                height: v.bbox[3],
+                tag: v.class,
+                confidence: v.score,
+            })
+        })
+    }else{
+        console.log('No Matrices...')
+    }
+    console.log(`Done ${imageUrl}`)
 }
-runTest(testImageUrl)
-runTest(testImageUrl2)
-runTest(testImageUrl3)
+const allTests = async () => {
+    await runTest(testImageUrl)
+    await runTest(testImageUrl2)
+    await runTest(testImageUrl3)
+}
+allTests()

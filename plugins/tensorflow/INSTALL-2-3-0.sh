@@ -1,8 +1,15 @@
 #!/bin/bash
+if [[ ! $(head -1 /etc/nv_tegra_release) =~ R32.*4\.[34] ]] ; then
+  echo "ERROR: not JetPack-4.4"
+  exit 1
+fi
+
+
 DIR=`dirname $0`
 echo "Replacing package.json for tfjs 2.3.0..."
 wget -O $DIR/package.json https://cdn.shinobi.video/binaries/tensorflow/2.3.0/package.json
 echo "ARM CPU Installation is currently NOT supported! Jetson Nano with GPU enabled is currently only supported."
+echo "Jetson Nano may experience \"Unsupported Errors\", you may ignore them. Patches will be applied."
 echo "Removing existing Tensorflow Node.js modules..."
 npm uninstall @tensorflow/tfjs-node-gpu --unsafe-perm
 npm uninstall @tensorflow/tfjs-node --unsafe-perm
@@ -127,10 +134,10 @@ if [ "$installGpuFlag" = true ]; then
 else
 	runRebuildCpu
 fi
-if [ ! -e "./conf.json" ]; then
+if [ ! -e "$DIR/conf.json" ]; then
 	dontCreateKeyFlag=false
     echo "Creating conf.json"
-    sudo cp conf.sample.json conf.json
+    sudo cp $DIR/conf.sample.json $DIR/conf.json
 else
     echo "conf.json already exists..."
 fi
