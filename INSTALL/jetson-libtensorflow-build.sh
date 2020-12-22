@@ -24,5 +24,4 @@ apt install python3-h5py-dbg -y
 apt install libblas3 liblapack3 liblapack-dev libblas-dev -y
 apt install libgfortran-8-dev-arm64-cross -y
 sudo apt-get install gfortran -y
-sed -i 's/h5py//g' ./install_tensorflow-2.3.0.sh
 sh ./install_tensorflow-2.3.0.sh
