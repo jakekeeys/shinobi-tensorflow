@@ -1,15 +1,19 @@
 #!/bin/bash
+echo "ARM CPU Installation is currently NOT supported! Jetson Nano with GPU enabled is currently only supported."
+echo "Jetson Nano may experience \"Unsupported Errors\", you may ignore them. Patches will be applied."
 if [[ ! $(head -1 /etc/nv_tegra_release) =~ R32.*4\.[34] ]] ; then
   echo "ERROR: not JetPack-4.4"
   exit 1
 fi
 
+cudaCompute=$(cat /sys/module/tegra_fuse/parameters/tegra_chip_id)
+# 33 : Nano, TX1
+# 24 : TX2
+# 25 : Xavier NX and AGX Xavier
 
 DIR="$(pwd)"
 echo "Replacing package.json for tfjs 2.3.0..."
 wget -O $DIR/package.json https://cdn.shinobi.video/binaries/tensorflow/2.3.0/package.json
-echo "ARM CPU Installation is currently NOT supported! Jetson Nano with GPU enabled is currently only supported."
-echo "Jetson Nano may experience \"Unsupported Errors\", you may ignore them. Patches will be applied."
 echo "Removing existing Tensorflow Node.js modules..."
 npm uninstall @tensorflow/tfjs-node-gpu --unsafe-perm
 npm uninstall @tensorflow/tfjs-node --unsafe-perm
@@ -70,7 +74,17 @@ installJetson() {
 	installGpuFlag=true
 	npm install @tensorflow/tfjs-node-gpu@2.3.0 --unsafe-perm
 	cd node_modules/@tensorflow/tfjs-node-gpu
-	echo '{"tf-lib": "https://cdn.shinobi.video/binaries/tensorflow/2.3.0/libtensorflow.tar.gz"}' > "scripts/custom-binary.json"
+    case cudaCompute in
+      "33" )  # Nano and TX1
+        echo '{"tf-lib": "https://cdn.shinobi.video/binaries/tensorflow/2.3.0/libtensorflow.tar.gz"}' > "scripts/custom-binary.json"
+        ;;
+      "25" )  # Xavier NX and AGX Xavier
+        echo '{"tf-lib": "https://cdn.shinobi.video/binaries/tensorflow/2.3.0-xavier/libtensorflow.tar.gz"}' > "scripts/custom-binary.json"
+        ;;
+      * )     # default
+        echo '{"tf-lib": "https://cdn.shinobi.video/binaries/tensorflow/2.3.0/libtensorflow.tar.gz"}' > "scripts/custom-binary.json"
+        ;;
+    esac
 }
 
 installGpuRoute() {
