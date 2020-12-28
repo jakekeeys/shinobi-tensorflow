@@ -50,27 +50,34 @@ fi
 
 installJetson() {
 	installGpuFlag=true
-	npm install @tensorflow/tfjs-node-gpu@1.7.3 --unsafe-perm
+	npm install @tensorflow/tfjs-node-gpu@2.7.0 --unsafe-perm
 	cd node_modules/@tensorflow/tfjs-node-gpu
 	echo '{"tf-lib": "https://cdn.shinobi.video/installers/libtensorflow-gpu-linux-arm64-1.15.0.tar.gz"}' > "scripts/custom-binary.json"
 }
 
 installArm() {
-	npm install @tensorflow/tfjs-node@1.7.3 --unsafe-perm
+	npm install @tensorflow/tfjs-node@2.7.0 --unsafe-perm
 	cd node_modules/@tensorflow/tfjs-node
 	echo '{"tf-lib": "https://cdn.shinobi.video/installers/libtensorflow-cpu-linux-arm-1.15.0.tar.gz"}' > "scripts/custom-binary.json"
 }
 
 installGpuRoute() {
 	installGpuFlag=true
-	npm install @tensorflow/tfjs-node-gpu@1.7.3 --unsafe-perm
+	npm install @tensorflow/tfjs-node-gpu@2.7.0 --unsafe-perm
 }
 
 installNonGpuRoute() {
-	npm install @tensorflow/tfjs-node@1.7.3 --unsafe-perm
+	npm install @tensorflow/tfjs-node@2.7.0 --unsafe-perm
 }
 
-npm install --unsafe-perm
+runRebuildCpu() {
+	npm rebuild @tensorflow/tfjs-node --build-addon-from-source --unsafe-perm
+}
+
+runRebuildGpu() {
+	npm rebuild @tensorflow/tfjs-node-gpu --build-addon-from-source --unsafe-perm
+}
+
 if [ "$nonInteractiveFlag" = false ]; then
 	echo "Shinobi - Are you installing on ARM64? This applies to computers like Jetson Nano and Raspberry Pi Model 3 B+"
 	echo "(y)es or (N)o"
@@ -116,8 +123,13 @@ else
 	fi
 fi
 
+npm install --unsafe-perm
 npm audit fix --force
-
+if [ "$installGpuFlag" = true ]; then
+	runRebuildGpu
+else
+	runRebuildCpu
+fi
 if [ ! -e "./conf.json" ]; then
 	dontCreateKeyFlag=false
     echo "Creating conf.json"
