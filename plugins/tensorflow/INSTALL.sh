@@ -70,6 +70,7 @@ installNonGpuRoute() {
 	npm install @tensorflow/tfjs-node@1.7.3 --unsafe-perm
 }
 
+npm install --unsafe-perm
 if [ "$nonInteractiveFlag" = false ]; then
 	echo "Shinobi - Are you installing on ARM64? This applies to computers like Jetson Nano and Raspberry Pi Model 3 B+"
 	echo "(y)es or (N)o"
@@ -115,7 +116,6 @@ else
 	fi
 fi
 
-npm install --unsafe-perm
 npm audit fix --force
 
 if [ ! -e "./conf.json" ]; then
