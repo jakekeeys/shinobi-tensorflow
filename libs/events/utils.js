@@ -268,6 +268,7 @@ module.exports = (s,config,lang,app,io) => {
     }
     const runEventExecutions = async (eventTime,monitorConfig,eventDetails,forceSave,filter,d) => {
         const monitorDetails = monitorConfig.details
+        const detailString = JSON.stringify(eventDetails)
         if(monitorDetails.det_multi_trig === '1'){
             runMultiTrigger(monitorConfig,eventDetails)
         }
