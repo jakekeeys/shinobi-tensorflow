@@ -23,6 +23,32 @@ module.exports = (s,config,lang,app,io) => {
         }
         return eventsCounted
     }
+    const addEventDetailsToString = (eventData,string,addOps) => {
+        //d = event data
+        if(!addOps)addOps = {}
+        var newString = string + ''
+        var d = Object.assign(eventData,addOps)
+        var detailString = s.stringJSON(d.details)
+        newString = newString
+            .replace(/{{TIME}}/g,d.currentTimestamp)
+            .replace(/{{REGION_NAME}}/g,d.details.name)
+            .replace(/{{SNAP_PATH}}/g,s.dir.streams+d.ke+'/'+d.id+'/s.jpg')
+            .replace(/{{MONITOR_ID}}/g,d.id)
+            .replace(/{{MONITOR_NAME}}/g,s.group[d.ke].rawMonitorConfigurations[d.id].name)
+            .replace(/{{GROUP_KEY}}/g,d.ke)
+            .replace(/{{DETAILS}}/g,detailString)
+        if(d.details.confidence){
+            newString = newString
+            .replace(/{{CONFIDENCE}}/g,d.details.confidence)
+        }
+        if(newString.includes("REASON")) {
+          if(d.details.reason) {
+            newString = newString
+            .replace(/{{REASON}}/g, d.details.reason)
+          }
+        }
+        return newString
+    }
     const isAtleastOneMatrixInRegion = function(regions,matrices,callback){
         var regionPolys = []
         var matrixPoints = []
@@ -266,6 +292,22 @@ module.exports = (s,config,lang,app,io) => {
             }
         })
     }
+    const checkForObjectsInRegions = (monitorConfig,filter,d,didCountingAlready) => {
+        const monitorDetails = monitorConfig.details
+        if(hasMatrices(monitorDetails) && monitorDetails.detector_obj_region === '1'){
+            var regions = s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].parsedObjects.cords
+            var isMatrixInRegions = isAtleastOneMatrixInRegion(regions,eventDetails.matrices)
+            if(isMatrixInRegions){
+                s.debugLog('Matrix in region!')
+                if(filter.countObjects && monitorDetails.detector_obj_count === '1' && monitorDetails.detector_obj_count_in_region === '1' && !didCountingAlready){
+                    countObjects(d)
+                }
+            }else{
+                return false
+            }
+        }
+        return true
+    }
     const runEventExecutions = async (eventTime,monitorConfig,eventDetails,forceSave,filter,d) => {
         const monitorDetails = monitorConfig.details
         const detailString = JSON.stringify(eventDetails)
@@ -300,7 +342,7 @@ module.exports = (s,config,lang,app,io) => {
             monitorDetails.detector_trigger === '1' &&
             (monitorDetails.detector_record_method === 'sip' || monitorDetails.detector_record_method === 'hot')
         ){
-            s.createEventBasedRecording(d,moment(eventTime).subtract(5,'seconds').format('YYYY-MM-DDTHH-mm-ss'))
+            createEventBasedRecording(d,moment(eventTime).subtract(5,'seconds').format('YYYY-MM-DDTHH-mm-ss'))
         }
         d.currentTime = eventTime
         d.currentTimestamp = s.timeObject(d.currentTime).format()
@@ -309,7 +351,7 @@ module.exports = (s,config,lang,app,io) => {
 
         if(filter.webhook && monitorDetails.detector_webhook === '1' && !s.group[d.ke].activeMonitors[d.id].detector_webhook){
             s.group[d.ke].activeMonitors[d.id].detector_webhook = s.createTimeout('detector_webhook',s.group[d.ke].activeMonitors[d.id],monitorDetails.detector_webhook_timeout,10)
-            var detector_webhook_url = s.addEventDetailsToString(d,monitorDetails.detector_webhook_url)
+            var detector_webhook_url = addEventDetailsToString(d,monitorDetails.detector_webhook_url)
             var webhookMethod = monitorDetails.detector_webhook_method
             if(!webhookMethod || webhookMethod === '')webhookMethod = 'GET'
             request(detector_webhook_url,{method: webhookMethod,encoding:null},function(err,data){
@@ -321,7 +363,7 @@ module.exports = (s,config,lang,app,io) => {
 
         if(filter.command && monitorDetails.detector_command_enable === '1' && !s.group[d.ke].activeMonitors[d.id].detector_command){
             s.group[d.ke].activeMonitors[d.id].detector_command = s.createTimeout('detector_command',s.group[d.ke].activeMonitors[d.id],monitorDetails.detector_command_timeout,10)
-            var detector_command = s.addEventDetailsToString(d,monitorDetails.detector_command)
+            var detector_command = addEventDetailsToString(d,monitorDetails.detector_command)
             if(detector_command === '')return
             exec(detector_command,{detached: true},function(err){
                 if(err)s.debugLog(err)
@@ -333,21 +375,113 @@ module.exports = (s,config,lang,app,io) => {
             await extender(d,filter)
         }
     }
-    const checkForObjectsInRegions = (monitorConfig,filter,d,didCountingAlready) => {
+    const createEventBasedRecording = function(d,fileTime){
+        if(!fileTime)fileTime = s.formattedTime()
+        const logTitleText = lang["Traditional Recording"]
+        const activeMonitor = s.group[d.ke].activeMonitors[d.id]
+        const monitorConfig = s.group[d.ke].rawMonitorConfigurations[d.id]
         const monitorDetails = monitorConfig.details
-        if(hasMatrices(monitorDetails) && monitorDetails.detector_obj_region === '1'){
-            var regions = s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].parsedObjects.cords
-            var isMatrixInRegions = isAtleastOneMatrixInRegion(regions,eventDetails.matrices)
-            if(isMatrixInRegions){
-                s.debugLog('Matrix in region!')
-                if(filter.countObjects && monitorDetails.detector_obj_count === '1' && monitorDetails.detector_obj_count_in_region === '1' && !didCountingAlready){
-                    countObjects(d)
-                }
-            }else{
-                return false
-            }
+        if(monitorDetails.detector !== '1'){
+            return
         }
-        return true
+        var detector_timeout
+        if(!monitorDetails.detector_timeout||monitorDetails.detector_timeout===''){
+            detector_timeout = 10
+        }else{
+            detector_timeout = parseFloat(monitorDetails.detector_timeout)
+        }
+        if(monitorDetails.watchdog_reset === '1' || !activeMonitor.eventBasedRecording.timeout){
+            clearTimeout(activeMonitor.eventBasedRecording.timeout)
+            activeMonitor.eventBasedRecording.timeout = setTimeout(function(){
+                activeMonitor.eventBasedRecording.allowEnd = true
+                activeMonitor.eventBasedRecording.process.stdin.setEncoding('utf8')
+                activeMonitor.eventBasedRecording.process.stdin.write('q')
+                activeMonitor.eventBasedRecording.process.kill('SIGINT')
+                delete(activeMonitor.eventBasedRecording.timeout)
+            },detector_timeout * 1000 * 60)
+        }
+        if(!activeMonitor.eventBasedRecording.process){
+            activeMonitor.eventBasedRecording.allowEnd = false;
+            const runRecord = function(){
+                var ffmpegError = ''
+                var error
+                var filename = fileTime + '.mp4'
+                s.userLog(d,{
+                    type: logTitleText,
+                    msg: lang["Started"]
+                })
+                //-t 00:'+s.timeObject(new Date(detector_timeout * 1000 * 60)).format('mm:ss')+'
+                activeMonitor.eventBasedRecording.process = spawn(
+                    config.ffmpegDir,
+                    splitForFFPMEG(('-loglevel warning -analyzeduration 1000000 -probesize 1000000 -re -i "'+s.dir.streams+d.ke+'/'+d.id+'/detectorStream.m3u8" -c:v copy -strftime 1 "'+s.getVideoDirectory(monitorConfig) + filename + '"'))
+                )
+                activeMonitor.eventBasedRecording.process.stderr.on('data',function(data){
+                    s.userLog(d,{
+                        type: logTitleText,
+                        msg: data.toString()
+                    })
+                })
+                activeMonitor.eventBasedRecording.process.on('close',function(){
+                    if(!activeMonitor.eventBasedRecording.allowEnd){
+                        s.userLog(d,{
+                            type: logTitleText,
+                            msg: lang["Detector Recording Process Exited Prematurely. Restarting."]
+                        })
+                        runRecord()
+                        return
+                    }
+                    s.insertCompletedVideo(monitorConfig,{
+                        file : filename,
+                    })
+                    s.userLog(d,{
+                        type: logTitleText,
+                        msg: lang["Detector Recording Complete"]
+                    })
+                    s.userLog(d,{
+                        type: logTitleText,
+                        msg: lang["Clear Recorder Process"]
+                    })
+                    delete(activeMonitor.eventBasedRecording.process)
+                    clearTimeout(activeMonitor.eventBasedRecording.timeout)
+                    delete(activeMonitor.eventBasedRecording.timeout)
+                    clearTimeout(activeMonitor.recordingChecker)
+                })
+            }
+            runRecord()
+        }
+    }
+    const closeEventBasedRecording = function(e){
+        const activeMonitor = s.group[e.ke].activeMonitors[e.id]
+        if(activeMonitor.eventBasedRecording.process){
+            clearTimeout(activeMonitor.eventBasedRecording.timeout)
+            activeMonitor.eventBasedRecording.allowEnd = true
+            activeMonitor.eventBasedRecording.process.kill('SIGTERM')
+        }
+        // var stackedProcesses = s.group[e.ke].activeMonitors[e.id].eventBasedRecording.stackable
+        // Object.keys(stackedProcesses).forEach(function(key){
+        //     var item = stackedProcesses[key]
+        //     clearTimeout(item.timeout)
+        //     item.allowEnd = true;
+        //     item.process.kill('SIGTERM');
+        // })
+    }
+    const legacyFilterEvents = (x,d) => {
+        switch(x){
+            case'archive':
+                d.videos.forEach(function(v,n){
+                    s.video('archive',v)
+                })
+            break;
+            case'delete':
+                s.deleteListOfVideos(d.videos)
+            break;
+            case'execute':
+                exec(d.execute,{detached: true})
+            break;
+        }
+        s.onEventTriggerBeforeFilterExtensions.forEach(function(extender){
+            extender(x,d)
+        })
     }
     return {
         countObjects: countObjects,
@@ -363,5 +497,8 @@ module.exports = (s,config,lang,app,io) => {
         runMultiTrigger: runMultiTrigger,
         checkForObjectsInRegions: checkForObjectsInRegions,
         runEventExecutions: runEventExecutions,
+        createEventBasedRecording: createEventBasedRecording,
+        closeEventBasedRecording: closeEventBasedRecording,
+        legacyFilterEvents: legacyFilterEvents,
     }
 }

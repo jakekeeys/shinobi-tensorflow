@@ -8,6 +8,9 @@ const {
 } = require('./common.js')
 module.exports = function(s,config,lang,io){
     const {
+        legacyFilterEvents
+    } = require('./events/utils.js')(s,config,lang)
+    const {
         ptzControl
     } = require('./control/ptz.js')(s,config,lang)
     s.clientSocketConnection = {}
@@ -980,7 +983,7 @@ module.exports = function(s,config,lang,io){
                      delete(d.cronKey)
                      switch(d.f){
                          case'filters':
-                             s.filterEvents(d.ff,d);
+                             legacyFilterEvents(d.ff,d)
                          break;
                          case's.tx':
                              s.tx(d.data,d.to)
