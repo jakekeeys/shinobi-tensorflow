@@ -1,5 +1,8 @@
 var socketIOclient = require('socket.io-client');
 module.exports = function(s,config,lang,io){
+    const {
+        triggerEvent,
+    } = require('./events/utils.js')(s,config,lang)
     //send data to detector plugin
     s.ocvTx = function(data){
         // chaining coming in future update
@@ -9,7 +12,7 @@ module.exports = function(s,config,lang,io){
     s.pluginEventController = function(d){
         switch(d.f){
             case'trigger':
-                s.triggerEvent(d)
+                triggerEvent(d)
             break;
             case's.tx':
                 s.tx(d.data,d.to)

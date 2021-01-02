@@ -27,6 +27,7 @@ module.exports = function(s,config,lang){
     const {
         addEventDetailsToString,
         closeEventBasedRecording,
+        triggerEvent,
     } = require('./events/utils.js')(s,config,lang)
     const {
         setPresetForCurrentPosition
@@ -819,7 +820,7 @@ module.exports = function(s,config,lang){
                 triggerLevel: triggerLevel,
                 triggerLevelMax: triggerLevelMax
             },function(dB) {
-                s.triggerEvent({
+                triggerEvent({
                     f:'trigger',
                     id:e.id,
                     ke:e.ke,
@@ -876,7 +877,7 @@ module.exports = function(s,config,lang){
                            if(object.substr(object.length - 1) !== '}')theJson += '}'
                            if(object.substr(0,1) !== '{')theJson = '{' + theJson
                            var data = JSON.parse(theJson)
-                           s.triggerEvent(data)
+                           triggerEvent(data)
                        })
                    }catch(err){
                        console.log('There was an error parsing a detector event')

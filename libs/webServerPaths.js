@@ -16,6 +16,9 @@ module.exports = function(s,config,lang,app,io){
         ptzControl,
         setPresetForCurrentPosition
     } = require('./control/ptz.js')(s,config,lang,app,io)
+    const {
+        triggerEvent,
+    } = require('./events/utils.js')(s,config,lang)
     if(config.productType === 'Pro'){
         var LdapAuth = require('ldapauth-fork');
     }
@@ -1580,7 +1583,7 @@ module.exports = function(s,config,lang,app,io){
                  break;
              }
              d.doObjectDetection = (!d.details.matrices || d.details.matrices.length === 0) && (s.isAtleatOneDetectorPluginConnected && details.detector_use_detect_object === '1')
-             s.triggerEvent(d)
+             triggerEvent(d)
              s.closeJsonResponse(res,{
                  ok: true,
                  msg: user.lang['Trigger Successful']

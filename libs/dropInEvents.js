@@ -1,6 +1,9 @@
 var fs = require('fs')
 var exec = require('child_process').exec
 module.exports = function(s,config,lang,app,io){
+    const {
+        triggerEvent,
+    } = require('./events/utils.js')(s,config,lang)
     if(config.dropInEventServer === true){
         if(config.dropInEventForceSaveEvent === undefined)config.dropInEventForceSaveEvent = true
         if(config.dropInEventDeleteFileAfterTrigger === undefined)config.dropInEventDeleteFileAfterTrigger = true
@@ -28,7 +31,7 @@ module.exports = function(s,config,lang,app,io){
                 var snapPath = s.dir.streams + ke + '/' + mid + '/s.jpg'
                 fs.unlink(snapPath,function(err){
                     fs.createReadStream(filePath).pipe(fs.createWriteStream(snapPath))
-                    s.triggerEvent({
+                    triggerEvent({
                         id: mid,
                         ke: ke,
                         details: {
@@ -72,7 +75,7 @@ module.exports = function(s,config,lang,app,io){
                     })
                 }
                 var completeAction = function(){
-                    s.triggerEvent({
+                    triggerEvent({
                         id: mid,
                         ke: ke,
                         details: {
@@ -294,7 +297,7 @@ module.exports = function(s,config,lang,app,io){
                                 reasonTag = parsed.subject
                             }
                         })
-                        s.triggerEvent({
+                        triggerEvent({
                             id: monitorId,
                             ke: ke,
                             details: {

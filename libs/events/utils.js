@@ -10,6 +10,12 @@ const P = SAT.Polygon;
 const B = SAT.Box;
 // Matrix In Region Libs />
 module.exports = (s,config,lang,app,io) => {
+    const {
+        splitForFFPMEG
+    } = require('../ffmpeg/utils.js')(s,config,lang)
+    const {
+        moveCameraPtzToMatrix
+    } = require('../control/ptz.js')(s,config,lang)
     const countObjects = async (event) => {
         const matrices = event.details.matrices
         const eventsCounted = s.group[event.ke].activeMonitors[event.id].eventsCounted || {}
@@ -413,7 +419,7 @@ module.exports = (s,config,lang,app,io) => {
                 //-t 00:'+s.timeObject(new Date(detector_timeout * 1000 * 60)).format('mm:ss')+'
                 activeMonitor.eventBasedRecording.process = spawn(
                     config.ffmpegDir,
-                    splitForFFPMEG(('-loglevel warning -analyzeduration 1000000 -probesize 1000000 -re -i "'+s.dir.streams+d.ke+'/'+d.id+'/detectorStream.m3u8" -c:v copy -strftime 1 "'+s.getVideoDirectory(monitorConfig) + filename + '"'))
+                    splitForFFPMEG(('-loglevel warning -analyzeduration 1000000 -probesize 1000000 -re -i "'+s.dir.streams+d.ke+'/'+d.id+'/detectorStream.m3u8" -movflags faststart+frag_keyframe+empty_moov -fflags +igndts -c:v copy -strftime 1 "'+s.getVideoDirectory(monitorConfig) + filename + '"'))
                 )
                 activeMonitor.eventBasedRecording.process.stderr.on('data',function(data){
                     s.userLog(d,{
@@ -483,6 +489,100 @@ module.exports = (s,config,lang,app,io) => {
             extender(x,d)
         })
     }
+    const triggerEvent = async (d,forceSave) => {
+        var didCountingAlready = false
+        const filter = {
+            halt : false,
+            addToMotionCounter : true,
+            useLock : true,
+            save : true,
+            webhook : true,
+            command : true,
+            record : true,
+            indifference : false,
+            countObjects : true
+        }
+        if(!s.group[d.ke] || !s.group[d.ke].activeMonitors[d.id]){
+            return s.systemLog(lang['No Monitor Found, Ignoring Request'])
+        }
+        const monitorConfig = s.group[d.ke].rawMonitorConfigurations[d.id]
+        if(!monitorConfig){
+            return s.systemLog(lang['No Monitor Found, Ignoring Request'])
+        }
+        const monitorDetails = monitorConfig.details
+        s.onEventTriggerBeforeFilterExtensions.forEach(function(extender){
+            extender(d,filter)
+        })
+        const passedEventFilters = checkEventFilters(d,monitorDetails,filter)
+        if(!passedEventFilters)return
+        const eventDetails = d.details
+        const detailString = JSON.stringify(eventDetails)
+        const eventTime = new Date()
+        if(
+            filter.addToMotionCounter &&
+            filter.record &&
+            (
+                monitorConfig.mode === 'record' ||
+                monitorConfig.mode === 'start' &&
+                (
+                    (
+                        monitorDetails.detector_record_method === 'sip' &&
+                        monitorDetails.detector_trigger === '1'
+                    ) ||
+                    (
+                        monitorDetails.detector_record_method === 'del' &&
+                        monitorDetails.detector_delete_motionless_videos === '1'
+                    )
+                )
+            )
+        ){
+            addToEventCounter(d)
+        }
+        if(
+            filter.countObjects &&
+            monitorDetails.detector_obj_count === '1' &&
+            monitorDetails.detector_obj_count_in_region !== '1'
+        ){
+            didCountingAlready = true
+            countObjects(d)
+        }
+        if(monitorDetails.detector_ptz_follow === '1'){
+            moveCameraPtzToMatrix(d,monitorDetails.detector_ptz_follow_target)
+        }
+        if(filter.useLock){
+            const passedMotionLock = checkMotionLock(d,monitorDetails)
+            if(!passedMotionLock)return
+        }
+        const passedObjectInRegionCheck = checkForObjectsInRegions(monitorConfig,filter,d,didCountingAlready)
+        if(!passedObjectInRegionCheck)return
+
+        //
+        if(d.doObjectDetection === true){
+            s.ocvTx({
+                f : 'frame',
+                mon : s.group[d.ke].rawMonitorConfigurations[d.id].details,
+                ke : d.ke,
+                id : d.id,
+                time : s.formattedTime(),
+                frame : s.group[d.ke].activeMonitors[d.id].lastJpegDetectorFrame
+            })
+        }
+        //
+        if(
+            monitorDetails.detector_use_motion === '0' ||
+            d.doObjectDetection !== true
+        ){
+            runEventExecutions(eventTime,monitorConfig,eventDetails,forceSave,filter,d)
+        }
+        //show client machines the event
+        s.tx({
+            f: 'detector_trigger',
+            id: d.id,
+            ke: d.ke,
+            details: eventDetails,
+            doObjectDetection: d.doObjectDetection
+        },`DETECTOR_${monitorConfig.ke}${monitorConfig.mid}`);
+    }
     return {
         countObjects: countObjects,
         isAtleastOneMatrixInRegion: isAtleastOneMatrixInRegion,
@@ -500,5 +600,6 @@ module.exports = (s,config,lang,app,io) => {
         createEventBasedRecording: createEventBasedRecording,
         closeEventBasedRecording: closeEventBasedRecording,
         legacyFilterEvents: legacyFilterEvents,
+        triggerEvent: triggerEvent,
     }
 }
