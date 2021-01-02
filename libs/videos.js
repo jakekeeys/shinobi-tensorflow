@@ -162,6 +162,7 @@ module.exports = function(s,config,lang){
                 }else{
                     var href = '/videos/'+e.ke+'/'+e.mid+'/'+k.filename
                     if(config.useUTC === true)href += '?isUTC=true';
+                    const monitorEventsCounted = s.group[e.ke].activeMonitors[e.mid].detector_motion_count
                     s.txWithSubPermissions({
                         f: 'video_build_success',
                         hrefNoAuth: href,
@@ -171,7 +172,7 @@ module.exports = function(s,config,lang){
                         time: k.startTime,
                         size: k.filesize,
                         end: k.endTime,
-                        events: k.events && k.events.length > 0 ? k.events : null
+                        events: monitorEventsCounted && monitorEventsCounted.length > 0 ? monitorEventsCounted : null
                     },'GRP_'+e.ke,'video_view')
                     //purge over max
                     s.purgeDiskForGroup(e.ke)
@@ -195,6 +196,7 @@ module.exports = function(s,config,lang){
                 }
             }
         }
+        s.group[e.ke].activeMonitors[e.mid].detector_motion_count = []
     }
     s.deleteVideo = function(e){
         //e = video object
