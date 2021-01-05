@@ -1201,7 +1201,7 @@ module.exports = function(s,config,lang){
 
                     }
                     startVideoProcessor = function(err,pingResponse){
-                        pingResponse = pingResponse ? pingResponse : {success: false}
+                        pingResponse = pingResponse ? pingResponse : {success: true}
                         if(pingResponse.success === true){
                             activeMonitor.isRecording = true
                             try{
