@@ -1,5 +1,19 @@
 #!/bin/bash
-DIR=`dirname $0`
+echo "ARM CPU Installation is currently NOT supported! Jetson Nano with GPU enabled is currently only supported."
+echo "Jetson Nano may experience \"Unsupported Errors\", you may ignore them. Patches will be applied."
+if [[ ! $(head -1 /etc/nv_tegra_release) =~ R32.*4\.[34] ]] ; then
+  echo "ERROR: not JetPack-4.4"
+  exit 1
+fi
+
+cudaCompute=$(cat /sys/module/tegra_fuse/parameters/tegra_chip_id)
+# 33 : Nano, TX1
+# 24 : TX2
+# 25 : Xavier NX and AGX Xavier
+
+DIR="$(pwd)"
+echo "Replacing package.json for tfjs 2.3.0..."
+wget -O $DIR/package.json https://cdn.shinobi.video/binaries/tensorflow/2.3.0/package.json
 echo "Removing existing Tensorflow Node.js modules..."
 npm uninstall @tensorflow/tfjs-node-gpu --unsafe-perm
 npm uninstall @tensorflow/tfjs-node --unsafe-perm
@@ -48,28 +62,6 @@ if [ "$installJetsonFlag" = true ] || [ "$installArmFlag" = true ] || [ "$instal
 	nonInteractiveFlag=true
 fi
 
-installJetson() {
-	installGpuFlag=true
-	npm install @tensorflow/tfjs-node-gpu@2.7.0 --unsafe-perm
-	cd node_modules/@tensorflow/tfjs-node-gpu
-	echo '{"tf-lib": "https://cdn.shinobi.video/installers/libtensorflow-gpu-linux-arm64-1.15.0.tar.gz"}' > "scripts/custom-binary.json"
-}
-
-installArm() {
-	npm install @tensorflow/tfjs-node@2.7.0 --unsafe-perm
-	cd node_modules/@tensorflow/tfjs-node
-	echo '{"tf-lib": "https://cdn.shinobi.video/installers/libtensorflow-cpu-linux-arm-1.15.0.tar.gz"}' > "scripts/custom-binary.json"
-}
-
-installGpuRoute() {
-	installGpuFlag=true
-	npm install @tensorflow/tfjs-node-gpu@2.7.0 --unsafe-perm
-}
-
-installNonGpuRoute() {
-	npm install @tensorflow/tfjs-node@2.7.0 --unsafe-perm
-}
-
 runRebuildCpu() {
 	npm rebuild @tensorflow/tfjs-node --build-addon-from-source --unsafe-perm
 }
@@ -78,22 +70,49 @@ runRebuildGpu() {
 	npm rebuild @tensorflow/tfjs-node-gpu --build-addon-from-source --unsafe-perm
 }
 
+installJetson() {
+	installGpuFlag=true
+	npm install @tensorflow/tfjs-node-gpu@2.3.0 --unsafe-perm
+	cd node_modules/@tensorflow/tfjs-node-gpu
+    case cudaCompute in
+      "33" )  # Nano and TX1
+        echo '{"tf-lib": "https://cdn.shinobi.video/binaries/tensorflow/2.3.0/libtensorflow.tar.gz"}' > "scripts/custom-binary.json"
+        ;;
+      "25" )  # Xavier NX and AGX Xavier
+        echo '{"tf-lib": "https://cdn.shinobi.video/binaries/tensorflow/2.3.0-xavier/libtensorflow.tar.gz"}' > "scripts/custom-binary.json"
+        ;;
+      * )     # default
+        echo '{"tf-lib": "https://cdn.shinobi.video/binaries/tensorflow/2.3.0/libtensorflow.tar.gz"}' > "scripts/custom-binary.json"
+        ;;
+    esac
+}
+
+installGpuRoute() {
+	installGpuFlag=true
+	npm install @tensorflow/tfjs-node-gpu@2.3.0 --unsafe-perm
+}
+
+installNonGpuRoute() {
+	npm install @tensorflow/tfjs-node@2.3.0 --unsafe-perm
+}
+
+
 if [ "$nonInteractiveFlag" = false ]; then
-	echo "Shinobi - Are you installing on ARM64? This applies to computers like Jetson Nano and Raspberry Pi Model 3 B+"
+	echo "Shinobi - Are you installing on Jetson Nano or Xavier?"
+	echo "You must be on JetPack 4.4 for this plugin to install!"
 	echo "(y)es or (N)o"
 	read armCpu
 	if [ "$armCpu" = "y" ] || [ "$armCpu" = "Y" ]; then
-	    echo "Shinobi - Is it a Jetson Nano?"
-	    echo "You must be on JetPack 4.3 for this plugin to install."
-	    echo "JetPack 4.3 Image can be found here : https://developer.nvidia.com/jetpack-43-archive"
-	    echo "(y)es or (N)o"
-	    read isItJetsonNano
-	    echo "Shinobi - You may see Unsupported Errors, please wait while patches are applied."
-	    if [ "$isItJetsonNano" = "y" ] || [ "$isItJetsonNano" = "Y" ]; then
+	    # echo "Shinobi - Is it a Jetson Nano?"
+	    # echo "You must be on JetPack 4.4 for this plugin to install!"
+	    # echo "(y)es or (N)o"
+	    # read isItJetsonNano
+	    # echo "Shinobi - You may see Unsupported Errors, please wait while patches are applied."
+	    # if [ "$isItJetsonNano" = "y" ] || [ "$isItJetsonNano" = "Y" ]; then
 		installJetson
-	    else
-		installArm
-	    fi
+	    # else
+		# installArm
+	    # fi
 	else
 	    echo "Shinobi - Do you want to install TensorFlow.js with GPU support? "
 	    echo "You can run this installer again to change it."
@@ -108,13 +127,11 @@ if [ "$nonInteractiveFlag" = false ]; then
 else
 	if [ "$installJetsonFlag" = true ]; then
 		installJetson
-		armAfterInstall
 	fi
-
-	if [ "$installArmFlag" = true ]; then
-		installArm
-		armAfterInstall
-	fi
+	#
+	# if [ "$installArmFlag" = true ]; then
+	# 	installArm
+	# fi
 
 	if [ "$installGpuFlag" = true ]; then
 		installGpuRoute
@@ -125,15 +142,16 @@ fi
 
 npm install --unsafe-perm
 npm audit fix --force
+
 if [ "$installGpuFlag" = true ]; then
 	runRebuildGpu
 else
 	runRebuildCpu
 fi
-if [ ! -e "./conf.json" ]; then
+if [ ! -e "$DIR/conf.json" ]; then
 	dontCreateKeyFlag=false
     echo "Creating conf.json"
-    sudo cp conf.sample.json conf.json
+    sudo cp $DIR/conf.sample.json $DIR/conf.json
 else
     echo "conf.json already exists..."
 fi

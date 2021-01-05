@@ -25,6 +25,11 @@ module.exports = function(s,config,lang){
         monitorConfigurationMigrator,
     } = require('./monitor/utils.js')(s,config,lang)
     const {
+        addEventDetailsToString,
+        closeEventBasedRecording,
+        triggerEvent,
+    } = require('./events/utils.js')(s,config,lang)
+    const {
         setPresetForCurrentPosition
     } = require('./control/ptz.js')(s,config,lang)
     const startMonitorInQueue = createQueue(1, 3)
@@ -32,25 +37,27 @@ module.exports = function(s,config,lang){
         if(!s.group[e.ke]){s.group[e.ke]={}};
         if(!s.group[e.ke].activeMonitors){s.group[e.ke].activeMonitors={}}
         if(!s.group[e.ke].activeMonitors[e.mid]){s.group[e.ke].activeMonitors[e.mid]={}}
-        if(!s.group[e.ke].activeMonitors[e.mid].streamIn){s.group[e.ke].activeMonitors[e.mid].streamIn={}};
-        if(!s.group[e.ke].activeMonitors[e.mid].emitterChannel){s.group[e.ke].activeMonitors[e.mid].emitterChannel={}};
-        if(!s.group[e.ke].activeMonitors[e.mid].mp4frag){s.group[e.ke].activeMonitors[e.mid].mp4frag={}};
-        if(!s.group[e.ke].activeMonitors[e.mid].firstStreamChunk){s.group[e.ke].activeMonitors[e.mid].firstStreamChunk={}};
-        if(!s.group[e.ke].activeMonitors[e.mid].contentWriter){s.group[e.ke].activeMonitors[e.mid].contentWriter={}};
-        if(!s.group[e.ke].activeMonitors[e.mid].childNodeStreamWriters){s.group[e.ke].activeMonitors[e.mid].childNodeStreamWriters={}};
-        if(!s.group[e.ke].activeMonitors[e.mid].eventBasedRecording){s.group[e.ke].activeMonitors[e.mid].eventBasedRecording={}};
-        if(!s.group[e.ke].activeMonitors[e.mid].watch){s.group[e.ke].activeMonitors[e.mid].watch={}};
-        if(!s.group[e.ke].activeMonitors[e.mid].fixingVideos){s.group[e.ke].activeMonitors[e.mid].fixingVideos={}};
-        // if(!s.group[e.ke].activeMonitors[e.mid].viewerConnection){s.group[e.ke].activeMonitors[e.mid].viewerConnection={}};
-        // if(!s.group[e.ke].activeMonitors[e.mid].viewerConnectionCount){s.group[e.ke].activeMonitors[e.mid].viewerConnectionCount=0};
-        if(!s.group[e.ke].activeMonitors[e.mid].parsedObjects){s.group[e.ke].activeMonitors[e.mid].parsedObjects={}};
-        if(!s.group[e.ke].activeMonitors[e.mid].detector_motion_count){s.group[e.ke].activeMonitors[e.mid].detector_motion_count=[]};
-        if(!s.group[e.ke].activeMonitors[e.mid].eventsCounted){s.group[e.ke].activeMonitors[e.mid].eventsCounted = {}};
-        if(!s.group[e.ke].activeMonitors[e.mid].isStarted){s.group[e.ke].activeMonitors[e.mid].isStarted = false};
-        if(!s.group[e.ke].activeMonitors[e.mid].pipe4BufferPieces){s.group[e.ke].activeMonitors[e.mid].pipe4BufferPieces = []};
-        if(s.group[e.ke].activeMonitors[e.mid].delete){clearTimeout(s.group[e.ke].activeMonitors[e.mid].delete)}
+        const activeMonitor = s.group[e.ke].activeMonitors[e.mid]
+
+        if(!activeMonitor.streamIn){activeMonitor.streamIn={}};
+        if(!activeMonitor.emitterChannel){activeMonitor.emitterChannel={}};
+        if(!activeMonitor.mp4frag){activeMonitor.mp4frag={}};
+        if(!activeMonitor.firstStreamChunk){activeMonitor.firstStreamChunk={}};
+        if(!activeMonitor.contentWriter){activeMonitor.contentWriter={}};
+        if(!activeMonitor.childNodeStreamWriters){activeMonitor.childNodeStreamWriters={}};
+        if(!activeMonitor.eventBasedRecording){activeMonitor.eventBasedRecording={}};
+        if(!activeMonitor.watch){activeMonitor.watch={}};
+        if(!activeMonitor.fixingVideos){activeMonitor.fixingVideos={}};
+        // if(!activeMonitor.viewerConnection){activeMonitor.viewerConnection={}};
+        // if(!activeMonitor.viewerConnectionCount){activeMonitor.viewerConnectionCount=0};
+        if(!activeMonitor.parsedObjects){activeMonitor.parsedObjects={}};
+        if(!activeMonitor.detector_motion_count){activeMonitor.detector_motion_count=[]};
+        if(!activeMonitor.eventsCounted){activeMonitor.eventsCounted = {}};
+        if(!activeMonitor.isStarted){activeMonitor.isStarted = false};
+        if(!activeMonitor.pipe4BufferPieces){activeMonitor.pipe4BufferPieces = []};
+        if(activeMonitor.delete){clearTimeout(activeMonitor.delete)}
         if(!s.group[e.ke].rawMonitorConfigurations){s.group[e.ke].rawMonitorConfigurations={}}
-        if(!s.group[e.ke].activeMonitors[e.mid].criticalErrors)s.group[e.ke].activeMonitors[e.mid].criticalErrors = {
+        if(!activeMonitor.criticalErrors)activeMonitor.criticalErrors = {
             "404": false,
             "453": false,
             "500": false,
@@ -813,7 +820,7 @@ module.exports = function(s,config,lang){
                 triggerLevel: triggerLevel,
                 triggerLevelMax: triggerLevelMax
             },function(dB) {
-                s.triggerEvent({
+                triggerEvent({
                     f:'trigger',
                     id:e.id,
                     ke:e.ke,
@@ -870,7 +877,7 @@ module.exports = function(s,config,lang){
                            if(object.substr(object.length - 1) !== '}')theJson += '}'
                            if(object.substr(0,1) !== '{')theJson = '{' + theJson
                            var data = JSON.parse(theJson)
-                           s.triggerEvent(data)
+                           triggerEvent(data)
                        })
                    }catch(err){
                        console.log('There was an error parsing a detector event')
@@ -1079,7 +1086,7 @@ module.exports = function(s,config,lang){
         s.group[e.ke].activeMonitors[monitorId].detector_notrigger_timeout = setInterval(function(){
             if(currentConfig.detector_notrigger_webhook === '1' && !s.group[e.ke].activeMonitors[monitorId].detector_notrigger_webhook){
                 s.group[e.ke].activeMonitors[monitorId].detector_notrigger_webhook = s.createTimeout('detector_notrigger_webhook',s.group[e.ke].activeMonitors[monitorId],currentConfig.detector_notrigger_webhook_timeout,10)
-                var detector_notrigger_webhook_url = s.addEventDetailsToString(e,currentConfig.detector_notrigger_webhook_url)
+                var detector_notrigger_webhook_url = addEventDetailsToString(e,currentConfig.detector_notrigger_webhook_url)
                 var webhookMethod = currentConfig.detector_notrigger_webhook_method
                 if(!webhookMethod || webhookMethod === '')webhookMethod = 'GET'
                 request(detector_notrigger_webhook_url,{method: webhookMethod,encoding:null},function(err,data){
@@ -1090,7 +1097,7 @@ module.exports = function(s,config,lang){
             }
             if(currentConfig.detector_notrigger_command_enable === '1' && !s.group[e.ke].activeMonitors[monitorId].detector_notrigger_command){
                 s.group[e.ke].activeMonitors[monitorId].detector_notrigger_command = s.createTimeout('detector_notrigger_command',s.group[e.ke].activeMonitors[monitorId],currentConfig.detector_notrigger_command_timeout,10)
-                var detector_notrigger_command = s.addEventDetailsToString(e,currentConfig.detector_notrigger_command)
+                var detector_notrigger_command = addEventDetailsToString(e,currentConfig.detector_notrigger_command)
                 if(detector_notrigger_command === '')return
                 exec(detector_notrigger_command,{detached: true},function(err){
                     if(err)s.debugLog(err)
@@ -1193,8 +1200,9 @@ module.exports = function(s,config,lang){
                     }catch(err){
 
                     }
-                    startVideoProcessor = function(err,o){
-                        if(o.success === true){
+                    startVideoProcessor = function(err,pingResponse){
+                        pingResponse = pingResponse ? pingResponse : {success: false}
+                        if(pingResponse.success === true){
                             activeMonitor.isRecording = true
                             try{
                                 createCameraFfmpegProcess(e)
@@ -1247,10 +1255,10 @@ module.exports = function(s,config,lang){
                         try{
                             connectionTester.test(strippedHost,e.port,2000,startVideoProcessor);
                         }catch(err){
-                            startVideoProcessor(null,{success:true})
+                            startVideoProcessor()
                         }
                     }else{
-                        startVideoProcessor(null,{success:true})
+                        startVideoProcessor()
                     }
                 }else{
                     cameraDestroy(e)
@@ -1276,17 +1284,7 @@ module.exports = function(s,config,lang){
                 e.type !== 'local' &&
                 e.details.skip_ping !== '1'
             ){
-                connectionTester.test(strippedHost,e.port,2000,function(err,o){
-                    if(o.success === true){
-                        startVideoProcessor()
-                    }else{
-                        s.onMonitorPingFailedExtensions.forEach(function(extender){
-                            extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
-                        })
-                        s.userLog(e,{type:lang["Ping Failed"],msg:lang.skipPingText1});
-                        fatalError(e,"Ping Failed");return;
-                    }
-                })
+                connectionTester.test(strippedHost,e.port,2000,startVideoProcessor)
             }else{
                 startVideoProcessor()
             }
@@ -1532,7 +1530,7 @@ module.exports = function(s,config,lang){
                     },s.group[e.ke].activeMonitors[e.id].childNodeId)
                     s.cx({f:'sync',sync:s.group[e.ke].rawMonitorConfigurations[e.id],ke:e.ke,mid:e.id},s.group[e.ke].activeMonitors[e.id].childNodeId);
                 }else{
-                    s.closeEventBasedRecording(e)
+                    closeEventBasedRecording(e)
                     if(s.group[e.ke].activeMonitors[e.id].fswatch){s.group[e.ke].activeMonitors[e.id].fswatch.close();delete(s.group[e.ke].activeMonitors[e.id].fswatch)}
                     if(s.group[e.ke].activeMonitors[e.id].fswatchStream){s.group[e.ke].activeMonitors[e.id].fswatchStream.close();delete(s.group[e.ke].activeMonitors[e.id].fswatchStream)}
                     if(s.group[e.ke].activeMonitors[e.id].last_frame){delete(s.group[e.ke].activeMonitors[e.id].last_frame)}

@@ -66,8 +66,8 @@ $(document).ready(function(e){
             videoSet: powerVideoSet.val() || '',
             videoLimit: parseInt(powerVideoVideoLimitElement.val()) || 0,
             eventLimit: parseInt(powerVideoEventLimitElement.val()) || 500,
-            startDate: dateData.startDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
-            endDate: dateData.endDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
+            startDate: dateData.startDate.clone().utc().format('YYYY-MM-DDTHH:mm:ss'),
+            endDate: dateData.endDate.clone().utc().format('YYYY-MM-DDTHH:mm:ss'),
             ke: user.ke,
             mid: monitorId
         })

@@ -2240,10 +2240,6 @@ module.exports = function(s,config,lang){
                               "value": "sip"
                            },
                            {
-                              "name": lang['Hotswap Modes (Watch-Only)'],
-                              "value": "hot"
-                           },
-                           {
                               "name": lang['Delete Motionless Videos (Record)'],
                               "value": "del"
                            }
@@ -2393,99 +2389,133 @@ module.exports = function(s,config,lang){
                       ],
                    },
                    {
-                      "name": "detail=detector_webhook",
-                      "field": "Webhook",
-                      "description": "Send a GET request to a URL with some values from the event.",
-                      "default": "0",
-                      "example": "",
-                      "selector": "h_det_web",
-                      "fieldType": "select",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": [
-                         {
-                            "name": lang.No,
-                            "value": "0"
-                         },
-                         {
-                            "name": lang.Yes,
-                            "value": "1"
-                         }
-                      ]
-                   },
-                   {
                        hidden: true,
-                      "name": "detail=detector_webhook_url",
-                      "field": lang['Webhook URL'],
-                      "description": "",
-                      "default": "",
-                      "example": "http://111.111.111.111?mid={{MONITOR_ID}}&group={{GROUP_KEY}}&confidence={{CONFIDENCE}}",
-                      "form-group-class": "h_det_web_input h_det_web_1",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": ""
-                   },
-                   {
-                      "name": "detail=detector_webhook_method",
-                      "field": lang['Call Method'],
-                      "description": "",
-                      "default": "GET",
-                      "example": "",
-                      "form-group-class": "h_det_web_input h_det_web_1",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "fieldType": "select",
-                      "possible": [
-                          {
-                             "name": `GET (${lang.Default})`,
-                             "value": "GET"
-                          },
-                          {
-                             "name": "PUT",
-                             "value": "PUT"
-                          },
-                          {
-                             "name": "POST",
-                             "value": "POST"
-                          }
+                       "name": lang['Webhook'],
+                       "color": "orange",
+                       id: "monSectionDetectorWebhook",
+                       isSection: true,
+                       isAdvanced: true,
+                       isFormGroupGroup: true,
+                       "section-class": "h_det_input h_det_1",
+                       "info": [
+                           {
+                              "name": "detail=detector_webhook",
+                              "field": "Webhook",
+                              "description": "Send a GET request to a URL with some values from the event.",
+                              "default": "0",
+                              "example": "",
+                              "selector": "h_det_web",
+                              "fieldType": "select",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "possible": [
+                                 {
+                                    "name": lang.No,
+                                    "value": "0"
+                                 },
+                                 {
+                                    "name": lang.Yes,
+                                    "value": "1"
+                                 }
+                              ]
+                           },
+                           {
+                              "name": "detail=detector_webhook_timeout",
+                              "field": lang['Allow Next Webhook'],
+                              "description": "This value is a timer to allow the next running of your Webhook. This value is in minutes.",
+                              "default": "10",
+                              "example": "",
+                              "form-group-class": "h_det_web_input h_det_web_1",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "possible": ""
+                           },
+                           {
+                               hidden: true,
+                              "name": "detail=detector_webhook_url",
+                              "field": lang['Webhook URL'],
+                              "description": "",
+                              "default": "",
+                              "example": "http://111.111.111.111?mid={{MONITOR_ID}}&group={{GROUP_KEY}}&confidence={{CONFIDENCE}}",
+                              "form-group-class": "h_det_web_input h_det_web_1",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "possible": ""
+                           },
+                           {
+                              "name": "detail=detector_webhook_method",
+                              "field": lang['Call Method'],
+                              "description": "",
+                              "default": "GET",
+                              "example": "",
+                              "form-group-class": "h_det_web_input h_det_web_1",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "fieldType": "select",
+                              "possible": [
+                                  {
+                                     "name": `GET (${lang.Default})`,
+                                     "value": "GET"
+                                  },
+                                  {
+                                     "name": "PUT",
+                                     "value": "PUT"
+                                  },
+                                  {
+                                     "name": "POST",
+                                     "value": "POST"
+                                  }
+                               ]
+                           },
                        ]
                    },
                    {
-                      "name": "detail=detector_command_enable",
-                      "field": lang['Command on Trigger'],
-                      "description": "",
-                      "default": "0",
-                      "example": "",
-                      "selector": "h_det_com",
-                      "fieldType": "select",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": [
-                         {
-                            "name": lang.No,
-                            "value": "0"
-                         },
-                         {
-                            "name": lang.Yes,
-                            "value": "1"
-                         }
-                      ]
-                   },
-                   {
-                      "name": "detail=detector_command",
-                      "field": lang['Command'],
-                      "description": "The command that will run. This is the equivalent of running a shell command from terminal.",
-                      "default": "",
-                      "form-group-class": "h_det_com_input h_det_com_1",
-                      "example": "/home/script.sh {{MONITOR_ID}} {{GROUP_KEY}} {{CONFIDENCE}}",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": ""
-                   },
-                   {
-                      "name": "detail=detector_command_timeout",
-                      "field": lang['Allow Next Command'],
-                      "description": "This value is a timer to allow the next running of your script. This value is in minutes.",
-                      "default": "10",
-                      "example": "",
-                      "form-group-class": "h_det_com_input h_det_com_1",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": ""
+                       hidden: true,
+                       "name": lang['Command'],
+                       "color": "orange",
+                       id: "monSectionDetectorCommand",
+                       isSection: true,
+                       isAdvanced: true,
+                       isFormGroupGroup: true,
+                       "section-class": "h_det_input h_det_1",
+                       "info": [
+                           {
+                              "name": "detail=detector_command_enable",
+                              "field": lang['Command on Trigger'],
+                              "description": "",
+                              "default": "0",
+                              "example": "",
+                              "selector": "h_det_com",
+                              "fieldType": "select",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "possible": [
+                                 {
+                                    "name": lang.No,
+                                    "value": "0"
+                                 },
+                                 {
+                                    "name": lang.Yes,
+                                    "value": "1"
+                                 }
+                              ]
+                           },
+                           {
+                              "name": "detail=detector_command",
+                              "field": lang['Command'],
+                              "description": "The command that will run. This is the equivalent of running a shell command from terminal.",
+                              "default": "",
+                              "form-group-class": "h_det_com_input h_det_com_1",
+                              "example": "/home/script.sh {{MONITOR_ID}} {{GROUP_KEY}} {{CONFIDENCE}}",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "possible": ""
+                           },
+                           {
+                              "name": "detail=detector_command_timeout",
+                              "field": lang['Allow Next Command'],
+                              "description": "This value is a timer to allow the next running of your script. This value is in minutes.",
+                              "default": "10",
+                              "example": "",
+                              "form-group-class": "h_det_com_input h_det_com_1",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "possible": ""
+                           },
+                       ]
                    },
                    {
                       "name": "detail=snap_seconds_inward",
@@ -2883,15 +2913,6 @@ module.exports = function(s,config,lang){
                                   "value": "POST"
                                }
                             ]
-                        },
-                        {
-                           "name": "detail=detector_notrigger_command_timeout",
-                           "field": lang['Allow Next Webhook'],
-                           "description": "This value is a timer to allow the next running of your webhook. This value is in minutes.",
-                           "default": "10",
-                           "example": "",
-                           "form-group-class": "h_det_web_notrig_input h_det_web_notrig_1",
-                           "possible": ""
                         },
                         {
                            "name": "detail=detector_notrigger_command_enable",
