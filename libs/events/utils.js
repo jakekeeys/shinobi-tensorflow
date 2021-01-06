@@ -285,7 +285,7 @@ module.exports = (s,config,lang,app,io) => {
     const runMultiTrigger = (monitorConfig,eventDetails) => {
         s.getCamerasForMultiTrigger(monitorConfig).forEach(function(monitor){
             if(monitor.mid !== d.id){
-                s.triggerEvent({
+                triggerEvent({
                     id: monitor.mid,
                     ke: monitor.ke,
                     details: {
