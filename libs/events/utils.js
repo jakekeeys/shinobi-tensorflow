@@ -282,10 +282,10 @@ module.exports = (s,config,lang,app,io) => {
         }
         return true
     }
-    const runMultiTrigger = (monitorConfig,eventDetails) => {
+    const runMultiTrigger = (monitorConfig,eventDetails, d, triggerEvent) => {
         s.getCamerasForMultiTrigger(monitorConfig).forEach(function(monitor){
             if(monitor.mid !== d.id){
-                s.triggerEvent({
+                triggerEvent({
                     id: monitor.mid,
                     ke: monitor.ke,
                     details: {
@@ -314,11 +314,11 @@ module.exports = (s,config,lang,app,io) => {
         }
         return true
     }
-    const runEventExecutions = async (eventTime,monitorConfig,eventDetails,forceSave,filter,d) => {
+    const runEventExecutions = async (eventTime,monitorConfig,eventDetails,forceSave,filter,d, triggerEvent) => {
         const monitorDetails = monitorConfig.details
         const detailString = JSON.stringify(eventDetails)
         if(monitorDetails.det_multi_trig === '1'){
-            runMultiTrigger(monitorConfig,eventDetails)
+            runMultiTrigger(monitorConfig,eventDetails, d, triggerEvent)
         }
         //save this detection result in SQL, only coords. not image.
         if(forceSave || (filter.save && monitorDetails.detector_save === '1')){
@@ -572,7 +572,7 @@ module.exports = (s,config,lang,app,io) => {
             monitorDetails.detector_use_motion === '0' ||
             d.doObjectDetection !== true
         ){
-            runEventExecutions(eventTime,monitorConfig,eventDetails,forceSave,filter,d)
+            runEventExecutions(eventTime,monitorConfig,eventDetails,forceSave,filter,d, triggerEvent)
         }
         //show client machines the event
         s.tx({
