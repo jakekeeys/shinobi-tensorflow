@@ -28,6 +28,7 @@ fi
 echo "Shinobi - Run yum update"
 sudo yum update -y
 sudo yum install gcc gcc-c++ -y
+sudo yum install cmake -y
 sudo yum install make zip dos2unix -y
 if ! [ -x "$(command -v node)" ]; then
     echo "============="
