@@ -10,7 +10,7 @@ const connectionTester = require('connection-tester')
 const SoundDetection = require('shinobi-sound-detection')
 const async = require("async");
 const URL = require('url')
-const { copyObject, createQueue } = require('./common.js')
+const { copyObject, createQueue, queryStringToObject } = require('./common.js')
 module.exports = function(s,config,lang){
     const {
         probeMonitor,
@@ -452,6 +452,7 @@ module.exports = function(s,config,lang){
             port: URLobject.port,
             method: monitorConfig.details.control_url_method,
             path: URLobject.pathname,
+            query: queryStringToObject(URLobject.query || ""),
         };
         if(URLobject.query){
             options.path=options.path+'?'+URLobject.query
@@ -470,7 +471,7 @@ module.exports = function(s,config,lang){
     }
     s.cameraSendSnapshot = async (e,options) => {
         options = Object.assign({
-            flags: '-s 200x200'
+            flags: '-s 500x500'
         },options || {})
         s.checkDetails(e)
         if(e.ke && config.doSnapshot === true){
@@ -501,7 +502,7 @@ module.exports = function(s,config,lang){
             return await fs.promises.readFile(config.defaultMjpeg)
         }
         options = Object.assign({
-            flags: '-s 200x200'
+            flags: '-s 500x500'
         },options || {})
         if(e.ke && config.doSnapshot === true){
             if(s.group[e.ke] && s.group[e.ke].rawMonitorConfigurations && s.group[e.ke].rawMonitorConfigurations[e.mid] && s.group[e.ke].rawMonitorConfigurations[e.mid].mode !== 'stop'){
