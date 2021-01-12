@@ -1,5 +1,5 @@
 #!/bin/bash
-DIR=`dirname $0`
+DIR=$(dirname $0)
 echo "Removing existing Tensorflow Node.js modules..."
 npm uninstall @tensorflow/tfjs-node-gpu --unsafe-perm
 npm uninstall @tensorflow/tfjs-node --unsafe-perm
@@ -10,26 +10,26 @@ installArmFlag=false
 installGpuFlag=false
 dontCreateKeyFlag=false
 
-while [ ! $# -eq 0 ]
-do
-	case "$1" in
-		--jetson)
-			installJetsonFlag=true
-			exit
-			;;
-		--arm)
-			installArmFlag=true
-			exit
-			;;
-		--gpu)
-			installGpuFlag=true
-			exit
-			;;
-		--dont-create-key)
-			dontCreateKeyFlag=true
-			exit
-			;;
-	esac
+while [ ! $# -eq 0 ];
+	do
+		case "$1" in
+			--jetson)
+				installJetsonFlag=true
+				exit
+				;;
+			--arm)
+				installArmFlag=true
+				exit
+				;;
+			--gpu)
+				installGpuFlag=true
+				exit
+				;;
+			--dont-create-key)
+				dontCreateKeyFlag=true
+				exit
+				;;
+		esac
 	shift
 done
 
@@ -48,6 +48,14 @@ if [ "$installJetsonFlag" = true ] || [ "$installArmFlag" = true ] || [ "$instal
 	nonInteractiveFlag=true
 fi
 
+manualInstallRequirements() {
+	npm install --unsafe-perm
+	npm install @tensorflow/tfjs-converter@2.7.0 --unsafe-perm
+	npm install @tensorflow/tfjs-core@2.7.0 --unsafe-perm
+	npm install @tensorflow/tfjs-layers@2.7.0 --unsafe-perm
+	npm install @tensorflow/tfjs-node@2.7.0 --unsafe-perm
+}
+
 installJetson() {
 	installGpuFlag=true
 	npm install @tensorflow/tfjs-node-gpu@2.7.0 --unsafe-perm
@@ -63,10 +71,12 @@ installArm() {
 
 installGpuRoute() {
 	installGpuFlag=true
+	manualInstallRequirements
 	npm install @tensorflow/tfjs-node-gpu@2.7.0 --unsafe-perm
 }
 
 installNonGpuRoute() {
+	manualInstallRequirements
 	npm install @tensorflow/tfjs-node@2.7.0 --unsafe-perm
 }
 
@@ -123,7 +133,8 @@ else
 	fi
 fi
 
-npm install --unsafe-perm
+
+# npm install @tensorflow/tfjs-node-gpu@2.7.0
 npm audit fix --force
 if [ "$installGpuFlag" = true ]; then
 	runRebuildGpu
