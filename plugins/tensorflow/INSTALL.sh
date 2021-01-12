@@ -1,8 +1,8 @@
 #!/bin/bash
 DIR=$(dirname $0)
+echo "Do not attempt to use this Installer on ARM-based CPUs."
 echo "Removing existing Tensorflow Node.js modules..."
-npm uninstall @tensorflow/tfjs-node-gpu --unsafe-perm
-npm uninstall @tensorflow/tfjs-node --unsafe-perm
+rm -rf node_modules
 npm install yarn -g --unsafe-perm --force
 
 installJetsonFlag=false
@@ -50,10 +50,7 @@ fi
 
 manualInstallRequirements() {
 	npm install --unsafe-perm
-	npm install @tensorflow/tfjs-converter@2.7.0 --unsafe-perm
-	npm install @tensorflow/tfjs-core@2.7.0 --unsafe-perm
-	npm install @tensorflow/tfjs-layers@2.7.0 --unsafe-perm
-	npm install @tensorflow/tfjs-node@2.7.0 --unsafe-perm
+	npm install @tensorflow/tfjs-backend-cpu@2.7.0 @tensorflow/tfjs-backend-webgl@2.7.0 @tensorflow/tfjs-converter@2.7.0 @tensorflow/tfjs-core@2.7.0 @tensorflow/tfjs-layers@2.7.0 @tensorflow/tfjs-node@2.7.0 --unsafe-perm
 }
 
 installJetson() {
@@ -89,22 +86,22 @@ runRebuildGpu() {
 }
 
 if [ "$nonInteractiveFlag" = false ]; then
-	echo "Shinobi - Are you installing on ARM64? This applies to computers like Jetson Nano and Raspberry Pi Model 3 B+"
-	echo "(y)es or (N)o"
-	read armCpu
-	if [ "$armCpu" = "y" ] || [ "$armCpu" = "Y" ]; then
-	    echo "Shinobi - Is it a Jetson Nano?"
-	    echo "You must be on JetPack 4.3 for this plugin to install."
-	    echo "JetPack 4.3 Image can be found here : https://developer.nvidia.com/jetpack-43-archive"
-	    echo "(y)es or (N)o"
-	    read isItJetsonNano
-	    echo "Shinobi - You may see Unsupported Errors, please wait while patches are applied."
-	    if [ "$isItJetsonNano" = "y" ] || [ "$isItJetsonNano" = "Y" ]; then
-		installJetson
-	    else
-		installArm
-	    fi
-	else
+	# echo "Shinobi - Are you installing on ARM64? This applies to computers like Jetson Nano and Raspberry Pi Model 3 B+"
+	# echo "(y)es or (N)o"
+	# read armCpu
+	# if [ "$armCpu" = "y" ] || [ "$armCpu" = "Y" ]; then
+	#     echo "Shinobi - Is it a Jetson Nano?"
+	#     echo "You must be on JetPack 4.3 for this plugin to install."
+	#     echo "JetPack 4.3 Image can be found here : https://developer.nvidia.com/jetpack-43-archive"
+	#     echo "(y)es or (N)o"
+	#     read isItJetsonNano
+	#     echo "Shinobi - You may see Unsupported Errors, please wait while patches are applied."
+	#     if [ "$isItJetsonNano" = "y" ] || [ "$isItJetsonNano" = "Y" ]; then
+	# 	installJetson
+	#     else
+	# 	installArm
+	#     fi
+	# else
 	    echo "Shinobi - Do you want to install TensorFlow.js with GPU support? "
 	    echo "You can run this installer again to change it."
 	    echo "(y)es or (N)o"
@@ -114,7 +111,7 @@ if [ "$nonInteractiveFlag" = false ]; then
 	    else
 		installNonGpuRoute
 	    fi
-	fi
+	# fi
 else
 	if [ "$installJetsonFlag" = true ]; then
 		installJetson
