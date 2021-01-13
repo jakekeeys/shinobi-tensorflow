@@ -14,7 +14,7 @@ else
 
 	if [ ! "${osoverride^}" = "Y" ]; then
 		exit 1
-	else 
+	else
 		pkgmgr="yum"
 	fi
 fi
@@ -32,7 +32,7 @@ clear
 echo "========================================================="
 echo "==   Shinobi : The Open Source CCTV and NVR Solution   =="
 echo "========================================================="
-echo "This script will install Shinobi CCTV on CentOS $version with" 
+echo "This script will install Shinobi CCTV on CentOS $version with"
 echo "minimal user intervention."
 echo
 echo "You may skip any components you already have or do not"
@@ -41,15 +41,15 @@ echo "========================================================="
 read -p "Press [Enter] to begin..."
 
 #Install dependencies
-echo "Installing dependencies and tools..." 
+echo "Installing dependencies and tools..."
 
 if [ "$version" = 7 ]; then
 	#Installing deltarpm first will greatly increase the download speed of the other packages
 	sudo yum install deltarpm -y -q -e 0
-fi 
+fi
 
 #Install remaining packages
-sudo "$pkgmgr" install "$vm" nano dos2unix net-tools curl wget git gcc gcc-c++ make zip -y -q -e 0
+sudo "$pkgmgr" install "$vm" nano dos2unix net-tools curl wget git gcc gcc-c++ make cmake zip -y -q -e 0
 
 #Install updates
 echo "Updating system..."
@@ -60,7 +60,7 @@ if [ "$1" != 1 ]; then
 	#Clone git repo and change directory
 	if sudo git clone -q https://gitlab.com/Shinobi-Systems/Shinobi.git Shinobi &> /dev/null; then
 		echo "Successfully cloned Shinobi repository."
-	else 
+	else
 		echo "Failed to clone Shinobi repository!"
 	fi
 	if cd Shinobi; then
@@ -149,7 +149,7 @@ if [ "${installdbserver^}" = "Y" ] || [ "${installdbserver^}" = "" ]; then
 	if [ "${securedbserver^}" = "Y" ]; then
 		#Configure basic security for MariaDB
 		sudo mysql_secure_installation
-	else 
+	else
 		echo "========================================================="
 		echo "Skipping database server security configuration..."
 	fi
@@ -172,7 +172,7 @@ if [ "${mysqlDefaultData^}" = "Y" ]; then
 		#Get the hostname/ip of the database server
 		echo "Please enter the hostname or IP address of the database"
 		read -p "server, or leave blank for localhost: " sqlhost
-		#Get the port for the database server			
+		#Get the port for the database server
 		while :; do
 			echo "Please enter the port number of the MariaDB instance,"
 			read -p "or leave blank for the default port: " sqlport
@@ -199,7 +199,7 @@ if [ "${mysqlDefaultData^}" = "Y" ]; then
 			echo "Unable to connect to MariaDB with the supplied credentials!"
 			read -p "Please enter your MariaDB username: " sqluser
 			read -sp "Please enter your MariaDB password: " sqlpass
-			echo ""			
+			echo ""
 			echo "Please enter the hostname or IP address of the database"
 			read -p "server, or leave blank for localhost: " sqlhost
 
@@ -218,7 +218,7 @@ if [ "${mysqlDefaultData^}" = "Y" ]; then
 					echo ""
 				fi
 			done
-			
+
 			#If the hostname is left blank, use localhost
 			if [ "$sqlhost" = "" ]; then
 				sqlhost=127.0.0.1

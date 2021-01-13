@@ -52,5 +52,15 @@ module.exports = {
     stringToSqlTime: (value) => {
         newValue = new Date(value.replace('T',' '))
         return newValue
-    }
+    },
+    queryStringToObject: (string) => {
+        const newObject = {}
+        string.split('&').forEach((piece) => {
+            const parts = piece.split('=')
+            const key = parts[0]
+            const value = parts[1]
+            newObject[key] = value
+        })
+        return newObject
+    },
 }

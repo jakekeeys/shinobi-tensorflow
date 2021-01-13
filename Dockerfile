@@ -61,6 +61,7 @@ RUN apt install -y software-properties-common \
         build-essential \
         bzip2 \
         coreutils \
+        procps \
         gnutls-bin \
         nasm \
         tar \
