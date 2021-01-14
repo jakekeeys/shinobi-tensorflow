@@ -56,8 +56,9 @@ RUN apt install -y software-properties-common \
         librtmp-dev \
         libx264-dev \
         libx265-dev \
-        yasm && \
-    apt install -y \
+        yasm
+RUN apt update --fix-missing
+RUN apt install -y \
         build-essential \
         bzip2 \
         coreutils \
