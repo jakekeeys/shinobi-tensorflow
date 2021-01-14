@@ -41,6 +41,7 @@ RUN if [ "$DB_DISABLE_INCLUDED" = "false" ] ; then sed -ie "s/^bind-address\s*=\
 
 # Install FFmpeg
 
+RUN apt update --fix-missing
 RUN apt install -y software-properties-common \
         libfreetype6-dev \
         libgnutls28-dev \
@@ -56,8 +57,8 @@ RUN apt install -y software-properties-common \
         librtmp-dev \
         libx264-dev \
         libx265-dev \
-        yasm && \
-    apt install -y \
+        yasm
+RUN apt install -y \
         build-essential \
         bzip2 \
         coreutils \
