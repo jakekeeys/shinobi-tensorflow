@@ -450,12 +450,14 @@ module.exports = function(s,config,lang){
         options = {
             host: URLobject.hostname,
             port: URLobject.port,
-            method: monitorConfig.details.control_url_method,
-            path: URLobject.pathname,
-            query: queryStringToObject(URLobject.query || ""),
-        };
-        if(URLobject.query){
-            options.path=options.path+'?'+URLobject.query
+            method: monitorConfig.details.control_url_method
+        }
+        const queryStringObjects = queryStringToObject(URLobject.query || "")
+        if (queryStringObjects && queryStringObjects.postData) {
+            options.postData = decodeURIComponent(queryStringObjects.postData)
+            options.path = URLobject.pathname + '?' + decodeURIComponent(URLobject.query.replace(/&postData(\=[^&]*)?(?=&|$)|^postData(\=[^&]*)?(&|$)/, ''))
+        } else {
+            options.path = URLobject.pathname
         }
         if(URLobject.username&&URLobject.password){
             options.username = URLobject.username
