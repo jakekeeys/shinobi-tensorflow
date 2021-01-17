@@ -217,12 +217,17 @@ module.exports = function(s,config,lang){
                 let stopURL = controlBaseUrl + monitorConfig.details[`control_url_${options.direction}_stop`]
                 let controlOptions = s.cameraControlOptionsFromUrl(stopURL,monitorConfig)
                 let requestOptions = {
-                    url : stopURL,
-                    method : controlOptions.method,
-                    auth : {
-                        user : controlOptions.username,
-                        pass : controlOptions.password
+                    url : controlBaseUrl + controlOptions.path,
+                    method : controlOptions.method
+                }
+                if(controlOptions.username && controlOptions.password){
+                    requestOptions.auth = {
+                        user: controlOptions.username,
+                        pass: controlOptions.password
                     }
+                }
+                if(controlOptions.postData){
+                    requestOptions.form = controlOptions.postData
                 }
                 if(monitorConfig.details.control_digest_auth === '1'){
                     requestOptions.sendImmediately = true
@@ -248,12 +253,17 @@ module.exports = function(s,config,lang){
                 let controlURL = controlBaseUrl + monitorConfig.details[`control_url_${options.direction}`]
                 let controlOptions = s.cameraControlOptionsFromUrl(controlURL,monitorConfig)
                 let requestOptions = {
-                    url: controlURL,
-                    method: controlOptions.method,
-                    auth: {
+                    url: controlBaseUrl + controlOptions.path,
+                    method: controlOptions.method
+                }
+                if(controlOptions.username && controlOptions.password){
+                    requestOptions.auth = {
                         user: controlOptions.username,
                         pass: controlOptions.password
                     }
+                }
+                if(controlOptions.postData){
+                    requestOptions.form = controlOptions.postData
                 }
                 if(monitorConfig.details.control_digest_auth === '1'){
                     requestOptions.sendImmediately = true
