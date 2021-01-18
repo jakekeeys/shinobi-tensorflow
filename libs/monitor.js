@@ -10,7 +10,7 @@ const connectionTester = require('connection-tester')
 const SoundDetection = require('shinobi-sound-detection')
 const async = require("async");
 const URL = require('url')
-const { copyObject, createQueue, queryStringToObject } = require('./common.js')
+const { copyObject, createQueue, queryStringToObject, createQueryStringFromObject } = require('./common.js')
 module.exports = function(s,config,lang){
     const {
         probeMonitor,
@@ -447,15 +447,17 @@ module.exports = function(s,config,lang){
         }else if(!URLobject.port){
             URLobject.port = 80
         }
-        options = {
+        const options = {
             host: URLobject.hostname,
             port: URLobject.port,
-            method: monitorConfig.details.control_url_method,
-            path: URLobject.pathname,
-            query: queryStringToObject(URLobject.query || ""),
-        };
-        if(URLobject.query){
-            options.path=options.path+'?'+URLobject.query
+            method: monitorConfig.details.control_url_method
+        }
+        const queryStringObjects = queryStringToObject(URLobject.query || "")
+        if (queryStringObjects && queryStringObjects.postData) {
+            options.postData = decodeURIComponent(queryStringObjects.postData)
+            options.path = URLobject.pathname + '?' + decodeURIComponent(createQueryStringFromObject(Object.assign(queryStringObjects,{postData: null})))
+        } else {
+            options.path = URLobject.pathname
         }
         if(URLobject.username&&URLobject.password){
             options.username = URLobject.username
