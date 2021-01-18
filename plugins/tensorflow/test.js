@@ -25,8 +25,16 @@ var fs = require('fs');
 const fetch = require('node-fetch');
 // Base Init />>
 
-
-var tf = require('@tensorflow/tfjs-node-gpu')
+var tf
+try{
+    tf = require('@tensorflow/tfjs-node-gpu')
+}catch(err){
+    try{
+        tf = require('@tensorflow/tfjs-node')
+    }catch(err){
+        return console.log('tfjs-node could not be loaded')
+    }
+}
 
   const cocossd = require('@tensorflow-models/coco-ssd');
   // const mobilenet = require('@tensorflow-models/mobilenet');
