@@ -63,4 +63,14 @@ module.exports = {
         })
         return newObject
     },
+    createQueryStringFromObject: (theObject) => {
+       const string = []
+       const keys = Object.keys(theObject)
+       keys.forEach((key) => {
+          const value = theObject[key]
+          if(value)string.push(`${key}=${value}`)
+       })
+       return string.join('&')
+    }
+
 }
