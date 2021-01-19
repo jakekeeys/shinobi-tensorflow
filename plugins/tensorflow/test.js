@@ -21,7 +21,6 @@
 
 console.log('############################################')
 console.log('@tensorflow/tfjs-node(-gpu) module test for Object Detection')
-console.log('############################################')
 
 // Base Init >>
 var fs = require('fs');
@@ -32,12 +31,12 @@ const tfjsBuild = process.argv[2]
 try{
     switch(tfjsBuild){
         case'gpu':
-            tf = require('@tensorflow/tfjs-node-gpu')
             console.log('GPU Test for Tensorflow Module')
+            tf = require('@tensorflow/tfjs-node-gpu')
         break;
         case'cpu':
-            tf = require('@tensorflow/tfjs-node')
             console.log('CPU Test for Tensorflow Module')
+            tf = require('@tensorflow/tfjs-node')
         break;
         default:
             console.log('Nothing selected, using CPU Module for test.')
@@ -62,6 +61,7 @@ if(!tf){
         }
     }
 }
+console.log('############################################')
 
   const cocossd = require('@tensorflow-models/coco-ssd');
   // const mobilenet = require('@tensorflow-models/mobilenet');
