@@ -4,9 +4,18 @@ const request = require('request')
 const unzipper = require('unzipper')
 const fetch = require("node-fetch")
 const spawn = require('child_process').spawn
+const {
+  Worker
+} = require('worker_threads');
 module.exports = async (s,config,lang,app,io) => {
+    const {
+        activateClientPlugin,
+        initializeClientPlugin,
+        deactivateClientPlugin,
+    } = require('./utils.js')(s,config,lang)
+    const runningPluginWorkers = {}
     const runningInstallProcesses = {}
-    const modulesBasePath = s.mainDirectory + '/libs/customAutoLoad/'
+    const modulesBasePath = process.cwd() + '/plugins/'
     const extractNameFromPackage = (filePath) => {
         const filePathParts = filePath.split('/')
         const packageName = filePathParts[filePathParts.length - 1].split('.')[0]
@@ -15,24 +24,41 @@ module.exports = async (s,config,lang,app,io) => {
     const getModulePath = (name) => {
         return modulesBasePath + name + '/'
     }
+    const getModuleConfiguration = (moduleName) => {
+        var moduleConfig = {}
+        const modulePath = modulesBasePath + moduleName
+        if(fs.existsSync(modulePath + '/conf.json')){
+            moduleConfig = getModuleProperties(moduleName,'conf')
+        }else{
+            if(fs.existsSync(modulePath + '/conf.sample.json')){
+                moduleConfig = getModuleProperties(moduleName,'conf.sample')
+            }else{
+                moduleConfig = {
+                    plug: moduleName.replace('shinobi-',''),
+                    type: 'detector'
+                }
+            }
+        }
+        return moduleConfig
+    }
     const getModule = (moduleName) => {
         const modulePath = modulesBasePath + moduleName
         const stats = fs.lstatSync(modulePath)
-        const isDirectory = stats.isDirectory()
-        const newModule = {
-            name: moduleName,
-            path: modulePath + '/',
-            size: stats.size,
-            lastModified: stats.mtime,
-            created: stats.ctime,
-            isDirectory: isDirectory,
-        }
-        if(isDirectory){
+        var newModule;
+        if(stats.isDirectory()){
+            newModule = {
+                name: moduleName,
+                path: modulePath + '/',
+                size: stats.size,
+                lastModified: stats.mtime,
+                created: stats.ctime,
+            }
             var hasInstaller = false
             if(!fs.existsSync(modulePath + '/index.js')){
                 hasInstaller = true
                 newModule.noIndex = true
             }
+            //package.json
             if(fs.existsSync(modulePath + '/package.json')){
                 hasInstaller = true
                 newModule.properties = getModuleProperties(moduleName)
@@ -41,12 +67,12 @@ module.exports = async (s,config,lang,app,io) => {
                     name: moduleName
                 }
             }
-            newModule.hasInstaller = hasInstaller
-        }else{
-            newModule.isIgnitor = (moduleName.indexOf('.js') > -1)
-            newModule.properties = {
-                name: moduleName
+            if(newModule.properties.disabled === undefined){
+                newModule.properties.disabled = true
             }
+            //conf.json
+            newModule.config = getModuleConfiguration(moduleName)
+            newModule.hasInstaller = hasInstaller
         }
         return newModule
     }
@@ -89,9 +115,9 @@ module.exports = async (s,config,lang,app,io) => {
             })
         })
     }
-    const getModuleProperties = (name) => {
+    const getModuleProperties = (name,file) => {
         const modulePath = getModulePath(name)
-        const propertiesPath = modulePath + 'package.json'
+        const propertiesPath = modulePath + `${file ? file : 'package'}.json`
         const properties = fs.existsSync(propertiesPath) ? s.parseJSON(fs.readFileSync(propertiesPath)) : {
             name: name
         }
@@ -172,131 +198,36 @@ module.exports = async (s,config,lang,app,io) => {
             return false
         }
     }
-    const loadModule = (shinobiModule) => {
-        const moduleName = shinobiModule.name
-        s.customAutoLoadModules[moduleName] = {}
-        var customModulePath = modulesBasePath + '/' + moduleName
-        if(shinobiModule.isIgnitor){
-            s.customAutoLoadModules[moduleName].type = 'file'
-            try{
-                require(customModulePath)(s,config,lang,app,io)
-            }catch(err){
-                s.systemLog('Failed to Load Module : ' + moduleName)
-                s.systemLog(err)
-            }
-        }else if(shinobiModule.isDirectory){
-            s.customAutoLoadModules[moduleName].type = 'folder'
-            try{
-                require(customModulePath)(s,config,lang,app,io)
-                fs.readdir(customModulePath,function(err,folderContents){
-                    folderContents.forEach(function(name){
-                        switch(name){
-                            case'web':
-                                var webFolder = s.checkCorrectPathEnding(customModulePath) + 'web/'
-                                fs.readdir(webFolder,function(err,webFolderContents){
-                                    webFolderContents.forEach(function(name){
-                                        switch(name){
-                                            case'libs':
-                                            case'pages':
-                                                if(name === 'libs'){
-                                                    if(config.webPaths.home !== '/'){
-                                                        app.use('/libs',express.static(webFolder + '/libs'))
-                                                    }
-                                                    app.use(s.checkCorrectPathEnding(config.webPaths.home)+'libs',express.static(webFolder + '/libs'))
-                                                    app.use(s.checkCorrectPathEnding(config.webPaths.admin)+'libs',express.static(webFolder + '/libs'))
-                                                    app.use(s.checkCorrectPathEnding(config.webPaths.super)+'libs',express.static(webFolder + '/libs'))
-                                                }
-                                                var libFolder = webFolder + name + '/'
-                                                fs.readdir(libFolder,function(err,webFolderContents){
-                                                    webFolderContents.forEach(function(libName){
-                                                        var thirdLevelName = libFolder + libName
-                                                        switch(libName){
-                                                            case'js':
-                                                            case'css':
-                                                            case'blocks':
-                                                                fs.readdir(thirdLevelName,function(err,webFolderContents){
-                                                                    webFolderContents.forEach(function(filename){
-                                                                        var fullPath = thirdLevelName + '/' + filename
-                                                                        var blockPrefix = ''
-                                                                        switch(true){
-                                                                            case filename.contains('super.'):
-                                                                                blockPrefix = 'super'
-                                                                            break;
-                                                                            case filename.contains('admin.'):
-                                                                                blockPrefix = 'admin'
-                                                                            break;
-                                                                        }
-                                                                        switch(libName){
-                                                                            case'js':
-                                                                                s.customAutoLoadTree[blockPrefix + 'LibsJs'].push(filename)
-                                                                            break;
-                                                                            case'css':
-                                                                                s.customAutoLoadTree[blockPrefix + 'LibsCss'].push(filename)
-                                                                            break;
-                                                                            case'blocks':
-                                                                                s.customAutoLoadTree[blockPrefix + 'PageBlocks'].push(fullPath)
-                                                                            break;
-                                                                        }
-                                                                    })
-                                                                })
-                                                            break;
-                                                            default:
-                                                                if(libName.indexOf('.ejs') > -1){
-                                                                    s.customAutoLoadTree.pages.push(thirdLevelName)
-                                                                }
-                                                            break;
-                                                        }
-                                                    })
-                                                })
-                                            break;
-                                        }
-                                    })
-                                })
-                            break;
-                            case'languages':
-                                var languagesFolder = s.checkCorrectPathEnding(customModulePath) + 'languages/'
-                                fs.readdir(languagesFolder,function(err,files){
-                                    if(err)return console.log(err);
-                                    files.forEach(function(filename){
-                                        var fileData = require(languagesFolder + filename)
-                                        var rule = filename.replace('.json','')
-                                        if(config.language === rule){
-                                            lang = Object.assign(lang,fileData)
-                                        }
-                                        if(s.loadedLanguages[rule]){
-                                            s.loadedLanguages[rule] = Object.assign(s.loadedLanguages[rule],fileData)
-                                        }else{
-                                            s.loadedLanguages[rule] = Object.assign(s.copySystemDefaultLanguage(),fileData)
-                                        }
-                                    })
-                                })
-                            break;
-                            case'definitions':
-                                var definitionsFolder = s.checkCorrectPathEnding(customModulePath) + 'definitions/'
-                                fs.readdir(definitionsFolder,function(err,files){
-                                    if(err)return console.log(err);
-                                    files.forEach(function(filename){
-                                        var fileData = require(definitionsFolder + filename)
-                                        var rule = filename.replace('.json','').replace('.js','')
-                                        if(config.language === rule){
-                                            s.definitions = s.mergeDeep(s.definitions,fileData)
-                                        }
-                                        if(s.loadedDefinitons[rule]){
-                                            s.loadedDefinitons[rule] = s.mergeDeep(s.loadedDefinitons[rule],fileData)
-                                        }else{
-                                            s.loadedDefinitons[rule] = s.mergeDeep(s.copySystemDefaultDefinitions(),fileData)
-                                        }
-                                    })
-                                })
-                            break;
-                        }
-                    })
-                })
-            }catch(err){
-                s.systemLog('Failed to Load Module : ' + moduleName)
-                s.systemLog(err)
-            }
+    const unloadModule = (moduleName) => {
+        const worker = runningPluginWorkers[moduleName]
+        if(worker){
+            worker.terminate()
+            runningPluginWorkers[moduleName] = null
         }
+    }
+    const loadModule = (shinobiModule) => {
+        console.log(new Error(shinobiModule))
+        const moduleName = shinobiModule.name
+        const moduleConfig = shinobiModule.config
+        const modulePlugName = moduleConfig.plug
+        const customModulePath = modulesBasePath + '/' + moduleName
+        console.log(customModulePath + '/' + shinobiModule.properties.main)
+        console.log('11111111111111111111111111111111111111')
+        const worker = new Worker(customModulePath + '/' + shinobiModule.properties.main);
+        initializeClientPlugin(moduleConfig)
+        activateClientPlugin(moduleConfig,(data) => {
+            worker.postMessage(data)
+        })
+        worker.on('error', (err) =>{
+            console.error(err)
+        });
+        worker.on('exit', (code) => {
+            if (code !== 0){
+                s.debugLog(`Worker (Plugin) stopped with exit code ${code}`);
+            }
+            deactivateClientPlugin(modulePlugName)
+        });
+        runningPluginWorkers[moduleName] = worker
     }
     const moveModuleToNameInProperties = (modulePath,packageRoot,properties) => {
         return new Promise((resolve,reject) => {
@@ -315,23 +246,10 @@ module.exports = async (s,config,lang,app,io) => {
         })
     }
     const initializeAllModules = async () => {
-        s.customAutoLoadModules = {}
-        s.customAutoLoadTree = {
-            pages: [],
-            PageBlocks: [],
-            LibsJs: [],
-            LibsCss: [],
-            adminPageBlocks: [],
-            adminLibsJs: [],
-            adminLibsCss: [],
-            superPageBlocks: [],
-            superLibsJs: [],
-            superLibsCss: []
-        }
         fs.readdir(modulesBasePath,function(err,folderContents){
             if(!err && folderContents.length > 0){
                 getModules(true).forEach((shinobiModule) => {
-                    if(shinobiModule.properties.disabled){
+                    if(!shinobiModule || shinobiModule.properties.disabled){
                         return;
                     }
                     loadModule(shinobiModule)
@@ -344,7 +262,7 @@ module.exports = async (s,config,lang,app,io) => {
     /**
     * API : Superuser : Custom Auto Load Package Download.
     */
-    app.get(config.webPaths.superApiPrefix+':auth/package/list', async (req,res) => {
+    app.get(config.webPaths.superApiPrefix+':auth/plugins/list', async (req,res) => {
         s.superAuth(req.params, async (resp) => {
             s.closeJsonResponse(res,{
                 ok: true,
@@ -355,7 +273,7 @@ module.exports = async (s,config,lang,app,io) => {
     /**
     * API : Superuser : Custom Auto Load Package Download.
     */
-    app.post(config.webPaths.superApiPrefix+':auth/package/download', async (req,res) => {
+    app.post(config.webPaths.superApiPrefix+':auth/plugins/download', async (req,res) => {
         s.superAuth(req.params, async (resp) => {
             try{
                 const url = req.body.downloadUrl
@@ -383,7 +301,7 @@ module.exports = async (s,config,lang,app,io) => {
     // /**
     // * API : Superuser : Custom Auto Load Package Update.
     // */
-    // app.post(config.webPaths.superApiPrefix+':auth/package/update', async (req,res) => {
+    // app.post(config.webPaths.superApiPrefix+':auth/plugins/update', async (req,res) => {
     //     s.superAuth(req.params, async (resp) => {
     //         try{
     //             const url = req.body.downloadUrl
@@ -412,7 +330,7 @@ module.exports = async (s,config,lang,app,io) => {
     /**
     * API : Superuser : Custom Auto Load Package Install.
     */
-    app.post(config.webPaths.superApiPrefix+':auth/package/install', (req,res) => {
+    app.post(config.webPaths.superApiPrefix+':auth/plugins/install', (req,res) => {
         s.superAuth(req.params, async (resp) => {
             const packageName = req.body.packageName
             const response = {ok: true}
@@ -427,19 +345,24 @@ module.exports = async (s,config,lang,app,io) => {
     /**
     * API : Superuser : Custom Auto Load Package set Status (Enabled or Disabled).
     */
-    app.post(config.webPaths.superApiPrefix+':auth/package/status', (req,res) => {
+    app.post(config.webPaths.superApiPrefix+':auth/plugins/status', (req,res) => {
         s.superAuth(req.params, async (resp) => {
             const status = req.body.status
             const packageName = req.body.packageName
             const selection = status == 'true' ? true : false
             disableModule(packageName,selection)
+            if(!selection){
+                loadModule(getModule(packageName))
+            }else{
+                unloadModule(packageName)
+            }
             s.closeJsonResponse(res,{ok: true, status: selection})
         },res,req)
     })
     /**
     * API : Superuser : Custom Auto Load Package Delete
     */
-    app.post(config.webPaths.superApiPrefix+':auth/package/delete', async (req,res) => {
+    app.post(config.webPaths.superApiPrefix+':auth/plugins/delete', async (req,res) => {
         s.superAuth(req.params, async (resp) => {
             const packageName = req.body.packageName
             const response = deleteModule(packageName)
@@ -449,7 +372,7 @@ module.exports = async (s,config,lang,app,io) => {
     /**
     * API : Superuser : Custom Auto Load Package Reload All
     */
-    app.post(config.webPaths.superApiPrefix+':auth/package/reloadAll', async (req,res) => {
+    app.post(config.webPaths.superApiPrefix+':auth/plugins/reloadAll', async (req,res) => {
         s.superAuth(req.params, async (resp) => {
             await initializeAllModules();
             s.closeJsonResponse(res,{ok: true})

@@ -94,6 +94,9 @@
                                 <li class="nav-item">
                                     <a class="nav-link" data-toggle="tab" href="#easyRemoteAccess" role="tab"><%-lang['Easy Remote Access (P2P)']%></a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#superPluginManager" role="tab"><%-lang['Plugin Manager']%></a>
+                                </li>
                             </ul>
                             <div class="card-body">
                                 <!-- Tab panes -->
@@ -116,6 +119,9 @@
                                     </div>
                                     <div class="tab-pane text-left" id="easyRemoteAccess" role="tabpanel">
                                         <% include blocks/easyRemoteAccess.ejs %>
+                                    </div>
+                                    <div class="tab-pane text-left" id="superPluginManager" role="tabpanel">
+                                        <% include blocks/superPluginManager.ejs %>
                                     </div>
                                 </div>
                             </div>

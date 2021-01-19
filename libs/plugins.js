@@ -1,8 +1,9 @@
 var socketIOclient = require('socket.io-client');
-module.exports = function(s,config,lang,io){
+module.exports = function(s,config,lang,app,io){
     const {
         triggerEvent,
     } = require('./events/utils.js')(s,config,lang)
+    require('./plugins/superUser.js')(s,config,lang,app,io)
     //send data to detector plugin
     s.ocvTx = function(data){
         // chaining coming in future update
