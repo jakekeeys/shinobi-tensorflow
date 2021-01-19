@@ -19,14 +19,49 @@
 // npm rebuild @tensorflow/tfjs-node-gpu@1.7.3 build-addon-from-source --unsafe-perm
 // ==============================================================
 
+console.log('############################################')
+console.log('@tensorflow/tfjs-node(-gpu) module test for Object Detection')
 
 // Base Init >>
 var fs = require('fs');
 const fetch = require('node-fetch');
 // Base Init />>
-
-
-var tf = require('@tensorflow/tfjs-node-gpu')
+var tf
+const tfjsBuild = process.argv[2]
+try{
+    switch(tfjsBuild){
+        case'gpu':
+            console.log('GPU Test for Tensorflow Module')
+            tf = require('@tensorflow/tfjs-node-gpu')
+        break;
+        case'cpu':
+            console.log('CPU Test for Tensorflow Module')
+            tf = require('@tensorflow/tfjs-node')
+        break;
+        default:
+            console.log('Nothing selected, using CPU Module for test.')
+            console.log(`Hint : Run the script like one of the following to specify cpu or gpu.`)
+            console.log(`node test.js cpu`)
+            console.log(`node test.js gpu`)
+            tf = require('@tensorflow/tfjs-node')
+        break;
+    }
+}catch(err){
+    console.log(`Selection Failed. Could not load desired module. ${tfjsBuild}`)
+    console.log(err)
+}
+if(!tf){
+    try{
+        tf = require('@tensorflow/tfjs-node-gpu')
+    }catch(err){
+        try{
+            tf = require('@tensorflow/tfjs-node')
+        }catch(err){
+            return console.log('tfjs-node could not be loaded')
+        }
+    }
+}
+console.log('############################################')
 
   const cocossd = require('@tensorflow-models/coco-ssd');
   // const mobilenet = require('@tensorflow-models/mobilenet');

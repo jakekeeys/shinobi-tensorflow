@@ -31,40 +31,41 @@ $.ccio.globalWebsocket=function(d,user){
             $('[ke="'+d.ke+'"][mid="'+d.id+'"][auth="'+user.auth_token+'"] .monitor_status').html(d.status);
         break;
         case'detector_trigger':
-            d.e=$('.monitor_item[ke="'+d.ke+'"][mid="'+d.id+'"][auth="'+user.auth_token+'"]')
-            if($.ccio.mon[d.ke+d.id+user.auth_token]&&d.e.length>0){
+            var monitorElement = $('.monitor_item[ke="'+d.ke+'"][mid="'+d.id+'"][auth="'+user.auth_token+'"]')
+            var monitorObject = $.ccio.mon[d.ke+d.id+user.auth_token]
+            if(monitorObject && monitorElement.length > 0){
                 if(d.doObjectDetection === true){
-                    d.e.addClass('doObjectDetection')
-                    clearTimeout($.ccio.mon[d.ke+d.id+user.auth_token].detector_trigger_doObjectDetection_timeout)
-                    $.ccio.mon[d.ke+d.id+user.auth_token].detector_trigger_doObjectDetection_timeout = setTimeout(function(){
-                        d.e.removeClass('doObjectDetection')
+                    monitorElement.addClass('doObjectDetection')
+                    clearTimeout(monitorObject.detector_trigger_doObjectDetection_timeout)
+                    monitorObject.detector_trigger_doObjectDetection_timeout = setTimeout(function(){
+                        monitorElement.removeClass('doObjectDetection')
                     },3000)
                 }else{
-                    d.e.removeClass('doObjectDetection')
+                    monitorElement.removeClass('doObjectDetection')
                 }
                 if(d.details.plates&&d.details.plates.length>0){
                     console.log('licensePlateStream',d.id,d)
                 }
                 if(d.details.matrices&&d.details.matrices.length>0){
-                    d.monitorDetails=JSON.parse($.ccio.mon[d.ke+d.id+user.auth_token].details)
-                    d.stream=d.e.find('.stream-element')
-                    d.streamObjects=d.e.find('.stream-objects')
+                    d.monitorDetails=JSON.parse(monitorObject.details)
+                    d.stream=monitorElement.find('.stream-element')
+                    d.streamObjects=monitorElement.find('.stream-objects')
                     $.ccio.init('drawMatrices',d)
                 }
                 if(d.details.points&&Object.keys(d.details.points).length>0){
-                    d.monitorDetails=JSON.parse($.ccio.mon[d.ke+d.id+user.auth_token].details)
-                    d.stream=d.e.find('.stream-element')
-                    d.streamObjects=d.e.find('.stream-objects')
+                    d.monitorDetails=JSON.parse(monitorObject.details)
+                    d.stream=monitorElement.find('.stream-element')
+                    d.streamObjects=monitorElement.find('.stream-objects')
                     $.ccio.init('drawPoints',d)
                 }
                 if(d.details.confidence){
                     d.tt=d.details.confidence;
                     if (d.tt > 100) { d.tt = 100 }
-                    d.e.find('.indifference .progress-bar').css('width',d.tt + '%').find('span').html(d.details.confidence+'% change in <b>'+d.details.name+'</b>')
+                    monitorElement.find('.indifference .progress-bar').css('width',d.tt + '%').find('span').html(d.details.confidence+'% change in <b>'+d.details.name+'</b>')
                 }
-                d.e.addClass('detector_triggered')
-                clearTimeout($.ccio.mon[d.ke+d.id+user.auth_token].detector_trigger_timeout);
-                $.ccio.mon[d.ke+d.id+user.auth_token].detector_trigger_timeout=setTimeout(function(){
+                monitorElement.addClass('detector_triggered')
+                clearTimeout(monitorObject.detector_trigger_timeout);
+                monitorObject.detector_trigger_timeout=setTimeout(function(){
                     $('.monitor_item[ke="'+d.ke+'"][mid="'+d.id+'"][auth="'+user.auth_token+'"]').removeClass('detector_triggered').find('.stream-detected-object,.stream-detected-point').remove()
                 },5000);
                 //noise alert
@@ -90,9 +91,17 @@ $.ccio.globalWebsocket=function(d,user){
                         },user.details.audio_delay * 1000)
                     }
                 }
-                if(user.details.event_mon_pop === '1' && (!$.ccio.mon[d.ke+d.id+user.auth_token].popOut || $.ccio.mon[d.ke+d.id+user.auth_token].popOut.closed === true)){
+                if(user.details.event_mon_pop === '1' && (!monitorObject.popOut || monitorObject.popOut.closed === true)){
                     popOutMonitor(d.id)
                 }
+                $.logWriter.draw('[mid="'+d.id+'"][ke="'+d.ke+'"][auth="'+user.auth_token+'"]',{
+                    ke: d.ke,
+                    mid: d.id,
+                    log: {
+                        type: lang['Event Occurred'],
+                        msg: d.details,
+                    }
+                },user)
             }
         break;
         case'init_success':

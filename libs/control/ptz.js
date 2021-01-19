@@ -4,6 +4,9 @@ var request = require('request')
 module.exports = function(s,config,lang){
     const moveLock = {}
     const ptzTimeoutsUntilResetToHome = {}
+    const sliceUrlAuth = (url) => {
+        return /^(.+?\/\/)(?:.+?:.+?@)?(.+)$/.exec(url).slice(1).join('')
+    }
     const startMove = async function(options,callback){
         const device = s.group[options.ke].activeMonitors[options.id].onvifConnection
         if(!device){
@@ -217,15 +220,22 @@ module.exports = function(s,config,lang){
                 let stopURL = controlBaseUrl + monitorConfig.details[`control_url_${options.direction}_stop`]
                 let controlOptions = s.cameraControlOptionsFromUrl(stopURL,monitorConfig)
                 let requestOptions = {
-                    url : stopURL,
-                    method : controlOptions.method,
-                    auth : {
-                        user : controlOptions.username,
-                        pass : controlOptions.password
+                    url : controlBaseUrl + controlOptions.path,
+                    method : controlOptions.method
+                }
+                if(controlOptions.username && controlOptions.password){
+                    requestOptions.auth = {
+                        user: controlOptions.username,
+                        pass: controlOptions.password
                     }
                 }
+                if(controlOptions.postData){
+                    requestOptions.form = controlOptions.postData
+                }
                 if(monitorConfig.details.control_digest_auth === '1'){
-                    requestOptions.sendImmediately = true
+                    requestOptions.uri =  sliceUrlAuth(requestOptions.url);
+                    delete requestOptions.url;
+                    requestOptions.auth.sendImmediately = false;
                 }
                 request(requestOptions,function(err,data){
                     const msg =  {
@@ -248,15 +258,22 @@ module.exports = function(s,config,lang){
                 let controlURL = controlBaseUrl + monitorConfig.details[`control_url_${options.direction}`]
                 let controlOptions = s.cameraControlOptionsFromUrl(controlURL,monitorConfig)
                 let requestOptions = {
-                    url: controlURL,
-                    method: controlOptions.method,
-                    auth: {
+                    url: controlBaseUrl + controlOptions.path,
+                    method: controlOptions.method
+                }
+                if(controlOptions.username && controlOptions.password){
+                    requestOptions.auth = {
                         user: controlOptions.username,
                         pass: controlOptions.password
                     }
                 }
+                if(controlOptions.postData){
+                    requestOptions.form = controlOptions.postData
+                }
                 if(monitorConfig.details.control_digest_auth === '1'){
-                    requestOptions.sendImmediately = true
+                    requestOptions.uri =  sliceUrlAuth(requestOptions.url);
+                    delete requestOptions.url;
+                    requestOptions.auth.sendImmediately = false;
                 }
                 moveLock[options.ke + options.id] = true
                 request(requestOptions,function(err,data){

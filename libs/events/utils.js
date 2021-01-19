@@ -130,6 +130,7 @@ module.exports = (s,config,lang,app,io) => {
         return (monitorDetails.matrices && monitorDetails.matrices.length > 0)
     }
     const checkEventFilters = (d,monitorDetails,filter) => {
+        const eventDetails = d.details
         if(
             monitorDetails.use_detector_filters === '1' &&
             ((monitorDetails.use_detector_filters_object === '1' && d.details.matrices) ||
