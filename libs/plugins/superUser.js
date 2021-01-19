@@ -351,11 +351,11 @@ module.exports = async (s,config,lang,app,io) => {
             const packageName = req.body.packageName
             const selection = status == 'true' ? true : false
             disableModule(packageName,selection)
-            if(!selection){
-                loadModule(getModule(packageName))
-            }else{
-                unloadModule(packageName)
-            }
+            // if(!selection){
+            //     loadModule(getModule(packageName))
+            // }else{
+            //     unloadModule(packageName)
+            // }
             s.closeJsonResponse(res,{ok: true, status: selection})
         },res,req)
     })
