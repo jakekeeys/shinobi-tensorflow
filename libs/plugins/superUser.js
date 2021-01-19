@@ -206,13 +206,10 @@ module.exports = async (s,config,lang,app,io) => {
         }
     }
     const loadModule = (shinobiModule) => {
-        console.log(new Error(shinobiModule))
         const moduleName = shinobiModule.name
         const moduleConfig = shinobiModule.config
         const modulePlugName = moduleConfig.plug
         const customModulePath = modulesBasePath + '/' + moduleName
-        console.log(customModulePath + '/' + shinobiModule.properties.main)
-        console.log('11111111111111111111111111111111111111')
         const worker = new Worker(customModulePath + '/' + shinobiModule.properties.main);
         initializeClientPlugin(moduleConfig)
         activateClientPlugin(moduleConfig,(data) => {
@@ -350,12 +347,15 @@ module.exports = async (s,config,lang,app,io) => {
             const status = req.body.status
             const packageName = req.body.packageName
             const selection = status == 'true' ? true : false
+            const theModule = getModule(packageName)
             disableModule(packageName,selection)
-            // if(!selection){
-            //     loadModule(getModule(packageName))
-            // }else{
-            //     unloadModule(packageName)
-            // }
+            if(theModule.config.hotLoadable === true){
+                if(!selection){
+                    loadModule()
+                }else{
+                    unloadModule(packageName)
+                }
+            }
             s.closeJsonResponse(res,{ok: true, status: selection})
         },res,req)
     })
