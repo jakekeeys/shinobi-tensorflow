@@ -4,6 +4,9 @@ var request = require('request')
 module.exports = function(s,config,lang){
     const moveLock = {}
     const ptzTimeoutsUntilResetToHome = {}
+    const sliceUrlAuth = (url) => {
+        return /^(.+?\/\/)(?:.+?:.+?@)?(.+)$/.exec(url).slice(1).join('')
+    }
     const startMove = async function(options,callback){
         const device = s.group[options.ke].activeMonitors[options.id].onvifConnection
         if(!device){
@@ -225,7 +228,9 @@ module.exports = function(s,config,lang){
                     }
                 }
                 if(monitorConfig.details.control_digest_auth === '1'){
-                    requestOptions.sendImmediately = true
+                    requestOptions.uri =  sliceUrlAuth(requestOptions.url);
+                    delete requestOptions.url;
+                    requestOptions.auth.sendImmediately = false;
                 }
                 request(requestOptions,function(err,data){
                     const msg =  {
@@ -256,7 +261,9 @@ module.exports = function(s,config,lang){
                     }
                 }
                 if(monitorConfig.details.control_digest_auth === '1'){
-                    requestOptions.sendImmediately = true
+                    requestOptions.uri =  sliceUrlAuth(requestOptions.url);
+                    delete requestOptions.url;
+                    requestOptions.auth.sendImmediately = false;
                 }
                 moveLock[options.ke + options.id] = true
                 request(requestOptions,function(err,data){
