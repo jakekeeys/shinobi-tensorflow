@@ -76,19 +76,10 @@ module.exports = (s,config,lang) => {
                 let filename = filePath.split('/')
                 filename = filename[filename.length - 1]
                 if(!filename)return;
-                // onData(filePath)
-                console.log('##################################################')
-                console.log(filePath)
-                console.log(filename)
-
                 const checkResponse = await checkIfVideoIsOrphaned(monitor,videosDirectory,filename)
                 if(checkResponse.status === 2){
                     ++orphanedFilesCount
                 }
-                console.log(checkResponse)
-                console.log(videosFound)
-                console.log(videosFound === options.checkMax)
-                console.log('##################################################')
                 ++videosFound
 
                 if(videosFound === options.checkMax){
@@ -100,7 +91,6 @@ module.exports = (s,config,lang) => {
                 var i;
                 for (i = 0; i < filePathLines.length; i++) {
                     await processLine(filePathLines[i])
-                    console.log(`${i} ##################################################`)
                 }
             })
             listing.stderr.on('data', d=>onError(d.toString()))
