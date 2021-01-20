@@ -32,6 +32,9 @@ module.exports = function(s,config,lang){
     const {
         setPresetForCurrentPosition
     } = require('./control/ptz.js')(s,config,lang)
+    const {
+        scanForOrphanedVideos
+    } = require('./video/utils.js')(s,config,lang)
     const startMonitorInQueue = createQueue(1, 3)
     s.initiateMonitorObject = function(e){
         if(!s.group[e.ke]){s.group[e.ke]={}};
@@ -615,10 +618,13 @@ module.exports = function(s,config,lang){
             ke: monitor.ke,
             mid: monitor.mid,
         },restartMessage)
-        s.orphanedVideoCheck({
+        scanForOrphanedVideos({
             ke: monitor.ke,
             mid: monitor.mid,
-        },2,null,true)
+        },{
+            forceCheck: true,
+            checkMax: 2
+        })
     }
     s.stripAuthFromHost = function(e){
         var host = e.host.split('@');
@@ -711,7 +717,10 @@ module.exports = function(s,config,lang){
                     s.userLog(e,{type:lang['Process Unexpected Exit'],msg:{msg:lang['Process Crashed for Monitor'],cmd:s.group[e.ke].activeMonitors[e.id].ffmpeg}});
                 }
                 fatalError(e,'Process Unexpected Exit');
-                s.orphanedVideoCheck(e,2,null,true)
+                scanForOrphanedVideos(e,{
+                    forceCheck: true,
+                    checkMax: 2
+                })
                 s.onMonitorUnexpectedExitExtensions.forEach(function(extender){
                     extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
                 })
@@ -1144,7 +1153,10 @@ module.exports = function(s,config,lang){
                     //                 var notStreaming = function(){
                     //                     launchMonitorProcesses(e)
                     //                     s.userLog(e,{type:lang['Camera is not streaming'],msg:{msg:lang['Restarting Process']}})
-                    //                     s.orphanedVideoCheck(e,2,null,true)
+                    //                     scanForOrphanedVideos(e,{
+                    //                         forceCheck: true,
+                    //                         checkMax: 2
+                    //                     })
                     //                 }
                     //                 if(err){
                     //                     notStreaming()
@@ -1566,14 +1578,15 @@ module.exports = function(s,config,lang){
                     var wantedStatus = lang.Idle
                 }
                 s.sendMonitorStatus({id:e.id,ke:e.ke,status:wantedStatus})
-                if(e.type === 'mjpeg'){
-                    setTimeout(() => {
-                        s.orphanedVideoCheck({
-                            ke: e.ke,
-                            mid: e.id,
-                        },2,null,true)
-                    },2000)
-                }
+                setTimeout(() => {
+                    scanForOrphanedVideos({
+                        ke: e.ke,
+                        mid: e.id,
+                    },{
+                        forceCheck: true,
+                        checkMax: 2
+                    })
+                },2000)
                 clearTimeout(s.group[e.ke].activeMonitors[e.id].onMonitorStartTimer)
                 s.onMonitorStopExtensions.forEach(function(extender){
                     extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)

@@ -6,6 +6,9 @@ var crypto = require('crypto');
 var exec = require('child_process').exec;
 var execSync = require('child_process').execSync;
 module.exports = function(s,config,lang,io){
+    const {
+        scanForOrphanedVideos
+    } = require('./video/utils.js')(s,config,lang)
     return new Promise((resolve, reject) => {
         var checkedAdminUsers = {}
         console.log('FFmpeg version : '+s.ffmpegVersion)
@@ -88,29 +91,33 @@ module.exports = function(s,config,lang,io){
                 }
             })
         }
-        var checkForOrphanedVideos = function(callback){
+        var checkForOrphanedVideos = async function(callback){
             var monitors = foundMonitors
             if(monitors && monitors[0]){
                 var loadCompleted = 0
                 var orphanedVideosForMonitors = {}
-                var checkForOrphanedVideosForMonitor = function(monitor){
+                var checkForOrphanedVideosForMonitor = async function(monitor){
                     if(!orphanedVideosForMonitors[monitor.ke])orphanedVideosForMonitors[monitor.ke] = {}
                     if(!orphanedVideosForMonitors[monitor.ke][monitor.mid])orphanedVideosForMonitors[monitor.ke][monitor.mid] = 0
-                    s.orphanedVideoCheck(monitor,null,function(orphanedFilesCount){
-                        if(orphanedFilesCount){
-                            orphanedVideosForMonitors[monitor.ke][monitor.mid] += orphanedFilesCount
-                        }
-                        ++loadCompleted
-                        if(monitors[loadCompleted]){
-                            checkForOrphanedVideosForMonitor(monitors[loadCompleted])
-                        }else{
-                            s.systemLog(lang.startUpText6+' : '+s.s(orphanedVideosForMonitors))
-                            delete(foundMonitors)
-                            callback()
-                        }
-                    })
+                    try{
+                        await fs.promises.mkdir(s.getStreamsDirectory(monitor), { recursive: true })
+                    }catch(err){
+                        s.debugLog(err)
+                    }
+                    const { orphanedFilesCount } = await scanForOrphanedVideos(monitor).promise
+                    if(orphanedFilesCount){
+                        orphanedVideosForMonitors[monitor.ke][monitor.mid] += orphanedFilesCount
+                    }
+                    ++loadCompleted
+                    if(monitors[loadCompleted]){
+                        await checkForOrphanedVideosForMonitor(monitors[loadCompleted])
+                    }else{
+                        s.systemLog(lang.startUpText6+' : '+s.s(orphanedVideosForMonitors))
+                        delete(foundMonitors)
+                        callback()
+                    }
                 }
-                checkForOrphanedVideosForMonitor(monitors[loadCompleted])
+                await checkForOrphanedVideosForMonitor(monitors[loadCompleted])
             }else{
                 callback()
             }
