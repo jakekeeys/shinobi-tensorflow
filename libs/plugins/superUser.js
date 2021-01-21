@@ -146,8 +146,6 @@ module.exports = async (s,config,lang,app,io,currentUse) => {
                 }else if(fs.existsSync(propertiesPath)){
                     // no INSTALL.sh found, check for package.json and do `npm install --unsafe-perm`
                     installProcess = spawn(`npm`,['install','--unsafe-perm','--prefix',modulePath])
-                }else{
-                    resolve()
                 }
                 if(installProcess){
                     const sendData = (data,channel) => {
@@ -168,10 +166,10 @@ module.exports = async (s,config,lang,app,io,currentUse) => {
                     })
                     installProcess.on('exit',(data) => {
                         runningInstallProcesses[name] = null;
-                        resolve()
                     })
                     runningInstallProcesses[name] = installProcess
                 }
+                resolve()
             }else{
                 resolve(lang['Already Installing...'])
             }
@@ -375,11 +373,16 @@ module.exports = async (s,config,lang,app,io,currentUse) => {
     app.post(config.webPaths.superApiPrefix+':auth/plugins/install', (req,res) => {
         s.superAuth(req.params, async (resp) => {
             const packageName = req.body.packageName
+            const cancelInstall = req.body.cancelInstall === 'true' ? true : false
             const response = {ok: true}
-            const error = await installModule(packageName)
-            if(error){
-                response.ok = false
-                response.msg = error
+            if(runningInstallProcesses[packageName] && cancelInstall){
+                runningInstallProcesses[packageName].kill('SIGTERM')
+            }else{
+                const error = await installModule(packageName)
+                if(error){
+                    response.ok = false
+                    response.msg = error
+                }
             }
             s.closeJsonResponse(res,response)
         },res,req)

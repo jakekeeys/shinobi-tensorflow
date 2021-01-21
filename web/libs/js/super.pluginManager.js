@@ -20,12 +20,11 @@ $(document).ready(function(){
                             <div><pre><b>${lang['Time Created']} :</b> ${module.created}</pre></div>
                             <div><pre><b>${lang['Last Modified']} :</b> ${module.lastModified}</pre></div>
                             <div class="mb-2">
-                                ${!module.isIgnitor ? `
-                                    ${module.hasInstaller ? `
-                                        <a href="#" class="btn btn-sm btn-info" plugin-manager-action="install">${lang['Run Installer']}</a>
-                                    ` : ''}
-                                    <a href="#" class="btn btn-sm btn-default" plugin-manager-action="status">${module.properties.disabled ? lang.Enable : lang.Disable}</a>
+                                ${module.hasInstaller ? `
+                                    <a href="#" class="btn btn-sm btn-info" plugin-manager-action="install">${lang['Run Installer']}</a>
+                                    <a href="#" class="btn btn-sm btn-danger" style="display:none" plugin-manager-action="cancelInstall">${lang['Stop']}</a>
                                 ` : ''}
+                                <a href="#" class="btn btn-sm btn-default" plugin-manager-action="status">${module.properties.disabled ? lang.Enable : lang.Disable}</a>
                                 <a href="#" class="btn btn-sm btn-danger" plugin-manager-action="delete">${lang.Delete}</a>
                                 <a href="#" class="btn btn-sm btn-warning" plugin-manager-action="editConfig">${lang[`Edit Configuration`]}</a>
                             </div>
@@ -79,6 +78,8 @@ $(document).ready(function(){
                 title: lang.Install,
             },
             clickCallback: function(){
+                loadedBlocks[packageName].stdout.empty()
+                loadedBlocks[packageName].stderr.empty()
                 $.post(superApiPrefix + $user.sessionKey + '/plugins/install',{
                     packageName: packageName,
                 },callback)
@@ -113,25 +114,74 @@ $(document).ready(function(){
         },callback)
     }
     var getPluginBlock = function(packageName){
-        return listElement.find(`[package-name="${packageName}"]`)
+        return loadedBlocks[packageName].block
     }
     var toggleUsabilityOfYesAndNoButtons = function(packageName,enabled){
         getPluginBlock(packageName).find('.command-installer')[!enabled ? 'hide' : 'show']()
+    }
+    var toggleCardButtons = function(card,buttons){
+        $.each(buttons,function(n,button){
+            card.find(`[plugin-manager-action="${button.action}"]`)[button.show ? 'show' : 'hide']()
+        })
     }
     $('body').on(`click`,`[plugin-manager-action]`,function(e){
         e.preventDefault()
         var el = $(this)
         var action = el.attr('plugin-manager-action')
         var card = el.parents('[package-name]')
-        console.log(card.length)
         var packageName = card.attr('package-name')
         switch(action){
             case'install':
                 installModule(packageName,function(data){
                     if(data.ok){
-                        console.log(data)
+                        toggleCardButtons(card,[
+                            {
+                                action: 'install',
+                                show: false,
+                            },
+                            {
+                                action: 'cancelInstall',
+                                show: true,
+                            },
+                            {
+                                action: 'delete',
+                                show: false,
+                            },
+                            {
+                                action: 'status',
+                                show: false,
+                            },
+                        ])
                     }
                 })
+            break;
+            case'cancelInstall':
+                $.post(superApiPrefix + $user.sessionKey + '/plugins/install',{
+                    packageName: packageName,
+                    cancelInstall: 'true'
+                },function(data){
+                    if(data.ok){
+                        toggleCardButtons(card,[
+                            {
+                                action: 'install',
+                                show: true,
+                            },
+                            {
+                                action: 'cancelInstall',
+                                show: false,
+                            },
+                            {
+                                action: 'delete',
+                                show: true,
+                            },
+                            {
+                                action: 'status',
+                                show: true,
+                            },
+                        ])
+                    }
+                })
+                toggleUsabilityOfYesAndNoButtons(packageName,false)
             break;
             case'status':
                 setModuleStatus(packageName,!!!loadedModules[packageName].properties.disabled,function(data){
