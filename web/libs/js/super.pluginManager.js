@@ -33,6 +33,14 @@ $(document).ready(function(){
                                     <div class="col-md-6 pr-2"><pre class="install-output-stdout"></pre></div>
                                     <div class="col-md-6 pl-2"><pre class="install-output-stderr"></pre></div>
                                 </div>
+                                <div class="command-installer row" style="display:none">
+                                    <div class="col-md-6">
+                                        <button type="button" class="btn btn-sm btn-success btn-block" plugin-manager-action="command" command="y">${lang.Yes}</button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button type="button" class="btn btn-sm btn-danger btn-block" plugin-manager-action="command" command="N">${lang.No}</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -97,6 +105,18 @@ $(document).ready(function(){
             packageName: packageName,
         },callback)
     }
+    var sendInstallerCommand = function(packageName,command,callback){
+        $.post(superApiPrefix + $user.sessionKey + '/plugins/command',{
+            command: command,
+            packageName: packageName,
+        },callback)
+    }
+    var getPluginBlock = (packageName) => {
+        return listElement.find(`[package-name="${packageName}"]`)
+    }
+    var toggleUsabilityOfYesAndNoButtons = function(packageName,enabled){
+        getPluginBlock(packageName).find('.command-installer')[!enabled ? 'hide' : 'show']()
+    }
     $('body').on(`click`,`[plugin-manager-action]`,function(e){
         e.preventDefault()
         var el = $(this)
@@ -127,6 +147,14 @@ $(document).ready(function(){
                     }
                 })
             break;
+            case'command':
+                var command = el.attr('command')
+                sendInstallerCommand(packageName,command,(data) => {
+                    if(data.ok){
+                        toggleUsabilityOfYesAndNoButtons(packageName,false)
+                    }
+                })
+            break;
         }
     })
     $('#downloadNewModule').submit(function(e){
@@ -153,7 +181,7 @@ $(document).ready(function(){
     },2000)
     $.ccio.ws.on('f',function(data){
         switch(data.f){
-            case'module-info':
+            case'plugin-info':
                 var name = data.module
                 switch(data.process){
                     case'install-stdout':
@@ -161,6 +189,9 @@ $(document).ready(function(){
                         // if(loadedBlocks[name].stdout.find('.line').length > 10){
                         //     loadedBlocks[name].stdout.children().first().remove()
                         // }
+                        if(data.data.indexOf('(y)es or (N)o') > -1){
+                            toggleUsabilityOfYesAndNoButtons(name,true)
+                        }
                     break;
                     case'install-stderr':
                         loadedBlocks[name].stderr.append(`<div class="line">${data.data}</div>`)

@@ -152,7 +152,7 @@ module.exports = async (s,config,lang,app,io,currentUse) => {
                 if(installProcess){
                     const sendData = (data,channel) => {
                         const clientData = {
-                            f: 'module-info',
+                            f: 'plugin-info',
                             module: name,
                             process: 'install-' + channel,
                             data: data.toString(),
@@ -378,6 +378,23 @@ module.exports = async (s,config,lang,app,io,currentUse) => {
             const response = {ok: true}
             const error = await installModule(packageName)
             if(error){
+                response.ok = false
+                response.msg = error
+            }
+            s.closeJsonResponse(res,response)
+        },res,req)
+    })
+    /**
+    * API : Superuser : Interact with Installer
+    */
+    app.post(config.webPaths.superApiPrefix+':auth/plugins/command', (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            const packageName = req.body.packageName
+            const command = req.body.command || ''
+            const response = {ok: true}
+            try{
+                runningInstallProcesses[packageName].stdin.write(`${command}\n`)
+            }catch(err){
                 response.ok = false
                 response.msg = error
             }
