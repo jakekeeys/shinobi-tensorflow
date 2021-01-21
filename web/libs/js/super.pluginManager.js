@@ -27,6 +27,7 @@ $(document).ready(function(){
                                     <a href="#" class="btn btn-sm btn-default" plugin-manager-action="status">${module.properties.disabled ? lang.Enable : lang.Disable}</a>
                                 ` : ''}
                                 <a href="#" class="btn btn-sm btn-danger" plugin-manager-action="delete">${lang.Delete}</a>
+                                <a href="#" class="btn btn-sm btn-warning" plugin-manager-action="editConfig">${lang[`Edit Configuration`]}</a>
                             </div>
                             <div class="pl-2 pr-2">
                                 <div class="install-output row">
@@ -111,7 +112,7 @@ $(document).ready(function(){
             packageName: packageName,
         },callback)
     }
-    var getPluginBlock = (packageName) => {
+    var getPluginBlock = function(packageName){
         return listElement.find(`[package-name="${packageName}"]`)
     }
     var toggleUsabilityOfYesAndNoButtons = function(packageName,enabled){
@@ -149,10 +150,31 @@ $(document).ready(function(){
             break;
             case'command':
                 var command = el.attr('command')
-                sendInstallerCommand(packageName,command,(data) => {
+                sendInstallerCommand(packageName,command,function(data){
                     if(data.ok){
                         toggleUsabilityOfYesAndNoButtons(packageName,false)
                     }
+                })
+            break;
+            case'editConfig':
+                $.get(superApiPrefix + $user.sessionKey + '/plugins/configuration?packageName=' + packageName,function(data){
+                    $.confirm.create({
+                        title: lang[`Edit Configuration`],
+                        body: `<textarea id="pluginConfigEditContents" class="form-control" style="height:400px;font-family: monospace;border:1px solid #eee; border-radius: 15px;padding: 10px;">${JSON.stringify(data.config,null,3) || {}}</textarea>`,
+                        clickOptions: {
+                            class: 'btn-success',
+                            title: lang.Save,
+                        },
+                        clickCallback: function(){
+                            var newPluginConfigStringed = $('#pluginConfigEditContents').val()
+                            $.post(superApiPrefix + $user.sessionKey + '/plugins/configuration/update',{
+                                packageName: packageName,
+                                config: newPluginConfigStringed,
+                            },function(data){
+                                console.log(data)
+                            })
+                        }
+                    })
                 })
             break;
         }

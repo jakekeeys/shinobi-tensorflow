@@ -396,7 +396,43 @@ module.exports = async (s,config,lang,app,io,currentUse) => {
                 runningInstallProcesses[packageName].stdin.write(`${command}\n`)
             }catch(err){
                 response.ok = false
-                response.msg = error
+                response.msg = err
+            }
+            s.closeJsonResponse(res,response)
+        },res,req)
+    })
+    /**
+    * API : Superuser : Update Plugin conf.json
+    */
+    app.post(config.webPaths.superApiPrefix+':auth/plugins/configuration/update', (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            const response = {ok: true}
+            const packageName = req.body.packageName
+            const configPath = modulesBasePath + packageName + '/conf.json'
+            const newPluginConfig = s.parseJSON(req.body.config) || {}
+            try{
+                await fs.promises.writeFile(configPath,s.prettyPrint(newPluginConfig))
+            }catch(err){
+                response.ok = false
+                response.msg = err
+            }
+            s.closeJsonResponse(res,response)
+        },res,req)
+    })
+    /**
+    * API : Superuser : Get Plugin conf.json
+    */
+    app.get(config.webPaths.superApiPrefix+':auth/plugins/configuration', (req,res) => {
+        s.superAuth(req.params, async (resp) => {
+            const response = {ok: true}
+            const packageName = req.query.packageName
+            const modulePath = modulesBasePath + packageName
+            try{
+                const shinobiModule = getModule(packageName)
+                response.config = shinobiModule.config
+            }catch(err){
+                response.ok = false
+                response.msg = err
             }
             s.closeJsonResponse(res,response)
         },res,req)

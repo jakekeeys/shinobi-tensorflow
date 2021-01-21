@@ -894,6 +894,7 @@
    "No Monitor ID Present in Form": "No Monitor ID Present in Form",
    "State Configuration has no monitors associated": "State Configuration has no monitors associated",
    "State Configuration Not Found": "State Configuration Not Found",
+   "Edit Configuration": "Edit Configuration",
    "Inserted State Configuration": "Inserted State Configuration",
    "Edited State Configuration": "Edited State Configuration",
    "Deleted State Configuration": "Deleted State Configuration",
