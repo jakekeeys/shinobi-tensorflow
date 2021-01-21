@@ -7,12 +7,20 @@ const spawn = require('child_process').spawn
 const {
   Worker
 } = require('worker_threads');
-module.exports = async (s,config,lang,app,io) => {
+module.exports = async (s,config,lang,app,io,currentUse) => {
+    const {
+        currentPluginCpuUsage,
+        currentPluginGpuUsage,
+        currentPluginFrameProcessingCount,
+    } = currentUse;
     const {
         activateClientPlugin,
         initializeClientPlugin,
         deactivateClientPlugin,
     } = require('./utils.js')(s,config,lang)
+    const {
+        triggerEvent,
+    } = require('../events/utils.js')(s,config,lang)
     const runningPluginWorkers = {}
     const runningInstallProcesses = {}
     const modulesBasePath = process.cwd() + '/plugins/'
@@ -205,16 +213,53 @@ module.exports = async (s,config,lang,app,io) => {
             runningPluginWorkers[moduleName] = null
         }
     }
+    const onWorkerMessage = (pluginName,type,data) => {
+        switch(type){
+            case'ocv':
+                switch(data.f){
+                    case'trigger':
+                        triggerEvent(data)
+                    break;
+                    case's.tx':
+                        s.tx(data.data,data.to)
+                    break;
+                    case'log':
+                        s.systemLog('PLUGIN : '+data.plug+' : ',data)
+                    break;
+                    case's.sqlQuery':
+                        s.sqlQuery(data.query,data.values)
+                    break;
+                    case's.knexQuery':
+                        s.knexQuery(data.options)
+                    break;
+                }
+            break;
+            case'cpuUsage':
+                currentPluginCpuUsage[pluginName] = data
+            break;
+            case'gpuUsage':
+                currentPluginGpuUsage[pluginName] = data
+            break;
+            case'processCount':
+                currentPluginFrameProcessingCount[pluginName] = data
+            break;
+        }
+    }
     const loadModule = (shinobiModule) => {
         const moduleName = shinobiModule.name
         const moduleConfig = shinobiModule.config
         const modulePlugName = moduleConfig.plug
         const customModulePath = modulesBasePath + '/' + moduleName
-        const worker = new Worker(customModulePath + '/' + shinobiModule.properties.main);
+        const worker = new Worker(customModulePath + '/' + shinobiModule.properties.main,{
+            workerData: {ok: true}
+        });
         initializeClientPlugin(moduleConfig)
         activateClientPlugin(moduleConfig,(data) => {
             worker.postMessage(data)
         })
+        worker.on('message', (data) =>{
+            onWorkerMessage(modulePlugName,...data)
+        });
         worker.on('error', (err) =>{
             console.error(err)
         });
@@ -351,7 +396,7 @@ module.exports = async (s,config,lang,app,io) => {
             disableModule(packageName,selection)
             if(theModule.config.hotLoadable === true){
                 if(!selection){
-                    loadModule()
+                    loadModule(theModule)
                 }else{
                     unloadModule(packageName)
                 }

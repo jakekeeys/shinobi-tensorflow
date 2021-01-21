@@ -13,33 +13,50 @@ var fs = require('fs');
 var config = require('./conf.json')
 var dotenv = require('dotenv').config()
 var s
-try {
-    s = require('../pluginBase.js')(__dirname, config)
-} catch (err) {
-    console.log(err)
-    try {
-        s = require('./pluginBase.js')(__dirname, config)
-    } catch (err) {
+const {
+  workerData
+} = require('worker_threads');
+if(workerData && workerData.ok === true){
+    try{
+        s = require('../pluginWorkerBase.js')(__dirname,config)
+    }catch(err){
         console.log(err)
-        return console.log(config.plug, 'Plugin start has failed. pluginBase.js was not found.')
+        try{
+            s = require('./pluginWorkerBase.js')(__dirname,config)
+        }catch(err){
+            console.log(err)
+            return console.log(config.plug,'WORKER : Plugin start has failed. pluginBase.js was not found.')
+        }
+    }
+}else{
+    try{
+        s = require('../pluginBase.js')(__dirname,config)
+    }catch(err){
+        console.log(err)
+        try{
+            s = require('./pluginBase.js')(__dirname,config)
+        }catch(err){
+            console.log(err)
+            return console.log(config.plug,'Plugin start has failed. pluginBase.js was not found.')
+        }
     }
 }
- 
- 
+
+
 var ready = false;
 const spawn = require('child_process').spawn;
 var child = null
 function respawn() {
- 
+
     console.log("respawned python",(new Date()))
     const theChild = spawn('python3', ['-u', 'detect_image.py']);
- 
+
     var lastStatusLog = new Date();
- 
+
     theChild.on('exit', () => {
          child = respawn();
     });
- 
+
     theChild.stdout.on('data', function (data) {
         var rawString = data.toString('utf8');
         if (new Date() - lastStatusLog > 5000) {
@@ -54,7 +71,7 @@ function respawn() {
                 console.log("Script got error: " + message.data, new Date());
                 throw message.data;
             }
- 
+
             if (obj.type === "info" && obj.data === "ready") {
                 console.log("set ready true")
                 ready = true;
@@ -67,15 +84,15 @@ function respawn() {
     })
     return theChild
 }
- 
- 
- 
- 
+
+
+
+
 // Base Init />>
 child = respawn();
- 
+
 const emptyDataObject = { data: [], type: undefined, time: 0 };
- 
+
 async function process(buffer, type) {
     const startTime = new Date();
     if (!ready) {
@@ -83,7 +100,7 @@ async function process(buffer, type) {
     }
     ready = false;
     child.stdin.write(buffer.toString('base64') + '\n');
- 
+
     var message = null;
     await new Promise(resolve => {
         child.stdout.once('data', (data) => {
@@ -105,8 +122,8 @@ async function process(buffer, type) {
         time: new Date() - startTime
     }
 }
- 
- 
+
+
 s.detectObject = function (buffer, d, tx, frameLocation, callback) {
     process(buffer).then((resp) => {
         var results = resp.data
