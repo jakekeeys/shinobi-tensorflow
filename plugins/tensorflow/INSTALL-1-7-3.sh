@@ -1,7 +1,7 @@
 #!/bin/bash
 DIR=$(dirname $0)
 echo "Removing existing Tensorflow Node.js modules..."
-rm -rf node_modules
+rm -rf $DIR/node_modules
 npm install yarn -g --unsafe-perm --force
 wget -O $DIR/package.json https://cdn.shinobi.video/binaries/tensorflow/1.7.3/package.json
 GPU_INSTALL="0"

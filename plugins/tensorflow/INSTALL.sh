@@ -2,7 +2,7 @@
 DIR=$(dirname $0)
 echo "Do not attempt to use this Installer on ARM-based CPUs."
 echo "Removing existing Tensorflow Node.js modules..."
-rm -rf node_modules
+rm -rf $DIR/node_modules
 npm install yarn -g --unsafe-perm --force
 
 installJetsonFlag=false

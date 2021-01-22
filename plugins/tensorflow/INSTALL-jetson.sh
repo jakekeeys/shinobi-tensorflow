@@ -16,7 +16,7 @@ echo $DIR
 echo "Replacing package.json for tfjs 2.3.0..."
 wget -O $DIR/package.json https://cdn.shinobi.video/binaries/tensorflow/2.3.0/package.json
 echo "Removing existing Tensorflow Node.js modules..."
-rm -rf node_modules
+rm -rf $DIR/node_modules
 npm install yarn -g --unsafe-perm --force
 
 installJetsonFlag=false

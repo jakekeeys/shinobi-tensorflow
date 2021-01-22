@@ -1,8 +1,18 @@
 var socketIOclient = require('socket.io-client');
-module.exports = function(s,config,lang,io){
+module.exports = function(s,config,lang,app,io){
+    const currentPluginCpuUsage = {}
+    const currentPluginGpuUsage = {}
+    const currentPluginFrameProcessingCount = {}
+    const pluginHandlersSet = {}
     const {
         triggerEvent,
     } = require('./events/utils.js')(s,config,lang)
+    require('./plugins/superUser.js')(s,config,lang,app,io,{
+        currentPluginCpuUsage: currentPluginCpuUsage,
+        currentPluginGpuUsage: currentPluginGpuUsage,
+        currentPluginFrameProcessingCount: currentPluginFrameProcessingCount,
+        pluginHandlersSet: pluginHandlersSet,
+    })
     //send data to detector plugin
     s.ocvTx = function(data){
         // chaining coming in future update
@@ -78,10 +88,7 @@ module.exports = function(s,config,lang,io){
         s.debugLog(`resetDetectorPluginArray : ${JSON.stringify(pluginArray)}`)
         s.detectorPluginArray = pluginArray
     }
-    var currentPluginCpuUsage = {}
-    var currentPluginGpuUsage = {}
-    var currentPluginFrameProcessingCount = {}
-    var pluginHandlersSet = {}
+
     if(config.detectorPluginsCluster){
         if(config.clusterUseBasicFrameCount === undefined)config.clusterUseBasicFrameCount = true;
         if(config.clusterUseBasicFrameCount){
