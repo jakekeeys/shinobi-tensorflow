@@ -229,7 +229,7 @@ $(document).ready(function(){
             break;
         }
     })
-    $('#downloadNewModule').submit(function(e){
+    $('#downloadNewPlugin').submit(function(e){
         e.preventDefault();
         var el = $(this)
         var form = el.serializeObject()
