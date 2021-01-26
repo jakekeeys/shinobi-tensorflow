@@ -45,74 +45,74 @@ module.exports = (s,config,lang) => {
         //     checkMax: 2
         // }
         options = options ? options : {}
-        const response = {ok: false}
-        if(options.forceCheck === true || config.insertOrphans === true){
-            if(!options.checkMax){
-                options.checkMax = config.orphanedVideoCheckMax || 2
-            }
-            let videosFound = 0;
-            let orphanedFilesCount = 0;
-            response.orphanedFilesCount = orphanedFilesCount
-            const videosDirectory = s.getVideoDirectory(monitor)
-            const tempDirectory = s.getStreamsDirectory(monitor)
-            // const findCmd = [videosDirectory].concat(options.flags || ['-maxdepth','1'])
-            fs.writeFileSync(
-                tempDirectory + 'orphanCheck.sh',
-                `find "${videosDirectory}" -maxdepth 1 -type f -exec stat -c "%y %n" {} + | sort -r | head -n ${options.checkMax}`
-            )
-            let listing = spawn('sh',[tempDirectory + 'orphanCheck.sh'])
-            // const onData = options.onData ? options.onData : () => {}
-            const onError = options.onError ? options.onError : s.systemLog
-            const onExit = () => {
-                try{
-                    listing.kill('SIGTERM')
-                    fs.unlink(tempDirectory + 'orphanCheck.sh',() => {})
-                }catch(err){
-                    s.debugLog(err)
+        return new Promise((resolve,reject) => {
+            const response = {ok: false}
+            if(options.forceCheck === true || config.insertOrphans === true){
+                if(!options.checkMax){
+                    options.checkMax = config.orphanedVideoCheckMax || 2
                 }
-                delete(listing)
-            }
-            const processLine = async (filePath) => {
-                let filename = filePath.split('/')
-                filename = filename[filename.length - 1]
-                if(!filename)return;
-                const checkResponse = await checkIfVideoIsOrphaned(monitor,videosDirectory,filename)
-                if(checkResponse.status === 2){
-                    ++orphanedFilesCount
-                }
-                ++videosFound
-
-                if(videosFound === options.checkMax){
-                    onExit()
-                }
-            }
-            listing.stdout.on('data', async (d) => {
-                const filePathLines = d.toString().split('\n')
-                var i;
-                for (i = 0; i < filePathLines.length; i++) {
-                    await processLine(filePathLines[i])
-                }
-            })
-            listing.stderr.on('data', d=>onError(d.toString()))
-            return {
-                process: listing,
-                stop: onExit,
-                promise: new Promise((resolve,reject) => {
+                let finished = false
+                let orphanedFilesCount = 0;
+                let videosFound = 0;
+                const videosDirectory = s.getVideoDirectory(monitor)
+                const tempDirectory = s.getStreamsDirectory(monitor)
+                // const findCmd = [videosDirectory].concat(options.flags || ['-maxdepth','1'])
+                fs.writeFileSync(
+                    tempDirectory + 'orphanCheck.sh',
+                    `find "${videosDirectory}" -maxdepth 1 -type f -exec stat -c "%y %n" {} + | sort -r | head -n ${options.checkMax}`
+                );
+                let listing = spawn('sh',[tempDirectory + 'orphanCheck.sh'])
+                // const onData = options.onData ? options.onData : () => {}
+                const onError = options.onError ? options.onError : s.systemLog
+                const onExit = () => {
                     try{
-                        listing.on('close', (code) => {
-                            // s.debugLog(`findOrphanedVideos ${monitor.ke} : ${monitor.mid} process exited with code ${code}`);
-                            response.ok = true
-                            onExit()
-                            resolve(response)
-                        });
+                        listing.kill('SIGTERM')
+                        fs.unlink(tempDirectory + 'orphanCheck.sh',() => {})
                     }catch(err){
+                        s.debugLog(err)
+                    }
+                    delete(listing)
+                }
+                const onFinish = () => {
+                    if(!finished){
+                        finished = true
+                        response.ok = true
+                        response.orphanedFilesCount = orphanedFilesCount
                         resolve(response)
+                        onExit()
+                    }
+                }
+                const processLine = async (filePath) => {
+                    let filename = filePath.split('/')
+                    filename = filename[filename.length - 1]
+                    if(!filename)return;
+                    const checkResponse = await checkIfVideoIsOrphaned(monitor,videosDirectory,filename)
+                    if(checkResponse.status === 2){
+                        ++orphanedFilesCount
+                    }
+                    ++videosFound
+                    if(videosFound === options.checkMax){
+                        onFinish()
+                    }
+                }
+                listing.stdout.on('data', async (d) => {
+                    const filePathLines = d.toString().split('\n')
+                    var i;
+                    for (i = 0; i < filePathLines.length; i++) {
+                        await processLine(filePathLines[i])
                     }
                 })
+                listing.stderr.on('data', d=>onError(d.toString()))
+                listing.on('close', (code) => {
+                    // s.debugLog(`findOrphanedVideos ${monitor.ke} : ${monitor.mid} process exited with code ${code}`);
+                    setTimeout(() => {
+                        onFinish()
+                    },1000)
+                });
+            }else{
+                resolve(response)
             }
-        }else{
-            resolve(response)
-        }
+        })
     }
     // orphanedVideoCheck : old function
     const orphanedVideoCheck = (monitor,checkMax,callback,forceCheck) => {

@@ -104,7 +104,7 @@ module.exports = function(s,config,lang,io){
                     }catch(err){
                         s.debugLog(err)
                     }
-                    const { orphanedFilesCount } = await scanForOrphanedVideos(monitor).promise
+                    const { orphanedFilesCount } = await scanForOrphanedVideos(monitor,{forceCheck: true})
                     if(orphanedFilesCount){
                         orphanedVideosForMonitors[monitor.ke][monitor.mid] += orphanedFilesCount
                     }
