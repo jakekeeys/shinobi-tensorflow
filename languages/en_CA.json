@@ -4,6 +4,7 @@
    "failedLoginText1": "You have failed to login too many times. You must wait 15 minutes before trying again.",
    "failedLoginText2": "Please check your login credentials.",
    "Time Left": "Time Left",
+   "Inverse Trigger": "Inverse Trigger",
    "Turn Speed": "Turn Speed",
    "Login": "Login",
    "Authenticate": "Authenticate",
