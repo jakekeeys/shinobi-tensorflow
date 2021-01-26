@@ -13,10 +13,14 @@ getubuntuversion=$(lsb_release -r | awk '{print $2}' | cut -d . -f1)
 echo "============="
 echo " Ubuntu Version: $getubuntuversion"
 echo "============="
+apt update -y
+apt update --fix-missing -y
 if [ "$getubuntuversion" = "18" ] || [ "$getubuntuversion" > "18" ]; then
     apt install sudo wget -y
     sudo apt install -y software-properties-common
     sudo add-apt-repository universe -y
+    apt update -y
+    apt update --fix-missing -y
 fi
 if [ "$getubuntuversion" = "16" ]; then
     sudo apt install gnupg-curl -y

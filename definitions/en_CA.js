@@ -2745,6 +2745,24 @@ module.exports = function(s,config,lang){
                               "possible": "Any non-negative integer."
                            },
                            {
+                              "name": "detail=inverse_trigger",
+                              "field": lang["Inverse Trigger"],
+                              "description": "To trigger outside specified regions. Will not trigger with Full Frame Detection enabled.",
+                              "default": "0",
+                              "example": "",
+                              "fieldType": "select",
+                              "possible": [
+                                 {
+                                    "name": lang.No,
+                                    "value": "0"
+                                 },
+                                 {
+                                    "name": lang.Yes,
+                                    "value": "1"
+                                 }
+                              ]
+                           },
+                           {
                               "name": "detail=detector_frame",
                               "field": lang["Full Frame Detection"],
                               "description": "This will read the entire frame for pixel differences. This is the same as creating a region that covers the entire screen.",

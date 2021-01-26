@@ -737,7 +737,10 @@ module.exports = function(s,config,lang,io){
                 s.systemLog('ERROR CATCH 1',er)
             }
             }else{
-                tx({ok:false,msg:lang.NotAuthorizedText1});
+                cn.emit('f',{
+                    ok: false,
+                    msg: lang.NotAuthorizedText1
+                });
             }
         });
         // super page socket functions

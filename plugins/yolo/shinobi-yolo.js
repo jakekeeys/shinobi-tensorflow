@@ -11,15 +11,32 @@
 var fs = require('fs');
 var config = require('./conf.json')
 var s
-try{
-    s = require('../pluginBase.js')(__dirname,config)
-}catch(err){
-    console.log(err)
+const {
+  workerData
+} = require('worker_threads');
+if(workerData && workerData.ok === true){
     try{
-        s = require('./pluginBase.js')(__dirname,config)
+        s = require('../pluginWorkerBase.js')(__dirname,config)
     }catch(err){
         console.log(err)
-        return console.log(config.plug,'Plugin start has failed. pluginBase.js was not found.')
+        try{
+            s = require('./pluginWorkerBase.js')(__dirname,config)
+        }catch(err){
+            console.log(err)
+            return console.log(config.plug,'WORKER : Plugin start has failed. pluginBase.js was not found.')
+        }
+    }
+}else{
+    try{
+        s = require('../pluginBase.js')(__dirname,config)
+    }catch(err){
+        console.log(err)
+        try{
+            s = require('./pluginBase.js')(__dirname,config)
+        }catch(err){
+            console.log(err)
+            return console.log(config.plug,'Plugin start has failed. pluginBase.js was not found.')
+        }
     }
 }
 // Base Init />>

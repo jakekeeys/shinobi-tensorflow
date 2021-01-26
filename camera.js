@@ -56,7 +56,7 @@ require('./libs/ffmpeg.js')(s,config,lang, async () => {
     //recording functions
     require('./libs/videos.js')(s,config,lang)
     //plugins : websocket connected services..
-    require('./libs/plugins.js')(s,config,lang,io)
+    require('./libs/plugins.js')(s,config,lang,app,io)
     //health : cpu and ram trackers..
     require('./libs/health.js')(s,config,lang,io)
     //cluster module
