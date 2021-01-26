@@ -84,15 +84,16 @@ module.exports = (s,config,lang) => {
                 }
                 const processLine = async (filePath) => {
                     let filename = filePath.split('/')
-                    filename = filename[filename.length - 1]
-                    if(!filename)return;
-                    const checkResponse = await checkIfVideoIsOrphaned(monitor,videosDirectory,filename)
-                    if(checkResponse.status === 2){
-                        ++orphanedFilesCount
-                    }
-                    ++videosFound
-                    if(videosFound === options.checkMax){
-                        onFinish()
+                    filename = `${filename[filename.length - 1]}`.trim()
+                    if(filename && filename.indexOf('-') > -1 && filename.indexOf('.') > -1){
+                        const { status } = await checkIfVideoIsOrphaned(monitor,videosDirectory,filename)
+                        if(status === 2){
+                            ++orphanedFilesCount
+                        }
+                        ++videosFound
+                        if(videosFound === options.checkMax){
+                            onFinish()
+                        }
                     }
                 }
                 listing.stdout.on('data', async (d) => {
