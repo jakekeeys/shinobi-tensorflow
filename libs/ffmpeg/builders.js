@@ -716,7 +716,7 @@ module.exports = (s,config,lang) => {
             }
             if(audioCodec === 'no'){
                 outputFlags.push(`-an`)
-            }else if(audioCodec){
+            }else if(audioCodec && audioCodec !== 'auto'){
                 outputFlags.push(`-c:a ` + audioCodec)
             }
             if(outputFilters.length > 0){
