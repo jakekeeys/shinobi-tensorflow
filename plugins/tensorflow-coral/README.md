@@ -1,32 +1,10 @@
 # TensorFlowCoral.js
 
-**Ubuntu and CentOS only**
+Follow the Official Coral PCI install instructions carefully. https://coral.ai/docs/m2/get-started/#2-install-the-pcie-driver-and-edge-tpu-runtime
 
-Go to the Shinobi directory. **/home/Shinobi** is the default directory.
+# Install
 
-```
-cd /home/Shinobi/plugins/tensorflow
-```
-
-Install TensorFlows python version first:
-https://www.tensorflow.org/lite/guide/python
-Make sure that you are downloading the correct file for your system architecture and python version.
-
-Install other python dependencies
-```
-pip install pillow
-pip install numpy
-```
-
-Copy the config file.
-
-```
-sh INSTALL.sh
-```
-
-IF YOU DON'T HAVE INSTALLED CORAL DEPENDENCIES BEFORE, YOU NEED TO PLUG OUT AND THEN PLUG IN YOUR CORAL USB ACCELERATOR BEFORE USING THIS PLUGIN!
-
-Start the plugin.
+Run INSTALL.sh
 
 ```
 pm2 start shinobi-tensorflow-coral.js
