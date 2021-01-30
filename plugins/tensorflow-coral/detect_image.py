@@ -23,15 +23,12 @@ from io import BytesIO, StringIO
 import time
 import base64
 import json
-import detect
-import tflite_runtime.interpreter as tflite
+from pycoral.adapters import common
+from pycoral.adapters import detect
+from pycoral.utils.dataset import read_label_file
+from pycoral.utils.edgetpu import make_interpreter
 import platform
 
-EDGETPU_SHARED_LIB = {
-    'Linux': 'libedgetpu.so.1',
-    'Darwin': 'libedgetpu.1.dylib',
-    'Windows': 'edgetpu.dll'
-}[platform.system()]
 
 def load_labels(path, encoding='utf-8'):
     """Loads labels from file (with or without index numbers).
@@ -54,16 +51,6 @@ def load_labels(path, encoding='utf-8'):
             return {index: line.strip() for index, line in enumerate(lines)}
 
 
-def make_interpreter(model_file):
-    model_file, *device = model_file.split('@')
-    return tflite.Interpreter(
-        model_path=model_file,
-        experimental_delegates=[
-            tflite.load_delegate(EDGETPU_SHARED_LIB,
-                                 {'device': device[0]} if device else {})
-        ])
-
-
 def draw_objects(draw, objs, labels):
     """Draws the bounding box and label for each object."""
     for obj in objs:
@@ -78,15 +65,20 @@ def draw_objects(draw, objs, labels):
 def printInfo(text):
     print(json.dumps({"type": "info", "data": text}))
 
+
 def printError(text):
     print(json.dumps({"type": "error", "data": text}))
+
 
 def printData(array, time):
     print(json.dumps({"type": "data", "data": array, "time": time}))
 
+
 def main():
-    labels = load_labels("models/coco_labels.txt")
-    interpreter = make_interpreter("models/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite")
+    labels = read_label_file("models/coco_labels.txt")
+
+    interpreter = make_interpreter(
+        "models/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite")
     interpreter.allocate_tensors()
     threshold = 0.4
     printInfo("ready")
@@ -95,19 +87,19 @@ def main():
         try:
             rawImage = BytesIO(base64.b64decode(line))
             image = Image.open(rawImage)
-            scale = detect.set_input(interpreter, image.size,
-                                     lambda size: image.resize(size, Image.ANTIALIAS))
+            _, scale = common.set_resized_input(
+                interpreter, image.size, lambda size: image.resize(size, Image.ANTIALIAS))
 
             start = time.perf_counter()
             interpreter.invoke()
             inference_time = time.perf_counter() - start
-            objs = detect.get_output(interpreter, threshold, scale)
+            objs = detect.get_objects(interpreter, threshold, scale)
             output = []
             for obj in objs:
                 label = labels.get(obj.id, obj.id)
-                labelID = obj[0]
-                score = obj[1]
-                bbox = obj[2]
+                labelID = obj.id
+                score = obj.score
+                bbox = obj.bbox
                 output.append({"bbox": bbox, "class": label, "score": score})
             printData(output, (inference_time * 1000))
         except Exception as e:

@@ -420,7 +420,7 @@ $(document).ready(function(e){
                 }
             break;
             case'trigger-event':
-                $.getJSON(getApiPrefix() + '/motion/'+e.ke+'/'+e.mid+'/?data={"plug":"camera1","name":"stairs","reason":"motion","confidence":100}',function(d){
+                $.getJSON(getApiPrefix() + '/motion/'+e.ke+'/'+e.mid+'/?data={"plug":"manual_trigger","name":"Manual Trigger","reason":"Manual","confidence":100}',function(d){
                     $.ccio.log(d)
                 })
             break;
