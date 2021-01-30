@@ -159,7 +159,6 @@ module.exports = function(jsonData,pamDiffResponder){
                 })
             }else{
                 pamDiff.on('diff', (data) => {
-                    console.error(data)
                     buildTriggerEvent(mergePamTriggers(data))
                 })
             }
@@ -167,7 +166,6 @@ module.exports = function(jsonData,pamDiffResponder){
             //config.detectorMergePamRegionTriggers NOT true
             //original behaviour, all regions have their own event.
             var buildTriggerEvent = function(trigger){
-                // console.error(trigger)
                 var detectorObject = {
                     f:'trigger',
                     id: monitorId,
