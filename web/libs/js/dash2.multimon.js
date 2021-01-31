@@ -14,10 +14,19 @@ $(document).ready(function(e){
         // el.search      // ?filter=a
     }
 //multi monitor manager
-$.multimon={e:$('#multi_mon')};
+var theWindow = $('#multi_mon')
 var apiKeySelector = $('#multi_mon_api_key_selector')
-$.multimon.table=$.multimon.e.find('.tableData tbody');
-$.multimon.f=$.multimon.e.find('form');
+var theTable = theWindow.find('.tableData tbody');
+var theForm = theWindow.find('form');
+var drawApiKeyList = function(){
+    $.get($.ccio.init('location',$user)+$user.auth_token+'/api/'+$user.ke+'/list',function(d){
+        var html = ''
+        $.each(d.keys || [],function(n,key){
+            html += `<option value="${key.code}">${key.code}</option>`
+        })
+        apiKeySelector.find('optgroup').html(html)
+    })
+}
 var drawTable = function(){
     var tmp=''
     $.each($.ccio.mon,function(n,v){
@@ -33,24 +42,37 @@ var drawTable = function(){
         tmp+='<td class="text-right"><a title="'+lang.Pop+'" monitor="pop" class="btn btn-primary"><i class="fa fa-external-link"></i></a> <a title="'+lang.Calendar+'" monitor="calendar" class="btn btn-default"><i class="fa fa-calendar"></i></a> <a title="'+lang['Power Viewer']+'" class="btn btn-default" monitor="powerview"><i class="fa fa-map-marker"></i></a> <a title="'+lang['Time-lapse']+'" class="btn btn-default" monitor="timelapse"><i class="fa fa-angle-double-right"></i></a> <a title="'+lang['Videos List']+'" monitor="videos_table" class="btn btn-default"><i class="fa fa-film"></i></a> <a title="'+lang['Monitor Settings']+'" class="btn btn-default" monitor="edit"><i class="fa fa-wrench"></i></a></td>'
         tmp+='</tr>'
     })
-    $.multimon.table.html(tmp)
+    theTable.html(tmp)
 }
-$.multimon.f.on('change','#multimon_select_all',function(e){
-    e.e=$(this);
-    e.p=e.e.prop('checked')
-    e.a=$.multimon.f.find('input[type=checkbox][name]')
-    if(e.p===true){
-        e.a.prop('checked',true)
+var getSelectedMonitors = function(unclean){
+    var arr = [];
+    if(unclean === true){
+        var monitors = $.ccio.mon
     }else{
-        e.a.prop('checked',false)
+        var monitors = $.ccio.init('cleanMons','object')
+    }
+    $.each(theForm.serializeObject(),function(n,v){
+        console.log(monitors,n)
+        arr.push(monitors[n])
+    })
+    return arr;
+}
+theForm.on('change','#multimon_select_all',function(e){
+    var el = $(this);
+    var isChecked = el.prop('checked')
+    var nameField = theForm.find('input[type=checkbox][name]')
+    if(isChecked === true){
+        nameField.prop('checked',true)
+    }else{
+        nameField.prop('checked',false)
     }
 })
-$.multimon.e.find('.import_config').click(function(){
-  var e={};e.e=$(this);e.mid=e.e.parents('[mid]').attr('mid');
+theWindow.find('.import_config').click(function(){
+    var el = $(this);
     $.confirm.e.modal('show');
     $.confirm.title.text(lang['Import Monitor Configuration'])
-    e.html=lang.ImportMultiMonitorConfigurationText+'<div style="margin-top:15px"><div class="form-group"><textarea placeholder="'+lang['Paste JSON here.']+'" class="form-control"></textarea></div><label class="upload_file btn btn-primary btn-block">'+lang['Upload File']+'<input class="upload" type=file name="files[]"></label></div>';
-    $.confirm.body.html(e.html)
+    var html = lang.ImportMultiMonitorConfigurationText+'<div style="margin-top:15px"><div class="form-group"><textarea placeholder="'+lang['Paste JSON here.']+'" class="form-control"></textarea></div><label class="upload_file btn btn-primary btn-block">'+lang['Upload File']+'<input class="upload" type=file name="files[]"></label></div>';
+    $.confirm.body.html(html)
     $.confirm.e.find('.upload').change(function(e){
         var files = e.target.files; // FileList object
         f = files[0];
@@ -171,28 +193,16 @@ $.multimon.e.find('.import_config').click(function(){
 //        });
     });
 })
-$.multimon.getSelectedMonitors = function(unclean){
-    var arr=[];
-    if(unclean === true){
-        var monitors = $.ccio.mon
-    }else{
-        var monitors = $.ccio.init('cleanMons','object')
-    }
-    $.each($.multimon.f.serializeObject(),function(n,v){
-        arr.push(monitors[n])
-    })
-    return arr;
-}
-$.multimon.e.find('.delete').click(function(){
-    var arr=$.multimon.getSelectedMonitors(true);
+theWindow.find('.delete').click(function(){
+    var arr = getSelectedMonitors(true);
     if(arr.length===0){
         $.ccio.init('note',{title:lang['No Monitors Selected'],text:lang['Select atleast one monitor to delete'],type:'error'});
         return
     }
     $.confirm.e.modal('show');
     $.confirm.title.text(lang['Delete']+' '+lang['Monitors'])
-    e.html='<p>'+lang.DeleteMonitorsText+'</p>';
-    $.confirm.body.html(e.html)
+    var html = '<p>'+lang.DeleteMonitorsText+'</p>';
+    $.confirm.body.html(html)
     $.confirm.click([
         {
             title:lang['Delete']+' '+lang['Monitors'],
@@ -218,42 +228,23 @@ $.multimon.e.find('.delete').click(function(){
         }
     ]);
 })
-//$.multimon.e.find('.edit_all').click(function(){
-//    var arr=$.multimon.getSelectedMonitors();
-//    var arrObject={}
-//    if(arr.length===0){
-//        $.ccio.init('note',{title:lang['No Monitors Selected'],text:lang['Select atleast one monitor to delete'],type:'error'});
-//        return
-//    }
-//    $.multimonedit.selectedList = arr;
-//    $.multimonedit.e.modal('show')
-//})
-$.multimon.e.find('.save_config').click(function(){
-    var e={};e.e=$(this);
-    var arr=$.multimon.getSelectedMonitors();
+theWindow.find('.save_config').click(function(){
+    var el = $(this);
+    var arr = getSelectedMonitors();
     if(arr.length===0){
         $.ccio.init('note',{title:lang['No Monitors Selected'],text:lang['Select atleast one monitor to delete'],type:'error'});
         return
     }
-    e.dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(arr));
+    var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(arr));
     $('#temp').html('<a></a>')
         .find('a')
-        .attr('href',e.dataStr)
+        .attr('href',dataStr)
         .attr('download','Shinobi_Monitors_'+(new Date())+'.json')
         [0].click()
 })
-$.multimon.e.on('shown.bs.modal',function() {
-
+theWindow.on('shown.bs.modal',function() {
     drawTable()
-
-    $.get($.ccio.init('location',$user)+$user.auth_token+'/api/'+$user.ke+'/list',function(d){
-        var html = ''
-        $.each(d.keys || [],function(n,key){
-            html += `<option value="${key.code}">${key.code}</option>`
-        })
-        apiKeySelector.find('optgroup').html(html)
-    })
-
+    drawApiKeyList()
 })
 apiKeySelector.change(function(){
     var value = $(this).val()
