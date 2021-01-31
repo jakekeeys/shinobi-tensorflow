@@ -12,6 +12,7 @@
 var fs = require('fs');
 var config = require('./conf.json')
 var dotenv = require('dotenv').config()
+const currentDirectory = process && process.cwd ? process.cwd() + '/' : __dirname + '/'
 var s
 const {
   workerData
@@ -49,7 +50,7 @@ var child = null
 function respawn() {
 
     console.log("respawned python",(new Date()))
-    const theChild = spawn('python3', ['-u', 'detect_image.py']);
+    const theChild = spawn('python3', ['-u', currentDirectory + 'detect_image.py']);
 
     var lastStatusLog = new Date();
 
