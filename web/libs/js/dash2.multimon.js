@@ -1,4 +1,5 @@
 $(document).ready(function(e){
+    var selectedApiKey = `${$user.auth_token}`
     var getUrlPieces = function(url){
         var el = document.createElement('a');
         el.href = url
@@ -14,8 +15,26 @@ $(document).ready(function(e){
     }
 //multi monitor manager
 $.multimon={e:$('#multi_mon')};
+var apiKeySelector = $('#multi_mon_api_key_selector')
 $.multimon.table=$.multimon.e.find('.tableData tbody');
 $.multimon.f=$.multimon.e.find('form');
+var drawTable = function(){
+    var tmp=''
+    $.each($.ccio.mon,function(n,v){
+        var streamURL = $.ccio.init('streamURL',v).replace($user.auth_token,selectedApiKey)
+        if(streamURL!=='Websocket'&&v.mode!==('idle'&&'stop')){
+            streamURL='<a target="_blank" href="'+streamURL+'">'+streamURL+'</a>'
+        }
+        var img = $('#left_menu [mid="'+v.mid+'"] [monitor="watch"]').attr('src')
+        tmp+='<tr mid="'+v.mid+'" ke="'+v.ke+'" auth="'+selectedApiKey+'">'
+        tmp+='<td><div class="checkbox"><input id="multimonCheck_'+v.ke+v.mid+selectedApiKey+'" type="checkbox" name="'+v.ke+v.mid+selectedApiKey+'" value="1"><label for="multimonCheck_'+v.ke+v.mid+selectedApiKey+'"></label></div></td>'
+        tmp+='<td><a monitor="watch"><img class="small-square-img" src="'+img+'"></a></td><td>'+v.name+'<br><small>'+v.mid+'</small></td><td class="monitor_status">'+v.status+'</td><td><small>'+streamURL+'</small></td>'
+        //buttons
+        tmp+='<td class="text-right"><a title="'+lang.Pop+'" monitor="pop" class="btn btn-primary"><i class="fa fa-external-link"></i></a> <a title="'+lang.Calendar+'" monitor="calendar" class="btn btn-default"><i class="fa fa-calendar"></i></a> <a title="'+lang['Power Viewer']+'" class="btn btn-default" monitor="powerview"><i class="fa fa-map-marker"></i></a> <a title="'+lang['Time-lapse']+'" class="btn btn-default" monitor="timelapse"><i class="fa fa-angle-double-right"></i></a> <a title="'+lang['Videos List']+'" monitor="videos_table" class="btn btn-default"><i class="fa fa-film"></i></a> <a title="'+lang['Monitor Settings']+'" class="btn btn-default" monitor="edit"><i class="fa fa-wrench"></i></a></td>'
+        tmp+='</tr>'
+    })
+    $.multimon.table.html(tmp)
+}
 $.multimon.f.on('change','#multimon_select_all',function(e){
     e.e=$(this);
     e.p=e.e.prop('checked')
@@ -224,20 +243,22 @@ $.multimon.e.find('.save_config').click(function(){
         [0].click()
 })
 $.multimon.e.on('shown.bs.modal',function() {
-    var tmp=''
-    $.each($.ccio.mon,function(n,v){
-        var streamURL = $.ccio.init('streamURL',v)
-        if(streamURL!=='Websocket'&&v.mode!==('idle'&&'stop')){
-            streamURL='<a target="_blank" href="'+streamURL+'">'+streamURL+'</a>'
-        }
-        var img = $('#left_menu [mid="'+v.mid+'"][auth="'+v.user.auth_token+'"] [monitor="watch"]').attr('src')
-        tmp+='<tr mid="'+v.mid+'" ke="'+v.ke+'" auth="'+v.user.auth_token+'">'
-        tmp+='<td><div class="checkbox"><input id="multimonCheck_'+v.ke+v.mid+v.user.auth_token+'" type="checkbox" name="'+v.ke+v.mid+v.user.auth_token+'" value="1"><label for="multimonCheck_'+v.ke+v.mid+v.user.auth_token+'"></label></div></td>'
-        tmp+='<td><a monitor="watch"><img class="small-square-img" src="'+img+'"></a></td><td>'+v.name+'<br><small>'+v.mid+'</small></td><td class="monitor_status">'+v.status+'</td><td>'+streamURL+'</td>'
-        //buttons
-        tmp+='<td class="text-right"><a title="'+lang.Pop+'" monitor="pop" class="btn btn-primary"><i class="fa fa-external-link"></i></a> <a title="'+lang.Calendar+'" monitor="calendar" class="btn btn-default"><i class="fa fa-calendar"></i></a> <a title="'+lang['Power Viewer']+'" class="btn btn-default" monitor="powerview"><i class="fa fa-map-marker"></i></a> <a title="'+lang['Time-lapse']+'" class="btn btn-default" monitor="timelapse"><i class="fa fa-angle-double-right"></i></a> <a title="'+lang['Videos List']+'" monitor="videos_table" class="btn btn-default"><i class="fa fa-film"></i></a> <a title="'+lang['Monitor Settings']+'" class="btn btn-default" monitor="edit"><i class="fa fa-wrench"></i></a></td>'
-        tmp+='</tr>'
+
+    drawTable()
+
+    $.get($.ccio.init('location',$user)+$user.auth_token+'/api/'+$user.ke+'/list',function(d){
+        var html = ''
+        $.each(d.keys || [],function(n,key){
+            html += `<option value="${key.code}">${key.code}</option>`
+        })
+        apiKeySelector.find('optgroup').html(html)
     })
-    $.multimon.table.html(tmp)
+
+})
+apiKeySelector.change(function(){
+    var value = $(this).val()
+    console.log(value)
+    selectedApiKey = `${value}`
+    drawTable()
 })
 })
