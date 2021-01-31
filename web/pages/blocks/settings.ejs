@@ -49,6 +49,7 @@
               return fieldElement
           }
           var drawBlock = function(monitorSettings){
+              console.log(monitorSettings)
             if(monitorSettings.evaluation && !eval(monitorSettings.evaluation)){
                 return
             }
@@ -68,9 +69,11 @@
             if(monitorSettings.attribute){
                 attributes.push(monitorSettings.attribute)
             }
-            if(monitorSettings.id){
-                attributes.push(`id="${monitorSettings.id}"`)
+            if(!monitorSettings.id){
+                var userSettingsId = monitorSettings.name.replace(/[^a-zA-Z ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/ /g, '')
+                monitorSettings.id = userSettingsId
             }
+            attributes.push(`id="${monitorSettings.id}"`)
             if(monitorSettings.color){
                 sectionClass.push(monitorSettings.color)
             }
