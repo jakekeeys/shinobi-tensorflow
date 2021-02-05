@@ -1,5 +1,14 @@
+const checkEmail = (email) => {
+    if(email.toLowerCase().indexOf('@shinobi') > -1 && !config.allowSpammingViaEmail){
+        console.log('CHANGE YOUR ACCOUNT EMAIL!')
+        console.log(email + ' IS NOT ALLOWED TO BE USED')
+        console.log('YOU CANNOT EMAIL TO THIS ADDRESS')
+        return 'cannot@email.com'
+    }
+    return email
+}
 // Example of how to generate HTML for an email.
-// createFramework({
+// template.createFramework({
 //     title: 'Password Reset',
 //     subtitle: 'If you did not make this request please change your password.',
 //     body: [
@@ -19,7 +28,7 @@
 //         }),
 //     ].join(''),
 // })
-module.exports = {
+const template = {
     createRow : (options) => {
         const trFillers = `<tr>
           <td colspan="3" height="11" style="border:0;margin:0;padding:0;font-size:1px;line-height:1px">
@@ -247,4 +256,8 @@ module.exports = {
     </table>` : ''}
     </div>`
     }
+}
+module.exports = {
+    template: template,
+    checkEmail: checkEmail,
 }

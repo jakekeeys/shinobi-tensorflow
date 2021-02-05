@@ -31,7 +31,7 @@
     "moment": "^2.27.0",
     "mp4frag": "^0.2.0",
     "mysql": "^2.18.1",
-    "node-onvif": "^0.1.7",
+    "shinobi-onvif": "0.1.9",
     "node-ssh": "^5.1.2",
     "nodemailer": "^6.4.11",
     "pam-diff": "^1.0.0",

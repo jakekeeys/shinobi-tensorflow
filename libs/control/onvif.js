@@ -1,6 +1,6 @@
 var os = require('os');
 var exec = require('child_process').exec;
-var onvif = require("node-onvif");
+const onvif = require("shinobi-onvif");
 module.exports = function(s,config,lang,app,io){
     const createOnvifDevice = async (onvifAuth) => {
         var response = {ok: false}

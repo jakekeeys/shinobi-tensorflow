@@ -426,9 +426,9 @@ $.ccio.init=function(x,d,user,k){
                 k.run=function(){
                     k.e.attr('src',$.ccio.init('location',user)+user.auth_token+'/jpeg/'+d.ke+'/'+d.mid+'/s.jpg?time='+(new Date()).getTime())
                 }
-                k.e.load(function(){
+                k.e.on('load',function(){
                     $.ccio.mon[d.ke+d.mid+user.auth_token].jpegInterval=setTimeout(k.run,1000/k.jpegInterval);
-                }).error(function(){
+                }).on('error',function(){
                     $.ccio.mon[d.ke+d.mid+user.auth_token].jpegInterval=setTimeout(k.run,1000/k.jpegInterval);
                 })
                 k.run()

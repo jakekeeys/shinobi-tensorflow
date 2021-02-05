@@ -1,4 +1,10 @@
+const fs = require('fs');
+const treekill = require('tree-kill');
+const spawn = require('child_process').spawn;
 module.exports = (s,config,lang) => {
+    const {
+        splitForFFPMEG,
+    } = require('../ffmpeg/utils.js')(s,config,lang)
     const cameraDestroy = function(e,p){
         if(
             s.group[e.ke] &&
@@ -82,7 +88,103 @@ module.exports = (s,config,lang) => {
             }
         }
     }
+    const createSnapshot = (options) => {
+        const url = options.url
+        const streamDir = options.streamDir || s.dir.streams
+        const inputOptions = options.input || []
+        const outputOptions = options.output || []
+        return new Promise((resolve,reject) => {
+            if(!url){
+                resolve(null);
+                return
+            }
+            const completeRequest = () => {
+                fs.readFile(temporaryImageFile,(err,imageBuffer) => {
+                    fs.unlink(temporaryImageFile,(err) => {
+                        if(err){
+                            s.debugLog(err)
+                        }
+                    })
+                    if(err){
+                        s.debugLog(err)
+                    }
+                    resolve(imageBuffer)
+                })
+            }
+            const temporaryImageFile = streamDir + s.gid(5) + '.jpg'
+            const ffmpegCmd = splitForFFPMEG(`-loglevel warning -re -probesize 100000 -analyzeduration 100000 ${inputOptions.join(' ')} -i "${url}" ${outputOptions.join(' ')} -f image2 -an -vf "fps=1" -vframes 1 "${temporaryImageFile}"`)
+            const snapProcess = spawn('ffmpeg',ffmpegCmd,{detached: true})
+            snapProcess.stderr.on('data',function(data){
+                // s.debugLog(data.toString())
+            })
+            snapProcess.on('close',async function(data){
+                clearTimeout(snapProcessTimeout)
+                completeRequest()
+            })
+            var snapProcessTimeout = setTimeout(function(){
+                var pid = snapProcess.pid
+                if(s.isWin){
+                    spawn("taskkill", ["/pid", pid, '/t'])
+                }else{
+                    process.kill(-pid, 'SIGTERM')
+                }
+                setTimeout(function(){
+                    if(s.isWin === false){
+                        treekill(pid)
+                    }else{
+                        snapProcess.kill()
+                    }
+                    completeRequest()
+                },10000)
+            },30000)
+        })
+    }
+    const addCredentialsToStreamLink = (options) => {
+        const streamUrl = options.url
+        const username = options.username
+        const password = options.password
+        const urlParts = streamUrl.split('://')
+        urlParts[0] = 'http'
+        return ['rtsp','://',`${username}:${password}@`,urlParts[1]].join('')
+    }
+    const monitorConfigurationMigrator = (monitor) => {
+        // converts the old style to the new style.
+        const updatedFields = require('./updatedFields.js')()
+        const fieldKeys = Object.keys(updatedFields)
+        fieldKeys.forEach((oldKey) => {
+            if(oldKey === 'details'){
+                const detailKeys = Object.keys(updatedFields.details)
+                detailKeys.forEach((oldKey) => {
+                    if(oldKey === 'stream_channels'){
+                        if(monitor.details.stream_channels){
+                            const channelUpdates = updatedFields.details.stream_channels
+                            const channelKeys = Object.keys(channelUpdates)
+                            const streamChannels = s.parseJSON(monitor.details.stream_channels) || []
+                            streamChannels.forEach(function(channel,number){
+                                channelKeys.forEach((oldKey) => {
+                                    const newKey = channelUpdates[oldKey]
+                                    monitor.details.stream_channels[number][newKey] = streamChannels[number][oldKey]
+                                    // delete(e.details.stream_channels[number][oldKey])
+                                })
+                            })
+                        }
+                    }else{
+                        const newKey = updatedFields.details[oldKey]
+                        monitor.details[newKey] = monitor.details[oldKey]
+                        // delete(monitor.details[oldKey])
+                    }
+                })
+            }else{
+                const newKey = updatedFields[oldKey]
+                monitor[newKey] = monitor[oldKey]
+                // delete(monitor[oldKey])
+            }
+        })
+    }
     return {
-        cameraDestroy: cameraDestroy
+        cameraDestroy: cameraDestroy,
+        createSnapshot: createSnapshot,
+        addCredentialsToStreamLink: addCredentialsToStreamLink,
+        monitorConfigurationMigrator: monitorConfigurationMigrator,
     }
 }

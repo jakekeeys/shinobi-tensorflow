@@ -48,59 +48,52 @@
               })
               return fieldElement
           }
-          var drawBlock = function(userSettings){
-            if(userSettings.evaluation && !eval(userSettings.evaluation)){
+          var drawBlock = function(monitorSettings){
+            if(monitorSettings.evaluation && !eval(monitorSettings.evaluation)){
                 return
             }
             var attributes = []
             var styles = []
             var sectionClass = []
-            var headerTitle = userSettings.headerTitle || lang[userSettings.name] || userSettings.name
-            if(userSettings.hidden === true){
+            var headerTitle = monitorSettings.headerTitle || lang[monitorSettings.name] || monitorSettings.name
+            if(monitorSettings.hidden === true){
                 styles.push('display:none')
             }
-            if(userSettings.style){
-                styles.push(userSettings.style)
+            if(monitorSettings.style){
+                styles.push(monitorSettings.style)
             }
-            if(userSettings.isSection === true){
+            if(monitorSettings.isSection === true){
                 attributes.push('section')
             }
-            if(userSettings.attribute){
-                attributes.push(userSettings.attribute)
+            if(monitorSettings.attribute){
+                attributes.push(monitorSettings.attribute)
             }
-            if(userSettings.id){
-                attributes.push(`id="${userSettings.id}"`)
-            }else{
-                var userSettingsId
-                if(userSettings.name){
-                    userSettingsId = userSettings.name.replace(/[^a-zA-Z ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/ /g, '')
-                }else{
-                    userSettingsId = "NO NAME"
-                }
-                userSettings.id = userSettingsId
-                attributes.push(`id="${userSettingsId}"`)
+            if(!monitorSettings.id){
+                var userSettingsId = monitorSettings.name.replace(/[^a-zA-Z ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/ /g, '')
+                monitorSettings.id = userSettingsId
             }
-            if(userSettings.color){
-                sectionClass.push(userSettings.color)
+            attributes.push(`id="${monitorSettings.id}"`)
+            if(monitorSettings.color){
+                sectionClass.push(monitorSettings.color)
             }
-            if(userSettings['section-class']){
-                sectionClass.push(userSettings['section-class'])
+            if(monitorSettings['section-class']){
+                sectionClass.push(monitorSettings['section-class'])
             }
-            if(userSettings.isAdvanced){ %>
-           <div class="h_us_input h_us_advanced">
+            if(monitorSettings.isAdvanced){ %>
+           <div class="h_us_input h_us_advanced" style="display:none">
            <% }
-            if(userSettings['section-pre-pre-class']){ %>
-           <div class="<%- userSettings['section-pre-pre-class'] %>">
+            if(monitorSettings['section-pre-pre-class']){ %>
+           <div class="<%- monitorSettings['section-pre-pre-class'] %>">
            <% }
-            if(userSettings['section-pre-class']){ %>
-           <div class="<%- userSettings['section-pre-class'] %>">
+            if(monitorSettings['section-pre-class']){ %>
+           <div class="<%- monitorSettings['section-pre-class'] %>">
            <% }
             %>
             <div <%- attributes.join(' ') %> style="<%- styles.join(';') %>" class="form-group-group <%- sectionClass.join(' ') %>">
-                <h4 class="<%- userSettings.headerClass %>"><%- headerTitle %>
-                    <% if(userSettings.headerButtons){ %>
+                <h4 class="monitor-section-header <%- monitorSettings.headerClass %>"><%- headerTitle %>
+                    <% if(monitorSettings.headerButtons){ %>
                         <div class="pull-right">
-                            <% userSettings.headerButtons.forEach(function(button){ %>
+                            <% monitorSettings.headerButtons.forEach(function(button){ %>
                                 <a class="btn btn-success btn-xs <%- button.class %>">
                                     <% if(button.icon){ %><i class="fa fa-<%- button.icon %>"></i><% } %>
                                      <% if(button.text){ %><%- button.text %><% } %>
@@ -109,8 +102,9 @@
                         </div>
                     <% } %>
                 </h4>
-            <% if(userSettings['input-mapping']){ %>
-                <div class="form-group-group forestgreen" style="display:none" input-mapping="<%- userSettings['input-mapping'] %>">
+                <div class="box-wrapper">
+            <% if(monitorSettings['input-mapping']){ %>
+                <div class="form-group-group forestgreen" style="display:none" input-mapping="<%- monitorSettings['input-mapping'] %>">
                     <h4><%-lang['Input Feed']%>
                         <div class="pull-right">
                             <a class="btn btn-success btn-xs add_map_row"><i class="fa fa-plus-square-o"></i></a>
@@ -119,20 +113,18 @@
                     <div class="choices"></div>
                 </div>
             <% } %>
-            <% if(userSettings.blockquote){ %>
-                <blockquote class="<%- userSettings.blockquoteClass || '' %>">
-                    <%- userSettings.blockquote %>
+            <% if(monitorSettings.blockquote){ %>
+                <blockquote class="<%- monitorSettings.blockquoteClass || '' %>">
+                    <%- monitorSettings.blockquote %>
                 </blockquote>
             <% } %>
-
-            <%
-            if(userSettings.blocks){
-                    userSettings.blocks.forEach(function(settingsBlock){
+            <% if(monitorSettings.blocks){
+                    monitorSettings.blocks.forEach(function(settingsBlock){
                         drawBlock(settingsBlock)
                     })
                 }
-               if(userSettings.info){
-               userSettings.info.forEach(function(field){
+               if(monitorSettings.info){
+               monitorSettings.info.forEach(function(field){
                    if(field.isFormGroupGroup === true){
                        drawBlock(field)
                    }else{
@@ -181,6 +173,7 @@
                 var preFill = field.preFill || ''
                 switch(fieldType){
                     case'btn':
+
                           fieldElement = `<a class="btn btn-block ${fieldClass.join(' ')}" ${attributes.join(' ')}>${field.btnContent}</a>`
                     break;
                     case'ul':
@@ -213,9 +206,6 @@
                           fieldElement += '</select></div>'
                     break;
                 }
-                if(field.isAdvanced){ %>
-                <div class="h_us_input h_us_advanced">
-                <% }
                  if(field['form-group-class-pre-pre-layer']){ %>
                 <div class="<%- field['form-group-class-pre-pre-layer'] %>">
                 <% }
@@ -225,15 +215,15 @@
                 if(fieldType === 'ul' || fieldType ===  'div' || fieldType ===  'btn'){ %>
                     <%- fieldElement %>
                 <% }else{ %>
-                <div <%- hidden %> class="form-group <%- field['form-group-class'] %>">
-                    <label><div><span><%- field.field %>
-                        <% if(field.description){ %>
-                            <small><%- field.description %></small>
-                        <% } %>
-                    </span></div>
-                        <%- fieldElement %>
-                    </label>
-                </div>
+                    <div <%- hidden %> class="form-group <%- field['form-group-class'] %>">
+                        <label><div><span><%- field.field %>
+                            <% if(field.description){ %>
+                                <small><%- field.description %></small>
+                            <% } %>
+                        </span></div>
+                            <%- fieldElement %>
+                        </label>
+                    </div>
                 <% }
                   }
                   if(field['form-group-class-pre-layer']){ %>
@@ -242,21 +232,19 @@
                   if(field['form-group-class-pre-pre-layer']){ %>
                  </div>
                  <% }
-                 if(field.isAdvanced){ %>
-                 </div>
-                 <% }
               })
           }
           %>
           </div>
+          </div>
           <%
-          if(userSettings['section-pre-class']){ %>
+          if(monitorSettings['section-pre-class']){ %>
           </div>
           <% }
-          if(userSettings['section-pre-pre-class']){ %>
+          if(monitorSettings['section-pre-pre-class']){ %>
           </div>
           <% }
-          if(userSettings.isAdvanced){ %>
+          if(monitorSettings.isAdvanced){ %>
           </div>
           <% }
           }

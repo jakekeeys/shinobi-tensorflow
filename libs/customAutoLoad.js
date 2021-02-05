@@ -7,9 +7,6 @@ const spawn = require('child_process').spawn
 module.exports = async (s,config,lang,app,io) => {
     const runningInstallProcesses = {}
     const modulesBasePath = s.mainDirectory + '/libs/customAutoLoad/'
-    const searchText = function(searchFor,searchIn){
-        return searchIn.indexOf(searchFor) > -1
-    }
     const extractNameFromPackage = (filePath) => {
         const filePathParts = filePath.split('/')
         const packageName = filePathParts[filePathParts.length - 1].split('.')[0]
@@ -222,10 +219,10 @@ module.exports = async (s,config,lang,app,io) => {
                                                                         var fullPath = thirdLevelName + '/' + filename
                                                                         var blockPrefix = ''
                                                                         switch(true){
-                                                                            case searchText('super.',filename):
+                                                                            case filename.contains('super.'):
                                                                                 blockPrefix = 'super'
                                                                             break;
-                                                                            case searchText('admin.',filename):
+                                                                            case filename.contains('admin.'):
                                                                                 blockPrefix = 'admin'
                                                                             break;
                                                                         }

@@ -104,7 +104,11 @@ $.sM.f.submit(function(e){
     if(e.s.pass!==''&&e.password_again===e.s.pass){e.er.push(lang['Passwords don\'t match'])};
     if(e.er.length>0){$.sM.e.find('.msg').html(e.er.join('<br>'));return;}
     $.each(e.s,function(n,v){e.s[n]=v.trim()})
+    var details = $.parseJSON(e.s.details)
     $.ccio.cx({f:'settings',ff:'edit',form:e.s})
+    if(details.googd_save === '1' && details.googd_code && details.googd_code !== '***************'){
+        $.sM.f.find('[detail="googd_code"]').val('***************')
+    }
     $.sM.e.modal('hide')
 });
 $.sM.e.on('shown.bs.modal',function(){

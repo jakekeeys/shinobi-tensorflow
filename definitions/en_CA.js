@@ -453,6 +453,13 @@ module.exports = function(s,config,lang){
                        "class": `btn-success probe_config`,
                        "btnContent": `<i class="fa fa-search"></i> &nbsp; ${lang.FFprobe}`,
                     },
+                    {
+                       "fieldType": "btn",
+                       "attribute": `style="margin-top:1rem"`,
+                       "form-group-class-pre-layer": "h_onvif_input h_onvif_1",
+                       "class": `btn-warning am_notice_edit open-onvif-device-manager`,
+                       "btnContent": `<i class="fa fa-gears"></i> &nbsp; ${lang['ONVIF Device Manager']}`,
+                    },
                 ]
             },
              "Input": {
@@ -472,11 +479,11 @@ module.exports = function(s,config,lang){
                       "form-group-class": "input-mapping",
                       "possible": [
                            {
-                              "name": lang['All streams in first feed'] + "(0)",
+                              "name": lang['All streams in first feed'] + '(0, ' + lang.Default + ')',
                               "value": "0"
                            },
                            {
-                              "name": lang['First stream in feed'] + '(0:0, ' + lang.Default + ')',
+                              "name": lang['First stream in feed'] + '(0:0)',
                               "value": "0:0"
                            },
                            {
@@ -987,7 +994,7 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
-                      "name": "detail=rotate_stream",
+                      "name": "detail=stream_rotate",
                       "field": lang["Rotate"],
                       "description": "Change the viewing angle of the video stream.",
                       "default": "",
@@ -1048,7 +1055,7 @@ module.exports = function(s,config,lang){
                       ]
                    },
                    {
-                      "name": "detail=svf",
+                      "name": "detail=stream_vf",
                       "field": lang["Video Filter"],
                       "description": "Place FFMPEG video filters in this box to affect the streaming portion. No spaces.",
                       "default": "",
@@ -1587,7 +1594,7 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
-                      "name": "detail=rotate_record",
+                      "name": "detail=rotate",
                       "field": lang["Rotate"],
                       "description": "Change the recording angle of the video stream.",
                       "default": "copy",
@@ -2233,10 +2240,6 @@ module.exports = function(s,config,lang){
                               "value": "sip"
                            },
                            {
-                              "name": lang['Hotswap Modes (Watch-Only)'],
-                              "value": "hot"
-                           },
-                           {
                               "name": lang['Delete Motionless Videos (Record)'],
                               "value": "del"
                            }
@@ -2386,99 +2389,133 @@ module.exports = function(s,config,lang){
                       ],
                    },
                    {
-                      "name": "detail=detector_webhook",
-                      "field": "Webhook",
-                      "description": "Send a GET request to a URL with some values from the event.",
-                      "default": "0",
-                      "example": "",
-                      "selector": "h_det_web",
-                      "fieldType": "select",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": [
-                         {
-                            "name": lang.No,
-                            "value": "0"
-                         },
-                         {
-                            "name": lang.Yes,
-                            "value": "1"
-                         }
-                      ]
-                   },
-                   {
                        hidden: true,
-                      "name": "detail=detector_webhook_url",
-                      "field": lang['Webhook URL'],
-                      "description": "",
-                      "default": "",
-                      "example": "http://111.111.111.111?mid={{MONITOR_ID}}&group={{GROUP_KEY}}&confidence={{CONFIDENCE}}",
-                      "form-group-class": "h_det_web_input h_det_web_1",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": ""
-                   },
-                   {
-                      "name": "detail=detector_webhook_method",
-                      "field": lang['Call Method'],
-                      "description": "",
-                      "default": "GET",
-                      "example": "",
-                      "form-group-class": "h_det_web_input h_det_web_1",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "fieldType": "select",
-                      "possible": [
-                          {
-                             "name": `GET (${lang.Default})`,
-                             "value": "GET"
-                          },
-                          {
-                             "name": "PUT",
-                             "value": "PUT"
-                          },
-                          {
-                             "name": "POST",
-                             "value": "POST"
-                          }
+                       "name": lang['Webhook'],
+                       "color": "orange",
+                       id: "monSectionDetectorWebhook",
+                       isSection: true,
+                       isAdvanced: true,
+                       isFormGroupGroup: true,
+                       "section-class": "h_det_input h_det_1",
+                       "info": [
+                           {
+                              "name": "detail=detector_webhook",
+                              "field": "Webhook",
+                              "description": "Send a GET request to a URL with some values from the event.",
+                              "default": "0",
+                              "example": "",
+                              "selector": "h_det_web",
+                              "fieldType": "select",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "possible": [
+                                 {
+                                    "name": lang.No,
+                                    "value": "0"
+                                 },
+                                 {
+                                    "name": lang.Yes,
+                                    "value": "1"
+                                 }
+                              ]
+                           },
+                           {
+                              "name": "detail=detector_webhook_timeout",
+                              "field": lang['Allow Next Webhook'],
+                              "description": "This value is a timer to allow the next running of your Webhook. This value is in minutes.",
+                              "default": "10",
+                              "example": "",
+                              "form-group-class": "h_det_web_input h_det_web_1",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "possible": ""
+                           },
+                           {
+                               hidden: true,
+                              "name": "detail=detector_webhook_url",
+                              "field": lang['Webhook URL'],
+                              "description": "",
+                              "default": "",
+                              "example": "http://111.111.111.111?mid={{MONITOR_ID}}&group={{GROUP_KEY}}&confidence={{CONFIDENCE}}",
+                              "form-group-class": "h_det_web_input h_det_web_1",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "possible": ""
+                           },
+                           {
+                              "name": "detail=detector_webhook_method",
+                              "field": lang['Call Method'],
+                              "description": "",
+                              "default": "GET",
+                              "example": "",
+                              "form-group-class": "h_det_web_input h_det_web_1",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "fieldType": "select",
+                              "possible": [
+                                  {
+                                     "name": `GET (${lang.Default})`,
+                                     "value": "GET"
+                                  },
+                                  {
+                                     "name": "PUT",
+                                     "value": "PUT"
+                                  },
+                                  {
+                                     "name": "POST",
+                                     "value": "POST"
+                                  }
+                               ]
+                           },
                        ]
                    },
                    {
-                      "name": "detail=detector_command_enable",
-                      "field": lang['Command on Trigger'],
-                      "description": "",
-                      "default": "0",
-                      "example": "",
-                      "selector": "h_det_com",
-                      "fieldType": "select",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": [
-                         {
-                            "name": lang.No,
-                            "value": "0"
-                         },
-                         {
-                            "name": lang.Yes,
-                            "value": "1"
-                         }
-                      ]
-                   },
-                   {
-                      "name": "detail=detector_command",
-                      "field": lang['Command'],
-                      "description": "The command that will run. This is the equivalent of running a shell command from terminal.",
-                      "default": "",
-                      "form-group-class": "h_det_com_input h_det_com_1",
-                      "example": "/home/script.sh {{MONITOR_ID}} {{GROUP_KEY}} {{CONFIDENCE}}",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": ""
-                   },
-                   {
-                      "name": "detail=detector_command_timeout",
-                      "field": lang['Allow Next Command'],
-                      "description": "This value is a timer to allow the next running of your script. This value is in minutes.",
-                      "default": "10",
-                      "example": "",
-                      "form-group-class": "h_det_com_input h_det_com_1",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": ""
+                       hidden: true,
+                       "name": lang['Command'],
+                       "color": "orange",
+                       id: "monSectionDetectorCommand",
+                       isSection: true,
+                       isAdvanced: true,
+                       isFormGroupGroup: true,
+                       "section-class": "h_det_input h_det_1",
+                       "info": [
+                           {
+                              "name": "detail=detector_command_enable",
+                              "field": lang['Command on Trigger'],
+                              "description": "",
+                              "default": "0",
+                              "example": "",
+                              "selector": "h_det_com",
+                              "fieldType": "select",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "possible": [
+                                 {
+                                    "name": lang.No,
+                                    "value": "0"
+                                 },
+                                 {
+                                    "name": lang.Yes,
+                                    "value": "1"
+                                 }
+                              ]
+                           },
+                           {
+                              "name": "detail=detector_command",
+                              "field": lang['Command'],
+                              "description": "The command that will run. This is the equivalent of running a shell command from terminal.",
+                              "default": "",
+                              "form-group-class": "h_det_com_input h_det_com_1",
+                              "example": "/home/script.sh {{MONITOR_ID}} {{GROUP_KEY}} {{CONFIDENCE}}",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "possible": ""
+                           },
+                           {
+                              "name": "detail=detector_command_timeout",
+                              "field": lang['Allow Next Command'],
+                              "description": "This value is a timer to allow the next running of your script. This value is in minutes.",
+                              "default": "10",
+                              "example": "",
+                              "form-group-class": "h_det_com_input h_det_com_1",
+                              "form-group-class-pre-layer": "h_det_input h_det_1",
+                              "possible": ""
+                           },
+                       ]
                    },
                    {
                       "name": "detail=snap_seconds_inward",
@@ -2568,7 +2605,7 @@ module.exports = function(s,config,lang){
                    },
                    {
                       "name": "detail=use_detector_filters",
-                      "field": lang['Detector Filters'],
+                      "field": lang['Event Filters'],
                       "description": "",
                       "default": "0",
                       "example": "",
@@ -2706,6 +2743,24 @@ module.exports = function(s,config,lang){
                               "default": "9",
                               "example": "9",
                               "possible": "Any non-negative integer."
+                           },
+                           {
+                              "name": "detail=inverse_trigger",
+                              "field": lang["Inverse Trigger"],
+                              "description": "To trigger outside specified regions. Will not trigger with Full Frame Detection enabled.",
+                              "default": "0",
+                              "example": "",
+                              "fieldType": "select",
+                              "possible": [
+                                 {
+                                    "name": lang.No,
+                                    "value": "0"
+                                 },
+                                 {
+                                    "name": lang.Yes,
+                                    "value": "1"
+                                 }
+                              ]
                            },
                            {
                               "name": "detail=detector_frame",
@@ -2876,15 +2931,6 @@ module.exports = function(s,config,lang){
                                   "value": "POST"
                                }
                             ]
-                        },
-                        {
-                           "name": "detail=detector_notrigger_command_timeout",
-                           "field": lang['Allow Next Webhook'],
-                           "description": "This value is a timer to allow the next running of your webhook. This value is in minutes.",
-                           "default": "10",
-                           "example": "",
-                           "form-group-class": "h_det_web_notrig_input h_det_web_notrig_1",
-                           "possible": ""
                         },
                         {
                            "name": "detail=detector_notrigger_command_enable",
@@ -3269,6 +3315,28 @@ module.exports = function(s,config,lang){
                              "possible": ""
                           },
                           {
+                             "name": "detail=event_record_scale_x",
+                             "field": lang.Width,
+                             "description": "Width of the Event-based Recording image that is output after processing.",
+                             "default": "",
+                             "fieldType": "number",
+                             "numberMin": "1",
+                             "example": "640",
+                             "form-group-class": "h_buff_input h_buff_libx264 h_buff_h264_vaapi h_buff_hevc_vaapi",
+                             "possible": ""
+                          },
+                          {
+                             "name": "detail=event_record_scale_y",
+                             "field": lang.Height,
+                             "description": "Height of the Event-based Recording image that is output after processing.",
+                             "default": "",
+                             "fieldType": "number",
+                             "numberMin": "1",
+                             "example": "480",
+                             "form-group-class": "h_buff_input h_buff_libx264 h_buff_h264_vaapi h_buff_hevc_vaapi",
+                             "possible": ""
+                          },
+                          {
                              "name": "detail=detector_buffer_hls_time",
                              "field": lang['HLS Segment Length'],
                              "description": "How long each video segment should be, in seconds. Each segment will be drawn by the client through an m3u8 file. Shorter segments take less space.",
@@ -3417,6 +3485,15 @@ module.exports = function(s,config,lang){
                        "field": lang['URL Stop Timeout'],
                        "description": "",
                        "default": "1000",
+                       "example": "",
+                       "form-group-class": "h_cs_input h_cs_1",
+                       "possible": ""
+                    },
+                    {
+                       "name": "detail=control_turn_speed",
+                       "field": lang['Turn Speed'],
+                       "description": "",
+                       "default": "0.1",
                        "example": "",
                        "form-group-class": "h_cs_input h_cs_1",
                        "possible": ""
@@ -4641,6 +4718,474 @@ module.exports = function(s,config,lang){
                 ]
              }
           }
-       }
+      },
+      "ONVIF Device Manager": {
+          "section": "ONVIF Device Manager",
+          "blocks": {
+             "Notice": {
+                 "id": "Notice",
+                 "name": lang["Notice"],
+                 "color": "warning",
+                 "blockquoteClass": "global_tip",
+                 "blockquote": lang.onvifdeviceManagerGlobalTip,
+                 "info": [
+                     {
+                        "fieldType": "btn",
+                        "class": `btn-warning onvif-device-reboot`,
+                        "btnContent": `<i class="fa fa-refresh"></i> &nbsp; ${lang['Reboot Camera']}`,
+                     },
+                 ]
+             },
+             "Network": {
+                 "id": "Network",
+                 "name": lang["Network"],
+                 "color": "purple",
+                 "info": [
+                     {
+                        "name": "setNetworkInterface:DHCP",
+                        "selector":"onvif_dhcp",
+                        "field": lang.DHCP,
+                        "description": "",
+                        "default": "true",
+                        "example": "",
+                        "fieldType": "select",
+                        "possible": [
+                            {
+                               "name": lang.Yes,
+                               "value": "true"
+                            },
+                            {
+                               "name": lang.No,
+                               "value": "false"
+                            }
+                        ]
+                     },
+                     {
+                        "field": lang['IP Address'],
+                        "name": "setNetworkInterface:ipv4",
+                        "placeholder": "xxx.xxx.xxx.xxx",
+                        "form-group-class": "onvif_dhcp_input onvif_dhcp_1",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Gateway'],
+                        "name": "setGateway:ipv4",
+                        "placeholder": "xxx.xxx.xxx.xxx",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Hostname'],
+                        "name": "setHostname:name",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['DNS'],
+                        "name": "setDNS:dns",
+                        "placeholder": "1.1.1.1,8.8.8.8",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['HTTP'] + ' ' + lang['Port'],
+                        "name": "setProtocols:HTTP",
+                        "placeholder": "80",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['RTSP'] + ' ' + lang['Port'],
+                        "name": "setProtocols:RTSP",
+                        "placeholder": "554",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                 ]
+             },
+             "Date and Time": {
+                 "id": "DateandTime",
+                 "name": lang["Date and Time"],
+                 "color": "purple",
+                 "info": [
+                     {
+                        "field": lang['UTCDateTime'],
+                        "name": "utcDateTime",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['NTP Servers'],
+                        "name": "setNTP:ipv4",
+                        "placeholder": "1.1.1.1,8.8.8.8",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['DateTimeType'],
+                        "name": "dateTimeType",
+                        "fieldType": "select",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": [
+                            {
+                               "name": lang.NTP,
+                               "value": "NTP"
+                            },
+                            {
+                               "name": lang.Manual,
+                               "value": "Manual"
+                            }
+                        ]
+                     },
+                     {
+                         "field": lang.DaylightSavings,
+                        "name": "daylightSavings",
+                        "selector":"onvif_dhcp",
+                        "description": "",
+                        "default": "true",
+                        "example": "",
+                        "fieldType": "select",
+                        "possible": [
+                            {
+                               "name": lang.Yes,
+                               "value": "true"
+                            },
+                            {
+                               "name": lang.No,
+                               "value": "false"
+                            }
+                        ]
+                     },
+                     {
+                         hidden: true,
+                         "field": lang.TimeZone,
+                        "name": "timezone",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                 ]
+             },
+             "Imaging": {
+                 "id": "Imaging",
+                 "name": lang["Imaging"],
+                 "color": "purple",
+                 "info": [
+                     {
+                        "field": lang['IrCutFilter'],
+                        "name": "IrCutFilter",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "fieldType": "select",
+                        "possible": [
+                           {
+                              "name": lang.On,
+                              "value": "ON",
+                              "info": "Enable Ir cut fiter. Typically Day mode."
+                           },
+                           {
+                              "name": lang.Off,
+                              "value": "OFF",
+                              "info": "Disable Ir cut fiter. Typically Night mode."
+                           },
+                           {
+                              "name": lang.Auto,
+                              "value": "AUTO",
+                              "info": "Ir cut filter is automatically activated by the device."
+                           },
+                       ]
+                     },
+                     {
+                        "field": lang['Brightness'],
+                        "name": "Brightness",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['ColorSaturation'],
+                        "name": "ColorSaturation",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Contrast'],
+                        "name": "Contrast",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['BacklightCompensation'] + ' : ' + lang['Mode'],
+                        "name": "BacklightCompensation:Mode",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Exposure'] + ' : ' + lang['Mode'],
+                        "name": "Exposure:Mode",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Exposure'] + ' : ' + lang['MinExposureTime'],
+                        "name": "Exposure:MinExposureTime",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Exposure'] + ' : ' + lang['MaxExposureTime'],
+                        "name": "Exposure:MaxExposureTime",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Exposure'] + ' : ' + lang['MinGain'],
+                        "name": "Exposure:MinGain",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Exposure'] + ' : ' + lang['MaxGain'],
+                        "name": "Exposure:MaxGain",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Sharpness'],
+                        "name": "Sharpness",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['WideDynamicRange'] + ' : ' + lang['Mode'],
+                        "name": "WideDynamicRange:Mode",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['WhiteBalance'] + ' : ' + lang['Mode'],
+                        "name": "WhiteBalance:Mode",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "form-group-class": "imaging-field",
+                        "possible": ""
+                     },
+                 ]
+             },
+             "Video Configuration": {
+                 "id": "VideoConfiguration",
+                 "name": lang["Video Configuration"],
+                 "color": "purple",
+                 "info": [
+                     {
+                         hidden: true,
+                         "field": lang.Token,
+                        "name": "videoToken",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "fieldType": "select",
+                        "possible": [
+
+                        ]
+                     },
+                     {
+                        "field": lang['Name'],
+                        "name": "Name",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                         "field": lang.Resolution,
+                        "name": "detail=Resolution",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "fieldType": "select",
+                        "possible": [
+
+                        ]
+                     },
+                     {
+                         hidden: true,
+                        "field": lang['Width'],
+                        "name": "Resolution:Width",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                         hidden: true,
+                        "field": lang['Height'],
+                        "name": "Resolution:Height",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Quality'],
+                        "name": "Quality",
+                        "fieldType": "number",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['FrameRateLimit'],
+                        "name": "RateControl:FrameRateLimit",
+                        "fieldType": "number",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['EncodingInterval'],
+                        "name": "RateControl:EncodingInterval",
+                        "fieldType": "number",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['BitrateLimit'],
+                        "name": "RateControl:BitrateLimit",
+                        "fieldType": "number",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['GovLength'],
+                        "name": "H264:GovLength",
+                        "fieldType": "number",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                     {
+                        "field": lang['Encoding'],
+                        "name": "Encoding",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "H264",
+                        "example": "",
+                        "fieldType": "select",
+                        "possible": [
+
+                        ]
+                     },
+                     {
+                         "field": lang['H264Profile'],
+                         "name": "H264:H264Profile",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "fieldType": "select",
+                        "possible": [
+
+                        ]
+                     },
+                     {
+                         hidden: true,
+                        "field": lang['UseCount'],
+                        "name": "UseCount",
+                        "placeholder": "",
+                        "description": "",
+                        "default": "",
+                        "example": "",
+                        "possible": ""
+                     },
+                 ]
+             },
+         }
+      }
     }
 }

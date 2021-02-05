@@ -154,7 +154,7 @@ $.ccio.tm=function(x,d,z,user){
                       "class": "default",
                       "icon": "external-link"
                    },
-                   "Pop": {
+                   "Zoom In": {
                       "label": lang['Zoom In'],
                       "attr": "monitor=\"zoomStreamWithMouse\"",
                       "class": "default",
@@ -303,15 +303,27 @@ $.ccio.tm=function(x,d,z,user){
                     el.muted = "muted"
                 })
             }else{
-                $.each(monitorMutes,function(monitorId,choice){
-                    if(choice === 1){
+                var hasFocus = $.ccio.windowFocus && window.hadFocus
+                $.each($.ccio.mon,function(frontId,monitor){
+                    setTimeout(() => {
+                        var monitorId = monitor.mid
+                        var muted = monitorMutes[monitorId]
                         try{
                             var vidEl = $('.monitor_item[mid="' + monitorId + '"] video')[0]
-                            vidEl.muted = true
+                            if(vidEl.length === 0)return;
+                            if(muted === 1){
+                                vidEl.muted = true
+                            }else{
+                                if(hasFocus){
+                                    vidEl.muted = false
+                                }else{
+                                    console.error('User must have window active to unmute.')
+                                }
+                            }
                         }catch(err){
-
+                            // console.log(err)
                         }
-                    }
+                    },2000)
                 })
             }
         break;
@@ -422,18 +434,18 @@ $.ccio.tm=function(x,d,z,user){
         break;
         case 'input-map-selector'://Input Map Selector
             if(!d.map){d.map=''}
-            tmp+='     <div class="form-group map-row">'
-            tmp+='        <label><div><span>'+lang['Map']+'</span></div>'
-            tmp+='            <div>'
-            tmp+='            <div class="input-group input-group-sm">'
-            tmp+='<input class="form-control" map-input="map" value="'+d.map+'" placeholder="0">'
-            tmp+='              <div class="input-group-btn">'
-            tmp+='                  <a class="btn btn-danger delete_map_row">&nbsp;<i class="fa fa-trash-o"></i>&nbsp;</a>'
-            tmp+='              </div>'
-            tmp+='            </div>'
-            tmp+='            </div>'
-            tmp+='        </label>'
-            tmp+='      </div>'
+            tmp+=`<div class="form-group map-row">
+              <label><div><span>${lang['Map']}</span></div>
+                  <div>
+                  <div class="input-group input-group-sm">
+                    <input class="form-control" map-input="map" value="${d.map}" placeholder="0">
+                    <div class="input-group-btn">
+                        <a class="btn btn-danger delete_map_row">&nbsp;<i class="fa fa-trash-o"></i>&nbsp;</a>
+                    </div>
+                  </div>
+                  </div>
+              </label>
+            </div>`
         break;
         case 'input-map'://Input Map Options
             var tempID = $.ccio.gid();

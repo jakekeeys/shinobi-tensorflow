@@ -188,8 +188,8 @@ module.exports = function(s,config,lang){
                     })
                     if(config.cron.deleteOverMax === true){
                         s.group[e.ke].diskUsedEmitter.on('purgeCloud',function(storageType,storagePoint){
-                            deleteCloudVideos(storageType,storagePoint,function(){
-                                deleteCloudTimelapseFrames(storageType,storagePoint,function(){
+                            deleteCloudVideos(e.ke,storageType,storagePoint,function(){
+                                deleteCloudTimelapseFrames(e.ke,storageType,storagePoint,function(){
 
                                 })
                             })
@@ -361,6 +361,7 @@ module.exports = function(s,config,lang){
                         const value = form[key]
                         updateQuery[key] = value
                     })
+                    updateQuery.details = formDetails
                     s.knexQuery({
                         action: "update",
                         table: "Users",

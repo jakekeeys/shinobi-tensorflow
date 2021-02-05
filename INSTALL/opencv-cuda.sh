@@ -16,7 +16,7 @@ if [ ! -e "./opencv_contrib" ]; then
     echo "Downloading OpenCV Modules..."
     git clone https://github.com/opencv/opencv_contrib.git
     cd opencv_contrib
-    git checkout 3.4.0
+    git checkout 3.4.10
     cd ..
 fi
 echo "Opening OpenCV Directory..."

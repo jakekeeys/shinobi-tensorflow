@@ -81,9 +81,11 @@ module.exports = (s,config,lang) => {
         var completedCheck = 0
         if(frames){
             frames.forEach(function(frame){
+                const details = s.parseJSON(frame.details)
                 var selectedDate = frame.filename.split('T')[0]
                 var dir = s.getTimelapseFrameDirectory(frame)
-                var fileLocationMid = `${dir}` + frame.filename
+                var timeFolder = s.formattedTime(new Date(frame.time),'YYYY-MM-DD')
+                var fileLocationMid = `${dir}${timeFolder}/` + frame.filename
                 const queryGroup = {
                     mid: frame.mid,
                     time: frame.time,
@@ -373,11 +375,11 @@ module.exports = (s,config,lang) => {
                     }
                     if(whereGroup.length > 0)queryGroup.__separator = 'or'
                     whereGroup.push(queryGroup)
-                    s.setCloudDiskUsedForGroup(e.ke,{
+                    s.setCloudDiskUsedForGroup(groupKey,{
                         amount : -(video.size/1048576),
                         storageType : storageType
                     })
-                    s.deleteVideoFromCloudExtensionsRunner(e,storageType,video)
+                    s.deleteVideoFromCloudExtensionsRunner(groupKey,storageType,video)
                 })
                 const whereGroupLength = whereGroup.length
                 if(whereGroupLength > 0){
@@ -399,15 +401,15 @@ module.exports = (s,config,lang) => {
     }
     const deleteCloudTimelapseFrames = function(groupKey,storageType,storagePoint,callback){
         const whereGroup = []
-        var cloudDisk = s.group[e.ke].cloudDiskUse[storageType]
+        var cloudDisk = s.group[groupKey].cloudDiskUse[storageType]
         //run purge command
-        if(cloudDisk.usedSpaceTimelapseFrames > (cloudDisk.sizeLimit * (s.group[e.ke].sizeLimitTimelapseFramesPercent / 100) * config.cron.deleteOverMaxOffset)){
+        if(cloudDisk.usedSpaceTimelapseFrames > (cloudDisk.sizeLimit * (s.group[groupKey].sizeLimitTimelapseFramesPercent / 100) * config.cron.deleteOverMaxOffset)){
             s.knexQuery({
                 action: "select",
                 columns: "*",
                 table: "Cloud Timelapse Frames",
                 where: [
-                    ['ke','=',e.ke],
+                    ['ke','=',groupKey],
                     ['details','NOT LIKE',`%"archived":"1"%`],
                 ],
                 orderBy: ['time','asc'],
@@ -415,7 +417,7 @@ module.exports = (s,config,lang) => {
             },(err,frames) => {
                 if(!frames)return console.log(err)
                 var whereQuery = [
-                    ['ke','=',e.ke],
+                    ['ke','=',groupKey],
                 ]
                 frames.forEach(function(frame){
                     frame.dir = s.getVideoDirectory(frame) + s.formattedTime(frame.time) + '.' + frame.ext
@@ -425,11 +427,11 @@ module.exports = (s,config,lang) => {
                     }
                     if(whereGroup.length > 0)queryGroup.__separator = 'or'
                     whereGroup.push(queryGroup)
-                    s.setCloudDiskUsedForGroup(e.ke,{
+                    s.setCloudDiskUsedForGroup(groupKey,{
                         amount : -(frame.size/1048576),
                         storageType : storageType
                     })
-                    s.deleteVideoFromCloudExtensionsRunner(e,storageType,frame)
+                    // s.deleteVideoFromCloudExtensionsRunner(groupKey,storageType,frame)
                 })
                 const whereGroupLength = whereGroup.length
                 if(whereGroupLength > 0){

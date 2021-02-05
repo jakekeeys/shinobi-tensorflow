@@ -29,6 +29,7 @@
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.righttoleft.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.sidemenu.css">
 <link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.darktheme.css">
+<link rel="stylesheet" href="<%-window.libURL%>libs/css/dash2.card.css">
 <% customAutoLoad.LibsCss.forEach(function(lib){ %>
     <link rel="stylesheet" href="<%-window.libURL%>libs/css/<%-lib%>">
 <% }) %>
@@ -179,6 +180,12 @@
 <script type="text/javascript" src="https://www.dropbox.com/static/api/2/dropins.js" id="dropboxjs" data-app-key="<%= config.DropboxAppKey %>"></script>
 <!--Dropbox End-->
 <% } %>
+<script src="<%-window.libURL%>libs/js/basic.js"></script>
+<script><% include ../libs/js/dash2.config.js %></script>
+<script src="<%-window.libURL%>libs/js/dash2.basic.js"></script>
+<script src="<%-window.libURL%>libs/js/dash2.monitorUtils.js"></script>
+<script src="<%-window.libURL%>libs/js/dash2.confirm.js"></script>
+<script src="<%-window.libURL%>libs/js/dash2.socketio.js"></script>
 <script src="<%-window.libURL%>libs/js/material.min.js"></script>
 <script src="<%-window.libURL%>libs/js/pnotify.custom.min.js"></script>
 <script><% include ../libs/js/moment.js %></script>
@@ -208,11 +215,6 @@
 <script src="<%-window.libURL%>libs/js/gridstack.min.js"></script>
 <script src="<%-window.libURL%>libs/js/gridstack.jQueryUI.min.js"></script>
 <script src="<%-window.libURL%>libs/vendor/leaflet/leaflet.js"></script>
-<script src="<%-window.libURL%>libs/js/basic.js"></script>
-<script><% include ../libs/js/dash2.config.js %></script>
-<script src="<%-window.libURL%>libs/js/dash2.basic.js"></script>
-<script src="<%-window.libURL%>libs/js/dash2.confirm.js"></script>
-<script src="<%-window.libURL%>libs/js/dash2.socketio.js"></script>
 <script src="<%-window.libURL%>libs/js/dash2.gridstack.js"></script>
 <script src="<%-window.libURL%>libs/js/dash2.elements.js"></script>
 <script src="<%-window.libURL%>libs/js/dash2.elementbuilder.js"></script>
@@ -227,3 +229,5 @@
 <% }else{ %>
     <% include blocks/powerVideo2.ejs %>
 <% } %>
+
+<% include blocks/onvifDeviceManager.ejs %>

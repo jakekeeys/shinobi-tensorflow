@@ -4,6 +4,9 @@ var request = require('request')
 module.exports = function(s,config,lang){
     const moveLock = {}
     const ptzTimeoutsUntilResetToHome = {}
+    const sliceUrlAuth = (url) => {
+        return /^(.+?\/\/)(?:.+?:.+?@)?(.+)$/.exec(url).slice(1).join('')
+    }
     const startMove = async function(options,callback){
         const device = s.group[options.ke].activeMonitors[options.id].onvifConnection
         if(!device){
@@ -26,30 +29,37 @@ module.exports = function(s,config,lang){
     }
     const stopMove = function(options,callback){
         const device = s.group[options.ke].activeMonitors[options.id].onvifConnection
-        s.runOnvifMethod({
-            auth: {
-                ke: options.ke,
-                id: options.id,
-                action: 'stop',
-                service: 'ptz',
-            },
-            options: {
-                'PanTilt': true,
-                'Zoom': true,
-                ProfileToken: device.current_profile.token
-            },
-        },callback)
+        try{
+            s.runOnvifMethod({
+                auth: {
+                    ke: options.ke,
+                    id: options.id,
+                    action: 'stop',
+                    service: 'ptz',
+                },
+                options: {
+                    'PanTilt': true,
+                    'Zoom': true,
+                    ProfileToken: device.current_profile.token
+                },
+            },callback)
+        }catch(err){
+            callback({ok: false})
+        }
     }
     const moveOnvifCamera = function(options,callback){
         const monitorConfig = s.group[options.ke].rawMonitorConfigurations[options.id]
         const invertedVerticalAxis = monitorConfig.details.control_invert_y === '1'
+        const turnSpeed = parseFloat(monitorConfig.details.control_turn_speed) || 0.1
         const controlUrlStopTimeout = parseInt(monitorConfig.details.control_url_stop_timeout) || 1000
         switch(options.direction){
             case'center':
+                moveLock[options.ke + options.id] = true
                 moveToPresetPosition({
                     ke: options.ke,
                     id: options.id,
                 },(endData) => {
+                    moveLock[options.ke + options.id] = false
                     callback({type:'Moving to Home Preset', response: endData})
                 })
             break;
@@ -59,7 +69,7 @@ module.exports = function(s,config,lang){
                     ke: options.ke,
                     id: options.id,
                 },(response) => {
-
+                    moveLock[options.ke + options.id] = false
                 })
             break;
             default:
@@ -69,16 +79,16 @@ module.exports = function(s,config,lang){
                 }
                 if(options.axis){
                     options.axis.forEach((axis) => {
-                        controlOptions.Velocity[axis.direction] = axis.amount
+                        controlOptions.Velocity[axis.direction] = axis.amount < 0 ? -turnSpeed : axis.amount > 0 ? turnSpeed : 0
                     })
                 }else{
                     var onvifDirections = {
-                        "left": [-1.0,'x'],
-                        "right": [1.0,'x'],
-                        "down": [invertedVerticalAxis ? 1.0 : -1.0,'y'],
-                        "up": [invertedVerticalAxis ? -1.0 : 1.0,'y'],
-                        "zoom_in": [1.0,'z'],
-                        "zoom_out": [-1.0,'z']
+                        "left": [-turnSpeed,'x'],
+                        "right": [turnSpeed,'x'],
+                        "down": [invertedVerticalAxis ? turnSpeed : -turnSpeed,'y'],
+                        "up": [invertedVerticalAxis ? -turnSpeed : turnSpeed,'y'],
+                        "zoom_in": [turnSpeed,'z'],
+                        "zoom_out": [-turnSpeed,'z']
                     }
                     var direction = onvifDirections[options.direction]
                     controlOptions.Velocity[direction[1]] = direction[0]
@@ -88,6 +98,7 @@ module.exports = function(s,config,lang){
                         controlOptions.Velocity[axis] = 0
                 })
                 if(monitorConfig.details.control_stop === '1'){
+                    moveLock[options.ke + options.id] = true
                     startMove({
                         ke: options.ke,
                         id: options.id,
@@ -101,8 +112,9 @@ module.exports = function(s,config,lang){
                                         id: options.id,
                                     },(response) => {
                                         if(!response.ok){
-                                            console.log(error)
+                                            s.systemLog(response)
                                         }
+                                        moveLock[options.ke + options.id] = false
                                     })
                                     callback({type: 'Control Triggered'})
                                 },controlUrlStopTimeout)
@@ -115,6 +127,7 @@ module.exports = function(s,config,lang){
                     controlOptions.Speed = {'x': 1, 'y': 1, 'z': 1}
                     controlOptions.Translation = Object.assign(controlOptions.Velocity,{})
                     delete(controlOptions.Velocity)
+                    moveLock[options.ke + options.id] = true
                     s.runOnvifMethod({
                         auth: {
                             ke: options.ke,
@@ -129,6 +142,7 @@ module.exports = function(s,config,lang){
                         }else{
                             callback({type: 'Control Triggered', error: response.error})
                         }
+                        moveLock[options.ke + options.id] = false
                     })
                 }
             }catch(err){
@@ -144,7 +158,7 @@ module.exports = function(s,config,lang){
         const controlUrlMethod = monitorConfig.details.control_url_method || 'GET'
         const controlBaseUrl = monitorConfig.details.control_base_url || s.buildMonitorUrl(monitorConfig, true)
         if(monitorConfig.details.control !== "1"){
-            s.userLog(e,{type:lang['Control Error'],msg:lang.ControlErrorText1});
+            s.userLog(monitorConfig,{type:lang['Control Error'],msg:lang.ControlErrorText1});
             return
         }
         if(monitorConfig.details.control_url_stop_timeout === '0' && monitorConfig.details.control_stop === '1' && s.group[options.ke].activeMonitors[options.id].ptzMoving === true){
@@ -176,7 +190,7 @@ module.exports = function(s,config,lang){
                             callback(msg)
                         })
                     }else{
-                        s.userLog(e,{type:lang['Control Error'],msg:response.error})
+                        s.userLog(options,{type:lang['Control Error'],msg:response.error})
                     }
                 }else{
                     moveOnvifCamera({
@@ -206,15 +220,22 @@ module.exports = function(s,config,lang){
                 let stopURL = controlBaseUrl + monitorConfig.details[`control_url_${options.direction}_stop`]
                 let controlOptions = s.cameraControlOptionsFromUrl(stopURL,monitorConfig)
                 let requestOptions = {
-                    url : stopURL,
-                    method : controlOptions.method,
-                    auth : {
-                        user : controlOptions.username,
-                        pass : controlOptions.password
+                    url : controlBaseUrl + controlOptions.path,
+                    method : controlOptions.method
+                }
+                if(controlOptions.username && controlOptions.password){
+                    requestOptions.auth = {
+                        user: controlOptions.username,
+                        pass: controlOptions.password
                     }
                 }
+                if(controlOptions.postData){
+                    requestOptions.form = controlOptions.postData
+                }
                 if(monitorConfig.details.control_digest_auth === '1'){
-                    requestOptions.sendImmediately = true
+                    requestOptions.uri =  sliceUrlAuth(requestOptions.url);
+                    delete requestOptions.url;
+                    requestOptions.auth.sendImmediately = false;
                 }
                 request(requestOptions,function(err,data){
                     const msg =  {
@@ -226,8 +247,9 @@ module.exports = function(s,config,lang){
                         msg.type = 'Control Error'
                         msg.msg = err
                     }
+                    moveLock[options.ke + options.id] = false
                     callback(msg)
-                    s.userLog(e,msg);
+                    s.userLog(monitorConfig,msg);
                 })
             }
             if(options.direction === 'stopMove'){
@@ -236,29 +258,38 @@ module.exports = function(s,config,lang){
                 let controlURL = controlBaseUrl + monitorConfig.details[`control_url_${options.direction}`]
                 let controlOptions = s.cameraControlOptionsFromUrl(controlURL,monitorConfig)
                 let requestOptions = {
-                    url: controlURL,
-                    method: controlOptions.method,
-                    auth: {
+                    url: controlBaseUrl + controlOptions.path,
+                    method: controlOptions.method
+                }
+                if(controlOptions.username && controlOptions.password){
+                    requestOptions.auth = {
                         user: controlOptions.username,
                         pass: controlOptions.password
                     }
                 }
-                if(monitorConfig.details.control_digest_auth === '1'){
-                    requestOptions.sendImmediately = true
+                if(controlOptions.postData){
+                    requestOptions.form = controlOptions.postData
                 }
+                if(monitorConfig.details.control_digest_auth === '1'){
+                    requestOptions.uri =  sliceUrlAuth(requestOptions.url);
+                    delete requestOptions.url;
+                    requestOptions.auth.sendImmediately = false;
+                }
+                moveLock[options.ke + options.id] = true
                 request(requestOptions,function(err,data){
                     if(err){
                         callback({ok:false,type:'Control Error',msg:err})
                         return
                     }
                     if(monitorConfig.details.control_stop == '1' && options.direction !== 'center' ){
-                        s.userLog(e,{type:'Control Triggered Started'});
+                        s.userLog(monitorConfig,{type:'Control Triggered Started'});
                         if(controlUrlStopTimeout > 0){
                             setTimeout(function(){
                                 stopCamera()
                             },controlUrlStopTimeout)
                         }
                     }else{
+                        moveLock[options.ke + options.id] = false
                         callback({ok:true,type:'Control Triggered'})
                     }
                 })
@@ -282,6 +313,7 @@ module.exports = function(s,config,lang){
     const setPresetForCurrentPosition = (options,callback) => {
         const nonStandardOnvif = s.group[options.ke].rawMonitorConfigurations[options.id].details.onvif_non_standard === '1'
         const profileToken = options.ProfileToken || "__CURRENT_TOKEN"
+        console.log(options.PresetToken)
         s.runOnvifMethod({
             auth: {
                 ke: options.ke,
@@ -291,7 +323,7 @@ module.exports = function(s,config,lang){
             },
             options: {
                 ProfileToken: profileToken,
-                PresetToken: nonStandardOnvif ? null : options.PresetToken || profileToken,
+                PresetToken: nonStandardOnvif ? '1' : options.PresetToken || profileToken,
                 PresetName: options.PresetName || nonStandardOnvif ? '1' : profileToken
             },
         },(endData) => {
@@ -319,6 +351,17 @@ module.exports = function(s,config,lang){
             },
         },callback)
     }
+    const setHomePositionTimeout = (event) => {
+        clearTimeout(ptzTimeoutsUntilResetToHome[event.ke + event.id])
+        ptzTimeoutsUntilResetToHome[event.ke + event.id] = setTimeout(() => {
+            moveToPresetPosition({
+                ke: event.ke,
+                id: event.id,
+            },(endData) => {
+                s.debugLog(endData)
+            })
+        },7000)
+    }
     const getLargestMatrix = (matrices) => {
         var largestMatrix = {width: 0, height: 0}
         matrices.forEach((matrix) => {
@@ -328,10 +371,6 @@ module.exports = function(s,config,lang){
     }
     const moveCameraPtzToMatrix = function(event,trackingTarget){
         if(moveLock[event.ke + event.id])return;
-        clearTimeout(moveLock[event.ke + event.id])
-        moveLock[event.ke + event.id] = setTimeout(() => {
-            delete(moveLock[event.ke + event.id])
-        },1000)
         const imgHeight = event.details.imgHeight
         const imgWidth = event.details.imgWidth
         const thresholdX = imgWidth * 0.125
@@ -342,6 +381,9 @@ module.exports = function(s,config,lang){
         const largestMatrix = getLargestMatrix(matrices.filter(matrix => matrix.tag === (trackingTarget || 'person')))
         // console.log(matrices.find(matrix => matrix.tag === 'person'))
         if(!largestMatrix)return;
+        const monitorConfig = s.group[event.ke].rawMonitorConfigurations[event.id]
+        const invertedVerticalAxis = monitorConfig.details.control_invert_y === '1'
+        const turnSpeed = parseFloat(monitorConfig.details.control_turn_speed) || 0.1
         const matrixCenterX = largestMatrix.x + (largestMatrix.width / 2)
         const matrixCenterY = largestMatrix.y + (largestMatrix.height / 2)
         const rawDistanceX = (matrixCenterX - imageCenterX)
@@ -353,8 +395,8 @@ module.exports = function(s,config,lang){
         if(axisX !== 0 || axisY !== 0){
             ptzControl({
                 axis: [
-                    {direction: 'x', amount: axisX === 0 ? 0 : axisX > 0 ? 0.01 : -0.01},
-                    {direction: 'y', amount: axisY === 0 ? 0 : axisY > 0 ? 0.01 : -0.01},
+                    {direction: 'x', amount: axisX === 0 ? 0 : axisX > 0 ? turnSpeed : -turnSpeed},
+                    {direction: 'y', amount: axisY === 0 ? 0 : axisY > 0 ? invertedVerticalAxis ? -turnSpeed : turnSpeed : invertedVerticalAxis ? turnSpeed : -turnSpeed},
                     {direction: 'z', amount: 0},
                 ],
                 // axis: [{direction: 'x', amount: 1.0}],
@@ -363,16 +405,10 @@ module.exports = function(s,config,lang){
             },(msg) => {
                 s.userLog(event,msg)
                 // console.log(msg)
-                clearTimeout(ptzTimeoutsUntilResetToHome[event.ke + event.id])
-                ptzTimeoutsUntilResetToHome[event.ke + event.id] = setTimeout(() => {
-                    moveToPresetPosition({
-                        ke: event.ke,
-                        id: event.id,
-                    },(endData) => {
-                        console.log(endData)
-                    })
-                },7000)
+                setHomePositionTimeout(event)
             })
+        }else{
+            setHomePositionTimeout(event)
         }
     }
     return {
