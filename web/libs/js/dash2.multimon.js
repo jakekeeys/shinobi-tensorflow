@@ -69,26 +69,15 @@ theForm.on('change','#multimon_select_all',function(e){
 })
 theWindow.find('.import_config').click(function(){
     var el = $(this);
-    $.confirm.e.modal('show');
-    $.confirm.title.text(lang['Import Monitor Configuration'])
     var html = lang.ImportMultiMonitorConfigurationText+'<div style="margin-top:15px"><div class="form-group"><textarea placeholder="'+lang['Paste JSON here.']+'" class="form-control"></textarea></div><label class="upload_file btn btn-primary btn-block">'+lang['Upload File']+'<input class="upload" type=file name="files[]"></label></div>';
-    $.confirm.body.html(html)
-    $.confirm.e.find('.upload').change(function(e){
-        var files = e.target.files; // FileList object
-        f = files[0];
-        var reader = new FileReader();
-        reader.onload = function(ee) {
-            $.confirm.e.find('textarea').val(ee.target.result);
-        }
-        reader.readAsText(f);
-    });
-    $.confirm.click({title:lang['Import'],class:'btn-primary'},function(){
-//        setTimeout(function(){
-//            $.confirm.e.modal('show');
-//        },1000)
-//        $.confirm.title.text(lang['Are you sure?'])
-//        $.confirm.body.html(lang.ImportMultiMonitorConfigurationText)
-//        $.confirm.click({title:'Save Set',class:'btn-danger'},function(){
+    $.confirm.create({
+        title: lang['Import Monitor Configuration'],
+        body: html,
+        clickOptions: {
+            title: lang['Import'],
+            class: 'btn-primary'
+        },
+        clickCallback: function(){
             try{
                 var postMonitor = function(v){
                     $.post($.ccio.init('location',$user)+$user.auth_token+'/configureMonitor/'+$user.ke+'/'+v.mid,{data:JSON.stringify(v,null,3)},function(d){
@@ -190,7 +179,16 @@ theWindow.find('.import_config').click(function(){
                     $.ccio.init('note',{title:lang['Invalid JSON'],text:lang.InvalidJSONText,type:'error'})
                 }
             }
-//        });
+        }
+    })
+    $.confirm.e.find('.upload').change(function(e){
+        var files = e.target.files; // FileList object
+        f = files[0];
+        var reader = new FileReader();
+        reader.onload = function(ee) {
+            $.confirm.e.find('textarea').val(ee.target.result);
+        }
+        reader.readAsText(f);
     });
 })
 theWindow.find('.delete').click(function(){
