@@ -116,12 +116,12 @@ echo "-----------------------------------"
 # echo "Getting C++ module : @tensorflow/tfjs-node@0.1.21"
 # echo "https://github.com/tensorflow/tfjs-node"
 # npm install @tensorflow/tfjs-converter@1.7.4 @tensorflow/tfjs-layers@1.7.4 --unsafe-perm
-
 if [ "$INSTALL_WITH_GPU" = "1" ]; then
     echo "GPU version of tjfs : https://github.com/tensorflow/tfjs-node-gpu"
 else
     echo "CPU version of tjfs : https://github.com/tensorflow/tfjs-node"
 fi
+npm install @tensorflow/tfjs-node$TFJS_SUFFIX --unsafe-perm
 if [ "$INSTALL_FOR_ARM" = "1" ]; then
     BINARY_LOCATION="node_modules/@tensorflow/tfjs-node$TFJS_SUFFIX/scripts/custom-binary.json"
     if [ "$INSTALL_FOR_ARM64" = "1" ]; then
@@ -135,7 +135,6 @@ if [ "$INSTALL_FOR_ARM" = "1" ]; then
     fi
     npm rebuild @tensorflow/tfjs-node$TFJS_SUFFIX --build-addon-from-source --unsafe-perm
 fi
-npm install @tensorflow/tfjs-node$TFJS_SUFFIX --unsafe-perm
 rm -rf $DIR/node_modules/@tensorflow/tfjs-backend-cpu
 rm -rf $DIR/node_modules/@tensorflow/tfjs-backend-webgl
 echo "-----------------------------------"
