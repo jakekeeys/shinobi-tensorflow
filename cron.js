@@ -319,7 +319,7 @@ const deleteRowsWithNoVideo = function(v){
                             sendToWebSocket({f:'video_delete',filename:filename+'.'+ev.ext,mid:ev.mid,ke:ev.ke,time:ev.time,end: formattedTime(new Date,'YYYY-MM-DD HH:mm:ss')},'GRP_'+ev.ke);
                         }
                     });
-                    if(videosToDelete.length>0 || config.debugLog === true){
+                    if(videosToDelete.length > 0 || config.debugLog === true){
                         postMessage({f:'deleteNoVideo',msg:videosToDelete.length+' SQL rows with no file deleted',ke:v.ke,time:moment()})
                     }
                 }
@@ -441,18 +441,15 @@ const deleteOldFileBins = function(v){
     })
 }
 //user processing function
-const processUser = async function(number,rows){
-    var v = rows[number];
+const processUser = async (v) => {
     if(!v){
         //no user object given, end of group list
         return
     }
-    s.debugLog(`Checking Group Key : ${v.ke}`)
+    s.debugLog(`Group Key : ${v.ke}`)
     s.debugLog(`Owner : ${v.mail}`)
-    if(!alreadyDeletedRowsWithNoVideosOnStart[v.ke]){
-        alreadyDeletedRowsWithNoVideosOnStart[v.ke]=false;
-    }
     if(!overlapLocks[v.ke]){
+        s.debugLog(`Checking...`)
         overlapLocks[v.ke] = true
         v.d = JSON.parse(v.details);
         await deleteOldVideos(v)
@@ -471,9 +468,8 @@ const processUser = async function(number,rows){
         s.debugLog('--- deleteRowsWithNoVideo Complete')
         //done user, unlock current, and do next
         overlapLocks[v.ke] = false;
-        await processUser(number+1,rows)
     }else{
-        await processUser(number+1,rows)
+        s.debugLog(`Locked, Skipped...`)
     }
 }
 //recursive function
@@ -496,12 +492,15 @@ const doCronJobs = function(){
         where: [
             ['details','NOT LIKE','%"sub"%'],
         ]
-    },(err,rows) => {
+    }, async (err,rows) => {
         if(err){
             console.error(err)
         }
-        if(rows&&rows[0]){
-            processUser(0,rows)
+        if(rows.length > 0){
+            var i;
+            for (i = 0; i < rows.length; i++) {
+                await processUser(rows[i])
+            }
         }
     })
 }
