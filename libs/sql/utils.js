@@ -236,6 +236,17 @@ module.exports = (s,config,databaseOptions) => {
             knexError(dbQuery,options,err)
         }
     }
+    const knexQueryPromise = (options) => {
+        return new Promise((resolve,reject) => {
+            knexQuery(options,(err,rows) => {
+                resolve({
+                    ok: !err,
+                    err: err,
+                    rows: rows,
+                })
+            })
+        })
+    }
     const initiateDatabaseEngine = () => {
         s.databaseEngine = knex(databaseOptions)
         return s.databaseEngine
@@ -251,6 +262,7 @@ module.exports = (s,config,databaseOptions) => {
         processWhereCondition: processWhereCondition,
         knexError: knexError,
         knexQuery: knexQuery,
+        knexQueryPromise: knexQueryPromise,
         initiateDatabaseEngine: initiateDatabaseEngine
     }
 }
