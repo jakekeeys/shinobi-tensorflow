@@ -232,7 +232,7 @@ const deleteVideosByDays = async (v,days,addedQueries) => {
 const deleteOldVideos = async (v) => {
     // v = group, admin user
     if(config.cron.deleteOld === true){
-        const daysOldForDeletion = !isNaN(v.d.days) ? parseFloat(v.d.days) : 5
+        const daysOldForDeletion = v.d.days && !isNaN(v.d.days) ? parseFloat(v.d.days) : 5
         const monitorsIgnored = []
         const monitorsResponse = await knexQueryPromise({
             action: "select",
@@ -335,20 +335,20 @@ const deleteRowsWithNoVideo = function(v){
 //info about what the application is doing
 const deleteOldLogs = function(v){
     return new Promise((resolve,reject) => {
-        if(!v.d.log_days||v.d.log_days==''){v.d.log_days=10}else{v.d.log_days=parseFloat(v.d.log_days)};
-        if(config.cron.deleteLogs===true&&v.d.log_days!==0){
+        const daysOldForDeletion = v.d.log_days && !isNaN(v.d.log_days) ? parseFloat(v.d.log_days) : 10
+        if(config.cron.deleteLogs === true && daysOldForDeletion !== 0){
             knexQuery({
                 action: "delete",
                 table: "Logs",
                 where: [
                     ['ke','=',v.ke],
-                    ['time','<', sqlDate(v.d.log_days+' DAY')],
+                    ['time','<', sqlDate(daysOldForDeletion + ' DAY')],
                 ]
             },(err,rrr) => {
                 resolve()
                 if(err)return console.error(err);
-                if(rrr.affectedRows && rrr.affectedRows.length>0 || config.debugLog === true){
-                    postMessage({f:'deleteLogs',msg:(rrr.affectedRows || 0)+' SQL rows older than '+v.d.log_days+' days deleted',ke:v.ke,time:moment()})
+                if(rrr && rrr > 0 || config.debugLog === true){
+                    postMessage({f:'deleteLogs',msg: rrr + ' SQL rows older than ' + daysOldForDeletion + ' days deleted',ke:v.ke,time:moment()})
                 }
             })
         }else{
@@ -359,20 +359,20 @@ const deleteOldLogs = function(v){
 //events - motion, object, etc. detections
 const deleteOldEvents = function(v){
     return new Promise((resolve,reject) => {
-        if(!v.d.event_days||v.d.event_days==''){v.d.event_days=10}else{v.d.event_days=parseFloat(v.d.event_days)};
-        if(config.cron.deleteEvents===true&&v.d.event_days!==0){
+        const daysOldForDeletion = v.d.event_days && !isNaN(v.d.event_days) ? parseFloat(v.d.event_days) : 10
+        if(config.cron.deleteEvents === true && daysOldForDeletion !== 0){
             knexQuery({
                 action: "delete",
                 table: "Events",
                 where: [
                     ['ke','=',v.ke],
-                    ['time','<', sqlDate(v.d.event_days+' DAY')],
+                    ['time','<', sqlDate(daysOldForDeletion + ' DAY')],
                 ]
             },(err,rrr) => {
                 resolve()
                 if(err)return console.error(err);
-                if(rrr.affectedRows && rrr.affectedRows.length > 0 || config.debugLog === true){
-                    postMessage({f:'deleteEvents',msg:(rrr.affectedRows || 0)+' SQL rows older than '+v.d.event_days+' days deleted',ke:v.ke,time:moment()})
+                if(rrr && rrr > 0 || config.debugLog === true){
+                    postMessage({f:'deleteEvents',msg:rrr + ' SQL rows older than ' + daysOldForDeletion + ' days deleted',ke:v.ke,time:moment()})
                 }
             })
         }else{
@@ -383,20 +383,20 @@ const deleteOldEvents = function(v){
 //event counts
 const deleteOldEventCounts = function(v){
     return new Promise((resolve,reject) => {
-        if(!v.d.event_days||v.d.event_days==''){v.d.event_days=10}else{v.d.event_days=parseFloat(v.d.event_days)};
-        if(config.cron.deleteEvents===true&&v.d.event_days!==0){
+        const daysOldForDeletion = v.d.event_days && !isNaN(v.d.event_days) ? parseFloat(v.d.event_days) : 10
+        if(config.cron.deleteEvents === true && daysOldForDeletion !== 0){
             knexQuery({
                 action: "delete",
                 table: "Events Counts",
                 where: [
                     ['ke','=',v.ke],
-                    ['time','<', sqlDate(v.d.event_days+' DAY')],
+                    ['time','<', sqlDate(daysOldForDeletion + ' DAY')],
                 ]
             },(err,rrr) => {
                 resolve()
                 if(err && err.code !== 'ER_NO_SUCH_TABLE')return console.error(err);
-                if(rrr.affectedRows && rrr.affectedRows.length > 0 || config.debugLog === true){
-                    postMessage({f:'deleteEvents',msg:(rrr.affectedRows || 0)+' SQL rows older than '+v.d.event_days+' days deleted',ke:v.ke,time:moment()})
+                if(rrr && rrr > 0 || config.debugLog === true){
+                    postMessage({f:'deleteEvents',msg:rrr + ' SQL rows older than ' + daysOldForDeletion + ' days deleted',ke:v.ke,time:moment()})
                 }
             })
         }else{
@@ -407,8 +407,8 @@ const deleteOldEventCounts = function(v){
 //check for temporary files (special archive)
 const deleteOldFileBins = function(v){
     return new Promise((resolve,reject) => {
-        if(!v.d.fileBin_days||v.d.fileBin_days==''){v.d.fileBin_days=10}else{v.d.fileBin_days=parseFloat(v.d.fileBin_days)};
-        if(config.cron.deleteFileBins===true&&v.d.fileBin_days!==0){
+        const daysOldForDeletion = v.d.fileBin_days && !isNaN(v.d.fileBin_days) ? parseFloat(v.d.fileBin_days) : 10
+        if(config.cron.deleteFileBins === true && daysOldForDeletion !== 0){
             var fileBinQuery = " FROM Files WHERE ke=? AND `time` < ?";
             knexQuery({
                 action: "select",
@@ -416,7 +416,7 @@ const deleteOldFileBins = function(v){
                 table: "Files",
                 where: [
                     ['ke','=',v.ke],
-                    ['time','<', sqlDate(v.d.fileBin_days+' DAY')],
+                    ['time','<', sqlDate(daysOldForDeletion + ' DAY')],
                 ]
             },(err,files) => {
                 if(files && files[0]){
@@ -427,7 +427,7 @@ const deleteOldFileBins = function(v){
                     if(config.debugLog === true){
                         postMessage({
                             f: 'deleteFileBins',
-                            msg: files.length + ' files older than ' + v.d.fileBin_days + ' days deleted',
+                            msg: files.length + ' files older than ' + daysOldForDeletion + ' days deleted',
                             ke: v.ke,
                             time: moment()
                         })
