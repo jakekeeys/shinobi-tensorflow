@@ -92,6 +92,9 @@ const deleteVideo = (x) => {
 const deleteFileBinEntry = (x) => {
     postMessage({f:'s.deleteFileBinEntry',file:x})
 }
+const setDiskUsedForGroup = (groupKey,size,target) => {
+    postMessage({f:'s.setDiskUsedForGroup', ke: groupKey, size: size, target: target})
+}
 const getVideoDirectory = function(e){
     if(e.mid&&!e.id){e.id=e.mid};
     if(e.details&&(e.details instanceof Object)===false){
@@ -112,10 +115,8 @@ const getFileBinDirectory = function(e){
 const checkFilterRules = function(v){
     return new Promise((resolve,reject) => {
         //filters
-        if(!v.d.filters||v.d.filters==''){
-            v.d.filters={};
-        }
-        s.debugLog('Filters')
+        v.d.filters = v.d.filters ? v.d.filters : {}
+        s.debugLog('Checking Basic Filters...')
         var keys = Object.keys(v.d.filters)
         if(keys.length>0){
             keys.forEach(function(m,current){
@@ -198,12 +199,14 @@ const deleteVideosByDays = async (v,days,addedQueries) => {
     const videoRows = selectResponse.rows
     let affectedRows = 0
     if(videoRows.length > 0){
+        let clearSize = 0;
         var i;
         for (i = 0; i < videoRows.length; i++) {
             const row = videoRows[i];
             const dir = getVideoDirectory(row)
             const filename = formattedTime(row.time) + '.' + row.ext
             await fs.promises.unlink(dir + filename)
+            row.size += clearSize
             sendToWebSocket({
                 f: 'video_delete',
                 filename: filename + '.' + row.ext,
@@ -218,7 +221,8 @@ const deleteVideosByDays = async (v,days,addedQueries) => {
             table: "Videos",
             where: whereQuery
         })
-        affectedRows = deleteResponse.rows.affectedRows
+        affectedRows = deleteResponse.rows.affectedRows || 0
+        setDiskUsedForGroup(v.ke,-clearSize)
     }
     return {
         ok: true,
@@ -440,7 +444,7 @@ const deleteOldFileBins = function(v){
 const processUser = async function(number,rows){
     var v = rows[number];
     if(!v){
-        //no user object given
+        //no user object given, end of group list
         return
     }
     s.debugLog(`Checking Group Key : ${v.ke}`)
@@ -450,10 +454,7 @@ const processUser = async function(number,rows){
     }
     if(!overlapLocks[v.ke]){
         overlapLocks[v.ke] = true
-        v.d=JSON.parse(v.details);
-        if(!v.d.filters||v.d.filters==''){
-            v.d.filters={};
-        }
+        v.d = JSON.parse(v.details);
         await deleteOldVideos(v)
         s.debugLog('--- deleteOldVideos Complete')
         await deleteOldLogs(v)
@@ -469,7 +470,7 @@ const processUser = async function(number,rows){
         await deleteRowsWithNoVideo(v)
         s.debugLog('--- deleteRowsWithNoVideo Complete')
         //done user, unlock current, and do next
-        overlapLocks[v.ke]=false;
+        overlapLocks[v.ke] = false;
         await processUser(number+1,rows)
     }else{
         await processUser(number+1,rows)

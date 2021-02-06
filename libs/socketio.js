@@ -997,6 +997,9 @@ module.exports = function(s,config,lang,io){
                          case's.deleteFileBinEntry':
                              s.deleteFileBinEntry(d.file)
                          break;
+                         case's.setDiskUsedForGroup':
+                            s.setDiskUsedForGroup(d.ke,d.size,d.target || undefined)
+                         break;
                          case'start':case'end':
                              d.mid='_cron';s.userLog(d,{type:'cron',msg:d.msg})
                          break;
