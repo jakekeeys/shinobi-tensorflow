@@ -221,7 +221,7 @@ const deleteVideosByDays = async (v,days,addedQueries) => {
             table: "Videos",
             where: whereQuery
         })
-        affectedRows = deleteResponse.rows.affectedRows || 0
+        affectedRows = deleteResponse.rows || 0
         setDiskUsedForGroup(v.ke,-clearSize)
     }
     return {
