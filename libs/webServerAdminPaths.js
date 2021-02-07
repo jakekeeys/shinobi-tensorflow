@@ -125,6 +125,35 @@ module.exports = function(s,config,lang,app){
         },res,req)
     })
     /**
+    * API : Administrator : Get Sub-Account List
+    */
+    app.get(config.webPaths.adminApiPrefix+':auth/accounts/:ke', function (req,res){
+        s.auth(req.params,function(user){
+            var endData = {
+                ok : false
+            }
+            if(user.details.sub){
+                endData.msg = user.lang['Not Permitted']
+                s.closeJsonResponse(res,endData)
+                return
+            }else{
+                endData.ok = true
+                s.knexQuery({
+                    action: "select",
+                    columns: "*",
+                    table: "Users",
+                    where: [
+                        ['ke','=',form.mail],
+                        ['details','LIKE','%"sub"%']
+                    ]
+                },function(err,rows){
+                    endData.accounts = rows
+                    s.closeJsonResponse(res,endData)
+                })
+            }
+        },res,req)
+    })
+    /**
     * API : Administrator : Add Sub-Account (Account to share cameras with)
     */
     app.post([
