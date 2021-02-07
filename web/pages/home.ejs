@@ -2,8 +2,8 @@
     var details = JSON.parse($user.details)
     if(!details.sub){ %>
         <script>
-            window.getAdminApiPrefix = function(){
-                return location.search === '?p2p=1' ? location.pathname + '/' : "<%=originalURL%><%=config.webPaths.adminApiPrefix%>"
+            window.getAdminApiPrefix = function(piece){
+                return location.search === '?p2p=1' ? location.pathname + '/' : "<%=originalURL%><%=config.webPaths.adminApiPrefix%><%- $user.auth_token %>/"
             }
         </script>
     <% }

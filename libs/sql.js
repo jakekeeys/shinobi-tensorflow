@@ -20,6 +20,7 @@ module.exports = function(s,config){
     }
     const {
         knexQuery,
+        knexQueryPromise,
         knexError,
         cleanSqlWhereObject,
         processSimpleWhereCondition,
@@ -34,6 +35,7 @@ module.exports = function(s,config){
         extender(config)
     })
     s.knexQuery = knexQuery
+    s.knexQueryPromise = knexQueryPromise
     s.getDatabaseRows = getDatabaseRows
     s.sqlQuery = sqlQuery
     s.connectDatabase = connectDatabase

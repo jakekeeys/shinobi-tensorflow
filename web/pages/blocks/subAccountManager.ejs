@@ -1,7 +1,7 @@
 <!--Sub Account Manager Window-->
 <div class="modal fade" id="subAccountManager" tabindex="-1" role="dialog" aria-labelledby="subAccountManagerLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
-    <form class="modal-content">
+    <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
@@ -69,7 +69,7 @@
            <div class="<%- monitorSettings['section-pre-class'] %>">
            <% }
             %>
-            <div <%- attributes.join(' ') %> style="<%- styles.join(';') %>" class="form-group-group <%- sectionClass.join(' ') %>">
+            <<%- monitorSettings.isForm ? 'form' : 'div' %> <%- attributes.join(' ') %> style="<%- styles.join(';') %>" class="form-group-group <%- sectionClass.join(' ') %>">
                 <h4 class="monitor-section-header <%- monitorSettings.headerClass %>"><%- headerTitle %>
                     <% if(monitorSettings.headerButtons){ %>
                         <div class="pull-right">
@@ -135,6 +135,9 @@
                 }else if(field.example){
                     attributes.push(`placeholder="Example : ${field.example}"`)
                 }
+                if(field.default){
+                    attributes.push(`data-default="${field.default}"`)
+                }
                 if(field.attribute){
                     attributes.push(field.attribute)
                 }
@@ -153,7 +156,8 @@
                 var preFill = field.preFill || ''
                 switch(fieldType){
                     case'btn':
-                          fieldElement = `<a class="btn btn-block ${fieldClass.join(' ')}" ${attributes.join(' ')}>${field.btnContent}</a>`
+                          baseElement = field.forForm ? 'button' : 'a'
+                          fieldElement = `<${baseElement} class="btn btn-block ${fieldClass.join(' ')}" ${attributes.join(' ')}>${field.btnContent}</${baseElement}>`
                     break;
                     case'ul':
                           fieldElement = `<ul ${attributes.join(' ')} class="${fieldClass.join(' ')}" ></ul>`
@@ -221,7 +225,7 @@
           }
           %>
           </div>
-          </div>
+          </<%- monitorSettings.isForm ? 'form' : 'div' %>>
           <%
           if(monitorSettings['section-pre-class']){ %>
           </div>
@@ -280,7 +284,7 @@
       <div class="modal-footer">
           <button type="button" class="btn btn-default pull-left" data-dismiss="modal"><i class="fa fa-times"></i> <%-lang.Close%></button>
       </div>
-    </form>
+    </div>
   </div>
 </div>
 <script src="<%-window.libURL%>libs/js/dash2.subAccountManager.js"></script>

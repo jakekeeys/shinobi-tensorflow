@@ -5190,7 +5190,7 @@ module.exports = function(s,config,lang){
        "Sub-Account Manager": {
            "section": "Sub-Account Manager",
            "blocks": {
-               "Account Information": {
+               "Sub-Accounts": {
                   "name": lang['Sub-Accounts'],
                   "color": "grey",
                   "isSection": true,
@@ -5206,6 +5206,7 @@ module.exports = function(s,config,lang){
                   "name": lang['Account Information'],
                   "color": "grey",
                   "isSection": true,
+                  "isForm": true,
                   "id":"monSectionAccountInformation",
                   "info": [
                       {
@@ -5236,25 +5237,30 @@ module.exports = function(s,config,lang){
                          "possible": ""
                       },
                       {
+                          forForm: true,
                          "fieldType": "btn",
                          "attribute": `type="reset"`,
                          "class": `btn-default reset-form`,
                          "btnContent": `<i class="fa fa-undo"></i> &nbsp; ${lang['Clear']}`,
                       },
                       {
+                          forForm: true,
                          "fieldType": "btn",
                          "attribute": `type="submit"`,
                          "class": `btn-success`,
                          "btnContent": `<i class="fa fa-check"></i> &nbsp; ${lang['Save']}`,
                       },
+                      {
+                          hidden: true,
+                         "name": "details",
+                         "preFill": "{}",
+                      },
                   ]
               },
               "Account Privileges": {
-                  hidden: true,
                  "name": lang['Account Privileges'],
                  "color": "grey",
                  "isSection": true,
-                 "isForm": true,
                  "id":"monSectionAccountPrivileges",
                  "info": [
                      {
@@ -5262,6 +5268,7 @@ module.exports = function(s,config,lang){
                         "field": lang['All Monitors and Privileges'],
                         "default": "0",
                         "fieldType": "select",
+                        "selector": "h_perm_allmonitors",
                         "possible": [
                             {
                                "name": lang.No,
@@ -5338,13 +5345,9 @@ module.exports = function(s,config,lang){
                         ]
                      },
                      {
-                         "fieldType": "form",
+                         "fieldType": "div",
+                         "class": "h_perm_allmonitors_input h_perm_allmonitors_1",
                          id: "sub_accounts_permissions",
-                     },
-                     {
-                         hidden: true,
-                        "name": "details",
-                        "preFill": "{}",
                      },
                  ]
               },

@@ -11,7 +11,7 @@ module.exports = function(s,config,lang,app){
     * API : Administrator : Edit Sub-Account (Account to share cameras with)
     */
     app.all(config.webPaths.adminApiPrefix+':auth/accounts/:ke/edit', function (req,res){
-        s.auth(req.params,function(user){
+        s.auth(req.params,async (user) => {
             var endData = {
                 ok : false
             }
@@ -28,7 +28,30 @@ module.exports = function(s,config,lang,app){
                 const updateQuery = {
                     details: s.stringJSON(form.details)
                 }
-                s.knexQuery({
+                if(form.pass && form.pass === form.password_again){
+                    updateQuery.pass = s.createHash(form.pass)
+                }
+                if(form.mail){
+                    const userCheck = await s.knexQueryPromise({
+                        action: "select",
+                        columns: "*",
+                        table: "Users",
+                        where: [
+                            ['mail','=',form.mail],
+                        ]
+                    })
+                    if(userCheck.rows[0]){
+                        const foundUser = userCheck.rows[0]
+                        if(foundUser.uid === form.uid){
+                            updateQuery.mail = form.mail
+                        }else{
+                            endData.msg = lang['Email address is in use.']
+                            s.closeJsonResponse(res,endData)
+                            return
+                        }
+                    }
+                }
+                await s.knexQueryPromise({
                     action: "update",
                     table: "Users",
                     update: updateQuery,
@@ -140,10 +163,10 @@ module.exports = function(s,config,lang,app){
                 endData.ok = true
                 s.knexQuery({
                     action: "select",
-                    columns: "*",
+                    columns: "ke,uid,mail,details",
                     table: "Users",
                     where: [
-                        ['ke','=',form.mail],
+                        ['ke','=',req.params.ke],
                         ['details','LIKE','%"sub"%']
                     ]
                 },function(err,rows){
@@ -185,16 +208,16 @@ module.exports = function(s,config,lang,app){
                     },function(err,r){
                         if(r && r[0]){
                             //found one exist
-                            endData.msg = 'Email address is in use.'
+                            endData.msg = lang['Email address is in use.']
                         }else{
                             //create new
                             endData.msg = 'New Account Created'
                             endData.ok = true
                             var newId = s.gid()
-                            var details = s.s({
+                            var details = s.s(Object.assign({
                                 sub: "1",
                                 allmonitors: "1"
-                            })
+                            },form.details || {}))
                             s.knexQuery({
                                 action: "insert",
                                 table: "Users",
