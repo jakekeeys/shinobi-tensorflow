@@ -25,6 +25,8 @@ module.exports = function(s,config,lang,app){
             var mail = form.mail || s.getPostData(req,'mail',false)
             if(form){
                 var keys = ['details']
+                form.details = s.parseJSON(form.details) || {"sub": 1, "allmonitors": "1"}
+                form.details.sub = 1
                 const updateQuery = {
                     details: s.stringJSON(form.details)
                 }
@@ -215,9 +217,10 @@ module.exports = function(s,config,lang,app){
                             endData.ok = true
                             var newId = s.gid()
                             var details = s.s(Object.assign({
-                                sub: "1",
                                 allmonitors: "1"
-                            },form.details || {}))
+                            },s.parseJSON(form.details) || {
+                                sub: "1",
+                            }))
                             s.knexQuery({
                                 action: "insert",
                                 table: "Users",

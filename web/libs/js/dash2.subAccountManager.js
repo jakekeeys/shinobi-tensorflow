@@ -3,11 +3,9 @@ $(document).ready(function(){
     var theWindow = $('#subAccountManager');
     var accountTable = $('#subAccountsList tbody');
     var theWindowForm = $('#monSectionAccountInformation');
-    var messageBox = theWindowForm.find('.msg')
     var permissionsSection = $('#monSectionAccountPrivileges');
     var permissionsMonitorSection = $('#sub_accounts_permissions');
     var submitButtons = theWindow.find('.submit-form')
-    var selectedAccountUidForEdit = null
     var loadedSubAccounts = {}
     var clearTable = function(){
         accountTable.empty()
@@ -56,28 +54,38 @@ $(document).ready(function(){
         })
     }
     var addSubAccount = function(newAccount,callback){
-        messageBox.empty()
         $.post(apiPrefix+'accounts/'+$user.ke+'/register',{
-            data: newAccount
+            data: JSON.stringify(newAccount)
         },function(data){
-            var notifyTitle = lang.accountAdded
-            var notifyText = lang.accountAddedText + '\n' + data.user.mail
-            var notifyColor = 'success'
-            if(data.user){
-                drawSubAccountRow(data.user)
-            }else{
+            var notifyTitle
+            var notifyText
+            var notifyColor
+            if(!data.ok && data.msg){
                 notifyTitle = lang.accountActionFailed
-                notifyText = lang.contactAdmin
+                notifyText = data.msg
                 notifyColor = 'warning'
+            }
+            if(data.user){
+                notifyTitle = lang.accountAdded
+                notifyText = lang.accountAddedText + '\n' + data.user.mail
+                notifyColor = 'success'
+                if(data.user){
+                    var account = data.user
+                    loadedSubAccounts[account.uid] = account;
+                    drawSubAccountRow(account)
+                    theWindowForm.find('[name="uid"]').val(account.uid)
+                    setSubmitButtonState(lang['Save Changes'],'check')
+                }else{
+                    notifyTitle = lang.accountActionFailed
+                    notifyText = lang.contactAdmin
+                    notifyColor = 'warning'
+                }
             }
             new PNotify({
                 title : notifyTitle,
                 text : notifyText,
                 type : notifyColor
             })
-            if(data.msg){
-                messageBox.text(data.msg)
-            }
             callback(data)
         });
     }
@@ -92,7 +100,7 @@ $(document).ready(function(){
                 $.each(form,function(n,v){
                     account[n] = v
                 });
-                account.detailsJSON=JSON.parse(account.details)
+                accountTable.find(`[uid="${account.uid}"] .mail`).text(form.mail)
                 new PNotify({
                     title : 'Account Edited',
                     text : '<b>' + account.mail + '</b> has been updated.',
@@ -182,7 +190,6 @@ $(document).ready(function(){
         })
     }
     var openSubAccountEditor = function(uid){
-        selectedAccountUidForEdit = `${uid}`;
         var account = loadedSubAccounts[uid]
         drawSelectableForPermissionForm()
         setPermissionSelectionsToFields(uid)
@@ -192,7 +199,7 @@ $(document).ready(function(){
         var foundSelected = {}
         var detailsElement = theWindowForm.find('[name="details"]')
         var details = JSON.parse(detailsElement.val())
-        details = details ? details : {"sub": 1}
+        details = details ? details : {sub: 1, allmonitors: "1"}
         // base privileges
         permissionsSection.find('[detail]').each(function(n,v){
             var el = $(v)
@@ -215,7 +222,13 @@ $(document).ready(function(){
         writePermissionsFromFieldsToString()
         return theWindowForm.serializeObject()
     }
+    var setSubmitButtonState = function(text,icon){
+        submitButtons.html(`<i class="fa fa-${icon}"></i> ${text}`)
+    }
     //add new
+    submitButtons.click(function(){
+        theWindowForm.submit()
+    })
     theWindowForm.submit(function(e){
         e.preventDefault();
         var formValues = getCompleteForm()
@@ -244,6 +257,7 @@ $(document).ready(function(){
         var el = $(this).parents('tr')
         var uid = el.attr('uid')
         openSubAccountEditor(uid)
+        setSubmitButtonState(lang['Save Changes'],'check')
     })
     theWindow.on('click','.reset-form',function(e){
         permissionsSection.find('[detail]').each(function(n,v){
@@ -253,6 +267,7 @@ $(document).ready(function(){
             el.val(defaultValue)
         })
         drawSelectableForPermissionForm()
+        setSubmitButtonState(lang['Add New'],'plus')
     })
 
     permissionsSection.on('click','[check]',function(e){
@@ -263,7 +278,7 @@ $(document).ready(function(){
     // });
     theWindow.on('shown.bs.modal',function() {
         getSubAccounts()
-        drawSelectableForPermissionForm()
+        if(theWindowForm.find('[name="uid"]').val() === '')drawSelectableForPermissionForm()
     })
     theWindow.on('hidden.bs.modal',function() {
         clearTable()

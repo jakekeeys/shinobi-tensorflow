@@ -5244,11 +5244,9 @@ module.exports = function(s,config,lang){
                          "btnContent": `<i class="fa fa-undo"></i> &nbsp; ${lang['Clear']}`,
                       },
                       {
-                          forForm: true,
                          "fieldType": "btn",
-                         "attribute": `type="submit"`,
-                         "class": `btn-success`,
-                         "btnContent": `<i class="fa fa-check"></i> &nbsp; ${lang['Save']}`,
+                         "class": `btn-success submit-form`,
+                         "btnContent": `<i class="fa fa-plus"></i> &nbsp; ${lang['Add New']}`,
                       },
                       {
                           hidden: true,
@@ -5348,6 +5346,11 @@ module.exports = function(s,config,lang){
                          "fieldType": "div",
                          "class": "h_perm_allmonitors_input h_perm_allmonitors_1",
                          id: "sub_accounts_permissions",
+                     },
+                     {
+                        "fieldType": "btn",
+                        "class": `btn-success submit-form`,
+                        "btnContent": `<i class="fa fa-plus"></i> &nbsp; ${lang['Add New']}`,
                      },
                  ]
               },
