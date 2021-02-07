@@ -239,3 +239,14 @@
 <% } %>
 
 <% include blocks/onvifDeviceManager.ejs %>
+<%
+    if(!details.sub){ %>
+        <script>
+            $(document).ready(function(){
+                if(`${location.pathname}/` === `<%=config.webPaths.adminApiPrefix%>`){
+                    $('#subAccountManager').modal('show')
+                }
+            })
+        </script>
+    <% }
+%>
