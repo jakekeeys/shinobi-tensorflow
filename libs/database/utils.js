@@ -403,11 +403,23 @@ module.exports = function(s,config){
             }
         })
     }
+    const knexQueryPromise = (options) => {
+        return new Promise((resolve,reject) => {
+            knexQuery(options,(err,rows) => {
+                resolve({
+                    ok: !err,
+                    err: err,
+                    rows: rows,
+                })
+            })
+        })
+    }
     const connectDatabase = function(){
         s.databaseEngine = require('knex')(s.databaseOptions)
     }
     return {
         knexQuery: knexQuery,
+        knexQueryPromise: knexQueryPromise,
         knexError: knexError,
         cleanSqlWhereObject: cleanSqlWhereObject,
         processSimpleWhereCondition: processSimpleWhereCondition,

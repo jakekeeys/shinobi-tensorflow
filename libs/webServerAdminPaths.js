@@ -11,7 +11,7 @@ module.exports = function(s,config,lang,app){
     * API : Administrator : Edit Sub-Account (Account to share cameras with)
     */
     app.all(config.webPaths.adminApiPrefix+':auth/accounts/:ke/edit', function (req,res){
-        s.auth(req.params,function(user){
+        s.auth(req.params,async (user) => {
             var endData = {
                 ok : false
             }
@@ -25,10 +25,35 @@ module.exports = function(s,config,lang,app){
             var mail = form.mail || s.getPostData(req,'mail',false)
             if(form){
                 var keys = ['details']
+                form.details = s.parseJSON(form.details) || {"sub": 1, "allmonitors": "1"}
+                form.details.sub = 1
                 const updateQuery = {
                     details: s.stringJSON(form.details)
                 }
-                s.knexQuery({
+                if(form.pass && form.pass === form.password_again){
+                    updateQuery.pass = s.createHash(form.pass)
+                }
+                if(form.mail){
+                    const userCheck = await s.knexQueryPromise({
+                        action: "select",
+                        columns: "*",
+                        table: "Users",
+                        where: [
+                            ['mail','=',form.mail],
+                        ]
+                    })
+                    if(userCheck.rows[0]){
+                        const foundUser = userCheck.rows[0]
+                        if(foundUser.uid === form.uid){
+                            updateQuery.mail = form.mail
+                        }else{
+                            endData.msg = lang['Email address is in use.']
+                            s.closeJsonResponse(res,endData)
+                            return
+                        }
+                    }
+                }
+                await s.knexQueryPromise({
                     action: "update",
                     table: "Users",
                     update: updateQuery,
@@ -125,6 +150,35 @@ module.exports = function(s,config,lang,app){
         },res,req)
     })
     /**
+    * API : Administrator : Get Sub-Account List
+    */
+    app.get(config.webPaths.adminApiPrefix+':auth/accounts/:ke', function (req,res){
+        s.auth(req.params,function(user){
+            var endData = {
+                ok : false
+            }
+            if(user.details.sub){
+                endData.msg = user.lang['Not Permitted']
+                s.closeJsonResponse(res,endData)
+                return
+            }else{
+                endData.ok = true
+                s.knexQuery({
+                    action: "select",
+                    columns: "ke,uid,mail,details",
+                    table: "Users",
+                    where: [
+                        ['ke','=',req.params.ke],
+                        ['details','LIKE','%"sub"%']
+                    ]
+                },function(err,rows){
+                    endData.accounts = rows
+                    s.closeJsonResponse(res,endData)
+                })
+            }
+        },res,req)
+    })
+    /**
     * API : Administrator : Add Sub-Account (Account to share cameras with)
     */
     app.post([
@@ -156,16 +210,17 @@ module.exports = function(s,config,lang,app){
                     },function(err,r){
                         if(r && r[0]){
                             //found one exist
-                            endData.msg = 'Email address is in use.'
+                            endData.msg = lang['Email address is in use.']
                         }else{
                             //create new
                             endData.msg = 'New Account Created'
                             endData.ok = true
                             var newId = s.gid()
-                            var details = s.s({
-                                sub: "1",
+                            var details = s.s(Object.assign({
                                 allmonitors: "1"
-                            })
+                            },s.parseJSON(form.details) || {
+                                sub: "1",
+                            }))
                             s.knexQuery({
                                 action: "insert",
                                 table: "Users",
