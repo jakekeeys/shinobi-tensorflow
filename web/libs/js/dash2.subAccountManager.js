@@ -119,16 +119,16 @@ $(document).ready(function(){
     var drawSubAccountRow = function(account){
         var html = `<tr uid="${account.uid}">
             <td>
-                <b class="mail">${account.mail}</b>
+                <span class="badge btn-primary mail">${account.mail}</span>
             </td>
             <td>
-                <span class="uid">${account.uid}</span>
+                <code class="uid">${account.uid}</code>
             </td>
-            <td>
-                <a class="permission btn btn-xs btn-primary"><i class="fa fa-lock"></i></a>
+            <td class="text-right">
+                <a class="permission btn btn-sm btn-primary"><i class="fa fa-lock"></i></a>
             </td>
-            <td>
-                <a class="delete btn btn-xs btn-danger"><i class="fa fa-trash-o"></i></a>
+            <td class="text-right">
+                <a class="delete btn btn-sm btn-danger"><i class="fa fa-trash-o"></i></a>
             </td>
         </tr>`;
         accountTable.prepend(html)
