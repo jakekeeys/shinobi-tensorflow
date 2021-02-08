@@ -134,8 +134,8 @@ s.detectObject = function (buffer, d, tx, frameLocation, callback) {
                 mats.push({
                     x: v.bbox[0],
                     y: v.bbox[1],
-                    width: v.bbox[2],
-                    height: v.bbox[3],
+                    width: (v.bbox[2]-v.bbox[0]),
+                    height: (v.bbox[3]-v.bbox[1]),
                     tag: v.class,
                     confidence: v.score,
                 })
