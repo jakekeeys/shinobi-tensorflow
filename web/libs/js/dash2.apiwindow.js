@@ -6,7 +6,7 @@ $.apM.md.change($.ccio.form.details).first().change();
 $.apM.f.submit(function(e){
     e.preventDefault();e.e=$(this),e.s=e.e.serializeObject();
     e.er=[];
-    if(!e.s.ip||e.s.ip.length<7){e.er.push('Enter atleast one IP')}
+    if(!e.s.ip||e.s.ip.length<7){e.er.push('Enter at least one IP')}
     if(e.er.length>0){$.apM.e.find('.msg').html(e.er.join('<br>'));return;}
     $.each(e.s,function(n,v){e.s[n]=v.trim()})
     // e.s = {

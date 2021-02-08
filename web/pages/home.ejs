@@ -1,5 +1,12 @@
 <%
     var details = JSON.parse($user.details)
+    if(!details.sub){ %>
+        <script>
+            window.getAdminApiPrefix = function(piece){
+                return location.search === '?p2p=1' ? location.pathname + '/' : "<%=originalURL%><%=config.webPaths.adminApiPrefix%><%- $user.auth_token %>/"
+            }
+        </script>
+    <% }
 %>
 <% include blocks/header %>
 <script>var $user = <%- JSON.stringify($user) %>;</script>
@@ -172,6 +179,7 @@
 <% include blocks/schedules.ejs %>
 <% include blocks/confirm.ejs %>
 <% include blocks/shinobiHub.ejs %>
+<% include blocks/subAccountManager.ejs %>
 <% customAutoLoad.PageBlocks.forEach(function(block){ %>
     <%- include(block) %>
 <% }) %>
@@ -231,3 +239,14 @@
 <% } %>
 
 <% include blocks/onvifDeviceManager.ejs %>
+<%
+    if(!details.sub){ %>
+        <script>
+            $(document).ready(function(){
+                if(`${location.pathname}/` === `<%=config.webPaths.adminApiPrefix%>`){
+                    $('#subAccountManager').modal('show')
+                }
+            })
+        </script>
+    <% }
+%>

@@ -336,8 +336,8 @@ $.ccio.init=function(x,d,user,k){
         case'drawMatrices':
             d.height=d.stream.height()
             d.width=d.stream.width()
-            if(!d.details.imgWidth && d.monitorDetails.detector_scale_x===''){d.monitorDetails.detector_scale_x=320}
-            if(!d.details.imgHeight && d.monitorDetails.detector_scale_y===''){d.monitorDetails.detector_scale_y=240}
+            if(!d.details.imgWidth && d.monitorDetails.detector_scale_x===''){d.monitorDetails.detector_scale_x=640}
+            if(!d.details.imgHeight && d.monitorDetails.detector_scale_y===''){d.monitorDetails.detector_scale_y=480}
 
             d.widthRatio=d.width/d.details.imgWidth || d.monitorDetails.detector_scale_x
             d.heightRatio=d.height/d.details.imgHeight || d.monitorDetails.detector_scale_y
@@ -426,9 +426,9 @@ $.ccio.init=function(x,d,user,k){
                 k.run=function(){
                     k.e.attr('src',$.ccio.init('location',user)+user.auth_token+'/jpeg/'+d.ke+'/'+d.mid+'/s.jpg?time='+(new Date()).getTime())
                 }
-                k.e.load(function(){
+                k.e.on('load',function(){
                     $.ccio.mon[d.ke+d.mid+user.auth_token].jpegInterval=setTimeout(k.run,1000/k.jpegInterval);
-                }).error(function(){
+                }).on('error',function(){
                     $.ccio.mon[d.ke+d.mid+user.auth_token].jpegInterval=setTimeout(k.run,1000/k.jpegInterval);
                 })
                 k.run()

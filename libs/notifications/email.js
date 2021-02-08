@@ -113,15 +113,13 @@ module.exports = function(s,config,lang){
                     r = r[0];
                     var detector_mail_timeout
                     if(!monitorConfig.details.detector_mail_timeout||monitorConfig.details.detector_mail_timeout===''){
-                        detector_mail_timeout = 1000*60*10;
+                        detector_mail_timeout = 1000 * 60 * 10;
                     }else{
-                        detector_mail_timeout = parseFloat(monitorConfig.details.detector_mail_timeout)*1000*60;
+                        detector_mail_timeout = parseFloat(monitorConfig.details.detector_mail_timeout) * 1000 * 60;
                     }
-                    //lock mailer so you don't get emailed on EVERY trigger event.
                     s.group[d.ke].activeMonitors[d.id].detector_mail = setTimeout(function(){
-                        //unlock so you can mail again.
                         clearTimeout(s.group[d.ke].activeMonitors[d.id].detector_mail);
-                        delete(s.group[d.ke].activeMonitors[d.id].detector_mail);
+                        s.group[d.ke].activeMonitors[d.id].detector_mail = null
                     },detector_mail_timeout);
                     const sendMail = function(files){
                         const infoRows = []
@@ -183,7 +181,7 @@ module.exports = function(s,config,lang){
                         const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(monitorConfig,{
                             secondsInward: monitorConfig.details.snap_seconds_inward
                         })
-                        d.screenshotBuffer = screenShot
+                        if(screenShot)d.screenshotBuffer = screenShot
                     }
                     sendMail([
                         {

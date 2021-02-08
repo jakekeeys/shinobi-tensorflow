@@ -1,3 +1,4 @@
+var fs = require('fs')
 var P2P = require('pipe2pam')
 var PamDiff = require('pam-diff')
 module.exports = function(jsonData,pamDiffResponder){
@@ -50,7 +51,7 @@ module.exports = function(jsonData,pamDiffResponder){
         }
 
         globalThreshold = parseInt(jsonData.rawMonitorConfig.details.detector_threshold) || 0
-
+        const regionsAreMasks = jsonData.rawMonitorConfig.details.detector_frame !== '1' && jsonData.rawMonitorConfig.details.inverse_trigger === '1';
         var regionJson
         try{
             regionJson = JSON.parse(jsonData.rawMonitorConfig.details.cords)
@@ -61,8 +62,8 @@ module.exports = function(jsonData,pamDiffResponder){
         if(Object.keys(regionJson).length === 0 || jsonData.rawMonitorConfig.details.detector_frame === '1'){
             fullFrame = {
                 name:'FULL_FRAME',
-                sensitivity:globalSensitivity,
-                color_threshold:globalColorThreshold,
+                sensitivity: globalSensitivity,
+                color_threshold: globalColorThreshold,
                 points:[
                     [0,0],
                     [0,height],
@@ -72,12 +73,18 @@ module.exports = function(jsonData,pamDiffResponder){
             }
         }
 
-
+        const mask = {
+            max_sensitivity : globalSensitivity,
+            threshold : globalThreshold,
+        }
         var regions = createPamDiffRegionArray(regionJson,globalColorThreshold,globalSensitivity,fullFrame)
         var pamDiffOptions = {
-            mask: jsonData.rawMonitorConfig.details.detector_frame !== '1' && jsonData.rawMonitorConfig.details.inverse_trigger === '1',
+            mask: regionsAreMasks,
             grayscale: 'luminosity',
-            regions : regions.forPam
+            regions : regions.forPam,
+            percent : globalSensitivity,
+            difference : globalColorThreshold,
+
         }
         if(jsonData.rawMonitorConfig.details.detector_show_matrix==='1'){
             pamDiffOptions.response = 'bounds'
@@ -108,7 +115,7 @@ module.exports = function(jsonData,pamDiffResponder){
                     var filteredCount = 0
                     var filteredCountSuccess = 0
                     trigger.merged.forEach(function(triggerPiece){
-                        var region = regionArray.find(x => x.name == triggerPiece.name)
+                        var region = regionsAreMasks ? mask : regionArray.find(x => x.name == triggerPiece.name)
                         checkMaximumSensitivity(region, detectorObject, function(err1) {
                             checkTriggerThreshold(region, detectorObject, function(err2) {
                                 ++filteredCount
@@ -122,7 +129,7 @@ module.exports = function(jsonData,pamDiffResponder){
                     })
                 }else{
                     if(trigger.matrix)detectorObject.details.matrices = [trigger.matrix]
-                    var region = regionArray.find(x => x.name == detectorObject.name)
+                    var region = regionsAreMasks ? mask : regionArray.find(x => x.name == detectorObject.name)
                     checkMaximumSensitivity(region, detectorObject, function(err1) {
                         checkTriggerThreshold(region, detectorObject, function(err2) {
                             if(!err1 && !err2){
@@ -175,7 +182,7 @@ module.exports = function(jsonData,pamDiffResponder){
                     imgWidth:jsonData.rawMonitorConfig.details.detector_scale_x
                 }
                 if(trigger.matrix)detectorObject.details.matrices = [trigger.matrix]
-                var region = Object.values(regionJson).find(x => x.name == detectorObject.name)
+                var region = regionsAreMasks ? mask : Object.values(regionJson).find(x => x.name == detectorObject.name)
                 checkMaximumSensitivity(region, detectorObject, function(err1) {
                     checkTriggerThreshold(region, detectorObject, function(err2) {
                         if(!err1 && ! err2){

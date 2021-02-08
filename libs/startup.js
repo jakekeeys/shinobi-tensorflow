@@ -127,7 +127,8 @@ module.exports = function(s,config,lang,io){
             var userDetails = JSON.parse(user.details)
             s.group[user.ke].sizeLimit = parseFloat(userDetails.size) || 10000
             s.group[user.ke].sizeLimitVideoPercent = parseFloat(userDetails.size_video_percent) || 90
-            s.group[user.ke].sizeLimitTimelapseFramesPercent = parseFloat(userDetails.size_timelapse_percent) || 10
+            s.group[user.ke].sizeLimitTimelapseFramesPercent = parseFloat(userDetails.size_timelapse_percent) || 5
+            s.group[user.ke].sizeLimitFileBinPercent = parseFloat(userDetails.size_filebin_percent) || 5
             s.knexQuery({
                 action: "select",
                 columns: "*",

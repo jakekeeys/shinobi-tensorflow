@@ -4719,7 +4719,7 @@ module.exports = function(s,config,lang){
              }
           }
       },
-      "ONVIF Device Manager": {
+       "ONVIF Device Manager": {
           "section": "ONVIF Device Manager",
           "blocks": {
              "Notice": {
@@ -5186,6 +5186,175 @@ module.exports = function(s,config,lang){
                  ]
              },
          }
-      }
+       },
+       "Sub-Account Manager": {
+           "section": "Sub-Account Manager",
+           "blocks": {
+               "Sub-Accounts": {
+                  "name": lang['Sub-Accounts'],
+                  "color": "grey",
+                  "isSection": true,
+                  "id":"monSectionAccountList",
+                  "info": [
+                      {
+                          "fieldType": "table",
+                          id: "subAccountsList",
+                      }
+                  ]
+               },
+               "Account Information": {
+                  "name": lang['Account Information'],
+                  "color": "grey",
+                  "isSection": true,
+                  "isForm": true,
+                  "id":"monSectionAccountInformation",
+                  "info": [
+                      {
+                          hidden: true,
+                         "name": "uid",
+                         "field": "UID",
+                         "fieldType": "text"
+                      },
+                      {
+                         "name": "mail",
+                         "field": lang.Email,
+                         "fieldType": "text",
+                         "default": "",
+                         "possible": ""
+                      },
+                      {
+                         "name": "pass",
+                         "field": lang.Password,
+                         "fieldType": "password",
+                         "default": "",
+                         "possible": ""
+                      },
+                      {
+                         "name": "password_again",
+                         "field": lang['Password Again'],
+                         "fieldType": "password",
+                         "default": "",
+                         "possible": ""
+                      },
+                      {
+                          forForm: true,
+                         "fieldType": "btn",
+                         "attribute": `type="reset"`,
+                         "class": `btn-default reset-form`,
+                         "btnContent": `<i class="fa fa-undo"></i> &nbsp; ${lang['Clear']}`,
+                      },
+                      {
+                         "fieldType": "btn",
+                         "class": `btn-success submit-form`,
+                         "btnContent": `<i class="fa fa-plus"></i> &nbsp; ${lang['Add New']}`,
+                      },
+                      {
+                          hidden: true,
+                         "name": "details",
+                         "preFill": "{}",
+                      },
+                  ]
+              },
+              "Account Privileges": {
+                 "name": lang['Account Privileges'],
+                 "color": "grey",
+                 "isSection": true,
+                 "id":"monSectionAccountPrivileges",
+                 "info": [
+                     {
+                        "name": "detail=allmonitors",
+                        "field": lang['All Monitors and Privileges'],
+                        "default": "0",
+                        "fieldType": "select",
+                        "selector": "h_perm_allmonitors",
+                        "possible": [
+                            {
+                               "name": lang.No,
+                               "value": "0"
+                            },
+                            {
+                               "name": lang.Yes,
+                               "value": "1"
+                            }
+                        ]
+                     },
+                     {
+                        "name": "detail=monitor_create",
+                        "field": lang['Can Create and Delete Monitors'],
+                        "default": "0",
+                        "fieldType": "select",
+                        "possible": [
+                            {
+                               "name": lang.No,
+                               "value": "0"
+                            },
+                            {
+                               "name": lang.Yes,
+                               "value": "1"
+                            }
+                        ]
+                     },
+                     {
+                        "name": "detail=user_change",
+                        "field": lang['Can Change User Settings'],
+                        "default": "0",
+                        "fieldType": "select",
+                        "possible": [
+                            {
+                               "name": lang.No,
+                               "value": "0"
+                            },
+                            {
+                               "name": lang.Yes,
+                               "value": "1"
+                            }
+                        ]
+                     },
+                     {
+                        "name": "detail=view_logs",
+                        "field": lang['Can View Logs'],
+                        "default": "0",
+                        "fieldType": "select",
+                        "possible": [
+                            {
+                               "name": lang.No,
+                               "value": "0"
+                            },
+                            {
+                               "name": lang.Yes,
+                               "value": "1"
+                            }
+                        ]
+                     },
+                     {
+                        "name": "detail=landing_page",
+                        "field": lang['Landing Page'],
+                        "default": "",
+                        "fieldType": "select",
+                        "possible": [
+                            {
+                               "name": lang.Default,
+                               "value": ""
+                            },
+                            {
+                               "name": lang.Timelapse,
+                               "value": "timelapse"
+                            }
+                        ]
+                     },
+                     {
+                         "fieldType": "div",
+                         "class": "h_perm_allmonitors_input h_perm_allmonitors_1",
+                         id: "sub_accounts_permissions",
+                     },
+                     {
+                        "fieldType": "btn",
+                        "class": `btn-success submit-form`,
+                        "btnContent": `<i class="fa fa-plus"></i> &nbsp; ${lang['Add New']}`,
+                     },
+                 ]
+              },
+          }
+       }
     }
 }

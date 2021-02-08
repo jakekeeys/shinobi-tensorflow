@@ -54,14 +54,13 @@ module.exports = function(s,config,lang){
                 if(filter.discord && s.group[d.ke].discordBot && monitorConfig.details.detector_discordbot === '1' && !s.group[d.ke].activeMonitors[d.id].detector_discordbot){
                     var detector_discordbot_timeout
                     if(!monitorConfig.details.detector_discordbot_timeout||monitorConfig.details.detector_discordbot_timeout===''){
-                        detector_discordbot_timeout = 1000*60*10;
+                        detector_discordbot_timeout = 1000 * 60 * 10;
                     }else{
-                        detector_discordbot_timeout = parseFloat(monitorConfig.details.detector_discordbot_timeout)*1000*60;
+                        detector_discordbot_timeout = parseFloat(monitorConfig.details.detector_discordbot_timeout) * 1000 * 60;
                     }
-                    //lock mailer so you don't get emailed on EVERY trigger event.
                     s.group[d.ke].activeMonitors[d.id].detector_discordbot = setTimeout(function(){
                         clearTimeout(s.group[d.ke].activeMonitors[d.id].detector_discordbot);
-                        delete(s.group[d.ke].activeMonitors[d.id].detector_discordbot);
+                        s.group[d.ke].activeMonitors[d.id].detector_discordbot = null
                     },detector_discordbot_timeout)
                     if(monitorConfig.details.detector_discordbot_send_video === '1'){
                         // change to function that captures on going video capture, waits, grabs new video file, slices portion (max for transmission) and prepares for delivery
@@ -89,7 +88,7 @@ module.exports = function(s,config,lang){
                     const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(monitorConfig,{
                         secondsInward: monitorConfig.details.snap_seconds_inward
                     })
-                    if(screenShot[screenShot.length - 2] === 0xFF && screenShot[screenShot.length - 1] === 0xD9){
+                    if(screenShot){
                         d.screenshotBuffer = screenShot
                         sendMessage({
                             author: {

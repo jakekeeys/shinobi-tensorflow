@@ -361,6 +361,7 @@ module.exports = function(s,config,lang){
                         const value = form[key]
                         updateQuery[key] = value
                     })
+                    updateQuery.details = formDetails
                     s.knexQuery({
                         action: "update",
                         table: "Users",

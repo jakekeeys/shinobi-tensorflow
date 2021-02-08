@@ -83,12 +83,12 @@ module.exports = function(s,config,lang){
                     })
                 }else{
                     var onvifDirections = {
-                        "left": [-1.0,'x'],
-                        "right": [1.0,'x'],
-                        "down": [invertedVerticalAxis ? 1.0 : -1.0,'y'],
-                        "up": [invertedVerticalAxis ? -1.0 : 1.0,'y'],
-                        "zoom_in": [1.0,'z'],
-                        "zoom_out": [-1.0,'z']
+                        "left": [-turnSpeed,'x'],
+                        "right": [turnSpeed,'x'],
+                        "down": [invertedVerticalAxis ? turnSpeed : -turnSpeed,'y'],
+                        "up": [invertedVerticalAxis ? -turnSpeed : turnSpeed,'y'],
+                        "zoom_in": [turnSpeed,'z'],
+                        "zoom_out": [-turnSpeed,'z']
                     }
                     var direction = onvifDirections[options.direction]
                     controlOptions.Velocity[direction[1]] = direction[0]

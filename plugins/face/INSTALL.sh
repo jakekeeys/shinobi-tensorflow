@@ -1,5 +1,6 @@
 #!/bin/bash
-DIR=`dirname $0`
+DIR=$(dirname $0)
+rm -rf $DIR/node_modules
 if [ -x "$(command -v apt)" ]; then
     sudo apt update -y
 fi
@@ -94,9 +95,6 @@ echo "-----------------------------------"
 echo "Adding Random Plugin Key to Main Configuration"
 node $DIR/../../tools/modifyConfigurationForPlugin.js face key=$(head -c 64 < /dev/urandom | sha256sum | awk '{print substr($1,1,60)}') tfjsBuild=$tfjsBuildVal
 echo "-----------------------------------"
-echo "Updating Node Package Manager"
-sudo npm install npm -g --unsafe-perm
-echo "-----------------------------------"
 echo "Getting node-gyp to build C++ modules"
 if [ ! -x "$(command -v node-gyp)" ]; then
   # Check if Ubuntu
@@ -110,39 +108,35 @@ if [ ! -x "$(command -v node-gyp)" ]; then
       sudo yum install gcc-c++ cairo-devel libjpeg-turbo-devel pango-devel giflib-devel -y
   fi
 fi
+sudo npm install --unsafe-perm
+
 sudo npm install node-gyp -g --unsafe-perm --force
 echo "-----------------------------------"
-npm uninstall @tensorflow/tfjs-node-gpu --unsafe-perm
-npm uninstall @tensorflow/tfjs-node --unsafe-perm
-echo "Getting C++ module : @tensorflow/tfjs-node@0.1.21"
-echo "https://github.com/tensorflow/tfjs-node"
-npm install @tensorflow/tfjs-core@1.7.3 --unsafe-perm --force
-npm install @tensorflow/tfjs-converter@1.7.3 --unsafe-perm --force
-npm install @tensorflow/tfjs-layers@1.7.3 --unsafe-perm --force
-echo "Getting C++ module : face-api.js"
-echo "https://github.com/justadudewhohacks/face-api.js"
-sudo npm install --unsafe-perm --force
+
+# echo "Getting C++ module : @tensorflow/tfjs-node@0.1.21"
+# echo "https://github.com/tensorflow/tfjs-node"
+# npm install @tensorflow/tfjs-converter@1.7.4 @tensorflow/tfjs-layers@1.7.4 --unsafe-perm
 if [ "$INSTALL_WITH_GPU" = "1" ]; then
     echo "GPU version of tjfs : https://github.com/tensorflow/tfjs-node-gpu"
 else
     echo "CPU version of tjfs : https://github.com/tensorflow/tfjs-node"
 fi
-sudo npm install @tensorflow/tfjs-node$TFJS_SUFFIX@1.7.3 --unsafe-perm --force
+npm install @tensorflow/tfjs-node$TFJS_SUFFIX --unsafe-perm
 if [ "$INSTALL_FOR_ARM" = "1" ]; then
-    cd node_modules/@tensorflow/tfjs-node$TFJS_SUFFIX
+    BINARY_LOCATION="node_modules/@tensorflow/tfjs-node$TFJS_SUFFIX/scripts/custom-binary.json"
     if [ "$INSTALL_FOR_ARM64" = "1" ]; then
         echo "{
   \"tf-lib\": \"https://cdn.shinobi.video/binaries/libtensorflow-gpu-linux-arm64-1.15.0.tar.gz\"
-}" > scripts/custom-binary.json
+}" > $BINARY_LOCATION
     else
         echo "{
   \"tf-lib\": \"https://cdn.shinobi.video/binaries/libtensorflow-cpu-linux-arm-1.15.0.tar.gz\"
-}" > scripts/custom-binary.json
+}" > $BINARY_LOCATION
     fi
-    npm install --unsafe-perm
-    cd ../../..
+    npm rebuild @tensorflow/tfjs-node$TFJS_SUFFIX --build-addon-from-source --unsafe-perm
 fi
-sudo npm audit fix --force
+rm -rf $DIR/node_modules/@tensorflow/tfjs-backend-cpu
+rm -rf $DIR/node_modules/@tensorflow/tfjs-backend-webgl
 echo "-----------------------------------"
 echo "Start the plugin with pm2 like so :"
 echo "pm2 start shinobi-face.js"

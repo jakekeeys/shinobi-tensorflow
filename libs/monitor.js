@@ -166,8 +166,13 @@ module.exports = function(s,config,lang){
                                  screenShot: buffer,
                                  isStaticFile: false
                              })
+                             fs.unlink(temporaryImageFile,function(){})
+                         }else{
+                             resolve({
+                                 screenShot: null,
+                                 isStaticFile: false
+                             })
                          }
-                         fs.unlink(temporaryImageFile,function(){})
                       })
                     }
                     try{
@@ -483,7 +488,7 @@ module.exports = function(s,config,lang){
             if(s.group[e.ke] && s.group[e.ke].rawMonitorConfigurations && s.group[e.ke].rawMonitorConfigurations[e.mid] && s.group[e.ke].rawMonitorConfigurations[e.mid].mode !== 'stop'){
                 var pathDir = s.dir.streams+e.ke+'/'+e.mid+'/'
                 const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(s.group[e.ke].rawMonitorConfigurations[e.mid],options)
-                if(screenShot && (screenShot[screenShot.length-2] === 0xFF && screenShot[screenShot.length-1] === 0xD9)){
+                if(screenShot){
                     s.tx({
                         f: 'monitor_snapshot',
                         snapshot: screenShot.toString('base64'),
@@ -513,7 +518,7 @@ module.exports = function(s,config,lang){
             if(s.group[e.ke] && s.group[e.ke].rawMonitorConfigurations && s.group[e.ke].rawMonitorConfigurations[e.mid] && s.group[e.ke].rawMonitorConfigurations[e.mid].mode !== 'stop'){
                 var pathDir = s.dir.streams+e.ke+'/'+e.mid+'/'
                 const {screenShot, isStaticFile} = await s.getRawSnapshotFromMonitor(s.group[e.ke].rawMonitorConfigurations[e.mid],options)
-                if(screenShot && (screenShot[screenShot.length-2] === 0xFF && screenShot[screenShot.length-1] === 0xD9)){
+                if(screenShot){
                     return screenShot
                 }else{
                     return await getDefaultImage()
