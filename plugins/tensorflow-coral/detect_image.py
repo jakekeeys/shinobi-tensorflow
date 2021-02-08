@@ -1,3 +1,4 @@
+
 # Lint as: python3
 # Copyright 2019 Google LLC
 #
@@ -30,38 +31,6 @@ from pycoral.utils.edgetpu import make_interpreter
 import platform
 
 
-def load_labels(path, encoding='utf-8'):
-    """Loads labels from file (with or without index numbers).
-
-    Args:
-      path: path to label file.
-      encoding: label file encoding.
-    Returns:
-      Dictionary mapping indices to labels.
-    """
-    with open(path, 'r', encoding=encoding) as f:
-        lines = f.readlines()
-        if not lines:
-            return {}
-
-        if lines[0].split(' ', maxsplit=1)[0].isdigit():
-            pairs = [line.split(' ', maxsplit=1) for line in lines]
-            return {int(index): label.strip() for index, label in pairs}
-        else:
-            return {index: line.strip() for index, line in enumerate(lines)}
-
-
-def draw_objects(draw, objs, labels):
-    """Draws the bounding box and label for each object."""
-    for obj in objs:
-        bbox = obj.bbox
-        draw.rectangle([(bbox.xmin, bbox.ymin), (bbox.xmax, bbox.ymax)],
-                       outline='red')
-        draw.text((bbox.xmin + 10, bbox.ymin + 10),
-                  '%s\n%.2f' % (labels.get(obj.id, obj.id), obj.score),
-                  fill='red')
-
-
 def printInfo(text):
     print(json.dumps({"type": "info", "data": text}))
 
@@ -85,14 +54,20 @@ def main():
     while True:
         line = sys.stdin.readline().rstrip("\n")
         try:
+            #load image from shinobi stream
             rawImage = BytesIO(base64.b64decode(line))
             image = Image.open(rawImage)
+            #resize the image for object detection using built in coral code
+            #it will set it to 300x300 and provide a scale for object detection later
             _, scale = common.set_resized_input(
                 interpreter, image.size, lambda size: image.resize(size, Image.ANTIALIAS))
-
+        
             start = time.perf_counter()
             interpreter.invoke()
+            
             inference_time = time.perf_counter() - start
+            #passing the scale from above, this function creates the bounding boxes
+            #it takes the 300x300 image and divides the scale ratio for original coordinates
             objs = detect.get_objects(interpreter, threshold, scale)
             output = []
             for obj in objs:
@@ -101,6 +76,7 @@ def main():
                 score = obj.score
                 bbox = obj.bbox
                 output.append({"bbox": bbox, "class": label, "score": score})
+            #outputted data is based on original feed in image size
             printData(output, (inference_time * 1000))
         except Exception as e:
             printError(str(e))
