@@ -193,6 +193,7 @@ $(document).ready(function(){
         var account = loadedSubAccounts[uid]
         drawSelectableForPermissionForm()
         setPermissionSelectionsToFields(uid)
+        theWindowForm.find('[name="pass"],[name="password_again"]').val('')
         permissionsSection.show()
     }
     var writePermissionsFromFieldsToString = function(){
@@ -268,6 +269,7 @@ $(document).ready(function(){
         })
         drawSelectableForPermissionForm()
         setSubmitButtonState(lang['Add New'],'plus')
+        theWindowForm.find('[name="pass"],[name="password_again"]').val('')
     })
 
     permissionsSection.on('click','[check]',function(e){
