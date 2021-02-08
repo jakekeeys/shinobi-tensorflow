@@ -135,7 +135,6 @@ $.ccio.globalWebsocket=function(d,user){
                 }
                 $.gR.drawList()
             })
-            $.ccio.pm(3,d.apis,null,user);
             $('.os_platform').html(d.os.platform)
             $('.os_cpuCount').html(d.os.cpuCount)
             $('.os_totalmem').attr('title',`Total : ${(d.os.totalmem/1048576).toFixed(2)}`)
@@ -780,18 +779,6 @@ $user.ws.on('ping', function(d){
 $user.ws.on('f',function (d){
     $.ccio.globalWebsocket(d)
     switch(d.f){
-        case'api_key_deleted':
-            if($user.uid === d.uid){
-                $.ccio.init('note',{title:lang['API Key Deleted'],text:lang.APIKeyDeletedText,type:'notice'});
-                $('[api_key="'+d.form.code+'"]').remove()
-            }
-        break;
-        case'api_key_added':
-            if($user.uid === d.uid){
-                $.ccio.init('note',{title:lang['API Key Added'],text:lang.FiltersUpdatedText,type:'success'});
-                $.ccio.tm(3,d.form,'#api_list')
-            }
-        break;
         case'filters_change':
             $.ccio.init('note',{title:lang['Filters Updated'],text:lang.FiltersUpdatedText,type:'success'});
             $user.details.filters=d.filters;

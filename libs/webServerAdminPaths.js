@@ -413,35 +413,38 @@ module.exports = function(s,config,lang,app){
             var endData = {
                 ok : false
             }
-            var form = s.getPostData(req)
-            if(form){
-                if(!form.code){
-                    s.tx({
-                        f:'form_incomplete',
-                        uid: user.uid,
-                        form:'APIs'
-                    },'GRP_' + req.params.ke)
-                    endData.msg = lang.postDataBroken
-                    s.closeJsonResponse(res,endData)
-                    return
-                }
+            var form = s.getPostData(req) || {}
+            const code = form.code || s.getPostData(req,'code',false)
+            if(!code){
+                s.tx({
+                    f:'form_incomplete',
+                    uid: user.uid,
+                    form:'APIs'
+                },'GRP_' + req.params.ke)
+                endData.msg = lang.postDataBroken
+                s.closeJsonResponse(res,endData)
+                return
+            }
+            if(code){
                 s.knexQuery({
                     action: "delete",
                     table: "API",
                     where: {
                         ke: req.params.ke,
                         uid: user.uid,
-                        code: form.code,
+                        code: code,
                     }
                 },(err,r) => {
                     if(!err){
                         s.tx({
                             f: 'api_key_deleted',
                             uid: user.uid,
-                            form: row
+                            form: {
+                                code: code
+                            }
                         },'GRP_' + req.params.ke)
                         endData.ok = true
-                        delete(s.api[row.code])
+                        delete(s.api[code])
                     }
                     s.closeJsonResponse(res,endData)
                 })
