@@ -205,16 +205,21 @@ const deleteVideosByDays = async (v,days,addedQueries) => {
             const row = videoRows[i];
             const dir = getVideoDirectory(row)
             const filename = formattedTime(row.time) + '.' + row.ext
-            await fs.promises.unlink(dir + filename)
-            row.size += clearSize
-            sendToWebSocket({
-                f: 'video_delete',
-                filename: filename + '.' + row.ext,
-                mid: row.mid,
-                ke: row.ke,
-                time: row.time,
-                end: formattedTime(new Date,'YYYY-MM-DD HH:mm:ss')
-            },'GRP_' + row.ke)
+            try{
+                await fs.promises.unlink(dir + filename)
+                row.size += clearSize
+                sendToWebSocket({
+                    f: 'video_delete',
+                    filename: filename + '.' + row.ext,
+                    mid: row.mid,
+                    ke: row.ke,
+                    time: row.time,
+                    end: formattedTime(new Date,'YYYY-MM-DD HH:mm:ss')
+                },'GRP_' + row.ke)
+            }catch(err){
+                console.log('Video Delete Error',row)
+                console.log(err)
+            }
         }
         const deleteResponse = await knexQueryPromise({
             action: "delete",
@@ -452,22 +457,28 @@ const processUser = async (v) => {
         s.debugLog(`Checking...`)
         overlapLocks[v.ke] = true
         v.d = JSON.parse(v.details);
-        await deleteOldVideos(v)
-        s.debugLog('--- deleteOldVideos Complete')
-        await deleteOldLogs(v)
-        s.debugLog('--- deleteOldLogs Complete')
-        await deleteOldFileBins(v)
-        s.debugLog('--- deleteOldFileBins Complete')
-        await deleteOldEvents(v)
-        s.debugLog('--- deleteOldEvents Complete')
-        await deleteOldEventCounts(v)
-        s.debugLog('--- deleteOldEventCounts Complete')
-        await checkFilterRules(v)
-        s.debugLog('--- checkFilterRules Complete')
-        await deleteRowsWithNoVideo(v)
-        s.debugLog('--- deleteRowsWithNoVideo Complete')
+        try{
+            await deleteOldVideos(v)
+            s.debugLog('--- deleteOldVideos Complete')
+            await deleteOldLogs(v)
+            s.debugLog('--- deleteOldLogs Complete')
+            await deleteOldFileBins(v)
+            s.debugLog('--- deleteOldFileBins Complete')
+            await deleteOldEvents(v)
+            s.debugLog('--- deleteOldEvents Complete')
+            await deleteOldEventCounts(v)
+            s.debugLog('--- deleteOldEventCounts Complete')
+            await checkFilterRules(v)
+            s.debugLog('--- checkFilterRules Complete')
+            await deleteRowsWithNoVideo(v)
+            s.debugLog('--- deleteRowsWithNoVideo Complete')
+        }catch(err){
+            console.log(`Failed to Complete User : ${v.mail}`)
+            console.log(err)
+        }
         //done user, unlock current, and do next
         overlapLocks[v.ke] = false;
+        s.debugLog(`Complete Checking... ${v.mail}`)
     }else{
         s.debugLog(`Locked, Skipped...`)
     }
@@ -475,7 +486,8 @@ const processUser = async (v) => {
 //recursive function
 const setIntervalForCron = function(){
     clearCronInterval()
-    theCronInterval = setInterval(doCronJobs,parseFloat(config.cron.interval)*60000*60)
+    theCronInterval = setInterval(doCronJobs,1000 * 10)
+    // theCronInterval = setInterval(doCronJobs,parseFloat(config.cron.interval)*60000*60)
 }
 const clearCronInterval = function(){
     clearInterval(theCronInterval)
