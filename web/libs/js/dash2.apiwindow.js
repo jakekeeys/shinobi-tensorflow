@@ -1,28 +1,60 @@
 $(document).ready(function(e){
     //api window
     var theWindow = $('#apis')
-    var apiKeyTable = $('#api_list')
+    var apiKeyTable = $('#api_list tbody')
     var theWindowForm = theWindow.find('form');
+    var permissionSelector = theWindowForm.find('[detail="permissions"]')
+    var getHumanNamesForRowDetails = function(rowDetails){
+        var newDetails = ``
+        $.each(rowDetails,function(key,value){
+            var foundOption = permissionSelector.find(`option[value="${key}"]`)
+            var label = foundOption.text()
+            newDetails += `<div><i class="fa fa-${value === `1` ? `check` : `times`} text-${value === `1` ? `success` : `default`}"></i> &nbsp; ${label}</div>`
+        })
+        return newDetails
+    }
     window.drawApiKeyRow = function(row){
-        var html = '<tr api_key="'+row.code+'"><td class="code">'+row.code+'</td><td class="ip">'+row.ip+'</td><td class="time">'+row.time+'</td><td class="text-right"><a class="delete btn btn-xs btn-danger">&nbsp;<i class="fa fa-trash"></i>&nbsp;</a></td></tr>';
+        var html = `<tr api_key="${row.code}">
+            <td>
+                <code class="code">${row.code}</code>
+                <br>
+                <pre clas="time">${moment(row.time).format(`DD-MM-YYYY hh:mm:ss A`)}</pre>
+                <pre>${row.ip}</pre>
+                <pre>${getHumanNamesForRowDetails(row.details || {})}</pre>
+            </td>
+            <td class="text-center">
+                <a class="delete btn btn-sm btn-danger">&nbsp;<i class="fa fa-trash"></i>&nbsp;</a>
+            </td>
+        </tr>`;
         apiKeyTable.prepend(html)
+    }
+    var writePermissionsFromFieldsToString = function(){
+        var detailsElement = theWindowForm.find('[name="details"]')
+        var details = JSON.parse(detailsElement.val())
+        var selected = permissionSelector.val()
+        permissionSelector.find('option').each(function(n,option){
+            var el = $(option)
+            var permissionValue = el.attr('value')
+            if(el.prop('selected')){
+                details[permissionValue] = "1"
+            }else{
+                details[permissionValue] = "0"
+            }
+        })
+        detailsElement.val(JSON.stringify(details))
     }
     var getApiKeys = function(callback){
         $.get(getApiPrefix('api') + '/list',function(data){
             callback(data.keys)
         })
     }
-    theWindowForm.find('[detail]').change($.ccio.form.details).first().change();
-    theWindowForm.submit(function(e){
-        e.preventDefault();
-        var el = $(this)
-        var formValues = el.serializeObject();
+    var addApiKey = function(formValues){
         var errors = []
         if(!formValues.ip||formValues.ip.length<7){
             errors.push(lang['Enter at least one IP'])
         }
         if(errors.length > 0){
-            theWindow.find('.msg').html(errors.join('<br>'));
+            $.ccio.init('note',{title:lang['API Key Action Failed'],text:errors.join('<br>'),type:'danger'});
             return
         }
         $.each(formValues,function(n,v){
@@ -36,10 +68,8 @@ $(document).ready(function(e){
                 drawApiKeyRow(data.api)
             }
         })
-    });
-    theWindow.on('click','.delete',function(e){
-        var el = $(this).parents('[api_key]')
-        var code = el.attr('api_key');
+    }
+    var deleteApiKey = function(code){
         $.confirm.create({
             title: lang.deleteApiKey,
             body: lang.deleteApiKeyText + '\n' + `<b>${code}</b>`,
@@ -58,6 +88,18 @@ $(document).ready(function(e){
                 })
             }
         })
+    }
+    theWindowForm.submit(function(e){
+        e.preventDefault()
+        writePermissionsFromFieldsToString()
+        var formValues = theWindowForm.serializeObject()
+        addApiKey(formValues)
+        return false;
+    })
+    theWindow.on('click','.delete',function(e){
+        var el = $(this).parents('[api_key]')
+        var code = el.attr('api_key')
+        deleteApiKey(code)
     })
     theWindow.on('shown.bs.modal',function(e){
         getApiKeys(function(apiKeys){

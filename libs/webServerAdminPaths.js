@@ -383,6 +383,7 @@ module.exports = function(s,config,lang,app){
                     insert: insertQuery
                 },(err,r) => {
                     insertQuery.time = s.formattedTime(new Date,'YYYY-DD-MM HH:mm:ss');
+                    insertQuery.details = s.parseJSON(insertQuery.details)
                     if(!err){
                         s.tx({
                             f: 'api_key_added',

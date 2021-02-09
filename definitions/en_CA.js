@@ -5355,6 +5355,94 @@ module.exports = function(s,config,lang){
                  ]
               },
           }
-       }
+      },
+      "API Keys": {
+          "section": "API Keys",
+          "blocks": {
+              "Add New": {
+                 "name": lang['Add New'],
+                 "color": "grey",
+                 "isSection": true,
+                 "isForm": true,
+                 "id":"apiKeySectionAddNew",
+                 "info": [
+                     {
+                        "name": "ip",
+                        "field": lang['Allowed IPs'],
+                        "default": `0.0.0.0`,
+                        "placeholder": `0.0.0.0 ${lang['for Global Access']}`,
+                        "description": lang['Separate with commas, no spaces'],
+                        "fieldType": "text"
+                     },
+                     {
+                        "name": "detail=permissions",
+                        "field": lang['Permissions'],
+                        "default": "",
+                        "fieldType": "select",
+                        "attribute": `multiple style="height:150px;"`,
+                        "possible": [
+                            {
+                                name: lang['Can Authenticate Websocket'],
+                                value: 'auth_socket',
+                            },
+                            {
+                                name: lang['Can Get Monitors'],
+                                value: 'get_monitors',
+                            },
+                            {
+                                name: lang['Can Control Monitors'],
+                                value: 'control_monitors',
+                            },
+                            {
+                                name: lang['Can Get Logs'],
+                                value: 'get_logs',
+                            },
+                            {
+                                name: lang['Can View Streams'],
+                                value: 'watch_stream',
+                            },
+                            {
+                                name: lang['Can View Snapshots'],
+                                value: 'watch_snapshot',
+                            },
+                            {
+                                name: lang['Can View Videos'],
+                                value: 'watch_videos',
+                            },
+                            {
+                                name: lang['Can Delete Videos'],
+                                value: 'delete_videos',
+                            },
+                        ]
+                     },
+                     {
+                         hidden: true,
+                        "name": "details",
+                        "preFill": "{}",
+                     },
+                     {
+                        "forForm": true,
+                        "fieldType": "btn",
+                        "class": `btn-success`,
+                        "attribute": `type="submit"`,
+                        "btnContent": `<i class="fa fa-plus"></i> &nbsp; ${lang['Add New']}`,
+                     },
+                 ]
+             },
+             "API Keys": {
+                "name": lang['API Keys'],
+                "color": "grey",
+                "isSection": true,
+                "id":"apiKeySectionList",
+                "info": [
+                    {
+                        "fieldType": "table",
+                        "class": "table table-striped",
+                        id: "api_list",
+                    }
+                ]
+             },
+         }
+      }
     }
 }
