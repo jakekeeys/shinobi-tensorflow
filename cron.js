@@ -486,8 +486,8 @@ const processUser = async (v) => {
 //recursive function
 const setIntervalForCron = function(){
     clearCronInterval()
-    theCronInterval = setInterval(doCronJobs,1000 * 10)
-    // theCronInterval = setInterval(doCronJobs,parseFloat(config.cron.interval)*60000*60)
+    // theCronInterval = setInterval(doCronJobs,1000 * 10)
+    theCronInterval = setInterval(doCronJobs,parseFloat(config.cron.interval)*60000*60)
 }
 const clearCronInterval = function(){
     clearInterval(theCronInterval)
