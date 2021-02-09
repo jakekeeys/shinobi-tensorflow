@@ -103,6 +103,7 @@ $(document).ready(function(e){
     })
     theWindow.on('shown.bs.modal',function(e){
         getApiKeys(function(apiKeys){
+            apiKeyTable.empty()
             $.each(apiKeys,function(n,row){
                 drawApiKeyRow(row)
             })
