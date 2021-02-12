@@ -59,7 +59,7 @@ module.exports = (s,config,lang) => {
                 // const findCmd = [videosDirectory].concat(options.flags || ['-maxdepth','1'])
                 fs.writeFileSync(
                     tempDirectory + 'orphanCheck.sh',
-                    `find "${videosDirectory}" -maxdepth 1 -type f -exec stat -c "%y %n" {} + | sort -r | head -n ${options.checkMax}`
+                    `find "${videosDirectory}" -maxdepth 1 -type f -exec stat -c "%n" {} + | sort -r | head -n ${options.checkMax}`
                 );
                 let listing = spawn('sh',[tempDirectory + 'orphanCheck.sh'])
                 // const onData = options.onData ? options.onData : () => {}
