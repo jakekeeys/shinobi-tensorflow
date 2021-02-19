@@ -326,26 +326,26 @@ module.exports = function(s,config,lang,app,io){
                     selectedDate = req.params.filename.split('T')[0]
                 }
                 fileLocation = `${fileLocation}${frame.ke}/${frame.mid}_timelapse/${selectedDate}/${req.params.filename}`
-                fs.stat(fileLocation,function(err,stats){
-                    if(!err){
-                        if(req.params.action === 'delete'){
-                            deleteTimelapseFrame({
-                                ke: frame.ke,
-                                mid: frame.mid,
-                                filename: req.params.filename,
-                                fileLocation: fileLocation,
-                            })
-                            delete(timelapseFramesCache[cacheKey])
-                            s.closeJsonResponse(res,{ok: true})
-                        }else{
+                if(req.params.action === 'delete'){
+                    deleteTimelapseFrame({
+                        ke: frame.ke,
+                        mid: frame.mid,
+                        filename: req.params.filename,
+                        fileLocation: fileLocation,
+                    })
+                    delete(timelapseFramesCache[cacheKey])
+                    s.closeJsonResponse(res,{ok: true})
+                }else{
+                    fs.stat(fileLocation,function(err,stats){
+                        if(!err){
                             res.contentType('image/jpeg')
                             res.on('finish',function(){res.end()})
                             fs.createReadStream(fileLocation).pipe(res)
+                        }else{
+                            s.closeJsonResponse(res,{ok: false, msg: lang[`Nothing exists`]})
                         }
-                    }else{
-                        s.closeJsonResponse(res,{ok: false, msg: lang[`Nothing exists`]})
-                    }
-                })
+                    })    
+                }
             }
             if(timelapseFramesCache[cacheKey]){
                 processFrame(timelapseFramesCache[cacheKey])

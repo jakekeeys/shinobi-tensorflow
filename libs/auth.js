@@ -182,7 +182,7 @@ module.exports = function(s,config,lang){
                 onFail()
             }
         }
-        if(s.group[params.ke] && s.group[params.ke].users && s.group[params.ke].users[params.auth]){
+        if(s.group[params.ke] && s.group[params.ke].users && s.group[params.ke].users[params.auth] && s.group[params.ke].users[params.auth].details){
             var activeSession = s.group[params.ke].users[params.auth]
             activeSession.permissions = {}
             if(!activeSession.lang){
@@ -276,7 +276,7 @@ module.exports = function(s,config,lang){
                     success()
                 }
             }
-            if(params.auth && s.superUsersApi[params.auth]){
+            if(params.auth && Object.keys(s.superUsersApi).indexOf(params.auth) > -1){
                 userFound = true
                 userSelected = s.superUsersApi[params.auth].$user
                 foundUser()

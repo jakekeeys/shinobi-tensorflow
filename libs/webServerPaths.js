@@ -89,7 +89,7 @@ module.exports = function(s,config,lang,app,io){
     * API : Logout
     */
     app.get(config.webPaths.apiPrefix+':auth/logout/:ke/:id', function (req,res){
-        if(s.group[req.params.ke]&&s.group[req.params.ke].users[req.params.auth]){
+        if(s.group[req.params.ke] && s.group[req.params.ke].users[req.params.auth] && s.group[req.params.ke].users[req.params.auth].details){
             delete(s.api[req.params.auth]);
             delete(s.group[req.params.ke].users[req.params.auth]);
             s.knexQuery({
@@ -171,9 +171,9 @@ module.exports = function(s,config,lang,app,io){
                 return false
             }
             switch(true){
-                case search(config.webPaths.admin):
-                    return 'admin'
-                break;
+                // case search(config.webPaths.admin):
+                //     return 'admin'
+                // break;
                 case search(config.webPaths.super):
                     return 'super'
                 break;
@@ -321,53 +321,6 @@ module.exports = function(s,config,lang,app,io){
                     })
                 break;
                 case'admin':
-                    if(!r.details.sub){
-                        s.knexQuery({
-                            action: "select",
-                            columns: "uid,mail,details",
-                            table: "Users",
-                            where: [
-                                ['ke','=',r.ke],
-                                ['details','LIKE','%"sub"%'],
-                            ]
-                        },(err,rr) => {
-                            s.knexQuery({
-                                action: "select",
-                                columns: "*",
-                                table: "Monitors",
-                                where: [
-                                    ['ke','=',r.ke],
-                                ]
-                            },(err,rrr) => {
-                                renderPage(config.renderPaths.admin,{
-                                    config: s.getConfigWithBranding(req.hostname),
-                                    $user: response,
-                                    $subs: rr,
-                                    $mons: rrr,
-                                    lang: r.lang,
-                                    define: s.getDefinitonFile(r.details.lang),
-                                    customAutoLoad: s.customAutoLoadTree
-                                })
-                            })
-                        })
-                    }else{
-                        //not admin user
-                        var chosenRender = 'home'
-                        if(r.details.landing_page && r.details.landing_page !== '' && config.renderPaths[r.details.landing_page]){
-                            chosenRender = r.details.landing_page
-                        }
-                        renderPage(config.renderPaths[chosenRender],{
-                            $user:response,
-                            config: s.getConfigWithBranding(req.hostname),
-                            lang:r.lang,
-                            define:s.getDefinitonFile(r.details.lang),
-                            addStorage:s.dir.addStorage,
-                            fs:fs,
-                            __dirname:s.mainDirectory,
-                            customAutoLoad: s.customAutoLoadTree
-                        });
-                    }
-                break;
                 default:
                     var chosenRender = 'home'
                     if(r.details.sub && r.details.landing_page && r.details.landing_page !== '' && config.renderPaths[r.details.landing_page]){

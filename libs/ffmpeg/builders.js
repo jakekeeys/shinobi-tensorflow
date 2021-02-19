@@ -372,111 +372,113 @@ module.exports = (s,config,lang) => {
     const buildMainStream = function(e){
         //e = monitor object
         //x = temporary values
-        const isCudaEnabled = hasCudaEnabled(e)
         const streamFlags = []
-        const streamFilters = []
-        const videoCodecisCopy = e.details.stream_vcodec === 'copy'
-        const videoCodec = e.details.stream_vcodec ? e.details.stream_vcodec : 'no'
-        const audioCodec = e.details.stream_acodec ? e.details.stream_acodec : 'no'
-        const videoQuality = e.details.stream_quality ? e.details.stream_quality : '1'
         const streamType = e.details.stream_type ? e.details.stream_type : 'hls'
-        const videoFps = !isNaN(parseFloat(e.details.stream_fps)) && e.details.stream_fps !== '0' ? parseFloat(e.details.stream_fps) : null
-        const inputMap = buildInputMap(e,e.details.input_map_choices.stream)
-        const outputCanHaveAudio = (streamType === 'hls' || streamType === 'mp4' || streamType === 'flv' || streamType === 'h265')
-        const outputRequiresEncoding = streamType === 'mjpeg' || streamType === 'b64'
-        const outputIsPresetCapable = outputCanHaveAudio
-        const { videoWidth, videoHeight } = validateDimensions(e.details.stream_scale_x,e.details.stream_scale_y)
-        if(inputMap)streamFlags.push(inputMap)
-        if(e.details.cust_stream)streamFlags.push(e.details.cust_stream)
-        if(streamFlags.indexOf('-strict -2') === -1)streamFlags.push(`-strict -2`)
-        //stream - timestamp
-        if(e.details.stream_timestamp === "1" && !videoCodecisCopy){
-            streamFilters.push(buildTimestampFiltersFromConfiguration('stream_',e))
-        }
-        if(e.details.stream_watermark === "1" && e.details.stream_watermark_location){
-            streamFilters.push(buildWatermarkFiltersFromConfiguration(`stream_`,e))
-        }
-        //stream - rotation
-        if(e.details.stream_rotate && e.details.stream_rotate !== "no" && e.details.stream_vcodec !== 'copy'){
-            streamFilters.push(buildRotationFiltersFromConfiguration(`stream_`,e))
-        }
-        if(outputCanHaveAudio && audioCodec !== 'no'){
-            streamFlags.push(`-c:a ` + audioCodec)
-        }else{
-            streamFlags.push(`-an`)
-        }
-        if(videoCodec === 'h264_vaapi'){
-            streamFilters.push('format=nv12,hwupload');
-            if(e.details.stream_scale_x && e.details.stream_scale_y){
-                streamFilters.push('scale_vaapi=w='+e.details.stream_scale_x+':h='+e.details.stream_scale_y)
+        if(streamType !== 'jpeg'){
+            const isCudaEnabled = hasCudaEnabled(e)
+            const streamFilters = []
+            const videoCodecisCopy = e.details.stream_vcodec === 'copy'
+            const videoCodec = e.details.stream_vcodec ? e.details.stream_vcodec : 'no'
+            const audioCodec = e.details.stream_acodec ? e.details.stream_acodec : 'no'
+            const videoQuality = e.details.stream_quality ? e.details.stream_quality : '1'
+            const videoFps = !isNaN(parseFloat(e.details.stream_fps)) && e.details.stream_fps !== '0' ? parseFloat(e.details.stream_fps) : null
+            const inputMap = buildInputMap(e,e.details.input_map_choices.stream)
+            const outputCanHaveAudio = (streamType === 'hls' || streamType === 'mp4' || streamType === 'flv' || streamType === 'h265')
+            const outputRequiresEncoding = streamType === 'mjpeg' || streamType === 'b64'
+            const outputIsPresetCapable = outputCanHaveAudio
+            const { videoWidth, videoHeight } = validateDimensions(e.details.stream_scale_x,e.details.stream_scale_y)
+            if(inputMap)streamFlags.push(inputMap)
+            if(e.details.cust_stream)streamFlags.push(e.details.cust_stream)
+            if(streamFlags.indexOf('-strict -2') === -1)streamFlags.push(`-strict -2`)
+            //stream - timestamp
+            if(e.details.stream_timestamp === "1" && !videoCodecisCopy){
+                streamFilters.push(buildTimestampFiltersFromConfiguration('stream_',e))
             }
-    	}
-        if(isCudaEnabled && (streamType === 'mjpeg' || streamType === 'b64')){
-            streamFilters.push('hwdownload,format=nv12')
-        }
-        if(!outputRequiresEncoding && videoCodec !== 'no'){
-            streamFlags.push(`-c:v ` + videoCodec)
-        }
-        if(!videoCodecisCopy || outputRequiresEncoding){
-            if(videoWidth && videoHeight)streamFlags.push(`-s ${videoWidth}x${videoHeight}`)
-            if(videoFps && streamType === 'mjpeg' || streamType === 'b64'){
-                streamFilters.push(`fps=${videoFps}`)
+            if(e.details.stream_watermark === "1" && e.details.stream_watermark_location){
+                streamFilters.push(buildWatermarkFiltersFromConfiguration(`stream_`,e))
             }
-        }
-        if(e.details.stream_vf){
-            streamFilters.push(e.details.stream_vf)
-        }
-        if(outputIsPresetCapable){
-            const streamPreset = streamType !== 'h265' && e.details.preset_stream ? e.details.preset_stream : null
-            if(streamPreset){
-                streamFlags.push(`-preset ${streamPreset}`)
+            //stream - rotation
+            if(e.details.stream_rotate && e.details.stream_rotate !== "no" && e.details.stream_vcodec !== 'copy'){
+                streamFilters.push(buildRotationFiltersFromConfiguration(`stream_`,e))
             }
-            if(!videoCodecisCopy){
-                streamFlags.push(`-crf ${videoQuality}`)
+            if(outputCanHaveAudio && audioCodec !== 'no'){
+                streamFlags.push(`-c:a ` + audioCodec)
+            }else{
+                streamFlags.push(`-an`)
             }
-        }else{
-            streamFlags.push(`-q:v ${videoQuality}`)
-        }
-        if((!videoCodecisCopy || outputRequiresEncoding) && streamFilters.length > 0){
-            streamFlags.push(`-vf "${streamFilters.join(',')}"`)
-        }
-        switch(streamType){
-            case'mp4':
-                streamFlags.push('-f mp4 -movflags +frag_keyframe+empty_moov+default_base_moof -metadata title="Poseidon Stream from Shinobi" -reset_timestamps 1 pipe:1')
-            break;
-            case'flv':
-                streamFlags.push(`-f flv`,'pipe:1')
-            break;
-            case'hls':
-                const hlsTime = !isNaN(parseInt(e.details.hls_time)) ? `${parseInt(e.details.hls_time)}` : '2'
-                const hlsListSize = !isNaN(parseInt(e.details.hls_list_size)) ? `${parseInt(e.details.hls_list_size)}` : '2'
-                if(videoCodec !== 'h264_vaapi' && !videoCodecisCopy){
-                    if(!arrayContains('-tune',streamFlags)){
-                        streamFlags.push(`-tune zerolatency`)
-                    }
-                    if(!arrayContains('-g ',streamFlags)){
-                        streamFlags.push(`-g 1`)
-                    }
+            if(videoCodec === 'h264_vaapi'){
+                streamFilters.push('format=nv12,hwupload');
+                if(e.details.stream_scale_x && e.details.stream_scale_y){
+                    streamFilters.push('scale_vaapi=w='+e.details.stream_scale_x+':h='+e.details.stream_scale_y)
                 }
-                streamFlags.push(`-f hls -hls_time ${hlsTime} -hls_list_size ${hlsListSize} -start_number 0 -hls_allow_cache 0 -hls_flags +delete_segments+omit_endlist "${e.sdir}s.m3u8"`)
-            break;
-            case'mjpeg':
-                streamFlags.push(`-an -c:v mjpeg -f mpjpeg -boundary_tag shinobi pipe:1`)
-            break;
-            case'h265':
-                streamFlags.push(`-movflags +frag_keyframe+empty_moov+default_base_moof -metadata title="Shinobi H.265 Stream" -reset_timestamps 1 -f hevc pipe:1`)
-            break;
-            case'b64':case'':case undefined:case null://base64
-                streamFlags.push(`-an -c:v mjpeg -f image2pipe pipe:1`)
-            break;
-        }
-        if(e.details.custom_output){
-            streamFlags.push(e.details.custom_output)
-        }
-        if(e.details.stream_channels){
-            e.details.stream_channels.forEach(function(v,n){
-                streamFlags.push(createStreamChannel(e,n + config.pipeAddition,v))
-            })
+        	}
+            if(isCudaEnabled && (streamType === 'mjpeg' || streamType === 'b64')){
+                streamFilters.push('hwdownload,format=nv12')
+            }
+            if(!outputRequiresEncoding && videoCodec !== 'no'){
+                streamFlags.push(`-c:v ` + videoCodec)
+            }
+            if(!videoCodecisCopy || outputRequiresEncoding){
+                if(videoWidth && videoHeight)streamFlags.push(`-s ${videoWidth}x${videoHeight}`)
+                if(videoFps && streamType === 'mjpeg' || streamType === 'b64'){
+                    streamFilters.push(`fps=${videoFps}`)
+                }
+            }
+            if(e.details.stream_vf){
+                streamFilters.push(e.details.stream_vf)
+            }
+            if(outputIsPresetCapable){
+                const streamPreset = streamType !== 'h265' && e.details.preset_stream ? e.details.preset_stream : null
+                if(streamPreset){
+                    streamFlags.push(`-preset ${streamPreset}`)
+                }
+                if(!videoCodecisCopy){
+                    streamFlags.push(`-crf ${videoQuality}`)
+                }
+            }else{
+                streamFlags.push(`-q:v ${videoQuality}`)
+            }
+            if((!videoCodecisCopy || outputRequiresEncoding) && streamFilters.length > 0){
+                streamFlags.push(`-vf "${streamFilters.join(',')}"`)
+            }
+            switch(streamType){
+                case'mp4':
+                    streamFlags.push('-f mp4 -movflags +frag_keyframe+empty_moov+default_base_moof -metadata title="Poseidon Stream from Shinobi" -reset_timestamps 1 pipe:1')
+                break;
+                case'flv':
+                    streamFlags.push(`-f flv`,'pipe:1')
+                break;
+                case'hls':
+                    const hlsTime = !isNaN(parseInt(e.details.hls_time)) ? `${parseInt(e.details.hls_time)}` : '2'
+                    const hlsListSize = !isNaN(parseInt(e.details.hls_list_size)) ? `${parseInt(e.details.hls_list_size)}` : '2'
+                    if(videoCodec !== 'h264_vaapi' && !videoCodecisCopy){
+                        if(!arrayContains('-tune',streamFlags)){
+                            streamFlags.push(`-tune zerolatency`)
+                        }
+                        if(!arrayContains('-g ',streamFlags)){
+                            streamFlags.push(`-g 1`)
+                        }
+                    }
+                    streamFlags.push(`-f hls -hls_time ${hlsTime} -hls_list_size ${hlsListSize} -start_number 0 -hls_allow_cache 0 -hls_flags +delete_segments+omit_endlist "${e.sdir}s.m3u8"`)
+                break;
+                case'mjpeg':
+                    streamFlags.push(`-an -c:v mjpeg -f mpjpeg -boundary_tag shinobi pipe:1`)
+                break;
+                case'h265':
+                    streamFlags.push(`-movflags +frag_keyframe+empty_moov+default_base_moof -metadata title="Shinobi H.265 Stream" -reset_timestamps 1 -f hevc pipe:1`)
+                break;
+                case'b64':case'':case undefined:case null://base64
+                    streamFlags.push(`-an -c:v mjpeg -f image2pipe pipe:1`)
+                break;
+            }
+            if(e.details.custom_output){
+                streamFlags.push(e.details.custom_output)
+            }
+            if(e.details.stream_channels){
+                e.details.stream_channels.forEach(function(v,n){
+                    streamFlags.push(createStreamChannel(e,n + config.pipeAddition,v))
+                })
+            }
         }
         return streamFlags.join(' ')
     }
@@ -716,7 +718,7 @@ module.exports = (s,config,lang) => {
             }
             if(audioCodec === 'no'){
                 outputFlags.push(`-an`)
-            }else if(audioCodec){
+            }else if(audioCodec && audioCodec !== 'auto'){
                 outputFlags.push(`-c:a ` + audioCodec)
             }
             if(outputFilters.length > 0){

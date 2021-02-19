@@ -68,9 +68,11 @@
             if(monitorSettings.attribute){
                 attributes.push(monitorSettings.attribute)
             }
-            if(monitorSettings.id){
-                attributes.push(`id="${monitorSettings.id}"`)
+            if(!monitorSettings.id){
+                var userSettingsId = monitorSettings.name.replace(/[^a-zA-Z ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/ /g, '')
+                monitorSettings.id = userSettingsId
             }
+            attributes.push(`id="${monitorSettings.id}"`)
             if(monitorSettings.color){
                 sectionClass.push(monitorSettings.color)
             }

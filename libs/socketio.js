@@ -370,39 +370,28 @@ module.exports = function(s,config,lang,io){
                     s.tx({f:'user_status_change',ke:d.ke,uid:cn.uid,status:1,user:s.group[d.ke].users[d.auth]},'GRP_'+d.ke)
                     s.sendDiskUsedAmountToClients(d.ke)
                     s.loadGroupApps(d)
-                    s.knexQuery({
-                        action: "select",
-                        columns: "*",
-                        table: "API",
-                        where: [
-                            ['ke','=',d.ke],
-                            ['uid','=',d.uid],
-                        ]
-                    },function(err,rrr) {
-                        tx({
-                            f:'init_success',
-                            users:s.group[d.ke].vid,
-                            apis:rrr,
-                            os:{
-                                platform:s.platform,
-                                cpuCount:s.coreCount,
-                                totalmem:s.totalmem
-                            }
-                        })
-                        try{
-                            Object.values(s.group[d.ke].rawMonitorConfigurations).forEach((monitor) => {
-                                s.cameraSendSnapshot({
-                                    mid: monitor.mid,
-                                    ke: monitor.ke,
-                                    mon: monitor
-                                },{
-                                    useIcon: true
-                                })
-                            })
-                        }catch(err){
-                            s.debugLog(err)
+                    tx({
+                        f:'init_success',
+                        users:s.group[d.ke].vid,
+                        os:{
+                            platform:s.platform,
+                            cpuCount:s.coreCount,
+                            totalmem:s.totalmem
                         }
                     })
+                    try{
+                        Object.values(s.group[d.ke].rawMonitorConfigurations).forEach((monitor) => {
+                            s.cameraSendSnapshot({
+                                mid: monitor.mid,
+                                ke: monitor.ke,
+                                mon: monitor
+                            },{
+                                useIcon: true
+                            })
+                        })
+                    }catch(err){
+                        s.debugLog(err)
+                    }
                     s.onSocketAuthenticationExtensions.forEach(function(extender){
                         extender(r,cn,d,tx)
                     })
@@ -993,6 +982,12 @@ module.exports = function(s,config,lang,io){
                          break;
                          case's.deleteVideo':
                              s.deleteVideo(d.file)
+                         break;
+                         case's.deleteFileBinEntry':
+                             s.deleteFileBinEntry(d.file)
+                         break;
+                         case's.setDiskUsedForGroup':
+                            s.setDiskUsedForGroup(d.ke,d.size,d.target || undefined)
                          break;
                          case'start':case'end':
                              d.mid='_cron';s.userLog(d,{type:'cron',msg:d.msg})

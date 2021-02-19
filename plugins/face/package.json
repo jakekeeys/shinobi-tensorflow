@@ -4,6 +4,10 @@
   "description": "Face Recognition plugin for Shinobi that uses C++ functions for detection. Based on @justadudewhohacks' face-api.js.",
   "main": "shinobi-face.js",
   "dependencies": {
+    "@tensorflow/tfjs-converter": "^1.7.4",
+    "@tensorflow/tfjs-core": "^1.7.4",
+    "@tensorflow/tfjs-layers": "^1.7.4",
+    "@tensorflow/tfjs-node": "^1.7.4",
     "socket.io-client": "^1.7.4",
     "express": "^4.16.2",
     "moment": "^2.19.2",

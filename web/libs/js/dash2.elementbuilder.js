@@ -232,9 +232,6 @@ $.ccio.tm=function(x,d,z,user){
             tmp+='</div>';//.grid-stack-content
             tmp+='</div>';//#monitor_live_...
         break;
-        case 3://api key row
-            tmp+='<tr api_key="'+d.code+'"><td class="code">'+d.code+'</td><td class="ip">'+d.ip+'</td><td class="time">'+d.time+'</td><td class="text-right"><a class="delete btn btn-xs btn-danger">&nbsp;<i class="fa fa-trash"></i>&nbsp;</a></td></tr>';
-        break;
         case 4://log row, draw to global and monitor
             if(!d.time){d.time=$.ccio.init('t')}
             tmp+='<li class="log-item">'
@@ -886,13 +883,6 @@ $.ccio.pm=function(x,d,z,user){
             }
             $(d.ev).html(tmp);
             $.ccio.init('ls');
-        break;
-        case 3:
-            z='#api_list';
-            $(z).empty();
-            $.each(d,function(n,v){
-                tmp+=$.ccio.tm(3,v,null,user);
-            })
         break;
         case'option':
             $.each(d,function(n,v){

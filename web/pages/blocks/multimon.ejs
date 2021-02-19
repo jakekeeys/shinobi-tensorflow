@@ -26,7 +26,13 @@
         </form>
         <div class="modal-footer">
             <button type="button" class="btn btn-default pull-left" data-dismiss="modal"><%-lang.Close%></button>
-            <div>
+            <div style="display:inline-block;margin-right:5px;font-family: monospace">
+              <div><select class="form-control btn-default" id="multi_mon_api_key_selector">
+                  <option value="<%- $user.auth_token %>" selected><%-lang['Session Key']%></option>
+                  <optgroup label="<%- lang['API Keys'] %>"></optgroup>
+              </select></div>
+            </div>
+            <div style="display:inline-block">
                 <a class="btn btn-danger delete"><%-lang['Delete']%></a>
                 <a class="btn btn-primary save_config"><%-lang['Export']%></a>
                 <a class="btn btn-default import_config"><%-lang['Import']%></a>
