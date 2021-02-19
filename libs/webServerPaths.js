@@ -89,7 +89,7 @@ module.exports = function(s,config,lang,app,io){
     * API : Logout
     */
     app.get(config.webPaths.apiPrefix+':auth/logout/:ke/:id', function (req,res){
-        if(s.group[req.params.ke]&&s.group[req.params.ke].users[req.params.auth]){
+        if(s.group[req.params.ke] && s.group[req.params.ke].users[req.params.auth] && s.group[req.params.ke].users[req.params.auth].details){
             delete(s.api[req.params.auth]);
             delete(s.group[req.params.ke].users[req.params.auth]);
             s.knexQuery({
