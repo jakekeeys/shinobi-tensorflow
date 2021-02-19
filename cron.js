@@ -251,7 +251,7 @@ const deleteOldVideos = async (v) => {
         var i;
         for (i = 0; i < monitorRows.length; i++) {
             const monitor = monitorRows[i]
-            const monitorId = monitor.id
+            const monitorId = monitor.mid
             const details = JSON.parse(monitor.details);
             const monitorsMaxDaysToKeep = !isNaN(details.max_keep_days) ? parseFloat(details.max_keep_days) : null
             if(monitorsMaxDaysToKeep){
