@@ -733,6 +733,7 @@
    "libx264": "libx264",
    "libx265": "libx265",
    "copy": "copy",
+   "Duplicate": "Duplicate",
    "Audio": "Audio",
    "Mute Audio": "Mute Audio",
    "No Audio": "No Audio",
