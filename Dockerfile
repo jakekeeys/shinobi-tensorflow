@@ -1,4 +1,4 @@
-FROM node:12.18.3-buster-slim
+FROM node:12.21.0-buster-slim
 
 ENV DB_USER=majesticflame \
     DB_PASSWORD='' \
@@ -89,8 +89,7 @@ COPY ./plugins  /home/Shinobi/plugins
 RUN chmod -R 777 /home/Shinobi/plugins
 RUN npm i npm@latest -g && \
     npm install pm2 -g && \
-    npm install --unsafe-perm && \
-    npm audit fix --force
+    npm install --unsafe-perm
 COPY ./Docker/pm2.yml ./
 
 # Copy default configuration files
