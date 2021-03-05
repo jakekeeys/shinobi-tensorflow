@@ -126,8 +126,8 @@ module.exports = (s,config,lang,app,io) => {
     const getEventsCounted = (groupKey,monitorId) => {
         return s.group[eventData.ke].activeMonitors[eventData.id].detector_motion_count.length
     }
-    const hasMatrices = (monitorDetails) => {
-        return (monitorDetails.matrices && monitorDetails.matrices.length > 0)
+    const hasMatrices = (eventDetails) => {
+        return (eventDetails.matrices && eventDetails.matrices.length > 0)
     }
     const checkEventFilters = (d,monitorDetails,filter) => {
         const eventDetails = d.details
@@ -246,7 +246,7 @@ module.exports = (s,config,lang,app,io) => {
             })
             if(d.details.matrices && d.details.matrices.length === 0 || filter.halt === true){
                 return false
-            }else if(hasMatrices(monitorDetails)){
+            }else if(hasMatrices(d.details)){
                 var reviewedMatrix = []
                 d.details.matrices.forEach(function(matrix){
                     if(matrix)reviewedMatrix.push(matrix)
@@ -299,9 +299,9 @@ module.exports = (s,config,lang,app,io) => {
             }
         })
     }
-    const checkForObjectsInRegions = (monitorConfig,filter,d,didCountingAlready) => {
+    const checkForObjectsInRegions = (monitorConfig,eventDetails,filter,d,didCountingAlready) => {
         const monitorDetails = monitorConfig.details
-        if(hasMatrices(monitorDetails) && monitorDetails.detector_obj_region === '1'){
+        if(hasMatrices(eventDetails) && monitorDetails.detector_obj_region === '1'){
             var regions = s.group[monitorConfig.ke].activeMonitors[monitorConfig.mid].parsedObjects.cords
             var isMatrixInRegions = isAtleastOneMatrixInRegion(regions,eventDetails.matrices)
             if(isMatrixInRegions){
@@ -554,7 +554,7 @@ module.exports = (s,config,lang,app,io) => {
             const passedMotionLock = checkMotionLock(d,monitorDetails)
             if(!passedMotionLock)return
         }
-        const passedObjectInRegionCheck = checkForObjectsInRegions(monitorConfig,filter,d,didCountingAlready)
+        const passedObjectInRegionCheck = checkForObjectsInRegions(monitorConfig,eventDetails,filter,d,didCountingAlready)
         if(!passedObjectInRegionCheck)return
 
         //
