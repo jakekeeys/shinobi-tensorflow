@@ -119,6 +119,7 @@ const initialize = (config,lang) => {
               connectionToP2PServer.emit('httpResponse',{
                   err: err,
                   json: rawRequest.bodyOnEnd ? json : null,
+                  headers: resp.headers,
                   rid: rawRequest.rid
               })
           } : null,
@@ -233,7 +234,7 @@ const initialize = (config,lang) => {
         s.debugLog('p2p','Server Forced Disconnection')
     });
     const onDisconnect = () => {
-        s.systemLog('p2p','Disconnected')
+        s.systemLog('p2p','P2P Disconnected')
         killAllClientConnections()
         if(!connectionToP2PServer.allowDisconnect){
             s.systemLog('p2p','Attempting Reconnection...')
