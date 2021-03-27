@@ -50,7 +50,7 @@ fi
 
 manualInstallRequirements() {
 	npm install --unsafe-perm
-	npm install @tensorflow/tfjs-backend-cpu@2.7.0 @tensorflow/tfjs-backend-webgl@2.7.0 @tensorflow/tfjs-converter@2.7.0 @tensorflow/tfjs-core@2.7.0 @tensorflow/tfjs-layers@2.7.0 @tensorflow/tfjs-node@2.7.0 --unsafe-perm
+	npm install @tensorflow/tfjs-backend-cpu@2.7.0 @tensorflow/tfjs-backend-webgl@2.7.0 @tensorflow/tfjs-converter@2.7.0 @tensorflow/tfjs-core@2.7.0 @tensorflow/tfjs-layers@2.7.0 @tensorflow/tfjs-node@2.7.0 --unsafe-perm --force
 }
 
 installJetson() {

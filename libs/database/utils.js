@@ -355,7 +355,7 @@ module.exports = function(s,config){
             }
             if(options.parseRowDetails){
                 r.forEach((row) => {
-                    row.details = JSON.parse(row.details)
+                    row.details = s.parseJSON(row.details,{})
                 })
             }
             if(options.noCount){
