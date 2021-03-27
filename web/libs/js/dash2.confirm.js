@@ -35,6 +35,7 @@ $(document).ready(function(){
         if(options.clickOptions && options.clickCallback)$.confirm.click(options.clickOptions,options.clickCallback)
     }
     $.confirm.e.on('hidden.bs.modal', function () {
+        $.confirm.body.empty()
         $.confirm.footer.find('.confirmaction').remove()
     })
 })
