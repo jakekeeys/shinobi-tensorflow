@@ -69,7 +69,7 @@ if [ "$DB_DISABLE_INCLUDED" = "false" ]; then
 
 else
     echo "Create database schema if it does not exists ..."
-    mysql -u "$DB_USER" -h "$DB_HOST" -p"$DB_PASSWORD" --port="$DB_PORT" -e "source /home/Shinobi/sql/framework.sql" || true
+    mysql -u "$DB_USER" -h "$DB_HOST" -p"$DB_PASSWORD" --port="$DB_PORT" --database="$DB_DATABASE" -e "source /home/Shinobi/sql/framework.sql" || true
 fi
 
 DATABASE_CONFIG='{"host": "'$DB_HOST'","user": "'$DB_USER'","password": "'$DB_PASSWORD'","database": "'$DB_DATABASE'","port":'$DB_PORT'}'

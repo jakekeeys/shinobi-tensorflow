@@ -80,7 +80,7 @@ if [[ $@ == *'restart'* ]]; then
 else
     if [[ $@ == *'start'* ]] || [[ $@ == *'now'* ]]; then
         proccessAlive=$(pm2 list | grep camera | grep online)
-        if [ "$proccessAlive" ]]; then
+        if [ "$proccessAlive" ]; then
             echo "Shinobi process is already running."
         else
             if [ -e "$installationDirectory/INSTALL/installed.txt" ]; then
