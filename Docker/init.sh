@@ -62,7 +62,7 @@ if [ "$DB_DISABLE_INCLUDED" = "false" ]; then
     echo "Setting up MySQL database if it does not exists ..."
 
     echo "Create database schema if it does not exists ..."
-    mysql -e "source /home/Shinobi/sql/framework.sql" || true
+    mysql -e "source /home/Shinobi/sql/framework1.sql" || true
 
     echo "Create database user if it does not exists ..."
     mysql -e "source /home/Shinobi/sql/user.sql" || true
@@ -103,7 +103,7 @@ fi
 
 if [ -e "/config/init.extension.sh" ]; then
     echo "Running extension init file ..."
-    ( sh /config/init.extension.sh ) 
+    ( sh /config/init.extension.sh )
 fi
 
 # Execute Command
