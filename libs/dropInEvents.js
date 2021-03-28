@@ -193,6 +193,10 @@ module.exports = function(s,config,lang,app,io){
             const FtpSrv = require('ftp-srv')
             const ftpServer = new FtpSrv({
                 url: config.ftpServerUrl,
+                // pasv_url must be set to enable PASV; ftp-srv uses its known IP if given 127.0.0.1,
+                // and smart clients will ignore the IP anyway. Some Dahua IP cams require PASV mode.
+                // ftp-srv just wants an IP only (no protocol or port)
+                pasv_url: config.ftpServerUrl.replace(/.*:\/\//, '').replace(/:.*/, ''),
                 log: require('bunyan').createLogger({
                   name: 'ftp-srv',
                   level: 100
