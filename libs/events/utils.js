@@ -602,5 +602,6 @@ module.exports = (s,config,lang,app,io) => {
         closeEventBasedRecording: closeEventBasedRecording,
         legacyFilterEvents: legacyFilterEvents,
         triggerEvent: triggerEvent,
+        addEventDetailsToString: addEventDetailsToString,
     }
 }

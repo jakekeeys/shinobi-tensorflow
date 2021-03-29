@@ -680,7 +680,7 @@ module.exports = (s,config,lang) => {
             const hlsTime = !isNaN(parseInt(e.details.detector_buffer_hls_list_time)) ? `${parseInt(e.details.detector_buffer_hls_list_time)}` : '2'
             const hlsListSize = !isNaN(parseInt(e.details.detector_buffer_hls_list_size)) ? `${parseInt(e.details.detector_buffer_hls_list_size)}` : '4'
             if(inputMap)outputFlags.push(inputMap)
-            if(e.details.cust_record)outputFlags.push(e.details.cust_sip_record)
+            if(e.details.cust_sip_record)outputFlags.push(e.details.cust_sip_record)
             if(videoCodec === 'auto'){
                 if(e.type === 'h264' || e.type === 'hls' || e.type === 'mp4'){
                     videoCodec = `copy`
