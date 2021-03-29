@@ -607,11 +607,15 @@ module.exports = function(s,config,lang){
         }
     }
     s.getVideoStorageIndex = function(video){
-        var details = s.parseJSON(video.details) || {}
-        var storageId = details.storageId
-        if(s.group[video.ke] && s.group[video.ke].activeMonitors[video.id] && s.group[video.ke].activeMonitors[video.id].addStorageId)storageId = s.group[video.ke].activeMonitors[video.id].addStorageId
-        if(storageId){
-            return s.group[video.ke].addStorageUse[storageId]
+        try{
+            var details = s.parseJSON(video.details) || {}
+            var storageId = details.storageId
+            if(s.group[video.ke] && s.group[video.ke].activeMonitors[video.id] && s.group[video.ke].activeMonitors[video.id].addStorageId)storageId = s.group[video.ke].activeMonitors[video.id].addStorageId
+            if(storageId){
+                return s.group[video.ke].addStorageUse[storageId]
+            }
+        }catch(err){
+            s.debugLog(err)
         }
         return null
     }
