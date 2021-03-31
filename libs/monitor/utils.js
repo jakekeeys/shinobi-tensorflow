@@ -71,19 +71,26 @@ module.exports = (s,config,lang) => {
             if(activeMonitor.childNode){
                 s.cx({f:'kill',d:s.cleanMonitorObject(e)},activeMonitor.childNodeId)
             }else{
-                if(proc && proc.kill){
-                    if(s.isWin){
-                        spawn("taskkill", ["/pid", proc.pid, '/t'])
-                    }else{
-                        proc.kill('SIGTERM')
-                    }
-                    setTimeout(function(){
-                        try{
-                            proc.kill()
-                        }catch(err){
-                            s.debugLog(err)
+                try{
+                    proc.stdin.write("q\r\n")
+                    setTimeout(() => {
+                        if(proc && proc.kill){
+                            if(s.isWin){
+                                spawn("taskkill", ["/pid", proc.pid, '/t'])
+                            }else{
+                                proc.kill('SIGTERM')
+                            }
+                            setTimeout(function(){
+                                try{
+                                    proc.kill()
+                                }catch(err){
+                                    s.debugLog(err)
+                                }
+                            },1000)
                         }
                     },1000)
+                }catch(err){
+                    s.debugLog(err)
                 }
             }
         }
