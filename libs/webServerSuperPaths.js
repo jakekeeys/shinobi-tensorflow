@@ -31,7 +31,7 @@ module.exports = function(s,config,lang,app){
                     response.rows[n].info = JSON.parse(v.info)
                 })
                 s.closeJsonResponse(res,{
-                    ok: true,
+                    ok: response.ok,
                     logs: response.rows
                 })
             })
