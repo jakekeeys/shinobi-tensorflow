@@ -17,24 +17,23 @@ module.exports = function(s,config,lang,app){
     app.all([config.webPaths.superApiPrefix+':auth/logs'], function (req,res){
         req.ret={ok:false};
         s.superAuth(req.params,function(resp){
-            const monitorRestrictions = s.getMonitorRestrictions(user.details,req.params.id)
             s.getDatabaseRows({
-                monitorRestrictions: monitorRestrictions,
                 table: 'Logs',
-                groupKey: req.params.ke,
+                groupKey: '$',
                 date: req.query.date,
                 startDate: req.query.start,
                 endDate: req.query.end,
                 startOperator: req.query.startOperator,
                 endOperator: req.query.endOperator,
-                limit: req.query.limit,
-                archived: req.query.archived,
-                endIsStartTo: true
+                limit: req.query.limit || 30,
             },(response) => {
                 response.rows.forEach(function(v,n){
-                    r[n].info = JSON.parse(v.info)
+                    response.rows[n].info = JSON.parse(v.info)
                 })
-                s.closeJsonResponse(res,r)
+                s.closeJsonResponse(res,{
+                    ok: true,
+                    logs: response.rows
+                })
             })
         },res,req)
     })
