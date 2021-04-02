@@ -267,8 +267,11 @@ $(document).ready(function(){
       schema: schema
     });
 
-    configurationEditor.setValue(shinobiConfig);
-
+    function loadConfiguationIntoEditor(){
+        $.get(superApiPrefix + $user.sessionKey + '/system/configure',function(data){
+            configurationEditor.setValue(data.config);
+        })
+    }
     // configurationEditor.on("change",  function() {
     //   // Do something...
     // });
@@ -306,6 +309,13 @@ $(document).ready(function(){
         e.preventDefault()
         submitConfiguration()
         return false;
+    })
+    $.ccio.ws.on('f',function(d){
+        switch(d.f){
+            case'init_success':
+                loadConfiguationIntoEditor()
+            break;
+        }
     })
     window.configurationEditor = configurationEditor
 })

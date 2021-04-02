@@ -2,7 +2,6 @@ var fs = require('fs');
 var os = require('os');
 var moment = require('moment')
 var request = require('request')
-var jsonfile = require("jsonfile")
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var execSync = require('child_process').execSync;
@@ -101,9 +100,21 @@ module.exports = function(s,config,lang,app){
         },res,req)
     })
     /**
+    * API : Superuser : Get Configuration (conf.json)
+    */
+    app.get(config.webPaths.superApiPrefix+':auth/system/configure', function (req,res){
+        s.superAuth(req.params,async (resp) => {
+            var endData = {
+                ok: true,
+                config: JSON.parse(fs.readFileSync(s.location.config)),
+            }
+            s.closeJsonResponse(res,endData)
+        },res,req)
+    })
+    /**
     * API : Superuser : Modify Configuration (conf.json)
     */
-    app.all(config.webPaths.superApiPrefix+':auth/system/configure', function (req,res){
+    app.post(config.webPaths.superApiPrefix+':auth/system/configure', function (req,res){
         s.superAuth(req.params,async (resp) => {
             var endData = {
                 ok : true
@@ -116,7 +127,7 @@ module.exports = function(s,config,lang,app){
                 s.systemLog('conf.json Modified',{
                     by: resp.$user.mail,
                     ip: resp.ip,
-                    old:jsonfile.readFileSync(s.location.config)
+                    old: s.parseJSON(fs.readFileSync(s.location.config),{})
                 })
                 const configError = await modifyConfiguration(postBody)
                 if(configError)s.systemLog(configError)

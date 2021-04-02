@@ -34,7 +34,6 @@
     </style>
     <script>
         var superApiPrefix = location.search === '?p2p=1' ? location.pathname + '/' : "<%=originalURL%><%=config.webPaths.superApiPrefix%>"
-        var shinobiConfig = <%- JSON.stringify(plainConfig) %>
     </script>
     <% customAutoLoad.superLibsCss.forEach(function(lib){ %>
         <link rel="stylesheet" href="<%-window.libURL%>libs/css/<%-lib%>">
