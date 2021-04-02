@@ -19,6 +19,14 @@ module.exports = function(s,config,lang,app,io){
     const {
         triggerEvent,
     } = require('./events/utils.js')(s,config,lang)
+    const {
+        basicLogin,
+        adminLogin,
+        superLogin,
+        twoFactorLogin,
+        twoFactorLoginPart2,
+        ldapLogin,
+    } = require('./auth/utils.js')(s,config,lang)
     if(config.productType === 'Pro'){
         var LdapAuth = require('ldapauth-fork');
     }
@@ -160,7 +168,7 @@ module.exports = function(s,config,lang,app,io){
         s.checkCorrectPathEnding(config.webPaths.home)+':screen',
         s.checkCorrectPathEnding(config.webPaths.admin)+':screen',
         s.checkCorrectPathEnding(config.webPaths.super)+':screen',
-    ],function (req,res){
+    ],async function (req,res){
         var response = {ok: false};
         req.ip = s.getClientIp(req)
         var screenChooser = function(screen){
@@ -573,46 +581,21 @@ module.exports = function(s,config,lang,app,io){
                         req.default()
                     }
                 })
-            }else{
-                if(req.body.function === 'super'){
-                    if(!fs.existsSync(s.location.super)){
-                        res.end(lang.superAdminText)
-                        return
-                    }
-                    var ok = s.superAuth({
-                        mail: req.body.mail,
-                        pass: req.body.pass,
-                        users: true,
-                        md5: true
-                    },function(data){
-                        s.knexQuery({
-                            action: "select",
-                            columns: "*",
-                            table: "Logs",
-                            where: [
-                                ['ke','=','$'],
-                            ],
-                            orderBy: ['time','desc'],
-                            limit: 30
-                        },(err,r) => {
-                            if(!r){
-                                r=[]
-                            }
-                            data.Logs = r
-                            data.customAutoLoad = s.customAutoLoadTree
-                            data.currentVersion = s.currentVersion
-                            fs.readFile(s.location.config,'utf8',function(err,file){
-                                data.plainConfig = JSON.parse(file)
-                                renderPage(config.renderPaths.super,data)
-                            })
-                        })
+            }else if(req.body.function === 'super'){
+                const superLoginResponse = await superLogin(req.body.mail,req.body.pass);
+                if(superLoginResponse.ok){
+                    renderPage(config.renderPaths.super,{
+                        config: config,
+                        lang: lang,
+                        $user: superLoginResponse.user,
+                        customAutoLoad: s.customAutoLoadTree,
+                        currentVersion: s.currentVersion,
                     })
-                    if(ok === false){
-                        failedAuthentication(req.body.function)
-                    }
                 }else{
-                    req.default()
+                    failedAuthentication(req.body.function)
                 }
+            }else{
+                req.default()
             }
         }else{
             if(req.body.machineID&&req.body.factorAuthKey){
