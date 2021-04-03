@@ -28,7 +28,7 @@ module.exports = (s,config,lang) => {
             columns: '*',
             table: "LoginTokens",
             where: [
-                ['loginId','=',loginId],
+                ['loginId','=',`google-${loginId}`],
             ]
         })
         if(!searchResponse.rows[0]){
@@ -36,7 +36,7 @@ module.exports = (s,config,lang) => {
                 action: "insert",
                 table: "LoginTokens",
                 insert: {
-                    loginId: loginId,
+                    loginId: `google-${loginId}`,
                     ke: groupKey,
                     uid: userId,
                     lastLogin: new Date(),
@@ -52,10 +52,10 @@ module.exports = (s,config,lang) => {
             action: "update",
             table: "LoginTokens",
             update: {
-                lastLogin: response.lastLogin
+                lastLogin: new Date()
             },
             where: [
-                ['loginId','=',loginId],
+                ['loginId','=',`google-${loginId}`],
             ]
         })
         response.ok = updateResponse.ok
@@ -67,7 +67,7 @@ module.exports = (s,config,lang) => {
             action: "delete",
             table: "LoginTokens",
             where: [
-                ['loginId','=',loginId],
+                ['loginId','=',`google-${loginId}`],
             ]
         })
         response.ok = updateResponse.ok
@@ -85,7 +85,7 @@ module.exports = (s,config,lang) => {
                 columns: '*',
                 table: "LoginTokens",
                 where: [
-                    ['loginId','=',user.id],
+                    ['loginId','=',`google-${user.id}`],
                 ]
             })
             if(searchResponse.rows[0]){
