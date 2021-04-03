@@ -1,11 +1,38 @@
 var fs = require('fs');
 module.exports = function(s,config,lang){
-    function basicLogin(username,password,page){
-
+    function basicAuth(username,password){
+        const response = { ok: false }
+        return new Promise((resolve,reject) => {
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "Users",
+                where: [
+                    ['mail','=',username],
+                    ['pass','=',s.createHash(password)],
+                ],
+                limit: 1
+            },(err,r) => {
+                if(!err && r && r[0]){
+                    response.ok = true
+                    response.user = r[0]
+                }else{
+                    response.err = err
+                }
+                resolve(response)
+            })
+        })
     }
-    function adminLogin(username,password){
-        //use basic login
-    }
+    // async function adminAuth(username,password){
+    //     const response = { ok: false }
+    //     const basicAuthResponse = await basicAuth(username,password)
+    //     const user = basicAuthResponse.user
+    //     if(user && !user.details.sub){
+    //         response.ok = true
+    //         response.user = user
+    //     }
+    //     return response
+    // }
     function superUserAuth(params){
         const response = { ok: false }
         if(!fs.existsSync(s.location.super)){
@@ -74,23 +101,115 @@ module.exports = function(s,config,lang){
             resolve(response)
         })
     }
-    function twoFactorLogin(user){
-        //use basic login first
-
+    function createTwoFactorAuth(user,machineId,pageTarget){
+        const userDetails = user.details
+        const response = {
+            ok: true,
+            hasItEnabled: userDetails.factorAuth === "1",
+            isAnAcceptedMachineId: false,
+            goToDashboard: false,
+        }
+        if(response.hasItEnabled){
+            if(!userDetails.acceptedMachines||!(userDetails.acceptedMachines instanceof Object)){
+                userDetails.acceptedMachines={}
+            }
+            if(!userDetails.acceptedMachines[machineId]){
+                if(!s.factorAuth[user.ke]){s.factorAuth[user.ke]={}}
+                if(!s.factorAuth[user.ke][user.uid]){
+                    s.factorAuth[user.ke][user.uid] = {
+                        key: s.nid(),
+                        user: user
+                    }
+                    s.onTwoFactorAuthCodeNotificationExtensions.forEach(function(extender){
+                        extender(user)
+                    })
+                }
+                const factorAuthObject = s.factorAuth[user.ke][user.uid]
+                factorAuthObject.function = pageTarget
+                factorAuthObject.info = {
+                    ok: true,
+                    auth_token: user.auth,
+                    ke: user.ke,
+                    uid: user.uid,
+                    mail: user.mail,
+                    details: user.details
+                }
+                clearTimeout(factorAuthObject.expireAuth)
+                factorAuthObject.expireAuth = setTimeout(function(){
+                    s.deleteFactorAuth(user)
+                },1000*60*15)
+            }else{
+                response.isAnAcceptedMachineId = true
+            }
+        }
+        if(!response.hasItEnabled || response.isAnAcceptedMachineId){
+            response.goToDashboard = true
+        }
+        return response
     }
-    function twoFactorLoginPart2(loginCode){
-
+    function twoFactorVerification(params){
+        const response = { ok: false }
+        const factorAuthKey = (params.factorAuthKey || '00').trim()
+        console.log(params)
+        console.log(s.factorAuth[params.ke][params.id])
+        if(
+            s.factorAuth[params.ke] &&
+            s.factorAuth[params.ke][params.id] &&
+            s.factorAuth[params.ke][params.id].key === factorAuthKey
+        ){
+            const factorAuthObject = s.factorAuth[params.ke][params.id]
+            // if(factorAuthObject.key===params.factorAuthKey){
+            const userDetails = factorAuthObject.info.details
+            if(params.remember==="1"){
+                if(!userDetails.acceptedMachines||!(userDetails.acceptedMachines instanceof Object)){
+                    userDetails.acceptedMachines={}
+                }
+                if(!userDetails.acceptedMachines[params.machineID]){
+                    userDetails.acceptedMachines[params.machineID]={}
+                    s.knexQuery({
+                        action: "update",
+                        table: "Users",
+                        update: {
+                            details: JSON.stringify(userDetails)
+                        },
+                        where: [
+                            ['ke','=',params.ke],
+                            ['uid','=',params.id],
+                        ]
+                    })
+                }
+            }
+            const pageTarget = factorAuthObject.function
+            factorAuthObject.info.lang = s.getLanguageFile(userDetails.lang)
+            response.info = Object.assign(factorAuthObject.info,{})
+            clearTimeout(factorAuthObject.expireAuth)
+            s.deleteFactorAuth({
+                ke: params.ke,
+                uid: params.id,
+            })
+            // }else{
+            //     var info = factorAuthObject.info
+            //     renderPage(config.renderPaths.factorAuth,{$user:{
+            //         ke: info.ke,
+            //         id: info.uid,
+            //         mail: info.mail,
+            //     },lang:req.lang});
+            //     res.end();
+            // }
+            response.pageTarget = pageTarget
+            response.ok = true
+        }
+        return response
     }
     function ldapLogin(username,password){
 
     }
     return {
-        basicLogin: basicLogin,
-        adminLogin: adminLogin,
+        basicAuth: basicAuth,
         superUserAuth: superUserAuth,
         superLogin: superLogin,
-        twoFactorLogin: twoFactorLogin,
-        twoFactorLoginPart2: twoFactorLoginPart2,
+        createTwoFactorAuth: createTwoFactorAuth,
+        twoFactorVerification: twoFactorVerification,
         ldapLogin: ldapLogin,
     }
 }
