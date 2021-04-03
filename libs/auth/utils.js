@@ -14,8 +14,10 @@ module.exports = function(s,config,lang){
                 limit: 1
             },(err,r) => {
                 if(!err && r && r[0]){
+                    const user = r[0]
                     response.ok = true
-                    response.user = r[0]
+                    user.details = s.parseJSON(user.details)
+                    response.user = user
                 }else{
                     response.err = err
                 }

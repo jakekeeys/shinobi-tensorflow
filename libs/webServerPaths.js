@@ -355,7 +355,7 @@ module.exports = function(s,config,lang,app,io){
         console.log(req.body)
         if(req.body.alternateLogin && s.alternateLogins[req.body.alternateLogin]){
             const alternateLogin = s.alternateLogins[req.body.alternateLogin]
-            const alternateLoginResponse = await alternateLogin(req.body.alternateLoginToken)
+            const alternateLoginResponse = await alternateLogin(req.body)
             if(alternateLoginResponse.ok && alternateLoginResponse.user){
                 const user = alternateLoginResponse.user
                 const sessionKey = s.md5(s.gid())
@@ -389,7 +389,6 @@ module.exports = function(s,config,lang,app,io){
                     const user = basicAuthResponse.user;
                     const sessionKey = s.md5(s.gid())
                     user.auth = sessionKey
-                    user.details = s.parseJSON(user.details)
                     user.lang = s.getLanguageFile(user.details.lang)
                     s.knexQuery({
                         action: "update",

@@ -1,5 +1,8 @@
 const {OAuth2Client} = require('google-auth-library');
 module.exports = (s,config,lang) => {
+    const {
+        basicAuth,
+    } = require('./utils.js')(s,config,lang)
     const client = new OAuth2Client(config.appTokenGoogle);
     async function verifyToken(userLoginToken) {
       const ticket = await client.verifyIdToken({
@@ -25,7 +28,7 @@ module.exports = (s,config,lang) => {
             columns: '*',
             table: "LoginTokens",
             where: [
-                ['loginId','=',user.id],
+                ['loginId','=',loginId],
             ]
         })
         if(!searchResponse.rows[0]){
@@ -71,10 +74,12 @@ module.exports = (s,config,lang) => {
         return response
     }
     async function loginWithGoogleAccount(userLoginToken) {
-        const response = {ok: false}
+        const response = {ok: false, googleSignedIn: false}
         const tokenResponse = await verifyToken(userLoginToken)
         if(tokenResponse.ok){
             const user = tokenResponse.user
+            response.googleSignedIn = true
+            response.googleUser = user
             const searchResponse = await s.knexQueryPromise({
                 action: "select",
                 columns: '*',
@@ -104,15 +109,32 @@ module.exports = (s,config,lang) => {
         }
         return response
     }
-    s.alternateLogins['google'] = async (loginToken) => {
-        const response = { ok: false }
-        const tokenVerifyResponse = await loginWithGoogleAccount(loginToken)
-        if(tokenVerifyResponse.user){
-            response.ok = true
-            response.user = tokenVerifyResponse.user
+    s.onProcessReady(() => {
+        s.alternateLogins['google'] = async (params) => {
+            const response = { ok: false }
+            const loginToken = params.alternateLoginToken
+            const username = params.mail
+            const password = params.pass
+            const googleLoginResponse = await loginWithGoogleAccount(loginToken)
+            if(googleLoginResponse.user){
+                response.ok = true
+                response.user = googleLoginResponse.user
+            }else if(config.allowBindingAltLoginsFromLoginPage && googleLoginResponse.googleSignedIn && username && password){
+                const basicAuthResponse = await basicAuth(username,password)
+                if(basicAuthResponse.user){
+                    const user = basicAuthResponse.user
+                    const loginId = googleLoginResponse.googleUser.id
+                    const groupKey = user.ke
+                    const userId = user.uid
+                    const bindResponse = await bindLoginIdToUser(loginId,groupKey,userId)
+                    response.ok = true
+                    response.user = basicAuthResponse.user
+                }
+            }
+            return response
         }
-        return response
-    }
+        // s.customAutoLoadTree['LibsJs'].push(`dash2.googleSignIn.js`)
+    })
     return {
         client: client,
         verifyToken: verifyToken,
