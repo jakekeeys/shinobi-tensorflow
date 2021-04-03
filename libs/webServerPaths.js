@@ -26,7 +26,9 @@ module.exports = function(s,config,lang,app,io){
         twoFactorVerification,
         ldapLogin,
     } = require('./auth/utils.js')(s,config,lang)
-    const googleAuth = require('./auth/google.js')(s,config,lang)
+    if(config.allowGoogleSignOn){
+        require('./auth/google.js')(s,config,lang)
+    }
     if(config.productType === 'Pro'){
         var LdapAuth = require('ldapauth-fork');
     }
