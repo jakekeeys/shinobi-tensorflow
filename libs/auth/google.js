@@ -1,5 +1,5 @@
 const {OAuth2Client} = require('google-auth-library');
-module.exports = (s,app,config) => {
+module.exports = (s,config,lang) => {
     const client = new OAuth2Client(config.appTokenGoogle);
     async function verifyToken(userLoginToken) {
       const ticket = await client.verifyIdToken({
@@ -83,8 +83,8 @@ module.exports = (s,app,config) => {
                     ['loginId','=',user.id],
                 ]
             })
-            if(searchResponse[0]){
-                const loginTokenRow = searchResponse[0]
+            if(searchResponse.rows[0]){
+                const loginTokenRow = searchResponse.rows[0]
                 const userResponse = await s.knexQueryPromise({
                     action: "select",
                     columns: '*',
@@ -95,10 +95,21 @@ module.exports = (s,app,config) => {
                     ]
                 })
                 response.ok = true
-                response.user = userResponse
+                userResponse.rows[0].details = s.parseJSON(userResponse.rows[0].details)
+                response.user = userResponse.rows[0]
             }else{
+                console.log('This Token is Not Binded to a User!')
                 // make new if no users?
             }
+        }
+        return response
+    }
+    s.alternateLogins['google'] = async (loginToken) => {
+        const response = { ok: false }
+        const tokenVerifyResponse = await loginWithGoogleAccount(loginToken)
+        if(tokenVerifyResponse.user){
+            response.ok = true
+            response.user = tokenVerifyResponse.user
         }
         return response
     }

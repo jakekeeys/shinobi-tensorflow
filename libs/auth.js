@@ -5,6 +5,7 @@ module.exports = function(s,config,lang){
     s.superUsersApi = {}
     s.factorAuth = {}
     s.failedLoginAttempts = {}
+    s.alternateLogins = {}
     //
     var getUserByUid = function(params,columns,callback){
         if(!columns)columns = '*'

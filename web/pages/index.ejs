@@ -81,6 +81,13 @@
 									<div class="form-group f_i_input f_i_ldap" style="display:none">
 										<input name="key" id="key" tabindex="2" class="monospace form-control wide-text" placeholder="Group Key">
 									</div>
+									<div class="form-group" style="display:none">
+                                        <select class="form-control wide-text" name="alternateLogin">
+                                            <option value="" selected>Default</option>
+                                            <option value="google">Google</option>
+                                        </select>
+                                        <input style="display:none" name="alternateLoginToken" class="monospace form-control wide-text" placeholder="Group Key">
+                                    </div>
                                     <% if(config.showLoginSelector === true){ %>
     									<div class="form-group">
         									<div class="row">
@@ -219,13 +226,11 @@ $('[selector]').change(function(e){
 <script src="https://apis.google.com/js/platform.js" async defer></script>
 <script>
 function onGoogleSignIn(googleUser) {
-  var profile = googleUser.getBasicProfile();
-  console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
-  console.log('Name: ' + profile.getName());
-  console.log('Image URL: ' + profile.getImageUrl());
-  console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
-
-  var id_token = googleUser.getAuthResponse().id_token;
-  console.log("ID Token: " + id_token);
+    var id_token = googleUser.getAuthResponse().id_token;
+    $.ccio.f.find('[name="mail"],[name="pass"],.g-signin2').hide()
+    $.ccio.f.find('[name="alternateLogin"]').val('google')
+    $.ccio.f.find('[name="alternateLoginToken"]').val(id_token)
+    $.ccio.f.find('[name="login-submit"]').html(`<i class="fa fa-google"></i> <%- lang.Login %>`)
+    // $.ccio.f.submit()
 }
 </script>

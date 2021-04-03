@@ -26,6 +26,7 @@ module.exports = function(s,config,lang,app,io){
         twoFactorVerification,
         ldapLogin,
     } = require('./auth/utils.js')(s,config,lang)
+    const googleAuth = require('./auth/google.js')(s,config,lang)
     if(config.productType === 'Pro'){
         var LdapAuth = require('ldapauth-fork');
     }
@@ -170,7 +171,7 @@ module.exports = function(s,config,lang,app,io){
     ],async function (req,res){
         var response = {ok: false};
         req.ip = s.getClientIp(req)
-        var screenChooser = function(screen){
+        const screenChooser = function(screen){
             var search = function(screen){
                 if(req.url.indexOf(screen) > -1){
                     return true
@@ -205,7 +206,7 @@ module.exports = function(s,config,lang,app,io){
             return false
         }
         //
-        renderPage = function(focus,data){
+        const renderPage = function(focus,data){
             if(s.failedLoginAttempts[req.body.mail]){
                 clearTimeout(s.failedLoginAttempts[req.body.mail].timeout)
                 delete(s.failedLoginAttempts[req.body.mail])
@@ -349,7 +350,37 @@ module.exports = function(s,config,lang,app,io){
                 }
             })
         }
-        if(req.body.mail&&req.body.pass){
+        console.log(req.body)
+        if(req.body.alternateLogin && s.alternateLogins[req.body.alternateLogin]){
+            const alternateLogin = s.alternateLogins[req.body.alternateLogin]
+            const alternateLoginResponse = await alternateLogin(req.body.alternateLoginToken)
+            if(alternateLoginResponse.ok && alternateLoginResponse.user){
+                const user = alternateLoginResponse.user
+                const sessionKey = s.md5(s.gid())
+                user.auth = sessionKey
+                s.knexQuery({
+                    action: "update",
+                    table: "Users",
+                    update: {
+                        auth: sessionKey
+                    },
+                    where: [
+                        ['ke','=',user.ke],
+                        ['uid','=',user.uid],
+                    ]
+                })
+                checkRoute(req.body.function,{
+                    ok: true,
+                    auth_token: user.auth,
+                    ke: user.ke,
+                    uid: user.uid,
+                    mail: user.mail,
+                    details: user.details
+                })
+            }else{
+                return failedAuthentication(req.body.function,req.body.mail)
+            }
+        }else if(req.body.mail && req.body.pass){
             async function regularLogin(){
                 const basicAuthResponse = await basicAuth(req.body.mail,req.body.pass)
                 if(basicAuthResponse.user){
