@@ -50,7 +50,10 @@ module.exports = (s,config,lang) => {
                 userResponse.rows[0].details = s.parseJSON(userResponse.rows[0].details)
                 response.user = userResponse.rows[0]
             }else{
-                console.log('This Token is Not Binded to a User!')
+                response.msg = lang.tokenNotUserBound
+                if(config.allowBindingAltLoginsFromLoginPage){
+                    response.msg += '\n' + lang.tokenNotUserBoundPt2
+                }
                 // make new if no users?
             }
         }
@@ -79,10 +82,11 @@ module.exports = (s,config,lang) => {
                     response.ok = true
                     response.user = basicAuthResponse.user
                 }
+            }else{
+                response.msg = googleLoginResponse.msg
             }
             return response
         }
-        // s.customAutoLoadTree['LibsJs'].push(`dash2.googleSignIn.js`)
     })
     return {
         client: client,

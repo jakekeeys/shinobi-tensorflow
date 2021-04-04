@@ -1,11 +1,13 @@
 module.exports = (s,config,lang) => {
     async function getLoginToken(loginId,bindType) {
+        bindType = bindType ? bindType : 'google'
         return (await s.knexQueryPromise({
             action: "select",
             columns: '*',
             table: "LoginTokens",
             where: [
                 ['loginId','=',`${bindType}-${loginId}`],
+                ['type','=',bindType],
             ],
             limit: 1
         })).rows[0]
@@ -19,6 +21,7 @@ module.exports = (s,config,lang) => {
             table: "LoginTokens",
             where: [
                 ['loginId','=',`${bindType}-${loginId}`],
+                ['type','=',bindType],
             ]
         })
         if(!searchResponse.rows[0]){
@@ -27,6 +30,7 @@ module.exports = (s,config,lang) => {
                 table: "LoginTokens",
                 insert: {
                     loginId: `${bindType}-${loginId}`,
+                    type: bindType,
                     ke: groupKey,
                     uid: userId,
                     lastLogin: new Date(),
@@ -47,6 +51,7 @@ module.exports = (s,config,lang) => {
             },
             where: [
                 ['loginId','=',`${bindType}-${loginId}`],
+                ['type','=',bindType],
             ]
         })
         response.ok = updateResponse.ok
@@ -54,11 +59,13 @@ module.exports = (s,config,lang) => {
     }
     async function deleteLoginToken(loginId) {
         const response = {ok: false}
+        bindType = bindType ? bindType : 'google'
         const updateResponse = await s.knexQueryPromise({
             action: "delete",
             table: "LoginTokens",
             where: [
                 ['loginId','=',`${bindType}-${loginId}`],
+                ['type','=',bindType],
             ]
         })
         response.ok = updateResponse.ok

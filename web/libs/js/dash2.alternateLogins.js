@@ -1,0 +1,52 @@
+$(document).ready(function(){
+    var alternateLoginsBox = $('#alternate-logins')
+    function getAlternateLogins(){
+        $.get(getApiPrefix('loginTokens'),function(data){
+            var rows = data.rows
+            alternateLoginsBox.empty()
+            if(rows.length > 0){
+                $.each(rows,function(n,row){
+                    alternateLoginsBox.append(`<div class="row" login-id="${row.loginId}">
+                        <div class="col-md-6" style="text-transform:capitalize;font-size: 150%;">
+                            <i class="fa fa-${row.type}"></i> &nbsp;
+                            <span>${row.type}</span>
+                        </div>
+                        <div class="col-md-6 text-right">
+                            <a class="btn btn-sm btn-danger unlink-account"><i class="fa fa-unlink"></i> ${lang.Unlink}</a>
+                        </div>
+                    </div>`)
+                })
+            }else{
+                alternateLoginsBox.append(`<div class="row">
+                    <div class="col-md-12 text-center epic-text" style="margin: 0">
+                        ${lang.noLoginTokensAdded}
+                    </div>
+                </div>`)
+            }
+        })
+    }
+    getAlternateLogins()
+    alternateLoginsBox.on('click','.unlink-account',function(){
+        var loginId = $(this).parents('[login-id]').attr('login-id')
+        $.confirm.create({
+            title: lang['Unlink Login'],
+            body: lang.noUndoForAction,
+            clickOptions: {
+                title: lang['Unlink'],
+                class: 'btn-danger'
+            },
+            clickCallback: function(){
+                $.get(getApiPrefix('loginTokens') + '/' + loginId + '/delete',function(data){
+                    if(data.ok){
+                        new PNotify({
+                            title: lang.Unlinked,
+                            text: lang.loginHandleUnbound,
+                            type: 'success'
+                        })
+                        alternateLoginsBox.find(`[login-id="${loginId}"]`).remove()
+                    }
+                })
+            }
+        })
+    })
+})

@@ -134,13 +134,20 @@ module.exports = function(s,config){
             },true)
         }
         try{
-            await s.databaseEngine.schema.createTable('LoginTokens', table => {
+            s.databaseEngine.schema.createTable('LoginTokens', table => {
                 table.string('loginId',255).defaultTo('')
+                table.string('type',25).defaultTo('')
                 table.string('ke',50).defaultTo('')
                 table.string('uid',50).defaultTo('')
                 table.timestamp('lastLogin').defaultTo(s.databaseEngine.fn.now())
             }).then(() => {
-                s.systemLog('Created New Database Table : LoginTokens')
+                s.databaseEngine.schema.alterTable('LoginTokens', function(table) {
+                    table.unique('loginId')
+                }).then(() => {
+                    s.systemLog('Created New Database Table : LoginTokens')
+                }).catch((err) => {
+                    console.log(err)
+                })
             }).catch((err) => {
                 if(err && err.code !== 'ER_TABLE_EXISTS_ERROR'){
                     console.log('error')

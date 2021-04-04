@@ -26,9 +26,6 @@ module.exports = function(s,config,lang,app,io){
         twoFactorVerification,
         ldapLogin,
     } = require('./auth/utils.js')(s,config,lang)
-    if(config.allowGoogleSignOn){
-        require('./auth/google.js')(s,config,lang)
-    }
     if(config.productType === 'Pro'){
         var LdapAuth = require('ldapauth-fork');
     }
@@ -223,12 +220,12 @@ module.exports = function(s,config,lang,app,io){
                 s.renderPage(req,res,focus,data)
             }
         }
-        const failedAuthentication = function(board,failIdentifier){
+        const failedAuthentication = function(board,failIdentifier,failMessage){
             // brute protector
             if(!failIdentifier){
                 s.renderPage(req,res,config.renderPaths.index,{
                     failedLogin: true,
-                    message: lang.failedLoginText2,
+                    message: failMessage || lang.failedLoginText2,
                     lang: s.copySystemDefaultLanguage(),
                     config: s.getConfigWithBranding(req.hostname),
                     screen: screenChooser(req.params.screen)
@@ -257,7 +254,7 @@ module.exports = function(s,config,lang,app,io){
             }else{
                 s.renderPage(req,res,config.renderPaths.index,{
                     failedLogin: true,
-                    message: lang.failedLoginText2,
+                    message: failMessage || lang.failedLoginText2,
                     lang: s.copySystemDefaultLanguage(),
                     config: s.getConfigWithBranding(req.hostname),
                     screen: screenChooser(req.params.screen)
@@ -379,7 +376,7 @@ module.exports = function(s,config,lang,app,io){
                     details: user.details
                 })
             }else{
-                return failedAuthentication(req.body.function,req.body.mail)
+                return failedAuthentication(req.body.function,req.body.mail,alternateLoginResponse.msg)
             }
         }else if(req.body.mail && req.body.pass){
             async function regularLogin(){
@@ -1747,6 +1744,76 @@ module.exports = function(s,config,lang,app,io){
             })
         },res,req);
     })
+    /**
+    * API : Get Login Tokens
+     */
+    app.get(config.webPaths.apiPrefix+':auth/loginTokens/:ke', function (req,res){
+        var response = {ok:false};
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,(user) => {
+            const groupKey = req.params.ke
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "LoginTokens",
+                where: [
+                    ['ke','=',groupKey],
+                    ['uid','=',user.uid],
+                ]
+            },(err,rows) => {
+                response.ok = true
+                response.rows = rows
+                s.closeJsonResponse(res,response)
+            })
+        },res,req);
+    });
+    /**
+    * API : Get Login Token
+     */
+    app.get(config.webPaths.apiPrefix+':auth/loginTokens/:ke/:loginId', function (req,res){
+        var response = {ok:false};
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,(user) => {
+            const groupKey = req.params.ke
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "LoginTokens",
+                where: [
+                    ['loginId','=',user.uid],
+                    ['ke','=',groupKey],
+                    ['uid','=',user.uid],
+                ],
+                limit: 1
+            },(err,rows) => {
+                response.ok = !!rows[0]
+                response.row = rows[0]
+                s.closeJsonResponse(res,response)
+            })
+        },res,req);
+    });
+    /**
+    * API : Delete Login Token
+     */
+    app.get(config.webPaths.apiPrefix+':auth/loginTokens/:ke/:loginId/delete', function (req,res){
+        var response = {ok:false};
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,async (user) => {
+            const loginId = req.params.loginId
+            const groupKey = req.params.ke
+            const deleteResponse = await s.knexQueryPromise({
+                action: "delete",
+                table: "LoginTokens",
+                where: [
+                    ['loginId','=',loginId],
+                    ['ke','=',groupKey],
+                    ['uid','=',user.uid],
+                ]
+            })
+            response.ok = true
+            s.closeJsonResponse(res,response)
+        },res,req);
+    });
     /**
     * API : Stream In to push data to ffmpeg by HTTP
      */

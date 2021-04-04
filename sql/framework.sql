@@ -94,12 +94,12 @@ CREATE TABLE IF NOT EXISTS `Files` (
 
 -- Dumping structure for table ccio.LoginTokens
 CREATE TABLE IF NOT EXISTS `LoginTokens` (
-  `loginId` varchar(255) NOT NULL DEFAULT '',
-  `ke` varchar(50) NOT NULL DEFAULT '',
-  `uid` varchar(50) NOT NULL DEFAULT '',
-  `lastLogin` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`loginId`),
-  UNIQUE KEY `userId` (`loginId`)
+  `loginId` varchar(255) DEFAULT '',
+  `type` varchar(25) DEFAULT '',
+  `ke` varchar(50) DEFAULT '',
+  `uid` varchar(50) DEFAULT '',
+  `lastLogin` timestamp NOT NULL DEFAULT current_timestamp(),
+  UNIQUE KEY `logintokens_loginid_unique` (`loginId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.

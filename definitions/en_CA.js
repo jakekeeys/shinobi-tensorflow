@@ -4215,6 +4215,16 @@ module.exports = function(s,config,lang){
                      },
                  ]
              },
+             "AlternateLogins": {
+                 "name": lang["Alternate Logins"],
+                 "color": "orange",
+                 "info": [
+                     {
+                         "fieldType": 'div',
+                         "id": "alternate-logins"
+                     },
+                 ]
+             },
              "2-Factor Authentication": {
                  "name": lang['2-Factor Authentication'],
                  "color": "grey",

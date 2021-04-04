@@ -68,7 +68,7 @@
 								<form id="login-form" method="post" style="display: block;margin:0">
                                     <input type="hidden" name="machineID" id="machineID" value="">
                                     <% var message,timeLeft;if(message){ %>
-                                        <div class="form-group text-center monospace">
+                                        <div class="form-group text-center monospace" id ="login-message">
                                             <%= message %>
     									</div>
                                     <% } %>
@@ -181,6 +181,7 @@
         $('#machineID').val($.ccio.auth)
     })
     $.ccio.f.submit(function(e){
+        $('#login-message').remove()
         $('input').css('border-color','')
         e.e=$(this),e.s=e.e.serializeObject(),e.inputs=e.e.find('input,button');
         if(e.s.remember){
