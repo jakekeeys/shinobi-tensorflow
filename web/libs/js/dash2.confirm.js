@@ -31,6 +31,8 @@ $(document).ready(function(){
                 $.confirm.body.css('word-wrap','break-word')
             }
             $.confirm.body.html(options.body)
+        }else{
+            alert('No Title, Language file Update?')
         }
         if(options.clickOptions && options.clickCallback)$.confirm.click(options.clickOptions,options.clickCallback)
     }

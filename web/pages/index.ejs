@@ -1,5 +1,6 @@
 <% include blocks/header %>
 <link rel="stylesheet" href="<%-window.libURL%>libs/themes/Ice/style.css">
+<meta name="google-signin-client_id" content="<%- config.appIdGoogleSignIn %>">
 <style>
 .wide-text{
     text-transform: uppercase;
@@ -67,7 +68,7 @@
 								<form id="login-form" method="post" style="display: block;margin:0">
                                     <input type="hidden" name="machineID" id="machineID" value="">
                                     <% var message,timeLeft;if(message){ %>
-                                        <div class="form-group text-center monospace">
+                                        <div class="form-group text-center monospace" id ="login-message">
                                             <%= message %>
     									</div>
                                     <% } %>
@@ -80,6 +81,13 @@
 									<div class="form-group f_i_input f_i_ldap" style="display:none">
 										<input name="key" id="key" tabindex="2" class="monospace form-control wide-text" placeholder="Group Key">
 									</div>
+									<div class="form-group" style="display:none">
+                                        <select class="form-control wide-text" name="alternateLogin">
+                                            <option value="" selected>Default</option>
+                                            <option value="google">Google</option>
+                                        </select>
+                                        <input style="display:none" name="alternateLoginToken" class="monospace form-control wide-text" placeholder="Group Key">
+                                    </div>
                                     <% if(config.showLoginSelector === true){ %>
     									<div class="form-group">
         									<div class="row">
@@ -123,6 +131,11 @@
 									<div class="form-group">
                                         <button type="submit" name="login-submit" id="login-submit" tabindex="4" class="btn btn-success btn-block wide-text" style="color:#FFF"><i class="fa fa-key"></i> <%- lang.Login %></button>
 									</div>
+                                    <% if(config.allowGoogleSignOn){ %>
+    									<div class="form-group text-center">
+                                            <div class="g-signin2" data-onsuccess="onGoogleSignIn" style="display: inline-block;"></div>
+    									</div>
+                                    <% } %>
 									<div class="form-group text-center" style="margin:0">
                                         <span style="<%- config.poweredByShinobiClass %>;margin-right: 10px" class="epic-text text-green"><i class="fa fa-sign-in"></i> <%- lang['Remember Me'] %></span>
                                         <div class="text-right" title="<%- lang['Remember Me'] %>" style="display:inline-block">
@@ -149,6 +162,7 @@
 </div>
 <script src="<%-window.libURL%>libs/js/material.min.js"></script>
 <script>
+    var googleSignIn = false;
     <% var failedLogin;if(failedLogin===true){ %>
         localStorage.removeItem('ShinobiLogin_'+location.host)
     <% } %>
@@ -167,11 +181,13 @@
         $('#machineID').val($.ccio.auth)
     })
     $.ccio.f.submit(function(e){
+        $('#login-message').remove()
         $('input').css('border-color','')
         e.e=$(this),e.s=e.e.serializeObject(),e.inputs=e.e.find('input,button');
         if(e.s.remember){
             localStorage.setItem('ShinobiLogin_'+location.host,JSON.stringify({mail:e.s.mail,pass:e.s.pass,function:e.s.function}))
         }else{localStorage.removeItem('ShinobiLogin_'+location.host)}
+        if(googleSignIn)googleSignOut()
     })
     if($.ccio.ls){
         $.ccio.ls=JSON.parse($.ccio.ls);
@@ -212,3 +228,23 @@ $('[selector]').change(function(e){
     $('.'+e.a+'_text').text($(this).find('option:selected').text())
 }).change();
 </script>
+<% if(config.allowGoogleSignOn){ %>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <script>
+        function onGoogleSignIn(googleUser) {
+            var id_token = googleUser.getAuthResponse().id_token;
+            $.ccio.f.find('[name="mail"],[name="pass"],.g-signin2').hide()
+            $.ccio.f.find('[name="alternateLogin"]').val('google')
+            $.ccio.f.find('[name="alternateLoginToken"]').val(id_token)
+            $.ccio.f.find('[name="login-submit"]').html(`<i class="fa fa-google"></i> <%- lang.Login %>`)
+            googleSignIn = true
+            $.ccio.f.submit()
+        }
+        function googleSignOut() {
+          var auth2 = gapi.auth2.getAuthInstance();
+          auth2.signOut().then(function () {
+            console.log('Google Signed out.');
+          });
+        }
+    </script>
+<% } %>

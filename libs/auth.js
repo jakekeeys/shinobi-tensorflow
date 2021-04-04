@@ -5,6 +5,7 @@ module.exports = function(s,config,lang){
     s.superUsersApi = {}
     s.factorAuth = {}
     s.failedLoginAttempts = {}
+    s.alternateLogins = {}
     //
     var getUserByUid = function(params,columns,callback){
         if(!columns)columns = '*'
@@ -247,39 +248,18 @@ module.exports = function(s,config,lang){
                     if(userSelected){
                         resp.$user = userSelected
                     }
-                    if(adminUsersSelected){
-                        resp.users = adminUsersSelected
-                    }
                 }
                 callback({
                     ip : ip,
                     $user: userSelected,
-                    users: adminUsersSelected,
                     config: chosenConfig,
-                    lang:lang
+                    lang: lang
                 })
-            }
-            var foundUser = function(){
-                if(params.users === true){
-                    s.knexQuery({
-                        action: "select",
-                        columns: "*",
-                        table: "Users",
-                        where: [
-                            ['details','NOT LIKE','%"sub"%'],
-                        ]
-                    },(err,r) => {
-                        adminUsersSelected = r
-                        success()
-                    })
-                }else{
-                    success()
-                }
             }
             if(params.auth && Object.keys(s.superUsersApi).indexOf(params.auth) > -1){
                 userFound = true
                 userSelected = s.superUsersApi[params.auth].$user
-                foundUser()
+                success()
             }else{
                 var superUserList = JSON.parse(fs.readFileSync(s.location.super))
                 superUserList.forEach(function(superUser,n){
@@ -300,7 +280,7 @@ module.exports = function(s,config,lang){
                     ){
                         userFound = true
                         userSelected = superUser
-                        foundUser()
+                        success()
                     }
                 })
             }
