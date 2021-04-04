@@ -352,7 +352,6 @@ module.exports = function(s,config,lang,app,io){
                 }
             })
         }
-        console.log(req.body)
         if(req.body.alternateLogin && s.alternateLogins[req.body.alternateLogin]){
             const alternateLogin = s.alternateLogins[req.body.alternateLogin]
             const alternateLoginResponse = await alternateLogin(req.body)

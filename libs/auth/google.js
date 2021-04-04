@@ -3,6 +3,12 @@ module.exports = (s,config,lang) => {
     const {
         basicAuth,
     } = require('./utils.js')(s,config,lang)
+    const {
+        getLoginToken,
+        deleteLoginToken,
+        bindLoginIdToUser,
+        refreshLoginTokenAccessDate,
+    } = require('./alternateLogins.js')(s,config,lang)
     const client = new OAuth2Client(config.appTokenGoogle);
     async function verifyToken(userLoginToken) {
       const ticket = await client.verifyIdToken({
@@ -21,58 +27,6 @@ module.exports = (s,config,lang) => {
           } : null,
       }
     }
-    async function bindLoginIdToUser(loginId,groupKey,userId) {
-        const response = {ok: false}
-        const searchResponse = await s.knexQueryPromise({
-            action: "select",
-            columns: '*',
-            table: "LoginTokens",
-            where: [
-                ['loginId','=',`google-${loginId}`],
-            ]
-        })
-        if(!searchResponse.rows[0]){
-            const insertResponse = await s.knexQueryPromise({
-                action: "insert",
-                table: "LoginTokens",
-                insert: {
-                    loginId: `google-${loginId}`,
-                    ke: groupKey,
-                    uid: userId,
-                    lastLogin: new Date(),
-                }
-            })
-            response.ok = insertResponse.ok
-        }
-        return response
-    }
-    async function refreshLoginTokenAccessDate(loginId) {
-        const response = {ok: false}
-        const updateResponse = await s.knexQueryPromise({
-            action: "update",
-            table: "LoginTokens",
-            update: {
-                lastLogin: new Date()
-            },
-            where: [
-                ['loginId','=',`google-${loginId}`],
-            ]
-        })
-        response.ok = updateResponse.ok
-        return response
-    }
-    async function deleteLoginToken(loginId) {
-        const response = {ok: false}
-        const updateResponse = await s.knexQueryPromise({
-            action: "delete",
-            table: "LoginTokens",
-            where: [
-                ['loginId','=',`google-${loginId}`],
-            ]
-        })
-        response.ok = updateResponse.ok
-        return response
-    }
     async function loginWithGoogleAccount(userLoginToken) {
         const response = {ok: false, googleSignedIn: false}
         const tokenResponse = await verifyToken(userLoginToken)
@@ -80,24 +34,17 @@ module.exports = (s,config,lang) => {
             const user = tokenResponse.user
             response.googleSignedIn = true
             response.googleUser = user
-            const searchResponse = await s.knexQueryPromise({
-                action: "select",
-                columns: '*',
-                table: "LoginTokens",
-                where: [
-                    ['loginId','=',`google-${user.id}`],
-                ]
-            })
-            if(searchResponse.rows[0]){
-                const loginTokenRow = searchResponse.rows[0]
+            const foundToken = await getLoginToken(user.id,'google')
+            if(foundToken){
                 const userResponse = await s.knexQueryPromise({
                     action: "select",
                     columns: '*',
                     table: "Users",
                     where: [
-                        ['uid','=',loginTokenRow.uid],
-                        ['ke','=',loginTokenRow.ke],
-                    ]
+                        ['uid','=',foundToken.uid],
+                        ['ke','=',foundToken.ke],
+                    ],
+                    limit: 1
                 })
                 response.ok = true
                 userResponse.rows[0].details = s.parseJSON(userResponse.rows[0].details)
@@ -117,8 +64,10 @@ module.exports = (s,config,lang) => {
             const password = params.pass
             const googleLoginResponse = await loginWithGoogleAccount(loginToken)
             if(googleLoginResponse.user){
+                const user = googleLoginResponse.user
                 response.ok = true
-                response.user = googleLoginResponse.user
+                response.user = user
+                refreshLoginTokenAccessDate(googleLoginResponse.googleUser.id,'google')
             }else if(config.allowBindingAltLoginsFromLoginPage && googleLoginResponse.googleSignedIn && username && password){
                 const basicAuthResponse = await basicAuth(username,password)
                 if(basicAuthResponse.user){
@@ -126,7 +75,7 @@ module.exports = (s,config,lang) => {
                     const loginId = googleLoginResponse.googleUser.id
                     const groupKey = user.ke
                     const userId = user.uid
-                    const bindResponse = await bindLoginIdToUser(loginId,groupKey,userId)
+                    const bindResponse = await bindLoginIdToUser(loginId,groupKey,userId,'google')
                     response.ok = true
                     response.user = basicAuthResponse.user
                 }
@@ -138,9 +87,6 @@ module.exports = (s,config,lang) => {
     return {
         client: client,
         verifyToken: verifyToken,
-        deleteLoginToken: deleteLoginToken,
-        bindLoginIdToUser: bindLoginIdToUser,
         loginWithGoogleAccount: loginWithGoogleAccount,
-        refreshLoginTokenAccessDate: refreshLoginTokenAccessDate,
     }
 }
