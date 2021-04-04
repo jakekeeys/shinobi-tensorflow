@@ -4220,6 +4220,7 @@ module.exports = function(s,config,lang){
                  "color": "orange",
                  "info": [
                      {
+                         "form-group-class-pre-layer": "form-group",
                          "fieldType": 'div',
                          "id": "alternate-logins"
                      },

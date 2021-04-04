@@ -1,6 +1,5 @@
 var fs = require('fs');
 module.exports = function(s,config,lang){
-    require('./auth/logins.js')(s,config,lang)
     //Authenticator functions
     s.api = {}
     s.superUsersApi = {}

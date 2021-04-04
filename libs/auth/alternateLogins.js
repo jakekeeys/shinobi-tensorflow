@@ -37,6 +37,8 @@ module.exports = (s,config,lang) => {
                 }
             })
             response.ok = insertResponse.ok
+        }else{
+            response.msg = lang.alreadyLinked
         }
         return response
     }

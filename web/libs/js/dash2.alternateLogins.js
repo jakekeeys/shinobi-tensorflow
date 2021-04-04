@@ -49,4 +49,5 @@ $(document).ready(function(){
             }
         })
     })
+    window.drawAlternateLoginsToSettings = getAlternateLogins
 })

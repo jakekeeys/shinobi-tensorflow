@@ -1,5 +1,5 @@
 const {OAuth2Client} = require('google-auth-library');
-module.exports = (s,config,lang) => {
+module.exports = (s,config,lang,app) => {
     const {
         basicAuth,
     } = require('./utils.js')(s,config,lang)
@@ -60,6 +60,7 @@ module.exports = (s,config,lang) => {
         return response
     }
     s.onProcessReady(() => {
+        config.renderPaths.loginTokenAddGoogle = `pages/loginTokenAddGoogle`
         s.alternateLogins['google'] = async (params) => {
             const response = { ok: false }
             const loginToken = params.alternateLoginToken
@@ -87,7 +88,46 @@ module.exports = (s,config,lang) => {
             }
             return response
         }
+        s.definitions["Account Settings"].blocks["AlternateLogins"].info.push({
+           "form-group-class-pre-layer": "form-group",
+           "fieldType": "btn",
+           "class": `btn-info google-sign-in`,
+           "btnContent": `<i class="fa fa-google"></i> &nbsp; ${lang['Link Google Account']}`,
+       })
+       s.customAutoLoadTree['LibsJs'].push(`dash2.googleSignIn.js`)
     })
+    /**
+    * API : Add Token Window (Sign-In to Google) (GET)
+     */
+    app.get(config.webPaths.apiPrefix+':auth/loginTokenAddGoogle/:ke', function (req,res){
+        s.auth(req.params,(user) => {
+            s.renderPage(req,res,config.renderPaths.loginTokenAddGoogle,{
+                lang: lang,
+                config: s.getConfigWithBranding(req.hostname),
+                $user: user
+            })
+        },res,req);
+    });
+    /**
+    * API : Add Token Window (Sign-In to Google) (POST)
+     */
+    app.post(config.webPaths.apiPrefix+':auth/loginTokenAddGoogle/:ke', function (req,res){
+        const response = {ok: false};
+        s.auth(req.params,async (user) => {
+            const userId = user.uid
+            const groupKey = req.params.ke
+            const loginToken = req.body.loginToken
+            const tokenResponse = await verifyToken(loginToken)
+            if(tokenResponse.ok){
+                const googleUser = tokenResponse.user
+                const loginId = googleUser.id
+                const bindResponse = await bindLoginIdToUser(loginId,groupKey,userId,'google')
+                response.ok = bindResponse.ok
+                response.msg = bindResponse.msg
+            }
+            s.closeJsonResponse(res,response)
+        },res,req);
+    });
     return {
         client: client,
         verifyToken: verifyToken,
