@@ -12,9 +12,13 @@ module.exports = (s,config,lang) => {
             limit: 1
         })).rows[0]
     }
-    async function bindLoginIdToUser(loginId,groupKey,userId,bindType) {
+    async function bindLoginIdToUser(options) {
         const response = {ok: false}
-        bindType = bindType ? bindType : 'google'
+        const loginId = options.loginId
+        const groupKey = options.ke
+        const userId = options.uid
+        const name = options.name
+        const bindType = options.type ? options.type : 'google'
         const searchResponse = await s.knexQueryPromise({
             action: "select",
             columns: '*',
@@ -33,6 +37,7 @@ module.exports = (s,config,lang) => {
                     type: bindType,
                     ke: groupKey,
                     uid: userId,
+                    name: name,
                     lastLogin: new Date(),
                 }
             })

@@ -139,6 +139,7 @@ module.exports = function(s,config){
                 table.string('type',25).defaultTo('')
                 table.string('ke',50).defaultTo('')
                 table.string('uid',50).defaultTo('')
+                table.string('name',50).defaultTo('Unknown')
                 table.timestamp('lastLogin').defaultTo(s.databaseEngine.fn.now())
             }).then(() => {
                 s.databaseEngine.schema.alterTable('LoginTokens', function(table) {

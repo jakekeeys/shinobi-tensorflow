@@ -9,6 +9,7 @@ module.exports = (s,config,lang,app) => {
         bindLoginIdToUser,
         refreshLoginTokenAccessDate,
     } = require('./alternateLogins.js')(s,config,lang)
+    console.error(`Google App ID : ${config.appTokenGoogle}`)
     const client = new OAuth2Client(config.appTokenGoogle);
     async function verifyToken(userLoginToken) {
       const ticket = await client.verifyIdToken({
@@ -79,7 +80,13 @@ module.exports = (s,config,lang,app) => {
                     const loginId = googleLoginResponse.googleUser.id
                     const groupKey = user.ke
                     const userId = user.uid
-                    const bindResponse = await bindLoginIdToUser(loginId,groupKey,userId,'google')
+                    const bindResponse = await bindLoginIdToUser({
+                        loginId: loginId,
+                        ke: groupKey,
+                        uid: userId,
+                        name: googleLoginResponse.googleUser.name,
+                        type: 'google'
+                    })
                     response.ok = true
                     response.user = basicAuthResponse.user
                 }
@@ -121,7 +128,13 @@ module.exports = (s,config,lang,app) => {
             if(tokenResponse.ok){
                 const googleUser = tokenResponse.user
                 const loginId = googleUser.id
-                const bindResponse = await bindLoginIdToUser(loginId,groupKey,userId,'google')
+                const bindResponse = await bindLoginIdToUser({
+                    loginId: loginId,
+                    ke: groupKey,
+                    uid: userId,
+                    name: googleUser.name,
+                    type: 'google'
+                })
                 response.ok = bindResponse.ok
                 response.msg = bindResponse.msg
             }

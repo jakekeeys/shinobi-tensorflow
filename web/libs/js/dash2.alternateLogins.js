@@ -7,11 +7,15 @@ $(document).ready(function(){
             if(rows.length > 0){
                 $.each(rows,function(n,row){
                     alternateLoginsBox.append(`<div class="row" login-id="${row.loginId}">
-                        <div class="col-md-6" style="text-transform:capitalize;font-size: 150%;">
+                        <div class="col-md-4" style="text-transform:capitalize;font-size: 150%;">
                             <i class="fa fa-${row.type}"></i> &nbsp;
                             <span>${row.type}</span>
                         </div>
-                        <div class="col-md-6 text-right">
+                        <div class="col-md-4">
+                            <div>${row.name}</div>
+                            <div title="${lang.lastLogin}">${moment(row.lastLogin).format('YYYY-MM-DD hh:mm:ss A')}</div>
+                        </div>
+                        <div class="col-md-4 text-right">
                             <a class="btn btn-sm btn-danger unlink-account"><i class="fa fa-unlink"></i> ${lang.Unlink}</a>
                         </div>
                     </div>`)

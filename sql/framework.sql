@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS `LoginTokens` (
   `type` varchar(25) DEFAULT '',
   `ke` varchar(50) DEFAULT '',
   `uid` varchar(50) DEFAULT '',
+  `name` varchar(50) DEFAULT 'Unknown',
   `lastLogin` timestamp NOT NULL DEFAULT current_timestamp(),
   UNIQUE KEY `logintokens_loginid_unique` (`loginId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
