@@ -9,12 +9,12 @@ module.exports = (s,config,lang,app) => {
         bindLoginIdToUser,
         refreshLoginTokenAccessDate,
     } = require('./alternateLogins.js')(s,config,lang)
-    console.error(`Google App ID : ${config.appTokenGoogle}`)
-    const client = new OAuth2Client(config.appTokenGoogle);
+    console.error(`Google App ID : ${config.appIdGoogleSignIn}`)
+    const client = new OAuth2Client(config.appIdGoogleSignIn);
     async function verifyToken(userLoginToken) {
       const ticket = await client.verifyIdToken({
           idToken: userLoginToken,
-          audience: config.appTokenGoogle,
+          audience: config.appIdGoogleSignIn,
       });
       const payload = ticket.getPayload();
       const userid = payload['sub'];
