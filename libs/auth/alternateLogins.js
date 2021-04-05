@@ -64,7 +64,7 @@ module.exports = (s,config,lang) => {
         response.ok = updateResponse.ok
         return response
     }
-    async function deleteLoginToken(loginId) {
+    async function deleteLoginToken(loginId,bindType) {
         const response = {ok: false}
         bindType = bindType ? bindType : 'google'
         const updateResponse = await s.knexQueryPromise({
