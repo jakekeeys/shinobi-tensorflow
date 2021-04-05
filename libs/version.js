@@ -6,7 +6,7 @@ module.exports = function(s,config,lang,app,io){
                 var data = response.toString()
                 var isGitRespository = false
                 if(data.indexOf('not a git repository') === -1){
-                    s.currentVersion = data
+                    s.currentVersion = data.trim()
                     isGitRespository = true
                     s.systemLog(`Current Version : ${s.currentVersion}`)
                 }

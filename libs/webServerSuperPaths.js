@@ -9,6 +9,7 @@ module.exports = function(s,config,lang,app){
     const {
         modifyConfiguration,
         updateSystem,
+        getSystemInfo,
      } = require('./system/utils.js')(config)
     /**
     * API : Superuser : Get Logs
@@ -723,6 +724,17 @@ module.exports = function(s,config,lang,app){
                 childNodes: childNodesJson,
             }
             s.closeJsonResponse(res,endData)
+        },res,req)
+    })
+    /**
+    * API : Superuser : Get System Info
+    */
+    app.get(config.webPaths.superApiPrefix+':auth/system/info', function (req,res){
+        s.superAuth(req.params,async (resp) => {
+            s.closeJsonResponse(res,{
+                ok: true,
+                info: getSystemInfo(s)
+            })
         },res,req)
     })
 }

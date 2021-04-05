@@ -4,3 +4,14 @@
 .navbar.bg-success {
     background-color: #1f791b !important;
 }
+.super-system-info{
+    padding: 1rem;
+    overflow: auto!important;
+}
+.super-system-info > ul{
+    margin: 0;
+    padding: 0;
+}
+.form-group-group table tr:first-child > td {
+    border-top: 0;
+}
