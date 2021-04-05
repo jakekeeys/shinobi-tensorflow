@@ -101,12 +101,12 @@
                                 <!-- Tab panes -->
                                 <div class="tab-content text-center">
                                     <div class="tab-pane active" id="accounts" role="tabpanel">
-                                        <div class="mb-4"><a href="#" class="add btn btn-block btn-default"><i class="fa fa-plus"></i> <%- lang.Add %></a></div>
                                         <div class="row">
                                             <div class="col-md-5 text-left">
                                                 <pre class="super-system-info form-group-group red"></pre>
                                             </div>
                                             <div class="col-md-7">
+                                                <div class="mb-4"><a href="#" class="add btn btn-block btn-default"><i class="fa fa-plus"></i> <%- lang.Add %></a></div>
                                                 <div class="form-group-group red p-1" style="max-height:400px;overflow:auto">
                                                     <table class="table table-striped m-0"></table>
                                                 </div>
@@ -283,7 +283,7 @@ $.ccio.tm=function(x,d,z,k){
         case 0://account row
             d.detailsJSON=JSON.parse(d.details);
             $.ccio.accounts[d.ke]=d;
-            tmp+='<tr ke="'+d.ke+'"><td><b class="mail epic-text">'+d.mail+'</b></td><td>'+d.ke+'</td><td><a tabindex="1" class="permission btn badge badge-sm badge-info"><i class="fa fa-lock"></i></a></td><td><a tabindex="1" class="delete btn badge badge-sm badge-danger"><i class="fa fa-trash-o"></i></a></td></tr>';
+            tmp+='<tr ke="'+d.ke+'"><td class="text-left pl-3"><span class="mail">'+d.mail+'</span></td><td><span>'+d.ke+'</span></td><td><a tabindex="1" class="permission btn badge badge-sm badge-info m-0"><i class="fa fa-lock"></i></a></td><td><a tabindex="1" class="delete btn badge badge-sm badge-danger m-0"><i class="fa fa-trash-o"></i></a></td></tr>';
         break;
         case 4://log row, draw to global and monitor
             if(!d.time){d.time=$.ccio.init('t')}
