@@ -81,18 +81,11 @@
 									<div class="form-group f_i_input f_i_ldap" style="display:none">
 										<input name="key" id="key" tabindex="2" class="monospace form-control wide-text" placeholder="Group Key">
 									</div>
-									<div class="form-group" style="display:none">
-                                        <select class="form-control wide-text" name="alternateLogin">
-                                            <option value="" selected>Default</option>
-                                            <option value="google">Google</option>
-                                        </select>
-                                        <input style="display:none" name="alternateLoginToken" class="monospace form-control wide-text" placeholder="Group Key">
-                                    </div>
                                     <% if(config.showLoginSelector === true){ %>
-    									<div class="form-group">
+    									<div class="form-group f_i_input f_i_">
         									<div class="row">
                                                 <div class="col-md-12 monospace">
-                                                    <select class="form-control wide-text" name="function" selector="f_i">
+                                                    <select class="form-control wide-text" name="function">
                                                         <% switch(screen){
                                                             case'super': %>
                                                         <option value="super"><%- lang.Superuser %></option>
@@ -102,9 +95,6 @@
                                                         <% break;
                                                             default: %>
                                                         <option value="dash" selected><%- lang.Dashboard %></option>
-                                                        <% if(config.productType==='Pro'){ %>
-                                                        <option value="ldap"><%- lang.LDAP %></option>
-                                                        <% } %>
                                                         <option value="streamer"><%- lang.Streamer %></option>
                                                         <option value="cam"><%- lang.Dashcam %> (<%- lang.Streamer %> v2)</option>
                                                         <% break;
@@ -128,6 +118,14 @@
                                             } %>
                                         </select>
                                     <% } %>
+                                    <div class="form-group">
+                                        <select class="form-control wide-text" name="alternateLogin" selector="f_i">
+                                            <option value="" selected><%- lang.Default %></option>
+                                            <option value="google">Google</option>
+                                            <option value="ldap"><%- lang.LDAP %></option>
+                                        </select>
+                                        <input style="display:none" name="alternateLoginToken" class="monospace form-control wide-text" placeholder="Group Key">
+                                    </div>
 									<div class="form-group">
                                         <button type="submit" name="login-submit" id="login-submit" tabindex="4" class="btn btn-success btn-block wide-text" style="color:#FFF"><i class="fa fa-key"></i> <%- lang.Login %></button>
 									</div>
@@ -233,7 +231,7 @@ $('[selector]').change(function(e){
     <script>
         function onGoogleSignIn(googleUser) {
             var id_token = googleUser.getAuthResponse().id_token;
-            $.ccio.f.find('[name="mail"],[name="pass"],.g-signin2').hide()
+            $.ccio.f.find('[name="mail"],[name="pass"],[name="alternateLogin"],.g-signin2').hide()
             $.ccio.f.find('[name="alternateLogin"]').val('google')
             $.ccio.f.find('[name="alternateLoginToken"]').val(id_token)
             $.ccio.f.find('[name="login-submit"]').html(`<i class="fa fa-google"></i> <%- lang.Login %>`)

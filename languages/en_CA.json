@@ -121,6 +121,7 @@
    "Home": "Home",
    "alreadyLinked": "Already Linked to an Account",
    "Link Google Account": "Link Google Account",
+   "Link LDAP Account": "Link LDAP Account",
    "noLoginTokensAdded": "There are no Alternate Logins associated to this account.",
    "tokenNotUserBound": "This Login Handle is not linked to a user on this server!",
    "tokenNotUserBoundPt2": "Type your credentials then use the Google Sign-In button to link quickly.",

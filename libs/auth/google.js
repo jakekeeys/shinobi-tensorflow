@@ -9,7 +9,7 @@ module.exports = (s,config,lang,app) => {
         bindLoginIdToUser,
         refreshLoginTokenAccessDate,
     } = require('./alternateLogins.js')(s,config,lang)
-    console.error(`Google App ID : ${config.appIdGoogleSignIn}`)
+    console.log(`Google App ID : ${config.appIdGoogleSignIn}`)
     const client = new OAuth2Client(config.appIdGoogleSignIn);
     async function verifyToken(userLoginToken) {
       const ticket = await client.verifyIdToken({
@@ -61,7 +61,7 @@ module.exports = (s,config,lang,app) => {
         return response
     }
     s.onProcessReady(() => {
-        config.renderPaths.loginTokenAddGoogle = `pages/loginTokenAddGoogle`
+        config.renderPaths.loginTokenAddGoogle = `pages/blocks/loginTokenAddGoogle`
         s.alternateLogins['google'] = async (params) => {
             const response = { ok: false }
             const loginToken = params.alternateLoginToken
