@@ -144,6 +144,22 @@ drawBlock = function(monitorSettings){
       var fieldElement = ''
       var preFill = field.preFill || ''
       switch(fieldType){
+          case'btn-group':
+                let fieldBtnContent = ``
+                field.btns.forEach((btn) => {
+                    let btnClass = []
+                    let btnAttributes = []
+                    const btnBaseElement = btn.forForm || field.forForm ? 'button' : 'a'
+                    if(btn.class){
+                        btnClass.push(`${btn.class}`)
+                    }
+                    if(btn.attribute){
+                        btnAttributes.push(btn.attribute)
+                    }
+                    fieldBtnContent += `<${btnBaseElement} class="btn ${btnClass.join(' ')}" ${btnAttributes.join(' ')}>${btn.btnContent}</${btnBaseElement}>`
+                })
+                fieldElement = `<div class="btn-group btn-group-justified ${fieldClass.join(' ')}" ${attributes.join(' ')}>${fieldBtnContent}</div>`
+          break;
           case'btn':
                 baseElement = field.forForm ? 'button' : 'a'
                 fieldElement = `<${baseElement} class="btn btn-block ${fieldClass.join(' ')}" ${attributes.join(' ')}>${field.btnContent}</${baseElement}>`
@@ -190,7 +206,7 @@ drawBlock = function(monitorSettings){
        if(field['form-group-class-pre-layer']){ %>
       <div class="<%- field['form-group-class-pre-layer'] %>">
       <% }
-      if(fieldType === 'ul' || fieldType ===  'div' || fieldType ===  'btn' || fieldType ===  'table' || fieldType ===  'form'){ %>
+      if(fieldType === 'ul' || fieldType ===  'div' || fieldType ===  'btn' || fieldType ===  'btn-group' || fieldType ===  'table' || fieldType ===  'form'){ %>
           <%- fieldElement %>
       <% }else{ %>
           <div <%- hidden %> class="form-group <%- field['form-group-class'] %>">

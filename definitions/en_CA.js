@@ -4224,6 +4224,11 @@ module.exports = function(s,config,lang){
                          "fieldType": 'div',
                          "id": "alternate-logins"
                      },
+                     {
+                        "fieldType": "btn-group",
+                        "forForm": true,
+                        "btns": [],
+                     },
                  ]
              },
              "2-Factor Authentication": {
@@ -5395,28 +5400,10 @@ module.exports = function(s,config,lang){
                 "color": "forestgreen",
                 "info": [
                     {
-                       "name": "ldap_enable",
-                       "field": lang.Enabled,
-                       "description": "Enable LDAP authentication for this Group.",
-                       "default": "0",
-                       "example": "",
-                       "fieldType": "select",
-                       "possible": [
-                           {
-                              "name": lang.No,
-                              "value": "0"
-                           },
-                           {
-                              "name": lang.Yes,
-                              "value": "1"
-                           }
-                       ]
-                    },
-                    {
                        "name": "ldap_url",
                        "field": lang.URL,
                        "description": "",
-                       "example": "",
+                       "example": "ldap://127.0.0.1:389",
                        "possible": ""
                     },
                     {

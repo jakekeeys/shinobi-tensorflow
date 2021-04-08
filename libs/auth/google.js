@@ -95,9 +95,8 @@ module.exports = (s,config,lang,app) => {
             }
             return response
         }
-        s.definitions["Account Settings"].blocks["AlternateLogins"].info.push({
-           "form-group-class-pre-layer": "form-group",
-           "fieldType": "btn",
+        const alternateLoginsFieldList = s.definitions["Account Settings"].blocks["AlternateLogins"].info
+        alternateLoginsFieldList[alternateLoginsFieldList.length - 1].btns.push({
            "class": `btn-info google-sign-in`,
            "btnContent": `<i class="fa fa-google"></i> &nbsp; ${lang['Link Google Account']}`,
        })

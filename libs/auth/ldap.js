@@ -75,7 +75,6 @@ module.exports = (s,config,lang,app) => {
         return response
     }
     async function updateLdapBaseDetails(params,updateFields){
-        const enabled = updateFields.ldap_enable
         const url = updateFields.ldap_url
         const bindDN = updateFields.ldap_bindDN
         const searchBase = updateFields.ldap_searchBase
@@ -90,7 +89,6 @@ module.exports = (s,config,lang,app) => {
             ],
         })
         const userDetails = JSON.parse(userResponse.rows[0].details)
-        userDetails.ldap_enable = enabled
         userDetails.ldap_url = url
         userDetails.ldap_bindDN = bindDN
         userDetails.ldap_searchBase = searchBase
@@ -148,9 +146,8 @@ module.exports = (s,config,lang,app) => {
             }
             return response
         }
-        s.definitions["Account Settings"].blocks["AlternateLogins"].info.push({
-           "form-group-class-pre-layer": "form-group",
-           "fieldType": "btn",
+        const alternateLoginsFieldList = s.definitions["Account Settings"].blocks["AlternateLogins"].info
+        alternateLoginsFieldList[alternateLoginsFieldList.length - 1].btns.push({
            "class": `btn-info ldap-sign-in`,
            "btnContent": `<i class="fa fa-group"></i> &nbsp; ${lang['Link LDAP Account']}`,
         })
