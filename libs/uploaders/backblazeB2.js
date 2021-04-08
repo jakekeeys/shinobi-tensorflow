@@ -33,7 +33,8 @@ module.exports = function(s,config,lang){
                userDetails.bb_b2_applicationKey &&
                userDetails.bb_b2_applicationKey !=='' &&
                userDetails.bb_b2_bucket &&
-               userDetails.bb_b2_bucket !== ''
+               userDetails.bb_b2_bucket !== '' &&
+               userDetails.bb_b2_save === '1'
               ){
                 var B2 = require('backblaze-b2')
                 if(!userDetails.bb_b2_dir || userDetails.bb_b2_dir === '/'){

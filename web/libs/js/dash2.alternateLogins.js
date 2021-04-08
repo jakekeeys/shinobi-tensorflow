@@ -6,17 +6,19 @@ $(document).ready(function(){
             alternateLoginsBox.empty()
             if(rows.length > 0){
                 $.each(rows,function(n,row){
-                    alternateLoginsBox.append(`<div class="row" login-id="${row.loginId}">
-                        <div class="col-md-4" style="text-transform:capitalize;font-size: 150%;">
-                            <i class="fa fa-${row.type}"></i> &nbsp;
-                            <span>${row.type}</span>
+                    alternateLoginsBox.append(`<div class="row" login-id="${row.loginId}" style="border-bottom: 1px solid #333;padding-top:1rem;padding-bottom:1rem;display:flex">
+                        <div class="col-md-3" style="flex: 3">
+                            <i class="fa fa-address-card"></i> &nbsp;
+                            <span class="epic-text text-white">${row.type}</span>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3" style="flex: 3">
                             <div>${row.name}</div>
+                        </div>
+                        <div class="col-md-3" style="flex: 3">
                             <div title="${lang.lastLogin}">${moment(row.lastLogin).format('YYYY-MM-DD hh:mm:ss A')}</div>
                         </div>
-                        <div class="col-md-4 text-right">
-                            <a class="btn btn-sm btn-danger unlink-account"><i class="fa fa-unlink"></i> ${lang.Unlink}</a>
+                        <div class="col-md-3 text-right" style="flex: 3">
+                            <a class="btn badge-sm badge btn-danger unlink-account"><i class="fa fa-unlink"></i> ${lang.Unlink}</a>
                         </div>
                     </div>`)
                 })

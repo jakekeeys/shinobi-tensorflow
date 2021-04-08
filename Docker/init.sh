@@ -8,7 +8,7 @@ sed -i "s/$OLD_SQL_USER_TAG/$NEW_SQL_USER_TAG/g" sql/framework1.sql
 if [ "$SSL_ENABLED" = "true" ]; then
     if [ -d /config/ssl ]; then
         echo "Using provided SSL Key"
-        cp -R /config/ssl ssl
+        cp -R /config/ssl ./
         SSL_CONFIG='{"key":"./ssl/server.key","cert":"./ssl/server.cert"}'
     else
         echo "Making new SSL Key"

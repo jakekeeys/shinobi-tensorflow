@@ -4224,6 +4224,11 @@ module.exports = function(s,config,lang){
                          "fieldType": 'div',
                          "id": "alternate-logins"
                      },
+                     {
+                        "fieldType": "btn-group",
+                        "forForm": true,
+                        "btns": [],
+                     },
                  ]
              },
              "2-Factor Authentication": {
@@ -4548,75 +4553,6 @@ module.exports = function(s,config,lang){
                        "example": "",
                        "possible": ""
                     }
-                ]
-             },
-             "LDAP": {
-                "evaluation":"details.use_ldap!=='0'",
-                "name": lang["LDAP"],
-                "color": "forestgreen",
-                "info": [
-                    {
-                       "name": "detail=ldap_enable",
-                       "selector":"ldap_i",
-                       "field": lang.Enabled,
-                       "description": "Enable LDAP authentication for this Group.",
-                       "default": "0",
-                       "example": "",
-                       "fieldType": "select",
-                       "possible": [
-                           {
-                              "name": lang.No,
-                              "value": "0"
-                           },
-                           {
-                              "name": lang.Yes,
-                              "value": "1"
-                           }
-                       ]
-                    },
-                    {
-                       "form-group-class": "ldap_i_input ldap_i_1",
-                       "name": "detail=ldap_url",
-                       "field": lang.URL,
-                       "description": "",
-                       "example": "",
-                       "possible": ""
-                    },
-                    {
-                       "placeholder":lang.Example + " : cn=admin,dc=test,dc=com",
-                       "form-group-class": "ldap_i_input ldap_i_1",
-                       "name": "detail=ldap_bindDN",
-                       "field": lang.bindDN,
-                       "description": "",
-                       "example": "",
-                       "possible": ""
-                    },
-                    {
-                       "form-group-class": "ldap_i_input ldap_i_1",
-                       "name": "detail=ldap_bindCredentials",
-                       "field": lang['Bind Credentials'],
-                       "description": "",
-                       "example": "",
-                       "possible": ""
-                    },
-                    {
-                       "placeholder": "cn={{username}}",
-                       "form-group-class": "ldap_i_input ldap_i_1",
-                       "name": "detail=ldap_searchFilter",
-                       "field": lang['Search Filter'],
-                       "description": "",
-                       "example": "",
-                       "possible": ""
-                    },
-                    {
-                       "placeholder": "dc=test,dc=com",
-                       "form-group-class": "ldap_i_input ldap_i_1",
-                       "name": "detail=ldap_searchBase",
-                       "field": lang['Search Base'],
-                       "description": "",
-                       "example": "",
-                       "possible": ""
-                    },
                 ]
              },
              "Preferences": {
@@ -5454,6 +5390,67 @@ module.exports = function(s,config,lang){
                 ]
              },
          }
-      }
+     },
+     "LDAP": {
+         "section": "LDAP",
+         "blocks": {
+             "LDAP": {
+                "evaluation":"details.use_ldap!=='0'",
+                "name": lang["LDAP"],
+                "color": "forestgreen",
+                "info": [
+                    {
+                       "name": "ldap_url",
+                       "field": lang.URL,
+                       "description": "",
+                       "example": "ldap://127.0.0.1:389",
+                       "possible": ""
+                    },
+                    {
+                       "name": "username",
+                       "field": lang.Username,
+                       "description": "",
+                       "example": "",
+                       "possible": ""
+                    },
+                    {
+                       "name": "password",
+                       "field": lang.Password,
+                       "description": "",
+                       "example": "",
+                       "possible": ""
+                    },
+                    {
+                       "name": "ldap_bindDN",
+                       "field": lang.bindDN,
+                       "description": "",
+                       "example": "cn=admin,dc=test,dc=com",
+                       "possible": ""
+                    },
+                    {
+                       "name": "ldap_searchBase",
+                       "field": lang['Search Base'],
+                       "description": "",
+                       "example": "dc=test,dc=com",
+                       "possible": ""
+                    },
+                    {
+                       "name": "ldap_searchFilter",
+                       "field": lang['Search Filter'],
+                       "description": "",
+                       "example": "uid={{username}}",
+                       "possible": ""
+                    },
+                    {
+                       "fieldType": "btn",
+                       "forForm": true,
+                       "attribute": `type="submit"`,
+                       "class": `btn-success`,
+                       "btnContent": `<i class="fa fa-check"></i> &nbsp; ${lang['Save']}`,
+                    },
+                ]
+             }
+         }
+         }
     }
 }
