@@ -26,9 +26,6 @@ module.exports = function(s,config,lang,app,io){
         twoFactorVerification,
         ldapLogin,
     } = require('./auth/utils.js')(s,config,lang)
-    if(config.productType === 'Pro'){
-        var LdapAuth = require('ldapauth-fork');
-    }
     s.renderPage = function(req,res,paths,passables,callback){
         passables.window = {}
         passables.data = req.params
@@ -447,138 +444,7 @@ module.exports = function(s,config,lang,app,io){
                     failedAuthentication(req.body.function,req.body.mail)
                 }
             }
-            if(LdapAuth&&req.body.function==='ldap'&&req.body.key!==''){
-                s.knexQuery({
-                    action: "select",
-                    columns: "*",
-                    table: "Users",
-                    where: [
-                        ['ke','=',req.body.key],
-                        ['details','NOT LIKE','%"sub"%'],
-                    ],
-                },(err,r) => {
-                    if(r&&r[0]){
-                        r=r[0]
-                        r.details=JSON.parse(r.details)
-                        r.lang=s.getLanguageFile(r.details.lang)
-                        if(r.details.use_ldap!=='0'&&r.details.ldap_enable==='1'&&r.details.ldap_url&&r.details.ldap_url!==''){
-                            req.mailArray={}
-                            req.body.mail.split(',').forEach(function(v){
-                                v=v.split('=')
-                                req.mailArray[v[0]]=v[1]
-                            })
-                            if(!r.details.ldap_bindDN||r.details.ldap_bindDN===''){
-                                r.details.ldap_bindDN=req.body.mail
-                            }
-                            if(!r.details.ldap_bindCredentials||r.details.ldap_bindCredentials===''){
-                                r.details.ldap_bindCredentials=req.body.pass
-                            }
-                            if(!r.details.ldap_searchFilter||r.details.ldap_searchFilter===''){
-                                r.details.ldap_searchFilter=req.body.mail
-                                if(req.mailArray.cn){
-                                    r.details.ldap_searchFilter='cn='+req.mailArray.cn
-                                }
-                                if(req.mailArray.uid){
-                                    r.details.ldap_searchFilter='uid='+req.mailArray.uid
-                                }
-                            }else{
-                                r.details.ldap_searchFilter=r.details.ldap_searchFilter.replace('{{username}}',req.body.mail)
-                            }
-                            if(!r.details.ldap_searchBase||r.details.ldap_searchBase===''){
-                                r.details.ldap_searchBase='dc=test,dc=com'
-                            }
-                            req.auth = new LdapAuth({
-                                url:r.details.ldap_url,
-                                bindDN:r.details.ldap_bindDN,
-                                bindCredentials:r.details.ldap_bindCredentials,
-                                searchBase:r.details.ldap_searchBase,
-                                searchFilter:'('+r.details.ldap_searchFilter+')',
-                                reconnect:true
-                            });
-                            req.auth.on('error', function (err) {
-                                console.error('LdapAuth: ', err);
-                            });
-
-                            req.auth.authenticate(req.body.mail, req.body.pass, function(err, user) {
-                                if(user){
-                                    //found user
-                                    if(!user.uid){
-                                        user.uid=s.gid()
-                                    }
-                                    const userInfo = {
-                                        ke:req.body.key,
-                                        uid:user.uid,
-                                        auth:s.createHash(s.gid()),
-                                        mail:user.mail,
-                                        pass:s.createHash(req.body.pass),
-                                        details:JSON.stringify({
-                                            sub:'1',
-                                            ldap:'1',
-                                            allmonitors:'1',
-                                            filter: {}
-                                        })
-                                    }
-                                    s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP Success'],msg:{user:user}})
-                                    s.knexQuery({
-                                        action: "select",
-                                        columns: "*",
-                                        table: "Users",
-                                        where: [
-                                            ['ke','=',req.body.key],
-                                            ['mail','=',user.cn],
-                                        ],
-                                    },function(err,rr) {
-                                        if(rr&&rr[0]){
-                                            //already registered
-                                            rr = rr[0]
-                                            userInfo = rr;
-                                            rr.details = JSON.parse(rr.details)
-                                            userInfo.lang = s.getLanguageFile(rr.details.lang)
-                                            s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP User Authenticated'],msg:{user:user,shinobiUID:rr.uid}})
-                                            s.knexQuery({
-                                                action: "update",
-                                                table: "Users",
-                                                update: {
-                                                    auth: userInfo.auth
-                                                },
-                                                where: [
-                                                    ['ke','=',userInfo.ke],
-                                                    ['uid','=',rr.uid],
-                                                ]
-                                            })
-                                        }else{
-                                            //new ldap login
-                                            s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP User is New'],msg:{info:r.lang['Creating New Account'],user:user}})
-                                            userInfo.lang = r.lang
-                                            s.knexQuery({
-                                                action: "insert",
-                                                table: "Users",
-                                                insert: userInfo,
-                                            })
-                                        }
-                                        userInfo.details = JSON.stringify(userInfo.details)
-                                        userInfo.auth_token = userInfo.auth
-                                        userInfo.ok = true
-                                        checkRoute(req.body.function,userInfo)
-                                    })
-                                    return
-                                }
-                                s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP Failed'],msg:{err:err}})
-                                //no user
-                                regularLogin()
-                            });
-
-                            req.auth.close(function(err) {
-
-                            })
-                        }else{
-                            regularLogin()
-                        }
-                    }else{
-                        regularLogin()
-                    }
-                })
-            }else if(req.body.function === 'super'){
+            if(req.body.function === 'super'){
                 const superLoginResponse = await superLogin(req.body.mail,req.body.pass);
                 if(superLoginResponse.ok){
                     renderPage(config.renderPaths.super,{
