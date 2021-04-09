@@ -496,7 +496,6 @@ module.exports = (s,config,lang,app,io) => {
         if(!activeMonitor.sendingFromSecondaryDetectorOuput){
             s.debugLog('start sending object frames',groupKey,monitorId)
             theEmitter.on('data',activeMonitor.secondaryDetectorOuputContentWriter = (data) => {
-                console.log(data)
                 s.ocvTx({
                     f : 'frame',
                     mon : s.group[groupKey].rawMonitorConfigurations[monitorId].details,
