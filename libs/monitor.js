@@ -58,6 +58,7 @@ module.exports = function(s,config,lang){
         if(!activeMonitor.eventsCounted){activeMonitor.eventsCounted = {}};
         if(!activeMonitor.isStarted){activeMonitor.isStarted = false};
         if(!activeMonitor.pipe4BufferPieces){activeMonitor.pipe4BufferPieces = []};
+        if(!activeMonitor.secondaryDetectorOutput){activeMonitor.secondaryDetectorOutput = new events.EventEmitter()};
         if(activeMonitor.delete){clearTimeout(activeMonitor.delete)}
         if(!s.group[e.ke].rawMonitorConfigurations){s.group[e.ke].rawMonitorConfigurations={}}
         if(!activeMonitor.criticalErrors)activeMonitor.criticalErrors = {
@@ -690,11 +691,12 @@ module.exports = function(s,config,lang){
     }
     const onDetectorJpegOutputSecondary = (e,buffer) => {
         if(s.isAtleatOneDetectorPluginConnected){
-            const theArray = s.group[e.ke].activeMonitors[e.id].pipe4BufferPieces
+            const activeMonitor = s.group[e.ke].activeMonitors[e.id]
+            const theArray = activeMonitor.pipe4BufferPieces
             theArray.push(buffer)
             if(buffer[buffer.length-2] === 0xFF && buffer[buffer.length-1] === 0xD9){
-                s.group[e.ke].activeMonitors[e.id].lastJpegDetectorFrame = Buffer.concat(theArray)
-                s.group[e.ke].activeMonitors[e.id].pipe4BufferPieces = []
+                activeMonitor.secondaryDetectorOutput.emit('data',Buffer.concat(theArray))
+                activeMonitor.pipe4BufferPieces = []
             }
         }
     }
