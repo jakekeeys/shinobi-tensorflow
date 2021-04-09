@@ -645,6 +645,8 @@ module.exports = (s,config,lang) => {
                     detectorFlags.push(baseDimensionsFlag)
                 }
                 if(builtInMotionDetectorIsEnabled){
+                    addVideoFilters()
+                    detectorFlags.push(baseDimensionsFlag)
                     detectorFlags.push('-an -c:v pam -pix_fmt gray -f image2pipe pipe:3')
                     if(objectDetectorOutputIsEnabled){
                         addObjectDetectorInputMap()
