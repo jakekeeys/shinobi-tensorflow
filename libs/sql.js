@@ -40,7 +40,7 @@ module.exports = function(s,config){
     s.sqlQuery = sqlQuery
     s.connectDatabase = connectDatabase
     s.sqlQueryBetweenTimesWithPermissions = sqlQueryBetweenTimesWithPermissions
-    s.preQueries = function(){
+    s.preQueries = async function(){
         var knex = s.databaseEngine
         var mySQLtail = ''
         if(config.databaseType === 'mysql'){
@@ -132,6 +132,31 @@ module.exports = function(s,config){
                     },true)
                 }
             },true)
+        }
+        try{
+            s.databaseEngine.schema.createTable('LoginTokens', table => {
+                table.string('loginId',255).defaultTo('')
+                table.string('type',25).defaultTo('')
+                table.string('ke',50).defaultTo('')
+                table.string('uid',50).defaultTo('')
+                table.string('name',50).defaultTo('Unknown')
+                table.timestamp('lastLogin').defaultTo(s.databaseEngine.fn.now())
+            }).then(() => {
+                s.databaseEngine.schema.alterTable('LoginTokens', function(table) {
+                    table.unique('loginId')
+                }).then(() => {
+                    s.systemLog('Created New Database Table : LoginTokens')
+                }).catch((err) => {
+                    console.log(err)
+                })
+            }).catch((err) => {
+                if(err && err.code !== 'ER_TABLE_EXISTS_ERROR'){
+                    console.log('error')
+                    console.log(err)
+                }
+            })
+        }catch(err){
+            console.log(err)
         }
         delete(s.preQueries)
     }

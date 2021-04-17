@@ -20,6 +20,21 @@ module.exports = function(s,config,lang,app){
                 lon: -123.1140607
             }
         },
+        "vancouver-2": {
+            name: 'Vancouver-2',
+            host: 'p2p-vancouver-2.shinobi.cloud',
+            p2pPort: '8084',
+            webPort: '8000',
+            maxNetworkSpeed: {
+                up: 400,
+                down: 1000,
+                shared: true
+            },
+            location: {
+                lat: 49.284966,
+                lon: -123.1140607
+            }
+        },
         "toronto-1": {
             name: 'Toronto-1',
             host: 'p2p-toronto-1.shinobi.cloud',

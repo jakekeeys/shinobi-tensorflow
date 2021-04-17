@@ -224,7 +224,7 @@ $.aN.f.submit(function(e){
 //client side email check
 $.aN.e.on('change','[name="mail"]',function(){
     var thisVal = $(this).val()
-    $.each(users,function(n,user){
+    $.each(loadedUsers,function(n,user){
         if($.aN.selected && user.ke !== $.aN.selected.ke && thisVal.toLowerCase() === user.mail.toLowerCase()){
             new PNotify({text:lang['Email address is in use.'],type:'error'})
         }
@@ -233,7 +233,7 @@ $.aN.e.on('change','[name="mail"]',function(){
 //client side group key check
 $.aN.e.on('change','[name="ke"]',function(){
     var thisVal = $(this).val()
-    $.each(users,function(n,user){
+    $.each(loadedUsers,function(n,user){
         if(!$.aN.modeIsEdit() && user.ke === thisVal){
             new PNotify({text:lang['Group Key is in use.'] + ' ' + lang['Create Sub-Accounts at /admin'],type:'error'})
         }

@@ -1,4 +1,5 @@
 var fs = require('fs')
+var execSync = require('child_process').execSync
 var P2P = require('pipe2pam')
 var PamDiff = require('pam-diff')
 module.exports = function(jsonData,pamDiffResponder){
@@ -84,6 +85,7 @@ module.exports = function(jsonData,pamDiffResponder){
             regions : regions.forPam,
             percent : globalSensitivity,
             difference : globalColorThreshold,
+            response: "bounds"
 
         }
         if(jsonData.rawMonitorConfig.details.detector_show_matrix==='1'){
@@ -104,11 +106,12 @@ module.exports = function(jsonData,pamDiffResponder){
                         plug:'built-in',
                         name:trigger.name,
                         reason:'motion',
-                        confidence:trigger.percent
+                        confidence:trigger.percent,
+                        matrices: trigger.matrices,
+                        imgHeight:jsonData.rawMonitorConfig.details.detector_scale_y,
+                        imgWidth:jsonData.rawMonitorConfig.details.detector_scale_x
                     },
                     plates:[],
-                    imgHeight:jsonData.rawMonitorConfig.details.detector_scale_y,
-                    imgWidth:jsonData.rawMonitorConfig.details.detector_scale_x
                 }
                 if(trigger.merged){
                     if(trigger.matrices)detectorObject.details.matrices = trigger.matrices
@@ -175,11 +178,12 @@ module.exports = function(jsonData,pamDiffResponder){
                         plug:'built-in',
                         name:trigger.name,
                         reason:'motion',
-                        confidence:trigger.percent
+                        confidence:trigger.percent,
+                        matrices: trigger.matrices,
+                        imgHeight:jsonData.rawMonitorConfig.details.detector_scale_y,
+                        imgWidth:jsonData.rawMonitorConfig.details.detector_scale_x
                     },
                     plates:[],
-                    imgHeight:jsonData.rawMonitorConfig.details.detector_scale_y,
-                    imgWidth:jsonData.rawMonitorConfig.details.detector_scale_x
                 }
                 if(trigger.matrix)detectorObject.details.matrices = [trigger.matrix]
                 var region = regionsAreMasks ? mask : Object.values(regionJson).find(x => x.name == detectorObject.name)
@@ -360,9 +364,9 @@ module.exports = function(jsonData,pamDiffResponder){
     }
     createMatrixFromPamTrigger = function(trigger){
         if(
-            trigger.minX &&
-            trigger.maxX &&
-            trigger.minY &&
+            trigger.minX ||
+            trigger.maxX ||
+            trigger.minY ||
             trigger.maxY
         ){
             var coordinates = [

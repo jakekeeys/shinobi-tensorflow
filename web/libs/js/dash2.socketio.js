@@ -738,38 +738,6 @@ $user.ws.on('connect',function (d){
         }else{
             $.ccio.cx({f:'init',ke:$user.ke,auth:$user.auth_token,uid:$user.uid})
         }
-        if($user.details&&$user.details.links){
-            $.each($user.details.links,function(n,v){
-                if(v.secure==='0'){
-                    v.protocol='http'
-                }else{
-                    v.protocol='https'
-                }
-                if(v.host.indexOf('://')>-1){
-                    v.URL=v.protocol+'://'+v.host.split('://')[1]
-                }else{
-                    v.URL=v.protocol+'://'+v.host
-                }
-                $.get(v.URL+'/'+v.api+'/userInfo/'+v.ke,function(e){
-                    if(e.ok===true){
-                        e.user.auth_token=v.api
-                        $.users[v.api]=e.user
-                        $.users[v.api].info=v
-                        $.users[v.api].ws=io(v.host)
-                        $.users[v.api].ws.on('ping', function(d){
-                            $.users[v.api].ws.emit('pong',{beat:1});
-                        });
-                        $.users[v.api].ws.on('connect',function (d){
-                            console.log(v.host,'connected')
-                            $.ccio.cx({f:'init',ke:e.user.ke,auth:v.api,uid:e.user.uid},$.users[v.api])
-                        })
-                        $.users[v.api].ws.on('f',function (d){
-                            $.ccio.globalWebsocket(d,$.users[v.api])
-                        })
-                    }
-                })
-            })
-        }
     })
 })
 PNotify.prototype.options.styling = "fontawesome";

@@ -81,6 +81,7 @@ module.exports = (s,config,lang) => {
         streams.forEach((stream) => {
             try{
                 const codecType = stream.codec_type || 'video'
+                if(!streamIndex[codecType])streamIndex[codecType] = []
                 const simpleInfo = {
                     fps: eval(stream.r_frame_rate) || '',
                     width: stream.coded_width,

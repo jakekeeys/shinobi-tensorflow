@@ -3,6 +3,23 @@ const spawn = require('child_process').spawn;
 module.exports = (config) => {
     var currentlyUpdating = false
     return {
+        getSystemInfo: (s) => {
+            return {
+                "Time Started": s.timeStarted,
+                "Time Ready": s.timeReady,
+                Versions: {
+                    "Shinobi": s.currentVersion,
+                    "Node.js": process.version,
+                    "FFmpeg": s.ffmpegVersion,
+                    "isActivated": config.userHasSubscribed,
+                },
+                Machine: {
+                    "CPU Core Count": s.coreCount,
+                    "Total RAM": s.totalmem,
+                    "Operating System Platform": s.platform,
+                },
+            }
+        },
         getConfiguration: () => {
             return new Promise((resolve,reject) => {
                 fs.readFile(s.location.config,'utf8',function(err,data){

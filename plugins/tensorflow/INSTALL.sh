@@ -55,13 +55,13 @@ manualInstallRequirements() {
 
 installJetson() {
 	installGpuFlag=true
-	npm install @tensorflow/tfjs-node-gpu@2.7.0 --unsafe-perm
+	npm install @tensorflow/tfjs-node-gpu@2.7.0 --unsafe-perm --force
 	cd node_modules/@tensorflow/tfjs-node-gpu
 	echo '{"tf-lib": "https://cdn.shinobi.video/installers/libtensorflow-gpu-linux-arm64-1.15.0.tar.gz"}' > "scripts/custom-binary.json"
 }
 
 installArm() {
-	npm install @tensorflow/tfjs-node@2.7.0 --unsafe-perm
+	npm install @tensorflow/tfjs-node@2.7.0 --unsafe-perm --force
 	cd node_modules/@tensorflow/tfjs-node
 	echo '{"tf-lib": "https://cdn.shinobi.video/installers/libtensorflow-cpu-linux-arm-1.15.0.tar.gz"}' > "scripts/custom-binary.json"
 }
@@ -69,12 +69,12 @@ installArm() {
 installGpuRoute() {
 	installGpuFlag=true
 	manualInstallRequirements
-	npm install @tensorflow/tfjs-node-gpu@2.7.0 --unsafe-perm
+	npm install @tensorflow/tfjs-node-gpu@2.7.0 --unsafe-perm --force
 }
 
 installNonGpuRoute() {
 	manualInstallRequirements
-	npm install @tensorflow/tfjs-node@2.7.0 --unsafe-perm
+	npm install @tensorflow/tfjs-node@2.7.0 --unsafe-perm --force
 }
 
 runRebuildCpu() {

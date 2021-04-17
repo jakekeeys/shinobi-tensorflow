@@ -1,0 +1,45 @@
+<%
+    window.libURL = originalURL + global.s.checkCorrectPathEnding(config.webPaths.home)
+%>
+<meta name="google-signin-client_id" content="<%- config.appIdGoogleSignIn %>">
+<script src="<%-window.libURL%>libs/js/jquery.min.js"></script>
+<style>
+    body {
+        background: #333;
+    }
+    .g-signin2 {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+</style>
+<div class="g-signin2" data-onsuccess="onGoogleSignIn" style="display: inline-block;"></div>
+<script src="https://apis.google.com/js/platform.js" async defer></script>
+<script>
+    function onGoogleSignIn(googleUser) {
+        console.log('Logged in to Google! Binding...')
+        var id_token = googleUser.getAuthResponse().id_token;
+        $.post(location.href,{
+            loginToken: id_token,
+        },function(data){
+            googleSignOut()
+            if(data.ok){
+                window.close()
+            }else{
+                console.log(data)
+                $('.g-signin2').html(data.msg || 'Failed to Save').css({
+                    color: "#fff",
+                    textAlign: "center",
+                    fontFamily: "monospace",
+                })
+            }
+        })
+    }
+    function googleSignOut() {
+      var auth2 = gapi.auth2.getAuthInstance();
+      auth2.signOut().then(function () {
+        console.log('Google Signed out.');
+      });
+    }
+</script>

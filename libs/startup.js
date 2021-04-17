@@ -14,6 +14,7 @@ module.exports = function(s,config,lang,io){
         console.log('FFmpeg version : '+s.ffmpegVersion)
         console.log('Node.js version : '+process.version)
         s.processReady = function(){
+            s.timeReady = new Date()
             delete(checkedAdminUsers)
             resolve()
             s.systemLog(lang.startUpText5)

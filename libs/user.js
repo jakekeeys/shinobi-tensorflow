@@ -280,7 +280,7 @@ module.exports = function(s,config,lang){
                     }
                     ///unchangeable from client side, so reset them in case they did.
                     var form = d.form
-                    var formDetails = JSON.parse(form.details)
+                    var formDetails = s.parseJSON(form.details,{})
                     if(!dontRunExtensions){
                         s.beforeAccountSaveExtensions.forEach(function(extender){
                             extender({

@@ -637,12 +637,16 @@ module.exports = (s,config,lang) => {
             }
             if(sendFramesGlobally){
                 if(builtInMotionDetectorIsEnabled)addInputMap();
-                detectorFlags.push(baseDimensionsFlag)
                 if(isCudaEnabled)videoFilters.push(cudaVideoFilters);
                 videoFilters.push(baseFpsFilter)
                 if(e.details.cust_detect)detectorFlags.push(e.details.cust_detect)
-                addVideoFilters()
+                if(!objectDetectorOutputIsEnabled && !sendFramesToObjectDetector){
+                    addVideoFilters()
+                    detectorFlags.push(baseDimensionsFlag)
+                }
                 if(builtInMotionDetectorIsEnabled){
+                    addVideoFilters()
+                    detectorFlags.push(baseDimensionsFlag)
                     detectorFlags.push('-an -c:v pam -pix_fmt gray -f image2pipe pipe:3')
                     if(objectDetectorOutputIsEnabled){
                         addObjectDetectorInputMap()

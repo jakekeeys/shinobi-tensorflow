@@ -31,7 +31,10 @@ module.exports = function(process,__dirname){
         //UTC Offset
         utcOffset : require('moment')().utcOffset(),
         //directory path for this file
-        mainDirectory : process.cwd()
+        mainDirectory : process.cwd(),
+        //time start
+        timeStarted : new Date()
+
     }
     s.packageJson = packageJson
     if(packageJson.mainDirectory){

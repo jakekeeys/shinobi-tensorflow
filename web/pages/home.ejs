@@ -1,5 +1,5 @@
 <%
-    var details = JSON.parse($user.details)
+    var details = $user.details
     if(!details.sub){ %>
         <script>
             window.getAdminApiPrefix = function(piece){
@@ -179,7 +179,9 @@
 <% include blocks/schedules.ejs %>
 <% include blocks/confirm.ejs %>
 <% include blocks/shinobiHub.ejs %>
-<% include blocks/subAccountManager.ejs %>
+<% if(!details.sub){ %>
+    <% include blocks/subAccountManager.ejs %>
+<% } %>
 <% customAutoLoad.PageBlocks.forEach(function(block){ %>
     <%- include(block) %>
 <% }) %>

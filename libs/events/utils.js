@@ -490,6 +490,28 @@ module.exports = (s,config,lang,app,io) => {
             extender(x,d)
         })
     }
+    const sendFramesFromSecondaryOutput = (groupKey,monitorId,timeout) => {
+        const activeMonitor = s.group[groupKey].activeMonitors[monitorId]
+        const theEmitter = activeMonitor.secondaryDetectorOutput
+        if(!activeMonitor.sendingFromSecondaryDetectorOuput){
+            s.debugLog('start sending object frames',groupKey,monitorId)
+            theEmitter.on('data',activeMonitor.secondaryDetectorOuputContentWriter = (data) => {
+                s.ocvTx({
+                    f : 'frame',
+                    mon : s.group[groupKey].rawMonitorConfigurations[monitorId].details,
+                    ke : groupKey,
+                    id : monitorId,
+                    time : s.formattedTime(),
+                    frame : data
+                })
+            })
+        }
+        clearTimeout(activeMonitor.sendingFromSecondaryDetectorOuput)
+        activeMonitor.sendingFromSecondaryDetectorOuput = setTimeout(() => {
+            theEmitter.removeListener('data',activeMonitor.secondaryDetectorOuputContentWriter)
+            delete(activeMonitor.sendingFromSecondaryDetectorOuput)
+        },timeout || 5000)
+    }
     const triggerEvent = async (d,forceSave) => {
         var didCountingAlready = false
         const filter = {
@@ -559,14 +581,7 @@ module.exports = (s,config,lang,app,io) => {
 
         //
         if(d.doObjectDetection === true){
-            s.ocvTx({
-                f : 'frame',
-                mon : s.group[d.ke].rawMonitorConfigurations[d.id].details,
-                ke : d.ke,
-                id : d.id,
-                time : s.formattedTime(),
-                frame : s.group[d.ke].activeMonitors[d.id].lastJpegDetectorFrame
-            })
+            sendFramesFromSecondaryOutput(d.ke,d.id)
         }
         //
         if(

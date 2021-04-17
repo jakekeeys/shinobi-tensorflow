@@ -63,7 +63,7 @@ if [ "$installJetsonFlag" = true ] || [ "$installArmFlag" = true ] || [ "$instal
 fi
 manualInstallRequirements() {
 	npm install --unsafe-perm
-	npm install @tensorflow/tfjs-backend-cpu@2.3.0 @tensorflow/tfjs-backend-webgl@2.3.0 @tensorflow/tfjs-converter@2.3.0 @tensorflow/tfjs-core@2.3.0 @tensorflow/tfjs-layers@2.3.0 @tensorflow/tfjs-node@2.3.0 --unsafe-perm
+	npm install @tensorflow/tfjs-backend-cpu@2.3.0 @tensorflow/tfjs-backend-webgl@2.3.0 @tensorflow/tfjs-converter@2.3.0 @tensorflow/tfjs-core@2.3.0 @tensorflow/tfjs-layers@2.3.0 @tensorflow/tfjs-node@2.3.0 --unsafe-perm --force
 }
 runRebuildCpu() {
 	npm rebuild @tensorflow/tfjs-node --build-addon-from-source --unsafe-perm
@@ -96,12 +96,12 @@ installJetson() {
 installGpuRoute() {
 	installGpuFlag=true
     manualInstallRequirements
-	npm install @tensorflow/tfjs-node-gpu@2.3.0 --unsafe-perm
+	npm install @tensorflow/tfjs-node-gpu@2.3.0 --unsafe-perm --force
 }
 
 installNonGpuRoute() {
     manualInstallRequirements
-	npm install @tensorflow/tfjs-node@2.3.0 --unsafe-perm
+	npm install @tensorflow/tfjs-node@2.3.0 --unsafe-perm --force
     runRebuildCpu
 }
 

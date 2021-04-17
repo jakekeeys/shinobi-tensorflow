@@ -19,9 +19,13 @@ module.exports = function(s,config,lang,app,io){
     const {
         triggerEvent,
     } = require('./events/utils.js')(s,config,lang)
-    if(config.productType === 'Pro'){
-        var LdapAuth = require('ldapauth-fork');
-    }
+    const {
+        basicAuth,
+        superLogin,
+        createTwoFactorAuth,
+        twoFactorVerification,
+        ldapLogin,
+    } = require('./auth/utils.js')(s,config,lang)
     s.renderPage = function(req,res,paths,passables,callback){
         passables.window = {}
         passables.data = req.params
@@ -160,10 +164,10 @@ module.exports = function(s,config,lang,app,io){
         s.checkCorrectPathEnding(config.webPaths.home)+':screen',
         s.checkCorrectPathEnding(config.webPaths.admin)+':screen',
         s.checkCorrectPathEnding(config.webPaths.super)+':screen',
-    ],function (req,res){
+    ],async function (req,res){
         var response = {ok: false};
         req.ip = s.getClientIp(req)
-        var screenChooser = function(screen){
+        const screenChooser = function(screen){
             var search = function(screen){
                 if(req.url.indexOf(screen) > -1){
                     return true
@@ -198,7 +202,7 @@ module.exports = function(s,config,lang,app,io){
             return false
         }
         //
-        renderPage = function(focus,data){
+        const renderPage = function(focus,data){
             if(s.failedLoginAttempts[req.body.mail]){
                 clearTimeout(s.failedLoginAttempts[req.body.mail].timeout)
                 delete(s.failedLoginAttempts[req.body.mail])
@@ -213,22 +217,32 @@ module.exports = function(s,config,lang,app,io){
                 s.renderPage(req,res,focus,data)
             }
         }
-        failedAuthentication = function(board){
+        const failedAuthentication = function(board,failIdentifier,failMessage){
             // brute protector
-            if(!s.failedLoginAttempts[req.body.mail]){
-                s.failedLoginAttempts[req.body.mail] = {
+            if(!failIdentifier){
+                s.renderPage(req,res,config.renderPaths.index,{
+                    failedLogin: true,
+                    message: failMessage || lang.failedLoginText2,
+                    lang: s.copySystemDefaultLanguage(),
+                    config: s.getConfigWithBranding(req.hostname),
+                    screen: screenChooser(req.params.screen)
+                })
+                return
+            }
+            if(!s.failedLoginAttempts[failIdentifier]){
+                s.failedLoginAttempts[failIdentifier] = {
                     failCount : 0,
                     ips : {}
                 }
             }
-            ++s.failedLoginAttempts[req.body.mail].failCount
-            if(!s.failedLoginAttempts[req.body.mail].ips[req.ip]){
-                s.failedLoginAttempts[req.body.mail].ips[req.ip] = 0
+            ++s.failedLoginAttempts[failIdentifier].failCount
+            if(!s.failedLoginAttempts[failIdentifier].ips[req.ip]){
+                s.failedLoginAttempts[failIdentifier].ips[req.ip] = 0
             }
-            ++s.failedLoginAttempts[req.body.mail].ips[req.ip]
-            clearTimeout(s.failedLoginAttempts[req.body.mail].timeout)
-            s.failedLoginAttempts[req.body.mail].timeout = setTimeout(function(){
-                delete(s.failedLoginAttempts[req.body.mail])
+            ++s.failedLoginAttempts[failIdentifier].ips[req.ip]
+            clearTimeout(s.failedLoginAttempts[failIdentifier].timeout)
+            s.failedLoginAttempts[failIdentifier].timeout = setTimeout(function(){
+                delete(s.failedLoginAttempts[failIdentifier])
             },1000 * 60 * 15)
             // check if JSON
             if(req.query.json === 'true'){
@@ -237,7 +251,7 @@ module.exports = function(s,config,lang,app,io){
             }else{
                 s.renderPage(req,res,config.renderPaths.index,{
                     failedLogin: true,
-                    message: lang.failedLoginText2,
+                    message: failMessage || lang.failedLoginText2,
                     lang: s.copySystemDefaultLanguage(),
                     config: s.getConfigWithBranding(req.hostname),
                     screen: screenChooser(req.params.screen)
@@ -251,7 +265,7 @@ module.exports = function(s,config,lang,app,io){
                 type: lang['Authentication Failed'],
                 msg: {
                     for: board,
-                    mail: req.body.mail,
+                    mail: failIdentifier,
                     ip: req.ip
                 }
             }
@@ -263,7 +277,7 @@ module.exports = function(s,config,lang,app,io){
                     columns: "ke,uid,details",
                     table: "Users",
                     where: [
-                        ['mail','=',req.body.mail],
+                        ['mail','=',failIdentifier],
                     ]
                 },(err,r) => {
                     if(r && r[0]){
@@ -278,391 +292,194 @@ module.exports = function(s,config,lang,app,io){
                 })
             }
         }
-        checkRoute = function(r){
-            switch(req.body.function){
+        function checkRoute(pageTarget,userInfo){
+            if(!userInfo.lang){
+                userInfo.lang = s.getLanguageFile(userInfo.details.lang)
+            }
+            switch(pageTarget){
                 case'cam':
-                    s.knexQuery({
-                        action: "select",
-                        columns: "*",
-                        table: "Monitors",
-                        where: [
-                            ['ke','=',r.ke],
-                            ['type','=','dashcam'],
-                        ]
-                    },(err,rr) => {
-                        response.mons = rr
-                        renderPage(config.renderPaths.dashcam,{
-                            // config: s.getConfigWithBranding(req.hostname),
-                            $user: response,
-                            lang: r.lang,
-                            define: s.getDefinitonFile(r.details.lang),
-                            customAutoLoad: s.customAutoLoadTree
-                        })
+                    renderPage(config.renderPaths.dashcam,{
+                        // config: s.getConfigWithBranding(req.hostname),
+                        $user: userInfo,
+                        lang: userInfo.lang,
+                        define: s.getDefinitonFile(userInfo.details.lang),
+                        customAutoLoad: s.customAutoLoadTree
                     })
                 break;
                 case'streamer':
-                    s.knexQuery({
-                        action: "select",
-                        columns: "*",
-                        table: "Monitors",
-                        where: [
-                            ['ke','=',r.ke],
-                            ['type','=','socket'],
-                        ]
-                    },(err,rr) => {
-                        response.mons=rr;
-                        renderPage(config.renderPaths.streamer,{
-                            // config: s.getConfigWithBranding(req.hostname),
-                            $user: response,
-                            lang: r.lang,
-                            define: s.getDefinitonFile(r.details.lang),
-                            customAutoLoad: s.customAutoLoadTree
-                        })
+                    renderPage(config.renderPaths.streamer,{
+                        // config: s.getConfigWithBranding(req.hostname),
+                        $user: userInfo,
+                        lang: userInfo.lang,
+                        define: s.getDefinitonFile(userInfo.details.lang),
+                        customAutoLoad: s.customAutoLoadTree
                     })
                 break;
                 case'admin':
                 default:
                     var chosenRender = 'home'
-                    if(r.details.sub && r.details.landing_page && r.details.landing_page !== '' && config.renderPaths[r.details.landing_page]){
-                        chosenRender = r.details.landing_page
+                    if(userInfo.details.sub && userInfo.details.landing_page && userInfo.details.landing_page !== '' && config.renderPaths[userInfo.details.landing_page]){
+                        chosenRender = userInfo.details.landing_page
                     }
                     renderPage(config.renderPaths[chosenRender],{
-                        $user: response,
+                        $user: userInfo,
                         config: s.getConfigWithBranding(req.hostname),
-                        lang:r.lang,
-                        define:s.getDefinitonFile(r.details.lang),
-                        addStorage:s.dir.addStorage,
-                        fs:fs,
-                        __dirname:s.mainDirectory,
+                        lang: userInfo.lang,
+                        define: s.getDefinitonFile(userInfo.details.lang),
+                        addStorage: s.dir.addStorage,
+                        fs: fs,
+                        __dirname: s.mainDirectory,
                         customAutoLoad: s.customAutoLoadTree
                     })
                 break;
             }
-            s.userLog({ke:r.ke,mid:'$USER'},{type:r.lang['New Authentication Token'],msg:{for:req.body.function,mail:r.mail,id:r.uid,ip:req.ip}})
-        //    res.end();
+            s.userLog({
+                ke: userInfo.ke,
+                mid: '$USER'
+            },{
+                type: userInfo.lang['New Authentication Token'],
+                msg: {
+                    for: pageTarget,
+                    mail: userInfo.mail,
+                    id: userInfo.uid,
+                    ip: req.ip
+                }
+            })
         }
-        if(req.body.mail&&req.body.pass){
-            req.default=function(){
+        if(req.body.alternateLogin && s.alternateLogins[req.body.alternateLogin]){
+            const alternateLogin = s.alternateLogins[req.body.alternateLogin]
+            const alternateLoginResponse = await alternateLogin(req.body)
+            if(alternateLoginResponse.ok && alternateLoginResponse.user){
+                const user = alternateLoginResponse.user
+                const sessionKey = s.md5(s.gid())
+                user.auth = sessionKey
                 s.knexQuery({
-                    action: "select",
-                    columns: "*",
+                    action: "update",
                     table: "Users",
+                    update: {
+                        auth: sessionKey
+                    },
                     where: [
-                        ['mail','=',req.body.mail],
-                        ['pass','=',s.createHash(req.body.pass)],
-                    ],
-                    limit: 1
-                },(err,r) => {
-                    if(!err && r && r[0]){
-                        r=r[0];r.auth=s.md5(s.gid());
-                        s.knexQuery({
-                            action: "update",
-                            table: "Users",
-                            update: {
-                                auth: r.auth
-                            },
-                            where: [
-                                ['ke','=',r.ke],
-                                ['uid','=',r.uid],
-                            ]
-                        })
-                        response = {
-                            ok: true,
-                            auth_token: r.auth,
-                            ke: r.ke,
-                            uid: r.uid,
-                            mail: r.mail,
-                            details: r.details
-                        };
-                        r.details = JSON.parse(r.details);
-                        r.lang = s.getLanguageFile(r.details.lang)
-                        const factorAuth = function(cb){
-                            req.params.auth = r.auth
-                            req.params.ke = r.ke
-                            if(r.details.factorAuth === "1"){
-                                if(!r.details.acceptedMachines||!(r.details.acceptedMachines instanceof Object)){
-                                    r.details.acceptedMachines={}
-                                }
-                                if(!r.details.acceptedMachines[req.body.machineID]){
-                                    req.complete=function(){
-                                        s.factorAuth[r.ke][r.uid].function = req.body.function
-                                        s.factorAuth[r.ke][r.uid].info = response
-                                        clearTimeout(s.factorAuth[r.ke][r.uid].expireAuth)
-                                        s.factorAuth[r.ke][r.uid].expireAuth = setTimeout(function(){
-                                            s.deleteFactorAuth(r)
-                                        },1000*60*15)
-                                        renderPage(config.renderPaths.factorAuth,{$user:{
-                                            ke:r.ke,
-                                            uid:r.uid,
-                                            mail:r.mail
-                                        },lang:r.lang})
-                                    }
-                                    if(!s.factorAuth[r.ke]){s.factorAuth[r.ke]={}}
-                                    if(!s.factorAuth[r.ke][r.uid]){
-                                        s.factorAuth[r.ke][r.uid]={key:s.nid(),user:r}
-                                        s.onTwoFactorAuthCodeNotificationExtensions.forEach(function(extender){
-                                            extender(r)
-                                        })
-                                        req.complete()
-                                    }else{
-                                        req.complete()
-                                    }
-                                }else{
-                                   checkRoute(r)
-                                }
-                            }else{
-                               checkRoute(r)
-                            }
-                        }
-                        if(r.details.sub){
-                            s.knexQuery({
-                                action: "select",
-                                columns: "details",
-                                table: "Users",
-                                where: [
-                                    ['ke','=',r.ke],
-                                    ['details','NOT LIKE','%"sub"%'],
-                                ],
-                            },function(err,rr) {
-                                if(rr && rr[0]){
-                                    rr=rr[0];
-                                    rr.details = JSON.parse(rr.details);
-                                    r.details.mon_groups = rr.details.mon_groups;
-                                    response.details = JSON.stringify(r.details);
-                                    factorAuth()
-                                }else{
-                                    failedAuthentication(req.body.function)
-                                }
-                            })
-                        }else{
-                            factorAuth()
-                        }
-                    }else{
-                        failedAuthentication(req.body.function)
-                    }
+                        ['ke','=',user.ke],
+                        ['uid','=',user.uid],
+                    ]
                 })
-            }
-            if(LdapAuth&&req.body.function==='ldap'&&req.body.key!==''){
-                s.knexQuery({
-                    action: "select",
-                    columns: "*",
-                    table: "Users",
-                    where: [
-                        ['ke','=',req.body.key],
-                        ['details','NOT LIKE','%"sub"%'],
-                    ],
-                },(err,r) => {
-                    if(r&&r[0]){
-                        r=r[0]
-                        r.details=JSON.parse(r.details)
-                        r.lang=s.getLanguageFile(r.details.lang)
-                        if(r.details.use_ldap!=='0'&&r.details.ldap_enable==='1'&&r.details.ldap_url&&r.details.ldap_url!==''){
-                            req.mailArray={}
-                            req.body.mail.split(',').forEach(function(v){
-                                v=v.split('=')
-                                req.mailArray[v[0]]=v[1]
-                            })
-                            if(!r.details.ldap_bindDN||r.details.ldap_bindDN===''){
-                                r.details.ldap_bindDN=req.body.mail
-                            }
-                            if(!r.details.ldap_bindCredentials||r.details.ldap_bindCredentials===''){
-                                r.details.ldap_bindCredentials=req.body.pass
-                            }
-                            if(!r.details.ldap_searchFilter||r.details.ldap_searchFilter===''){
-                                r.details.ldap_searchFilter=req.body.mail
-                                if(req.mailArray.cn){
-                                    r.details.ldap_searchFilter='cn='+req.mailArray.cn
-                                }
-                                if(req.mailArray.uid){
-                                    r.details.ldap_searchFilter='uid='+req.mailArray.uid
-                                }
-                            }else{
-                                r.details.ldap_searchFilter=r.details.ldap_searchFilter.replace('{{username}}',req.body.mail)
-                            }
-                            if(!r.details.ldap_searchBase||r.details.ldap_searchBase===''){
-                                r.details.ldap_searchBase='dc=test,dc=com'
-                            }
-                            req.auth = new LdapAuth({
-                                url:r.details.ldap_url,
-                                bindDN:r.details.ldap_bindDN,
-                                bindCredentials:r.details.ldap_bindCredentials,
-                                searchBase:r.details.ldap_searchBase,
-                                searchFilter:'('+r.details.ldap_searchFilter+')',
-                                reconnect:true
-                            });
-                            req.auth.on('error', function (err) {
-                                console.error('LdapAuth: ', err);
-                            });
-
-                            req.auth.authenticate(req.body.mail, req.body.pass, function(err, user) {
-                                if(user){
-                                    //found user
-                                    if(!user.uid){
-                                        user.uid=s.gid()
-                                    }
-                                    response = {
-                                        ke:req.body.key,
-                                        uid:user.uid,
-                                        auth:s.createHash(s.gid()),
-                                        mail:user.mail,
-                                        pass:s.createHash(req.body.pass),
-                                        details:JSON.stringify({
-                                            sub:'1',
-                                            ldap:'1',
-                                            allmonitors:'1',
-                                            filter: {}
-                                        })
-                                    }
-                                    s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP Success'],msg:{user:user}})
-                                    s.knexQuery({
-                                        action: "select",
-                                        columns: "*",
-                                        table: "Users",
-                                        where: [
-                                            ['ke','=',req.body.key],
-                                            ['mail','=',user.cn],
-                                        ],
-                                    },function(err,rr) {
-                                        if(rr&&rr[0]){
-                                            //already registered
-                                            rr = rr[0]
-                                            response = rr;
-                                            rr.details = JSON.parse(rr.details)
-                                            response.lang = s.getLanguageFile(rr.details.lang)
-                                            s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP User Authenticated'],msg:{user:user,shinobiUID:rr.uid}})
-                                            s.knexQuery({
-                                                action: "update",
-                                                table: "Users",
-                                                update: {
-                                                    auth: response.auth
-                                                },
-                                                where: [
-                                                    ['ke','=',response.ke],
-                                                    ['uid','=',rr.uid],
-                                                ]
-                                            })
-                                        }else{
-                                            //new ldap login
-                                            s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP User is New'],msg:{info:r.lang['Creating New Account'],user:user}})
-                                            response.lang = r.lang
-                                            s.knexQuery({
-                                                action: "insert",
-                                                table: "Users",
-                                                insert: response,
-                                            })
-                                        }
-                                        response.details = JSON.stringify(response.details)
-                                        response.auth_token = response.auth
-                                        response.ok = true
-                                        checkRoute(response)
-                                    })
-                                    return
-                                }
-                                s.userLog({ke:req.body.key,mid:'$USER'},{type:r.lang['LDAP Failed'],msg:{err:err}})
-                                //no user
-                                req.default()
-                            });
-
-                            req.auth.close(function(err) {
-
-                            })
-                        }else{
-                            req.default()
-                        }
-                    }else{
-                        req.default()
-                    }
+                checkRoute(req.body.function,{
+                    ok: true,
+                    auth_token: user.auth,
+                    ke: user.ke,
+                    uid: user.uid,
+                    mail: user.mail,
+                    details: user.details
                 })
             }else{
-                if(req.body.function === 'super'){
-                    if(!fs.existsSync(s.location.super)){
-                        res.end(lang.superAdminText)
-                        return
-                    }
-                    var ok = s.superAuth({
-                        mail: req.body.mail,
-                        pass: req.body.pass,
-                        users: true,
-                        md5: true
-                    },function(data){
-                        s.knexQuery({
-                            action: "select",
-                            columns: "*",
-                            table: "Logs",
-                            where: [
-                                ['ke','=','$'],
-                            ],
-                            orderBy: ['time','desc'],
-                            limit: 30
-                        },(err,r) => {
-                            if(!r){
-                                r=[]
-                            }
-                            data.Logs = r
-                            data.customAutoLoad = s.customAutoLoadTree
-                            data.currentVersion = s.currentVersion
-                            fs.readFile(s.location.config,'utf8',function(err,file){
-                                data.plainConfig = JSON.parse(file)
-                                renderPage(config.renderPaths.super,data)
-                            })
-                        })
+                return failedAuthentication(req.body.function,req.body.mail,alternateLoginResponse.msg)
+            }
+        }else if(req.body.mail && req.body.pass){
+            async function regularLogin(){
+                const basicAuthResponse = await basicAuth(req.body.mail,req.body.pass)
+                if(basicAuthResponse.user){
+                    const user = basicAuthResponse.user;
+                    const sessionKey = s.md5(s.gid())
+                    user.auth = sessionKey
+                    user.lang = s.getLanguageFile(user.details.lang)
+                    s.knexQuery({
+                        action: "update",
+                        table: "Users",
+                        update: {
+                            auth: user.auth
+                        },
+                        where: [
+                            ['ke','=',user.ke],
+                            ['uid','=',user.uid],
+                        ]
                     })
-                    if(ok === false){
-                        failedAuthentication(req.body.function)
+                    if(user.details.sub){
+                        const adminUserCheckResponse = await s.knexQueryPromise({
+                            action: "select",
+                            columns: "details",
+                            table: "Users",
+                            where: [
+                                ['ke','=',user.ke],
+                                ['details','NOT LIKE','%"sub"%'],
+                            ],
+                            limit: 1,
+                        })
+                        if(adminUserCheckResponse.rows && adminUserCheckResponse.rows[0]){
+                            const adminUser = adminUserCheckResponse.rows[0];
+                            const adminUserDetails = s.parseJSON(adminUser.details);
+                            user.details.mon_groups = adminUserDetails.mon_groups;
+                        }else{
+                            return failedAuthentication(req.body.function,req.body.mail)
+                        }
                     }
+                    if(user.details.factorAuth === "1"){
+                        const factorAuthCreationResponse = createTwoFactorAuth(
+                            user,
+                            req.body.machineID || s.md5(s.gid()),
+                            req.body.function
+                        );
+                        if(!factorAuthCreationResponse.goToDashboard){
+                            renderPage(config.renderPaths.factorAuth,{
+                                $user:{
+                                    ke: user.ke,
+                                    uid: user.uid,
+                                    mail: user.mail
+                                },
+                                lang: user.lang
+                            })
+                            return;
+                        }
+                    }
+
+                    checkRoute(req.body.function,{
+                        ok: true,
+                        auth_token: user.auth,
+                        ke: user.ke,
+                        uid: user.uid,
+                        mail: user.mail,
+                        details: user.details
+                    })
                 }else{
-                    req.default()
+                    failedAuthentication(req.body.function,req.body.mail)
                 }
+            }
+            if(req.body.function === 'super'){
+                const superLoginResponse = await superLogin(req.body.mail,req.body.pass);
+                if(superLoginResponse.ok){
+                    renderPage(config.renderPaths.super,{
+                        config: config,
+                        lang: lang,
+                        $user: superLoginResponse.user,
+                        customAutoLoad: s.customAutoLoadTree,
+                        currentVersion: s.currentVersion,
+                    })
+                }else{
+                    failedAuthentication(req.body.function,req.body.mail)
+                }
+            }else{
+                regularLogin()
+            }
+        }else if(
+            req.body.machineID &&
+            req.body.factorAuthKey &&
+            s.factorAuth[req.body.ke] &&
+            s.factorAuth[req.body.ke][req.body.id]
+        ){
+            const factorAuthObject = s.factorAuth[req.body.ke][req.body.id]
+            const twoFactorVerificationResponse = twoFactorVerification({
+                ke: req.body.ke,
+                id: req.body.id,
+                machineID: req.body.machineID,
+                factorAuthKey: req.body.factorAuthKey,
+            })
+            if(twoFactorVerificationResponse.ok){
+                checkRoute(twoFactorVerificationResponse.pageTarget,twoFactorVerificationResponse.info)
+            }else{
+                failedAuthentication(lang['2-Factor Authentication'],factorAuthObject.info.mail)
             }
         }else{
-            if(req.body.machineID&&req.body.factorAuthKey){
-                if(s.factorAuth[req.body.ke]&&s.factorAuth[req.body.ke][req.body.id]&&s.factorAuth[req.body.ke][req.body.id].key===req.body.factorAuthKey){
-                    if(s.factorAuth[req.body.ke][req.body.id].key===req.body.factorAuthKey){
-                        if(req.body.remember==="1"){
-                            req.details=JSON.parse(s.factorAuth[req.body.ke][req.body.id].info.details)
-                            req.lang=s.getLanguageFile(req.details.lang)
-                            if(!req.details.acceptedMachines||!(req.details.acceptedMachines instanceof Object)){
-                                req.details.acceptedMachines={}
-                            }
-                            if(!req.details.acceptedMachines[req.body.machineID]){
-                                req.details.acceptedMachines[req.body.machineID]={}
-                                s.knexQuery({
-                                    action: "update",
-                                    table: "Users",
-                                    update: {
-                                        details: s.prettyPrint(req.details)
-                                    },
-                                    where: [
-                                        ['ke','=',req.body.ke],
-                                        ['uid','=',req.body.id],
-                                    ]
-                                })
-                            }
-                        }
-                        req.body.function = s.factorAuth[req.body.ke][req.body.id].function
-                        response = s.factorAuth[req.body.ke][req.body.id].info
-                        response.lang = req.lang || s.getLanguageFile(JSON.parse(s.factorAuth[req.body.ke][req.body.id].info.details).lang)
-                        checkRoute(s.factorAuth[req.body.ke][req.body.id].info)
-                        clearTimeout(s.factorAuth[req.body.ke][req.body.id].expireAuth)
-                        s.deleteFactorAuth({
-                            ke: req.body.ke,
-                            uid: req.body.id,
-                        })
-                    }else{
-                        var info = s.factorAuth[req.body.ke][req.body.id].info
-                        renderPage(config.renderPaths.factorAuth,{$user:{
-                            ke: info.ke,
-                            id: info.uid,
-                            mail: info.mail,
-                        },lang:req.lang});
-                        res.end();
-                    }
-                }else{
-                    failedAuthentication(lang['2-Factor Authentication'])
-                }
-            }else{
-                failedAuthentication(lang['2-Factor Authentication'])
-            }
+            failedAuthentication(lang['2-Factor Authentication'],req.body.mail)
         }
     })
     /**
@@ -1793,6 +1610,76 @@ module.exports = function(s,config,lang,app,io){
             })
         },res,req);
     })
+    /**
+    * API : Get Login Tokens
+     */
+    app.get(config.webPaths.apiPrefix+':auth/loginTokens/:ke', function (req,res){
+        var response = {ok:false};
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,(user) => {
+            const groupKey = req.params.ke
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "LoginTokens",
+                where: [
+                    ['ke','=',groupKey],
+                    ['uid','=',user.uid],
+                ]
+            },(err,rows) => {
+                response.ok = true
+                response.rows = rows
+                s.closeJsonResponse(res,response)
+            })
+        },res,req);
+    });
+    /**
+    * API : Get Login Token
+     */
+    app.get(config.webPaths.apiPrefix+':auth/loginTokens/:ke/:loginId', function (req,res){
+        var response = {ok:false};
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,(user) => {
+            const groupKey = req.params.ke
+            s.knexQuery({
+                action: "select",
+                columns: "*",
+                table: "LoginTokens",
+                where: [
+                    ['loginId','=',user.uid],
+                    ['ke','=',groupKey],
+                    ['uid','=',user.uid],
+                ],
+                limit: 1
+            },(err,rows) => {
+                response.ok = !!rows[0]
+                response.row = rows[0]
+                s.closeJsonResponse(res,response)
+            })
+        },res,req);
+    });
+    /**
+    * API : Delete Login Token
+     */
+    app.get(config.webPaths.apiPrefix+':auth/loginTokens/:ke/:loginId/delete', function (req,res){
+        var response = {ok:false};
+        res.setHeader('Content-Type', 'application/json');
+        s.auth(req.params,async (user) => {
+            const loginId = req.params.loginId
+            const groupKey = req.params.ke
+            const deleteResponse = await s.knexQueryPromise({
+                action: "delete",
+                table: "LoginTokens",
+                where: [
+                    ['loginId','=',loginId],
+                    ['ke','=',groupKey],
+                    ['uid','=',user.uid],
+                ]
+            })
+            response.ok = true
+            s.closeJsonResponse(res,response)
+        },res,req);
+    });
     /**
     * API : Stream In to push data to ffmpeg by HTTP
      */

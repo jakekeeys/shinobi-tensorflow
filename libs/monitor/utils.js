@@ -5,6 +5,7 @@ module.exports = (s,config,lang) => {
     const {
         splitForFFPMEG,
     } = require('../ffmpeg/utils.js')(s,config,lang)
+    const getUpdateableFields = require('./updatedFields.js')
     const cameraDestroy = function(e,p){
         if(
             s.group[e.ke] &&
@@ -42,7 +43,7 @@ module.exports = (s,config,lang) => {
             delete(activeMonitor.checkSnap);
             clearTimeout(activeMonitor.watchdog_stop);
             delete(activeMonitor.watchdog_stop);
-            delete(activeMonitor.lastJpegDetectorFrame);
+            delete(activeMonitor.secondaryDetectorOutput);
             delete(activeMonitor.detectorFrameSaveBuffer);
             clearTimeout(activeMonitor.recordingSnapper);
             clearInterval(activeMonitor.getMonitorCpuUsage);
@@ -71,19 +72,26 @@ module.exports = (s,config,lang) => {
             if(activeMonitor.childNode){
                 s.cx({f:'kill',d:s.cleanMonitorObject(e)},activeMonitor.childNodeId)
             }else{
-                if(proc && proc.kill){
-                    if(s.isWin){
-                        spawn("taskkill", ["/pid", proc.pid, '/t'])
-                    }else{
-                        proc.kill('SIGTERM')
-                    }
-                    setTimeout(function(){
-                        try{
-                            proc.kill()
-                        }catch(err){
-                            s.debugLog(err)
+                try{
+                    proc.stdin.write("q\r\n")
+                    setTimeout(() => {
+                        if(proc && proc.kill){
+                            if(s.isWin){
+                                spawn("taskkill", ["/pid", proc.pid, '/t'])
+                            }else{
+                                proc.kill('SIGTERM')
+                            }
+                            setTimeout(function(){
+                                try{
+                                    proc.kill()
+                                }catch(err){
+                                    s.debugLog(err)
+                                }
+                            },1000)
                         }
                     },1000)
+                }catch(err){
+                    s.debugLog(err)
                 }
             }
         }
@@ -149,7 +157,7 @@ module.exports = (s,config,lang) => {
     }
     const monitorConfigurationMigrator = (monitor) => {
         // converts the old style to the new style.
-        const updatedFields = require('./updatedFields.js')()
+        const updatedFields = getUpdateableFields()
         const fieldKeys = Object.keys(updatedFields)
         fieldKeys.forEach((oldKey) => {
             if(oldKey === 'details'){
@@ -163,20 +171,20 @@ module.exports = (s,config,lang) => {
                             streamChannels.forEach(function(channel,number){
                                 channelKeys.forEach((oldKey) => {
                                     const newKey = channelUpdates[oldKey]
-                                    monitor.details.stream_channels[number][newKey] = streamChannels[number][oldKey]
+                                    monitor.details.stream_channels[number][newKey] = streamChannels[number][oldKey] ? streamChannels[number][oldKey] : monitor.details.stream_channels[number][newKey]
                                     // delete(e.details.stream_channels[number][oldKey])
                                 })
                             })
                         }
                     }else{
                         const newKey = updatedFields.details[oldKey]
-                        monitor.details[newKey] = monitor.details[oldKey]
+                        monitor.details[newKey] = monitor.details[oldKey] ? monitor.details[oldKey] : monitor.details[newKey]
                         // delete(monitor.details[oldKey])
                     }
                 })
             }else{
                 const newKey = updatedFields[oldKey]
-                monitor[newKey] = monitor[oldKey]
+                monitor[newKey] = monitor[oldKey] ? monitor[oldKey] : monitor[newKey]
                 // delete(monitor[oldKey])
             }
         })

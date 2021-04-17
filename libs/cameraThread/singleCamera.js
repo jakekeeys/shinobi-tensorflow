@@ -93,7 +93,6 @@ stdioWriters.forEach((writer)=>{
       writeToStderr(err.stack);
   });
 })
-writeToStderr(JSON.stringify(ffmpegCommandString))
 var cameraProcess = spawn(ffmpegAbsolutePath,ffmpegCommandString,{detached: true,stdio:newPipes})
 cameraProcess.on('close',()=>{
   writeToStderr('Process Closed')
