@@ -218,7 +218,7 @@ module.exports = function(s,config,lang,app){
                             var newId = s.gid()
                             var details = s.s(Object.assign({
                                 allmonitors: "1"
-                            },s.parseJSON(form.details) || {
+                            },s.parseJSON(form.details) || {}, {
                                 sub: "1",
                             }))
                             s.knexQuery({
