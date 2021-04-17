@@ -480,7 +480,6 @@ $.ccio.init=function(x,d,user,k){
             $.each(user,function(n,v){$.sM.e.find('[name="'+n+'"]').val(v).change()})
             $.each(k.d,function(n,v){$.sM.e.find('[detail="'+n+'"]').val(v).change()})
             $.gR.drawList();
-            $.ccio.pm('link-set',k.d.links,null,user)
         break;
         case'jsontoblock'://draw json as block
             if(d instanceof Object){

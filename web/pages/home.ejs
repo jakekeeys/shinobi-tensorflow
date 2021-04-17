@@ -179,7 +179,9 @@
 <% include blocks/schedules.ejs %>
 <% include blocks/confirm.ejs %>
 <% include blocks/shinobiHub.ejs %>
-<% include blocks/subAccountManager.ejs %>
+<% if(!details.sub){ %>
+    <% include blocks/subAccountManager.ejs %>
+<% } %>
 <% customAutoLoad.PageBlocks.forEach(function(block){ %>
     <%- include(block) %>
 <% }) %>

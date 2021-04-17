@@ -360,6 +360,7 @@
    "SFTP (SSH File Transfer)": "SFTP (SSH File Transfer)",
    "SFTP Error": "SFTP Error",
    "SFTP": "SFTP",
+   "accountSettingsError": "Account Settings Error",
    "Could not create Bucket.": "Could not create Bucket.",
    "Amazon S3": "Amazon S3",
    "Wasabi Hot Cloud Storage": "Wasabi Hot Cloud Storage",
