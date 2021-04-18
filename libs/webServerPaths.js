@@ -13,6 +13,9 @@ var ejs = require('ejs');
 var fileupload = require("express-fileupload");
 module.exports = function(s,config,lang,app,io){
     const {
+        addApiEndpoint,
+    } = require('./control/apiBuilder.js')(lang)
+    const {
         ptzControl,
         setPresetForCurrentPosition
     } = require('./control/ptz.js')(s,config,lang,app,io)
@@ -92,27 +95,34 @@ module.exports = function(s,config,lang,app,io){
     /**
     * API : Logout
     */
-    app.get(config.webPaths.apiPrefix+':auth/logout/:ke/:id', function (req,res){
-        if(s.group[req.params.ke] && s.group[req.params.ke].users[req.params.auth] && s.group[req.params.ke].users[req.params.auth].details){
-            delete(s.api[req.params.auth]);
-            delete(s.group[req.params.ke].users[req.params.auth]);
-            s.knexQuery({
-                action: "update",
-                table: "Users",
-                update: {
-                    auth: '',
-                },
-                where: [
-                    ['auth','=',req.params.auth],
-                    ['ke','=',req.params.ke],
-                    ['uid','=',req.params.id],
-                ]
-            })
-            res.end(s.prettyPrint({ok:true,msg:'You have been logged out, session key is now inactive.'}))
-        }else{
-            res.end(s.prettyPrint({ok:false,msg:'This group key does not exist or this user is not logged in.'}))
-        }
-    });
+    addApiEndpoint(app,{
+        type: 'get',
+        group: 'Account',
+        name: lang.Logout,
+        args: [
+            config.webPaths.apiPrefix+':auth/logout/:ke/:id', function (req,res){
+                if(s.group[req.params.ke] && s.group[req.params.ke].users[req.params.auth] && s.group[req.params.ke].users[req.params.auth].details){
+                    delete(s.api[req.params.auth]);
+                    delete(s.group[req.params.ke].users[req.params.auth]);
+                    s.knexQuery({
+                        action: "update",
+                        table: "Users",
+                        update: {
+                            auth: '',
+                        },
+                        where: [
+                            ['auth','=',req.params.auth],
+                            ['ke','=',req.params.ke],
+                            ['uid','=',req.params.id],
+                        ]
+                    })
+                    res.end(s.prettyPrint({ok:true,msg:'You have been logged out, session key is now inactive.'}))
+                }else{
+                    res.end(s.prettyPrint({ok:false,msg:'This group key does not exist or this user is not logged in.'}))
+                }
+            }
+        ]
+    })
     /**
     * Page : Login Screen
     */
@@ -138,14 +148,21 @@ module.exports = function(s,config,lang,app,io){
     /**
     * API : Get User Info
     */
-    app.get(config.webPaths.apiPrefix+':auth/userInfo/:ke',function (req,res){
-        var response = {ok:false};
-        res.setHeader('Content-Type', 'application/json');
-        s.auth(req.params,function(user){
-            response.ok = true
-            response.user = user
-            res.end(s.prettyPrint(response));
-        },res,req);
+    addApiEndpoint(app,{
+        type: 'get',
+        group: 'Account',
+        name: lang.getUserInfo,
+        args: [
+            config.webPaths.apiPrefix+':auth/userInfo/:ke',function (req,res){
+                var response = {ok: false};
+                res.setHeader('Content-Type', 'application/json');
+                s.auth(req.params,function(user){
+                    response.ok = true
+                    response.user = user
+                    res.end(s.prettyPrint(response));
+                },res,req);
+            }
+        ]
     })
     //login function
     s.deleteFactorAuth=function(r){
@@ -157,330 +174,337 @@ module.exports = function(s,config,lang,app,io){
     /**
     * API : Login handler. Dashboard, Streamer, Dashcam Administrator, Superuser
     */
-    app.post([
-        config.webPaths.home,
-        config.webPaths.admin,
-        config.webPaths.super,
-        s.checkCorrectPathEnding(config.webPaths.home)+':screen',
-        s.checkCorrectPathEnding(config.webPaths.admin)+':screen',
-        s.checkCorrectPathEnding(config.webPaths.super)+':screen',
-    ],async function (req,res){
-        var response = {ok: false};
-        req.ip = s.getClientIp(req)
-        const screenChooser = function(screen){
-            var search = function(screen){
-                if(req.url.indexOf(screen) > -1){
-                    return true
-                }
-                return false
-            }
-            switch(true){
-                // case search(config.webPaths.admin):
-                //     return 'admin'
-                // break;
-                case search(config.webPaths.super):
-                    return 'super'
-                break;
-                default:
-                    return 'dashboard'
-                break;
-            }
-        }
-        // brute check
-        if(s.failedLoginAttempts[req.body.mail] && s.failedLoginAttempts[req.body.mail].failCount >= 5){
-            if(req.query.json=='true'){
-                res.end(s.prettyPrint({ok:false}))
-            }else{
-                s.renderPage(req,res,config.renderPaths.index,{
-                    failedLogin: true,
-                    message: lang.failedLoginText1,
-                    lang: s.copySystemDefaultLanguage(),
-                    config: s.getConfigWithBranding(req.hostname),
-                    screen: screenChooser(req.params.screen)
-                })
-            }
-            return false
-        }
-        //
-        const renderPage = function(focus,data){
-            if(s.failedLoginAttempts[req.body.mail]){
-                clearTimeout(s.failedLoginAttempts[req.body.mail].timeout)
-                delete(s.failedLoginAttempts[req.body.mail])
-            }
-            if(req.query.json=='true'){
-                delete(data.config)
-                data.ok = true;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(s.prettyPrint(data))
-            }else{
-                data.screen=req.params.screen
-                s.renderPage(req,res,focus,data)
-            }
-        }
-        const failedAuthentication = function(board,failIdentifier,failMessage){
-            // brute protector
-            if(!failIdentifier){
-                s.renderPage(req,res,config.renderPaths.index,{
-                    failedLogin: true,
-                    message: failMessage || lang.failedLoginText2,
-                    lang: s.copySystemDefaultLanguage(),
-                    config: s.getConfigWithBranding(req.hostname),
-                    screen: screenChooser(req.params.screen)
-                })
-                return
-            }
-            if(!s.failedLoginAttempts[failIdentifier]){
-                s.failedLoginAttempts[failIdentifier] = {
-                    failCount : 0,
-                    ips : {}
-                }
-            }
-            ++s.failedLoginAttempts[failIdentifier].failCount
-            if(!s.failedLoginAttempts[failIdentifier].ips[req.ip]){
-                s.failedLoginAttempts[failIdentifier].ips[req.ip] = 0
-            }
-            ++s.failedLoginAttempts[failIdentifier].ips[req.ip]
-            clearTimeout(s.failedLoginAttempts[failIdentifier].timeout)
-            s.failedLoginAttempts[failIdentifier].timeout = setTimeout(function(){
-                delete(s.failedLoginAttempts[failIdentifier])
-            },1000 * 60 * 15)
-            // check if JSON
-            if(req.query.json === 'true'){
-                res.setHeader('Content-Type', 'application/json')
-                res.end(s.prettyPrint({ok:false}))
-            }else{
-                s.renderPage(req,res,config.renderPaths.index,{
-                    failedLogin: true,
-                    message: failMessage || lang.failedLoginText2,
-                    lang: s.copySystemDefaultLanguage(),
-                    config: s.getConfigWithBranding(req.hostname),
-                    screen: screenChooser(req.params.screen)
-                })
-            }
-            var logTo = {
-                ke: '$',
-                mid: '$USER'
-            }
-            var logData = {
-                type: lang['Authentication Failed'],
-                msg: {
-                    for: board,
-                    mail: failIdentifier,
-                    ip: req.ip
-                }
-            }
-            if(board === 'super'){
-                s.userLog(logTo,logData)
-            }else{
-                s.knexQuery({
-                    action: "select",
-                    columns: "ke,uid,details",
-                    table: "Users",
-                    where: [
-                        ['mail','=',failIdentifier],
-                    ]
-                },(err,r) => {
-                    if(r && r[0]){
-                        r = r[0]
-                        r.details = JSON.parse(r.details)
-                        r.lang = s.getLanguageFile(r.details.lang)
-                        logData.id = r.uid
-                        logData.type = r.lang['Authentication Failed']
-                        logTo.ke = r.ke
+    addApiEndpoint(app,{
+        type: 'post',
+        group: 'Account',
+        name: lang.Login,
+        args: [
+            [
+                config.webPaths.home,
+                config.webPaths.admin,
+                config.webPaths.super,
+                s.checkCorrectPathEnding(config.webPaths.home)+':screen',
+                s.checkCorrectPathEnding(config.webPaths.admin)+':screen',
+                s.checkCorrectPathEnding(config.webPaths.super)+':screen',
+            ],async function (req,res){
+                var response = {ok: false};
+                req.ip = s.getClientIp(req)
+                const screenChooser = function(screen){
+                    var search = function(screen){
+                        if(req.url.indexOf(screen) > -1){
+                            return true
+                        }
+                        return false
                     }
-                    s.userLog(logTo,logData)
-                })
-            }
-        }
-        function checkRoute(pageTarget,userInfo){
-            if(!userInfo.lang){
-                userInfo.lang = s.getLanguageFile(userInfo.details.lang)
-            }
-            switch(pageTarget){
-                case'cam':
-                    renderPage(config.renderPaths.dashcam,{
-                        // config: s.getConfigWithBranding(req.hostname),
-                        $user: userInfo,
-                        lang: userInfo.lang,
-                        define: s.getDefinitonFile(userInfo.details.lang),
-                        customAutoLoad: s.customAutoLoadTree
-                    })
-                break;
-                case'streamer':
-                    renderPage(config.renderPaths.streamer,{
-                        // config: s.getConfigWithBranding(req.hostname),
-                        $user: userInfo,
-                        lang: userInfo.lang,
-                        define: s.getDefinitonFile(userInfo.details.lang),
-                        customAutoLoad: s.customAutoLoadTree
-                    })
-                break;
-                case'admin':
-                default:
-                    var chosenRender = 'home'
-                    if(userInfo.details.sub && userInfo.details.landing_page && userInfo.details.landing_page !== '' && config.renderPaths[userInfo.details.landing_page]){
-                        chosenRender = userInfo.details.landing_page
+                    switch(true){
+                        // case search(config.webPaths.admin):
+                        //     return 'admin'
+                        // break;
+                        case search(config.webPaths.super):
+                            return 'super'
+                        break;
+                        default:
+                            return 'dashboard'
+                        break;
                     }
-                    renderPage(config.renderPaths[chosenRender],{
-                        $user: userInfo,
-                        config: s.getConfigWithBranding(req.hostname),
-                        lang: userInfo.lang,
-                        define: s.getDefinitonFile(userInfo.details.lang),
-                        addStorage: s.dir.addStorage,
-                        fs: fs,
-                        __dirname: s.mainDirectory,
-                        customAutoLoad: s.customAutoLoadTree
-                    })
-                break;
-            }
-            s.userLog({
-                ke: userInfo.ke,
-                mid: '$USER'
-            },{
-                type: userInfo.lang['New Authentication Token'],
-                msg: {
-                    for: pageTarget,
-                    mail: userInfo.mail,
-                    id: userInfo.uid,
-                    ip: req.ip
                 }
-            })
-        }
-        if(req.body.alternateLogin && s.alternateLogins[req.body.alternateLogin]){
-            const alternateLogin = s.alternateLogins[req.body.alternateLogin]
-            const alternateLoginResponse = await alternateLogin(req.body)
-            if(alternateLoginResponse.ok && alternateLoginResponse.user){
-                const user = alternateLoginResponse.user
-                const sessionKey = s.md5(s.gid())
-                user.auth = sessionKey
-                s.knexQuery({
-                    action: "update",
-                    table: "Users",
-                    update: {
-                        auth: sessionKey
-                    },
-                    where: [
-                        ['ke','=',user.ke],
-                        ['uid','=',user.uid],
-                    ]
-                })
-                checkRoute(req.body.function,{
-                    ok: true,
-                    auth_token: user.auth,
-                    ke: user.ke,
-                    uid: user.uid,
-                    mail: user.mail,
-                    details: user.details
-                })
-            }else{
-                return failedAuthentication(req.body.function,req.body.mail,alternateLoginResponse.msg)
-            }
-        }else if(req.body.mail && req.body.pass){
-            async function regularLogin(){
-                const basicAuthResponse = await basicAuth(req.body.mail,req.body.pass)
-                if(basicAuthResponse.user){
-                    const user = basicAuthResponse.user;
-                    const sessionKey = s.md5(s.gid())
-                    user.auth = sessionKey
-                    user.lang = s.getLanguageFile(user.details.lang)
-                    s.knexQuery({
-                        action: "update",
-                        table: "Users",
-                        update: {
-                            auth: user.auth
-                        },
-                        where: [
-                            ['ke','=',user.ke],
-                            ['uid','=',user.uid],
-                        ]
-                    })
-                    if(user.details.sub){
-                        const adminUserCheckResponse = await s.knexQueryPromise({
+                // brute check
+                if(s.failedLoginAttempts[req.body.mail] && s.failedLoginAttempts[req.body.mail].failCount >= 5){
+                    if(req.query.json=='true'){
+                        res.end(s.prettyPrint({ok:false}))
+                    }else{
+                        s.renderPage(req,res,config.renderPaths.index,{
+                            failedLogin: true,
+                            message: lang.failedLoginText1,
+                            lang: s.copySystemDefaultLanguage(),
+                            config: s.getConfigWithBranding(req.hostname),
+                            screen: screenChooser(req.params.screen)
+                        })
+                    }
+                    return false
+                }
+                //
+                const renderPage = function(focus,data){
+                    if(s.failedLoginAttempts[req.body.mail]){
+                        clearTimeout(s.failedLoginAttempts[req.body.mail].timeout)
+                        delete(s.failedLoginAttempts[req.body.mail])
+                    }
+                    if(req.query.json=='true'){
+                        delete(data.config)
+                        data.ok = true;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.end(s.prettyPrint(data))
+                    }else{
+                        data.screen=req.params.screen
+                        s.renderPage(req,res,focus,data)
+                    }
+                }
+                const failedAuthentication = function(board,failIdentifier,failMessage){
+                    // brute protector
+                    if(!failIdentifier){
+                        s.renderPage(req,res,config.renderPaths.index,{
+                            failedLogin: true,
+                            message: failMessage || lang.failedLoginText2,
+                            lang: s.copySystemDefaultLanguage(),
+                            config: s.getConfigWithBranding(req.hostname),
+                            screen: screenChooser(req.params.screen)
+                        })
+                        return
+                    }
+                    if(!s.failedLoginAttempts[failIdentifier]){
+                        s.failedLoginAttempts[failIdentifier] = {
+                            failCount : 0,
+                            ips : {}
+                        }
+                    }
+                    ++s.failedLoginAttempts[failIdentifier].failCount
+                    if(!s.failedLoginAttempts[failIdentifier].ips[req.ip]){
+                        s.failedLoginAttempts[failIdentifier].ips[req.ip] = 0
+                    }
+                    ++s.failedLoginAttempts[failIdentifier].ips[req.ip]
+                    clearTimeout(s.failedLoginAttempts[failIdentifier].timeout)
+                    s.failedLoginAttempts[failIdentifier].timeout = setTimeout(function(){
+                        delete(s.failedLoginAttempts[failIdentifier])
+                    },1000 * 60 * 15)
+                    // check if JSON
+                    if(req.query.json === 'true'){
+                        res.setHeader('Content-Type', 'application/json')
+                        res.end(s.prettyPrint({ok:false}))
+                    }else{
+                        s.renderPage(req,res,config.renderPaths.index,{
+                            failedLogin: true,
+                            message: failMessage || lang.failedLoginText2,
+                            lang: s.copySystemDefaultLanguage(),
+                            config: s.getConfigWithBranding(req.hostname),
+                            screen: screenChooser(req.params.screen)
+                        })
+                    }
+                    var logTo = {
+                        ke: '$',
+                        mid: '$USER'
+                    }
+                    var logData = {
+                        type: lang['Authentication Failed'],
+                        msg: {
+                            for: board,
+                            mail: failIdentifier,
+                            ip: req.ip
+                        }
+                    }
+                    if(board === 'super'){
+                        s.userLog(logTo,logData)
+                    }else{
+                        s.knexQuery({
                             action: "select",
-                            columns: "details",
+                            columns: "ke,uid,details",
                             table: "Users",
                             where: [
-                                ['ke','=',user.ke],
-                                ['details','NOT LIKE','%"sub"%'],
-                            ],
-                            limit: 1,
+                                ['mail','=',failIdentifier],
+                            ]
+                        },(err,r) => {
+                            if(r && r[0]){
+                                r = r[0]
+                                r.details = JSON.parse(r.details)
+                                r.lang = s.getLanguageFile(r.details.lang)
+                                logData.id = r.uid
+                                logData.type = r.lang['Authentication Failed']
+                                logTo.ke = r.ke
+                            }
+                            s.userLog(logTo,logData)
                         })
-                        if(adminUserCheckResponse.rows && adminUserCheckResponse.rows[0]){
-                            const adminUser = adminUserCheckResponse.rows[0];
-                            const adminUserDetails = s.parseJSON(adminUser.details);
-                            user.details.mon_groups = adminUserDetails.mon_groups;
-                        }else{
-                            return failedAuthentication(req.body.function,req.body.mail)
-                        }
                     }
-                    if(user.details.factorAuth === "1"){
-                        const factorAuthCreationResponse = createTwoFactorAuth(
-                            user,
-                            req.body.machineID || s.md5(s.gid()),
-                            req.body.function
-                        );
-                        if(!factorAuthCreationResponse.goToDashboard){
-                            renderPage(config.renderPaths.factorAuth,{
-                                $user:{
-                                    ke: user.ke,
-                                    uid: user.uid,
-                                    mail: user.mail
-                                },
-                                lang: user.lang
+                }
+                function checkRoute(pageTarget,userInfo){
+                    if(!userInfo.lang){
+                        userInfo.lang = s.getLanguageFile(userInfo.details.lang)
+                    }
+                    switch(pageTarget){
+                        case'cam':
+                            renderPage(config.renderPaths.dashcam,{
+                                // config: s.getConfigWithBranding(req.hostname),
+                                $user: userInfo,
+                                lang: userInfo.lang,
+                                define: s.getDefinitonFile(userInfo.details.lang),
+                                customAutoLoad: s.customAutoLoadTree
                             })
-                            return;
+                        break;
+                        case'streamer':
+                            renderPage(config.renderPaths.streamer,{
+                                // config: s.getConfigWithBranding(req.hostname),
+                                $user: userInfo,
+                                lang: userInfo.lang,
+                                define: s.getDefinitonFile(userInfo.details.lang),
+                                customAutoLoad: s.customAutoLoadTree
+                            })
+                        break;
+                        case'admin':
+                        default:
+                            var chosenRender = 'home'
+                            if(userInfo.details.sub && userInfo.details.landing_page && userInfo.details.landing_page !== '' && config.renderPaths[userInfo.details.landing_page]){
+                                chosenRender = userInfo.details.landing_page
+                            }
+                            renderPage(config.renderPaths[chosenRender],{
+                                $user: userInfo,
+                                config: s.getConfigWithBranding(req.hostname),
+                                lang: userInfo.lang,
+                                define: s.getDefinitonFile(userInfo.details.lang),
+                                addStorage: s.dir.addStorage,
+                                fs: fs,
+                                __dirname: s.mainDirectory,
+                                customAutoLoad: s.customAutoLoadTree
+                            })
+                        break;
+                    }
+                    s.userLog({
+                        ke: userInfo.ke,
+                        mid: '$USER'
+                    },{
+                        type: userInfo.lang['New Authentication Token'],
+                        msg: {
+                            for: pageTarget,
+                            mail: userInfo.mail,
+                            id: userInfo.uid,
+                            ip: req.ip
+                        }
+                    })
+                }
+                if(req.body.alternateLogin && s.alternateLogins[req.body.alternateLogin]){
+                    const alternateLogin = s.alternateLogins[req.body.alternateLogin]
+                    const alternateLoginResponse = await alternateLogin(req.body)
+                    if(alternateLoginResponse.ok && alternateLoginResponse.user){
+                        const user = alternateLoginResponse.user
+                        const sessionKey = s.md5(s.gid())
+                        user.auth = sessionKey
+                        s.knexQuery({
+                            action: "update",
+                            table: "Users",
+                            update: {
+                                auth: sessionKey
+                            },
+                            where: [
+                                ['ke','=',user.ke],
+                                ['uid','=',user.uid],
+                            ]
+                        })
+                        checkRoute(req.body.function,{
+                            ok: true,
+                            auth_token: user.auth,
+                            ke: user.ke,
+                            uid: user.uid,
+                            mail: user.mail,
+                            details: user.details
+                        })
+                    }else{
+                        return failedAuthentication(req.body.function,req.body.mail,alternateLoginResponse.msg)
+                    }
+                }else if(req.body.mail && req.body.pass){
+                    async function regularLogin(){
+                        const basicAuthResponse = await basicAuth(req.body.mail,req.body.pass)
+                        if(basicAuthResponse.user){
+                            const user = basicAuthResponse.user;
+                            const sessionKey = s.md5(s.gid())
+                            user.auth = sessionKey
+                            user.lang = s.getLanguageFile(user.details.lang)
+                            s.knexQuery({
+                                action: "update",
+                                table: "Users",
+                                update: {
+                                    auth: user.auth
+                                },
+                                where: [
+                                    ['ke','=',user.ke],
+                                    ['uid','=',user.uid],
+                                ]
+                            })
+                            if(user.details.sub){
+                                const adminUserCheckResponse = await s.knexQueryPromise({
+                                    action: "select",
+                                    columns: "details",
+                                    table: "Users",
+                                    where: [
+                                        ['ke','=',user.ke],
+                                        ['details','NOT LIKE','%"sub"%'],
+                                    ],
+                                    limit: 1,
+                                })
+                                if(adminUserCheckResponse.rows && adminUserCheckResponse.rows[0]){
+                                    const adminUser = adminUserCheckResponse.rows[0];
+                                    const adminUserDetails = s.parseJSON(adminUser.details);
+                                    user.details.mon_groups = adminUserDetails.mon_groups;
+                                }else{
+                                    return failedAuthentication(req.body.function,req.body.mail)
+                                }
+                            }
+                            if(user.details.factorAuth === "1"){
+                                const factorAuthCreationResponse = createTwoFactorAuth(
+                                    user,
+                                    req.body.machineID || s.md5(s.gid()),
+                                    req.body.function
+                                );
+                                if(!factorAuthCreationResponse.goToDashboard){
+                                    renderPage(config.renderPaths.factorAuth,{
+                                        $user:{
+                                            ke: user.ke,
+                                            uid: user.uid,
+                                            mail: user.mail
+                                        },
+                                        lang: user.lang
+                                    })
+                                    return;
+                                }
+                            }
+
+                            checkRoute(req.body.function,{
+                                ok: true,
+                                auth_token: user.auth,
+                                ke: user.ke,
+                                uid: user.uid,
+                                mail: user.mail,
+                                details: user.details
+                            })
+                        }else{
+                            failedAuthentication(req.body.function,req.body.mail)
                         }
                     }
-
-                    checkRoute(req.body.function,{
-                        ok: true,
-                        auth_token: user.auth,
-                        ke: user.ke,
-                        uid: user.uid,
-                        mail: user.mail,
-                        details: user.details
+                    if(req.body.function === 'super'){
+                        const superLoginResponse = await superLogin(req.body.mail,req.body.pass);
+                        if(superLoginResponse.ok){
+                            renderPage(config.renderPaths.super,{
+                                config: config,
+                                lang: lang,
+                                $user: superLoginResponse.user,
+                                customAutoLoad: s.customAutoLoadTree,
+                                currentVersion: s.currentVersion,
+                            })
+                        }else{
+                            failedAuthentication(req.body.function,req.body.mail)
+                        }
+                    }else{
+                        regularLogin()
+                    }
+                }else if(
+                    req.body.machineID &&
+                    req.body.factorAuthKey &&
+                    s.factorAuth[req.body.ke] &&
+                    s.factorAuth[req.body.ke][req.body.id]
+                ){
+                    const factorAuthObject = s.factorAuth[req.body.ke][req.body.id]
+                    const twoFactorVerificationResponse = twoFactorVerification({
+                        ke: req.body.ke,
+                        id: req.body.id,
+                        machineID: req.body.machineID,
+                        factorAuthKey: req.body.factorAuthKey,
                     })
+                    if(twoFactorVerificationResponse.ok){
+                        checkRoute(twoFactorVerificationResponse.pageTarget,twoFactorVerificationResponse.info)
+                    }else{
+                        failedAuthentication(lang['2-Factor Authentication'],factorAuthObject.info.mail)
+                    }
                 }else{
-                    failedAuthentication(req.body.function,req.body.mail)
+                    failedAuthentication(lang['2-Factor Authentication'],req.body.mail)
                 }
-            }
-            if(req.body.function === 'super'){
-                const superLoginResponse = await superLogin(req.body.mail,req.body.pass);
-                if(superLoginResponse.ok){
-                    renderPage(config.renderPaths.super,{
-                        config: config,
-                        lang: lang,
-                        $user: superLoginResponse.user,
-                        customAutoLoad: s.customAutoLoadTree,
-                        currentVersion: s.currentVersion,
-                    })
-                }else{
-                    failedAuthentication(req.body.function,req.body.mail)
-                }
-            }else{
-                regularLogin()
-            }
-        }else if(
-            req.body.machineID &&
-            req.body.factorAuthKey &&
-            s.factorAuth[req.body.ke] &&
-            s.factorAuth[req.body.ke][req.body.id]
-        ){
-            const factorAuthObject = s.factorAuth[req.body.ke][req.body.id]
-            const twoFactorVerificationResponse = twoFactorVerification({
-                ke: req.body.ke,
-                id: req.body.id,
-                machineID: req.body.machineID,
-                factorAuthKey: req.body.factorAuthKey,
             })
-            if(twoFactorVerificationResponse.ok){
-                checkRoute(twoFactorVerificationResponse.pageTarget,twoFactorVerificationResponse.info)
-            }else{
-                failedAuthentication(lang['2-Factor Authentication'],factorAuthObject.info.mail)
-            }
-        }else{
-            failedAuthentication(lang['2-Factor Authentication'],req.body.mail)
-        }
+        ]
     })
     /**
     * API : Brute Protection Lock Reset by API
