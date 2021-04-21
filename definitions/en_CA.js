@@ -5139,7 +5139,8 @@ module.exports = function(s,config,lang){
            "blocks": {
                "Sub-Accounts": {
                   "name": lang['Sub-Accounts'],
-                  "color": "grey",
+                  "section-pre-class": "col-md-12",
+                  "color": "orange",
                   "isSection": true,
                   "id":"monSectionAccountList",
                   "info": [
@@ -5151,7 +5152,8 @@ module.exports = function(s,config,lang){
                },
                "Account Information": {
                   "name": lang['Account Information'],
-                  "color": "grey",
+                  "section-pre-class": "col-md-6",
+                  "color": "blue",
                   "isSection": true,
                   "isForm": true,
                   "id":"monSectionAccountInformation",
@@ -5204,7 +5206,8 @@ module.exports = function(s,config,lang){
               },
               "Account Privileges": {
                  "name": lang['Account Privileges'],
-                 "color": "grey",
+                 "section-pre-class": "col-md-6",
+                 "color": "red",
                  "isSection": true,
                  "id":"monSectionAccountPrivileges",
                  "info": [
@@ -5308,7 +5311,8 @@ module.exports = function(s,config,lang){
           "blocks": {
               "Add New": {
                  "name": lang['Add New'],
-                 "color": "grey",
+                 "section-pre-class": "col-md-6",
+                 "color": "forestgreen",
                  "isSection": true,
                  "isForm": true,
                  "id":"apiKeySectionAddNew",
@@ -5378,14 +5382,14 @@ module.exports = function(s,config,lang){
              },
              "API Keys": {
                 "name": lang['API Keys'],
-                "color": "grey",
+                "section-pre-class": "col-md-6",
+                "color": "blue",
                 "isSection": true,
                 "id":"apiKeySectionList",
                 "info": [
                     {
                         "fieldType": "table",
-                        "class": "table table-striped",
-                        id: "api_list",
+                        "id": "api_list",
                     }
                 ]
              },
@@ -5451,6 +5455,76 @@ module.exports = function(s,config,lang){
                 ]
              }
          }
+     },
+     "Region Editor": {
+         "section": "Region Editor",
+         "blocks": {
+             "Regions": {
+                "name": lang["Regions"],
+                "headerTitle": `<span class="cord_name">&nbsp;</span>
+                  <div class="pull-right">
+                      <a class="btn btn-success btn-xs add">&nbsp;<i class="fa fa-plus"></i>&nbsp;</a>
+                      <a class="btn btn-danger btn-xs erase">&nbsp;<i class="fa fa-trash-o"></i>&nbsp;</a>
+                  </div>`,
+                "color": "orange",
+                "section-pre-class": "col-md-6",
+                "sectionClass": "where",
+                "info": [
+                    {
+                       "id": "regions_list",
+                       "field": lang["Regions"],
+                       "fieldType": "select",
+                       "possible": []
+                   },
+                    {
+                       "name": "name",
+                       "field": lang['Region Name'],
+                    },
+                    {
+                       "name": "sensitivity",
+                       "field": lang['Minimum Change'],
+                    },
+                    {
+                       "name": "max_sensitivity",
+                       "field": lang['Maximum Change'],
+                    },
+                    {
+                       "name": "threshold",
+                       "field": lang['Trigger Threshold'],
+                    },
+                    {
+                       "name": "color_threshold",
+                       "field": lang['Color Threshold'],
+                    },
+                    {
+                        id: "regions_points",
+                        "fieldType": "table",
+                        "class": 'table table-striped',
+                    },
+                    {
+                       "fieldType": "btn",
+                       "class": `btn-info`,
+                       "btnContent": `<i class="fa fa-retweet"></i> &nbsp; ${lang['Live Stream Toggle']}`,
+                    },
+                ]
+            },
+            "Points": {
+               "name": lang["Points"],
+               "color": "orange",
+               "section-pre-class": "col-md-6",
+               "sectionClass": "where",
+               "blockquoteClass": "global_tip",
+               "blockquote": lang.RegionNote,
+               "info": [
+                   {
+                       "fieldType": "div",
+                       class: "canvas_holder",
+                       divContent: `<div id="region_editor_live"><iframe></iframe><img></div>
+                       <textarea id="regions_canvas" rows=3 class="hidden canvas-area input-xxlarge" disabled></textarea>`,
+                   }
+               ]
+            }
          }
+     }
     }
 }
