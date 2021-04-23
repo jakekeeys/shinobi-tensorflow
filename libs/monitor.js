@@ -465,6 +465,8 @@ module.exports = function(s,config,lang){
         if (queryStringObjects && queryStringObjects.postData) {
             options.postData = decodeURIComponent(queryStringObjects.postData)
             options.path = URLobject.pathname + '?' + decodeURIComponent(createQueryStringFromObject(Object.assign(queryStringObjects,{postData: null})))
+        } else if(URLobject.query){
+            options.path = URLobject.pathname + '?' + URLobject.query
         } else {
             options.path = URLobject.pathname
         }
