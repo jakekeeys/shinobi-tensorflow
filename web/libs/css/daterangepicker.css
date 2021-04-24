@@ -408,3 +408,6 @@
     clear: none !important;
   }
 }
+.daterangepicker .calendar-table th, .daterangepicker .calendar-table td {
+    padding: 2px;
+}
