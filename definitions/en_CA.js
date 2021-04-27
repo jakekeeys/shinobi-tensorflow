@@ -2554,56 +2554,6 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
-                      "name": "detail=detector_discordbot",
-                      "field": lang["Discord Alert on Trigger"],
-                      "description": "",
-                      "default": "0",
-                      "example": "",
-                      "selector": "h_det_discord",
-                      "fieldType": "select",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": [
-                         {
-                            "name": lang.No,
-                            "value": "0"
-                         },
-                         {
-                            "name": lang.Yes,
-                            "value": "1"
-                         }
-                      ]
-                   },
-                   {
-                      "name": "detail=detector_discordbot_send_video",
-                      "field": lang["Attach Video Clip"],
-                      "description": "",
-                      "default": "0",
-                      "example": "",
-                      "fieldType": "select",
-                      "form-group-class": "h_det_discord_input h_det_discord_1",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": [
-                         {
-                            "name": lang.No,
-                            "value": "0"
-                         },
-                         {
-                            "name": lang.Yes,
-                            "value": "1"
-                         }
-                      ]
-                   },
-                   {
-                      "name": "detail=detector_discordbot_timeout",
-                      "field": lang['Allow Next Discord Alert'],
-                      "description": "",
-                      "default": "10",
-                      "example": "",
-                      "form-group-class": "h_det_discord_input h_det_discord_1",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": ""
-                   },
-                   {
                       "name": "detail=use_detector_filters",
                       "field": lang['Event Filters'],
                       "description": "",
@@ -2856,7 +2806,7 @@ module.exports = function(s,config,lang){
                          },
                          {
                             "name": "detail=detector_notrigger_discord",
-                            "field": lang['Discord'],
+                            "field": lang['No Trigger'],
                             "description": "If motion has not been detected after the timeout period you will recieve an Discord notification.",
                             "default": "0",
                             "example": "",
@@ -4032,23 +3982,6 @@ module.exports = function(s,config,lang){
                                  }
                               ]
                            },
-                           {
-                              "name": "detail=notify_discord",
-                              "field": lang.Discord,
-                              "default": "0",
-                              "example": "",
-                              "fieldType": "select",
-                              "possible": [
-                                 {
-                                    "name": lang.No,
-                                    "value": "0"
-                                 },
-                                 {
-                                    "name": lang.Yes,
-                                    "value": "1"
-                                 }
-                              ]
-                           },
                        ],
                     },
                    {
@@ -4271,26 +4204,6 @@ module.exports = function(s,config,lang){
                           }
                        ]
                    },
-                   {
-                       hidden: true,
-                       "name": "detail=factor_discord",
-                       "field": lang.Discord,
-                       "description": "Send 2-Factor Authentication codes to the specified Discord channel.",
-                       "default": "1",
-                       "example": "",
-                       "fieldType": "select",
-                       "possible": [
-                          {
-                             "name": lang.No,
-                             "value": "0"
-                          },
-                          {
-                             "name": lang.Yes,
-                             "value": "1"
-                          }
-                       ],
-                       "form-group-class": "u_discord_bot_input u_discord_bot_1"
-                    },
                 ]
              },
              "Profile": {
@@ -4507,53 +4420,6 @@ module.exports = function(s,config,lang){
                 "name": lang["Uploaders"],
                 "color": "forestgreen",
                 "blocks": s.uploaderFields
-             },
-             "Discord Bot": {
-                "evaluation": "details.use_discordbot!=='0'",
-                "name": lang["Discord Bot"],
-                "color": "forestgreen",
-                "info": [
-                    {
-                       "name": "detail=discordbot",
-                       "selector":"u_discord_bot",
-                       "field": lang.Enabled,
-                       "description": "Discord is a messaging service that can provides Bots. The Bots can post messages to a private channel that you have created.",
-                       "default": "0",
-                       "example": "",
-                       "fieldType": "select",
-                       "possible": [
-                           {
-                              "name": lang.No,
-                              "value": "0"
-                           },
-                           {
-                              "name": lang.Yes,
-                              "value": "1"
-                           }
-                       ]
-                    },
-                    {
-                       "name": "detail=discordbot_token",
-                       "fieldType": "password",
-                       "placeholder": "XXXXXXXXXXXXXXXXXXXXXXXX.XXXXXXXXXXXXXXX_XXXXXXXXXXXXXXXXXX",
-                       "field": lang.Token,
-                       "form-group-class":"u_discord_bot_input u_discord_bot_1",
-                       "description": "",
-                       "default": "",
-                       "example": "",
-                       "possible": ""
-                   },
-                    {
-                       "name": "detail=discordbot_channel",
-                       "placeholder": "xxxxxxxxxxxxxxxxxx",
-                       "field": lang["Channel ID"],
-                       "form-group-class":"u_discord_bot_input u_discord_bot_1",
-                       "description": "",
-                       "default": "",
-                       "example": "",
-                       "possible": ""
-                    }
-                ]
              },
              "Preferences": {
                 "name": lang.Preferences,

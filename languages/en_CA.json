@@ -664,6 +664,8 @@
    "Webhook URL": "Webhook URL",
    "Command on Trigger": "Command on Trigger",
    "Command": "Command",
+   "No Trigger": "No Trigger",
+   "noTriggerText": "If motion has not been detected after the timeout period you will recieve an Discord notification.",
    "on Event": "on Event",
    "Allow Next Alert": "Allow Next Alert",
    "Allow Next Webhook": "Allow Next Webhook",
