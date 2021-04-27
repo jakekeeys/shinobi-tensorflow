@@ -64,13 +64,13 @@ require('./libs/ffmpeg.js')(s,config,lang, async () => {
     //cloud uploaders : amazon s3, webdav, backblaze b2..
     require('./libs/uploaders.js')(s,config,lang,app,io)
     //notifiers : discord..
-    require('./libs/notification.js')(s,config,lang)
-    //notifiers : discord..
     require('./libs/rtmpserver.js')(s,config,lang)
     //dropInEvents server (file manipulation to create event trigger)
     require('./libs/dropInEvents.js')(s,config,lang,app,io)
     //form fields to drive the internals
     require('./libs/definitions.js')(s,config,lang,app,io)
+    //notifiers : discord..
+    require('./libs/notification.js')(s,config,lang)
     //branding functions and config defaults
     require('./libs/branding.js')(s,config,lang,app,io)
     //custom module loader
