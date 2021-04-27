@@ -203,6 +203,23 @@ module.exports = function(s,config,lang){
                    },
                ]
             })
+            s.definitions["Account Settings"].blocks["2-Factor Authentication"].info.push({
+                "name": "detail=factor_telegram",
+                "field": 'Telegram',
+                "default": "1",
+                "example": "",
+                "fieldType": "select",
+                "possible": [
+                   {
+                      "name": lang.No,
+                      "value": "0"
+                   },
+                   {
+                      "name": lang.Yes,
+                      "value": "1"
+                   }
+                ]
+            })
             s.definitions["Account Settings"].blocks["Telegram"] = {
                "evaluation": "$user.details.use_telegrambot !== '0'",
                "name": "Telegram",
