@@ -5552,7 +5552,7 @@ module.exports = function(s,config,lang){
             },
             "Schedule": {
                "name": lang["Schedule"],
-               "headerTitle": `${lang['Schedule']} %>
+               "headerTitle": `${lang['Schedule']}
                  <div class="pull-right">
                      <a class="btn btn-danger btn-xs delete" style="display:none">&nbsp;<i class="fa fa-trash-o"></i>&nbsp;</a>
                  </div>`,
@@ -5652,6 +5652,69 @@ module.exports = function(s,config,lang){
                       "attribute": `multiple style="min-height:100px"`,
                       "possible": []
                    },
+               ]
+           },
+         }
+     },
+     "Monitor States": {
+         "section": "Monitor States",
+         "blocks": {
+             "Monitor States": {
+                "name": lang["Monitor States"],
+                "color": "green",
+                "section-pre-class": "col-md-6",
+                "info": [
+                    {
+                       "id": "monitorStatesSelector",
+                       "field": lang["Monitor States"],
+                       "fieldType": "select",
+                       "possible": [
+                           {
+                              "name": lang['Add New'],
+                              "value": ""
+                           },
+                           {
+                              "name": lang['Saved Presets'],
+                              "optgroup": []
+                           },
+                       ]
+                   },
+                ]
+            },
+            "Preset": {
+               "name": lang["Preset"],
+               "color": "green",
+               "section-pre-class": "col-md-6",
+               "info": [
+                   {
+                      "fieldType": "btn",
+                      "attribute": `type="submit" style="display:none"`,
+                      "class": `btn-danger delete`,
+                      "btnContent": `<i class="fa fa-trash"></i> &nbsp; ${lang.Delete}`,
+                   },
+                   {
+                      "name": "name",
+                      "field": lang.Name,
+                      "description": "",
+                      "example": "Motion Off",
+                      "possible": ""
+                   }
+               ]
+           },
+            "Monitors": {
+               "name": lang["Monitors"],
+               "color": "green",
+               "section-pre-class": "col-md-12",
+               "info": [
+                   {
+                      "fieldType": "btn",
+                      "class": `btn-success add-monitor`,
+                      "btnContent": `<i class="fa fa-plus"></i> &nbsp; ${lang['Add New']}`,
+                   },
+                  {
+                      "fieldType": "div",
+                      id: "monitorStatesMonitors",
+                  }
                ]
            },
          }
