@@ -250,7 +250,7 @@ module.exports = (s,config,lang) => {
                 streamFlags.push(`-preset ${streamPreset}`)
             }
             if(!videoCodecisCopy){
-                streamFlags.push(`-crf ${videoQuality}`)
+                streamFlags.push(`-q:v ${videoQuality}`)
             }
         }else{
             streamFlags.push(`-q:v ${videoQuality}`)
@@ -433,7 +433,7 @@ module.exports = (s,config,lang) => {
                     streamFlags.push(`-preset ${streamPreset}`)
                 }
                 if(!videoCodecisCopy){
-                    streamFlags.push(`-crf ${videoQuality}`)
+                    streamFlags.push(`-q:v ${videoQuality}`)
                 }
             }else{
                 streamFlags.push(`-q:v ${videoQuality}`)
