@@ -1,5 +1,5 @@
 <!--API Window-->
-<div class="modal fade dark" id="apis" role="dialog" aria-labelledby="apisLabel" aria-hidden="true">
+<div class="modal fade medium dark" id="apis" role="dialog" aria-labelledby="apisLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -9,17 +9,19 @@
         <h4 class="modal-title" id="apisLabel"><i class="fa fa-code"></i> &nbsp; <%-lang['API Keys']%> <small><%-lang['Group Key']%>  : <%- $user.ke %></small></h4>
       </div>
       <div class="modal-body">
-          <%
-            var drawBlock
-            var buildOptions
-          %>
-          <%
-            include fieldBuilders.ejs
-          %>
-          <% Object.keys(define['API Keys'].blocks).forEach(function(blockKey){
-                var accountSettings = define['API Keys'].blocks[blockKey]
-                drawBlock(accountSettings)
-            }) %>
+          <div class="row">
+              <%
+                var drawBlock
+                var buildOptions
+              %>
+              <%
+                include fieldBuilders.ejs
+              %>
+              <% Object.keys(define['API Keys'].blocks).forEach(function(blockKey){
+                    var accountSettings = define['API Keys'].blocks[blockKey]
+                    drawBlock(accountSettings)
+                }) %>
+          </div>
       </div>
       <div class="modal-footer text-left">
           <button type="button" class="btn btn-default" data-dismiss="modal"><%-lang['Close']%></button>
