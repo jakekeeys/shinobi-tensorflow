@@ -51,7 +51,8 @@ module.exports = function(s,config,lang){
                 const monitorConfig = s.group[d.ke].rawMonitorConfigurations[d.id]
                 // d = event object
                 //discord bot
-                if(filter.discord && s.group[d.ke].discordBot && monitorConfig.details.detector_discordbot === '1' && !s.group[d.ke].activeMonitors[d.id].detector_discordbot){
+                const isEnabled = monitorConfig.details.detector_discordbot === '1' || monitorConfig.details.notify_discord === '1'
+                if(filter.discord && s.group[d.ke].discordBot && isEnabled && !s.group[d.ke].activeMonitors[d.id].detector_discordbot){
                     var detector_discordbot_timeout
                     if(!monitorConfig.details.detector_discordbot_timeout||monitorConfig.details.detector_discordbot_timeout===''){
                         detector_discordbot_timeout = 1000 * 60 * 10;
@@ -210,6 +211,145 @@ module.exports = function(s,config,lang){
             s.onEventTriggerBeforeFilter(onEventTriggerBeforeFilterForDiscord)
             s.onDetectorNoTriggerTimeout(onDetectorNoTriggerTimeoutForDiscord)
             s.onMonitorUnexpectedExit(onMonitorUnexpectedExitForDiscord)
+            s.definitions["Monitor Settings"].blocks["Notifications"].info[0].info.push(
+                {
+                   "name": "detail=notify_discord",
+                   "field": "Discord",
+                   "description": "",
+                   "default": "0",
+                   "example": "",
+                   "selector": "h_det_discord",
+                   "fieldType": "select",
+                   "possible": [
+                      {
+                         "name": lang.No,
+                         "value": "0"
+                      },
+                      {
+                         "name": lang.Yes,
+                         "value": "1"
+                      }
+                   ]
+                }
+            )
+            s.definitions["Monitor Settings"].blocks["Notifications"].info.push({
+               "evaluation": "$user.details.use_discordbot !== '0'",
+               isFormGroupGroup: true,
+               "name": "Discord",
+               "color": "purple",
+               "section-class": "h_det_discord_input h_det_discord_1",
+               "info": [
+                   {
+                      "name": "detail=detector_discordbot_send_video",
+                      "field": lang["Attach Video Clip"] + ` (${lang['on Event']})`,
+                      "description": "",
+                      "default": "0",
+                      "example": "",
+                      "fieldType": "select",
+                      "possible": [
+                         {
+                            "name": lang.No,
+                            "value": "0"
+                         },
+                         {
+                            "name": lang.Yes,
+                            "value": "1"
+                         }
+                      ]
+                   },
+                   {
+                      "name": "detail=detector_discordbot_timeout",
+                      "field": lang['Allow Next Alert'] + ` (${lang['on Event']})`,
+                      "description": "",
+                      "default": "10",
+                      "example": "",
+                      "possible": ""
+                   },
+                   {
+                      "name": "detail=detector_notrigger_discord",
+                      "field": lang['No Trigger'],
+                      "description": lang.noTriggerText,
+                      "default": "0",
+                      "example": "",
+                      "fieldType": "select",
+                      "possible": [
+                         {
+                            "name": lang.No,
+                            "value": "0"
+                         },
+                         {
+                            "name": lang.Yes,
+                            "value": "1"
+                         }
+                      ]
+                   },
+               ]
+            })
+            s.definitions["Account Settings"].blocks["2-Factor Authentication"].info.push({
+                "name": "detail=factor_discord",
+                "field": 'Discord',
+                "default": "1",
+                "example": "",
+                "fieldType": "select",
+                "possible": [
+                   {
+                      "name": lang.No,
+                      "value": "0"
+                   },
+                   {
+                      "name": lang.Yes,
+                      "value": "1"
+                   }
+                ]
+            })
+            s.definitions["Account Settings"].blocks["Discord"] = {
+               "evaluation": "$user.details.use_discordbot !== '0'",
+               "name": "Discord",
+               "color": "purple",
+               "info": [
+                   {
+                      "name": "detail=discordbot",
+                      "selector":"u_discord_bot",
+                      "field": lang.Enabled,
+                      "default": "0",
+                      "example": "",
+                      "fieldType": "select",
+                      "possible": [
+                          {
+                             "name": lang.No,
+                             "value": "0"
+                          },
+                          {
+                             "name": lang.Yes,
+                             "value": "1"
+                          }
+                      ]
+                   },
+                   {
+                       hidden: true,
+                      "name": "detail=discordbot_token",
+                      "fieldType": "password",
+                      "placeholder": "XXXXXXXXXXXXXXXXXXXXXXXX.XXXXXXXXXXXXXXX_XXXXXXXXXXXXXXXXXX",
+                      "field": lang.Token,
+                      "form-group-class":"u_discord_bot_input u_discord_bot_1",
+                      "description": "",
+                      "default": "",
+                      "example": "",
+                      "possible": ""
+                  },
+                   {
+                       hidden: true,
+                      "name": "detail=discordbot_channel",
+                      "placeholder": "xxxxxxxxxxxxxxxxxx",
+                      "field": lang["Recipient ID"],
+                      "form-group-class":"u_discord_bot_input u_discord_bot_1",
+                      "description": "",
+                      "default": "",
+                      "example": "",
+                      "possible": ""
+                   }
+               ]
+            }
         }catch(err){
             console.log(err)
             console.log('Could not start Discord bot, please run "npm install discord.js" inside the Shinobi folder.')
