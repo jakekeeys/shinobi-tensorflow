@@ -43,7 +43,7 @@ module.exports = (s,config,lang) => {
             delete(activeMonitor.checkSnap);
             clearTimeout(activeMonitor.watchdog_stop);
             delete(activeMonitor.watchdog_stop);
-            delete(activeMonitor.secondaryDetectorOutput);
+            // delete(activeMonitor.secondaryDetectorOutput);
             delete(activeMonitor.detectorFrameSaveBuffer);
             clearTimeout(activeMonitor.recordingSnapper);
             clearInterval(activeMonitor.getMonitorCpuUsage);
