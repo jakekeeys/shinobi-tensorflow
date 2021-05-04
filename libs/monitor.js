@@ -693,7 +693,7 @@ module.exports = function(s,config,lang){
     }
     const onDetectorJpegOutputSecondary = (e,buffer) => {
         if(s.isAtleatOneDetectorPluginConnected){
-            const activeMonitor = s.group[e.ke].activeMonitors[e.id]
+            const activeMonitor = s.group[e.ke].activeMonitors[e.id || e.mid]
             const theArray = activeMonitor.pipe4BufferPieces
             theArray.push(buffer)
             if(buffer[buffer.length-2] === 0xFF && buffer[buffer.length-1] === 0xD9){
