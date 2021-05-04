@@ -5913,7 +5913,7 @@ module.exports = function(s,config,lang){
                  "name": lang["Scan Settings"],
                  "color": "navy",
                  "blockquote": lang.ONVIFnote,
-                 "section-pre-class": "col-md-6",
+                 "section-pre-class": "col-md-4",
                  "info": [
                      {
                         "name": "ip",
@@ -5958,11 +5958,11 @@ module.exports = function(s,config,lang){
             "Found Devices": {
                "name": lang['Found Devices'],
                "color": "blue",
-               "section-pre-class": "col-md-6",
+               "section-pre-class": "col-md-8",
                "info": [
                    {
                        "fieldType": "div",
-                       "class": "onvif_result",
+                       "class": "onvif_result row",
                    }
                ]
            },
