@@ -1605,8 +1605,8 @@ module.exports = function(s,config,lang){
                     wantedStatusCode = 6
                 }
                 s.sendMonitorStatus({
-                    id:e.id,
-                    ke:e.ke,
+                    id: e.id,
+                    ke: e.ke,
                     status: wantedStatus,
                     code: wantedStatusCode,
                 })
