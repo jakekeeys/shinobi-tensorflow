@@ -2603,8 +2603,7 @@ module.exports = function(s,config,lang){
                    },
                    {
                       "fieldType": "btn",
-                      "class": `btn-danger`,
-                      "attribute": `monitor="region"`,
+                      "class": `btn-danger open-region-editor`,
                       "btnContent": `<i class="fa fa-grav"></i> &nbsp; ${lang['Region Editor']}`,
                       "description": "",
                       "default": "",
@@ -5329,13 +5328,18 @@ module.exports = function(s,config,lang){
                 "name": lang["Regions"],
                 "headerTitle": `<span class="cord_name">&nbsp;</span>
                   <div class="pull-right">
-                      <a class="btn btn-success btn-xs add">&nbsp;<i class="fa fa-plus"></i>&nbsp;</a>
-                      <a class="btn btn-danger btn-xs erase">&nbsp;<i class="fa fa-trash-o"></i>&nbsp;</a>
+                      <a class="badge btn btn-success btn-sm add">&nbsp;<i class="fa fa-plus"></i>&nbsp;</a>
+                      <a class="badge btn btn-danger btn-sm erase">&nbsp;<i class="fa fa-trash-o"></i>&nbsp;</a>
                   </div>`,
                 "color": "orange",
                 "section-pre-class": "col-md-6",
-                "sectionClass": "where",
+                "section-class": "where",
                 "info": [
+                    {
+                       "field": lang["Monitor"],
+                       "id": "region_editor_monitors",
+                       "fieldType": "select",
+                    },
                     {
                        "id": "regions_list",
                        "field": lang["Regions"],
@@ -5369,7 +5373,7 @@ module.exports = function(s,config,lang){
                     },
                     {
                        "fieldType": "btn",
-                       "class": `btn-info`,
+                       "class": `btn-info toggle-region-still-image`,
                        "btnContent": `<i class="fa fa-retweet"></i> &nbsp; ${lang['Live Stream Toggle']}`,
                     },
                 ]
@@ -5585,5 +5589,422 @@ module.exports = function(s,config,lang){
            },
          }
      },
+     "Timelapse": {
+         "section": "Timelapse",
+         "blocks": {
+             "Search Settings": {
+                "name": lang["Search Settings"],
+                "color": "green",
+                "section-pre-class": "col-md-4",
+                "info": [
+                    {
+                        "id": "monitorStatesSelector",
+                        "field": lang["Monitor"],
+                        "fieldType": "select",
+                        "class": "dark monitors_list",
+                        "possible": []
+                    },
+                    {
+                        "id": "timelapsejpeg_date",
+                        "field": lang.Date,
+                    },
+                    {
+                        "id": "timelapseJpegFps",
+                        "field": lang["Frame Rate"],
+                        "fieldType": "range",
+                        "min": "1",
+                        "max": "30",
+                    },
+                    {
+                       "fieldType": "btn-group",
+                       "btns": [
+                           {
+                               "fieldType": "btn",
+                               "class": `btn-primary playPause playPauseText`,
+                               "btnContent": `${lang['Play']}`,
+                           },
+                           {
+                               "fieldType": "btn",
+                               "class": `btn-success download_mp4`,
+                               "btnContent": `${lang['Download']}`,
+                           },
+                       ],
+                    },
+               ]
+           },
+           "Frames": {
+              "name": lang.Frames,
+              "color": "blue",
+              "section-pre-class": "col-md-8",
+              "info": [
+                  {
+                      "fieldType": "div",
+                      "class": "frameIcons row scroll-style-6",
+                  }
+              ]
+          },
+        }
+      },
+     "Event Filters": {
+          "section": "Event Filters",
+          "blocks": {
+              "Saved Filters": {
+                 "name": lang["Saved Filters"],
+                 "color": "green",
+                 "info": [
+                     {
+                        "field": lang["Monitor"],
+                        "id": "event_filters_monitors",
+                        "fieldType": "select",
+                     },
+                     {
+                        "fieldType": "btn-group",
+                        "class": "mb-3",
+                        "btns": [
+                            {
+                                "fieldType": "btn",
+                                "class": `btn-success add-filter`,
+                                "btnContent": `${lang['Add New']}`,
+                            },
+                            {
+                                "fieldType": "btn",
+                                "class": `btn-danger delete-filter`,
+                                "btnContent": `${lang['Delete']}`,
+                            },
+                        ],
+                     },
+                     {
+                        "id": "detector_filters",
+                        "field": lang["Filters"],
+                        "fieldType": "select",
+                     },
+                     {
+                         hidden:true,
+                        "name": "id",
+                     },
+                     {
+                        "name": "filter_name",
+                        "field": lang['Filter Name'],
+                     },
+                 ]
+             },
+             "Conditions": {
+                "name": lang["Conditions"],
+                "color": "blue",
+                "section-class": "where",
+                "info": [
+                    {
+                       "fieldType": "btn-group",
+                       "class": "mb-3",
+                       "btns": [
+                           {
+                               "fieldType": "btn",
+                               "class": `btn-success add`,
+                               "btnContent": `${lang['Add New']}`,
+                           },
+                       ],
+                    },
+                    {
+                        "id": 'detector_filters_where',
+                        "fieldType": 'div',
+                    },
+                ]
+            },
+             "Action for Selected": {
+                "name": lang["Action for Selected"],
+                "color": "red",
+                "section-class": "actions",
+                "info": [
+                    {
+                      "name": "actions=halt",
+                      "field": "Drop Event",
+                      "fieldType": "select",
+                      "form-group-class": "actions-row",
+                      "description": "Make the event do nothing, as if it never happened.",
+                      "default": "No",
+                      "possible": [
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "Allow other functions to continue.",
+                            "selected": true
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Use Traditional Recording, Hotswap, or Delete Motionless with their currently set options in the Global Detection Settings section."
+                         }
+                      ]
+                    },
+                    {
+                      "name": "actions=save",
+                      "field": "Save Events to SQL",
+                      "fieldType": "select",
+                      "description": "Save Motion Events in SQL. This will allow display of motion over video during the time motion events occured in the Power Viewer.",
+                      "default": "Yes",
+                      "form-group-class": "actions-row",
+                      "possible": [
+                         {
+                            "name": "Default",
+                            "value": "",
+                            "info": "Use values set in Global Detector Settings.",
+                            "selected": true
+                         },
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "Finish the current 10 minute order."
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Reset the timer"
+                         }
+                      ]
+                    },
+                    {
+                      "name": "actions=mail",
+                      "field": "Email on Trigger",
+                      "fieldType": "select",
+                      "form-group-class": "actions-row",
+                      "description": "Recieve an email of an image during a motion event to the master account for the camera group. You must setup SMTP details in conf.json.",
+                      "default": "No",
+                      "example": "1",
+                      "possible": [
+                         {
+                            "name": "Default",
+                            "value": "",
+                            "info": "Use values set in Global Detector Settings.",
+                            "selected": true
+                         },
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "No Email."
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Send Email."
+                         }
+                      ]
+                    },
+                    {
+                      "name": "actions=webhook",
+                      "field": "Webhook on Trigger",
+                      "fieldType": "select",
+                      "form-group-class": "actions-row",
+                      "description": "Send a GET request during an event to the URL specified. Webhook location can be specified in the Global Detector Settings for the Monitor.",
+                      "default": "No",
+                      "example": "1",
+                      "possible": [
+                         {
+                            "name": "Default",
+                            "value": "",
+                            "info": "Use values set in Global Detector Settings.",
+                            "selected": true
+                         },
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "No Webhook."
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Send Webhook."
+                         }
+                      ]
+                    },
+                    {
+                      "name": "actions=discord",
+                      "field": "Discord Alert on Trigger",
+                      "fieldType": "select",
+                      "form-group-class": "actions-row",
+                      "description": "Recieve a Discord Notification with an image or video during an event to the Discord channel specified. Discord Bot and Channel settings can be changed in your Account Settings.",
+                      "default": "No",
+                      "example": "1",
+                      "possible": [
+                         {
+                            "name": "Default",
+                            "value": "",
+                            "info": "Use values set in Global Detector Settings.",
+                            "selected": true
+                         },
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "No Alert."
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Get a Message to Discord."
+                         }
+                      ]
+                   },
+                   {
+                      "name": "actions=command",
+                      "field": "Detector Command",
+                      "fieldType": "select",
+                      "form-group-class": "actions-row",
+                      "description": "You may use this to trigger a script on command.",
+                      "default": "No",
+                      "form-group-class": "actions-row",
+                      "possible": [
+                         {
+                            "name": "Default",
+                            "value": "",
+                            "info": "Use values set in Global Detector Settings.",
+                            "selected": true
+                         },
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "No script will run."
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Trigger the script that is set in the <b>Command</b> option. <b>Command</b> is only visible when selecting this option."
+                         }
+                      ]
+                   },
+                   {
+                      "name": "actions=record",
+                      "field": "Use Record Method",
+                      "fieldType": "select",
+                      "description": "Use Traditional Recording, Hotswap, or Delete Motionless with their currently set options in the Global Detection Settings section.",
+                      "default": "No",
+                      "form-group-class": "actions-row",
+                      "possible": [
+                         {
+                            "name": "Default",
+                            "value": "",
+                            "info": "Use values set in Global Detector Settings.",
+                            "selected": true
+                         },
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "No Traditional Recording, Hotswap, or Delete Motionless."
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Use Traditional Recording, Hotswap, or Delete Motionless with their currently set options in the Global Detection Settings section."
+                         }
+                      ]
+                   },
+                   {
+                      "name": "actions=indifference",
+                      "field": "Modify Indifference",
+                      "description": "Modify minimum indifference required for event.",
+                      "form-group-class": "actions-row",
+                   },
+                ]
+            },
+          }
+      },
+     "ONVIF Scanner": {
+          "section": "ONVIF Scanner",
+          "blocks": {
+              "Search Settings": {
+                 "name": lang["Scan Settings"],
+                 "color": "navy",
+                 "blockquote": lang.ONVIFnote,
+                 "section-pre-class": "col-md-6",
+                 "info": [
+                     {
+                        "name": "ip",
+                        "field": lang['IP Address'],
+                        "description": lang['Range or Single'],
+                        "example": "10.1.100.1-10.1.100.254",
+                     },
+                     {
+                        "name": "port",
+                        "field": lang['Port'],
+                        "description": lang.separateByCommasOrRange,
+                        "example": "80,7575,8000,8080,8081",
+                     },
+                     {
+                        "name": "user",
+                        "field": lang['Camera Username'],
+                        "placeholder": "Can be left blank.",
+                     },
+                     {
+                        "name": "pass",
+                        "field": lang['Camera Password'],
+                        "fieldType": "password",
+                     },
+                     {
+                        "fieldType": "btn-group",
+                        "btns": [
+                            {
+                                "fieldType": "btn",
+                                "forForm": true,
+                                "class": `btn-block btn-success`,
+                                "btnContent": `${lang['Search']}<span class="_loading" style="display:none"> &nbsp; <i class="fa fa-pulse fa-spinner"></i></span>`,
+                            },
+                            {
+                                "fieldType": "btn",
+                                "class": `btn-default add-all`,
+                                "btnContent": `${lang['Add All']}`,
+                            },
+                        ],
+                     },
+                ]
+            },
+            "Found Devices": {
+               "name": lang['Found Devices'],
+               "color": "blue",
+               "section-pre-class": "col-md-6",
+               "info": [
+                   {
+                       "fieldType": "div",
+                       "class": "onvif_result",
+                   }
+               ]
+           },
+         }
+       },
+     "Camera Probe": {
+          "section": "Camera Probe",
+          "blocks": {
+              "Search Settings": {
+                 "name": lang["FFprobe"],
+                 "color": "blue",
+                 "blockquote": `<i>"${lang['FFmpegTip']}"</i> - FFmpegTips`,
+                 "section-pre-class": "col-md-12",
+                 "info": [
+                     {
+                        "name": "url",
+                        "field": lang['Complete Stream URL'],
+                        "example": "http://192.168.88.126/videostream.cgi or /dev/video0",
+                     },
+                     {
+                        "fieldType": "btn-group",
+                        "btns": [
+                            {
+                                "fieldType": "btn",
+                                "forForm": true,
+                                "class": `btn-block btn-success`,
+                                "btnContent": `${lang['Check']}`,
+                            },
+                            {
+                                "fieldType": "btn",
+                                "class": `btn-default fill`,
+                                "btnContent": `${lang['Save']}`,
+                            },
+                        ],
+                     },
+                     {
+                         "fieldType": "div",
+                         "class": "output_data",
+                     }
+                ]
+            },
+         }
+       },
     }
 }
