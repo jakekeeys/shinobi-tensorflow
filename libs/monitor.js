@@ -1660,8 +1660,10 @@ module.exports = function(s,config,lang){
                 }
                 //set recording status
                 e.wantedStatus = lang.Watching
+                e.wantedStatusCode = 2
                 if(e.functionMode === 'record'){
                     e.wantedStatus = lang.Recording
+                    e.wantedStatusCode = 3
                     activeMonitor.isRecording = true
                 }else{
                     activeMonitor.isRecording = false
