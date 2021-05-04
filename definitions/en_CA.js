@@ -1,5 +1,17 @@
 module.exports = function(s,config,lang){
     return {
+        "Monitor Status Codes": {
+            "0": "Disabled",
+            "1": "Starting",
+            "2": "Watching",
+            "3": "Recording",
+            "4": "Restarting",
+            "5": "Stopped",
+            "6": "Idle",
+            "7": "Died",
+            "8": "Stopping",
+            "9": "Started",
+        },
        "Monitor Settings": {
           "section": "Monitor Settings",
           "blocks": {

@@ -619,7 +619,8 @@ module.exports = function(s,config,lang){
         s.sendMonitorStatus({
             id: monitor.mid,
             ke: monitor.ke,
-            status: lang.Restarting
+            status: lang.Restarting,
+            code: 4,
         })
         launchMonitorProcesses(monitorConfig)
         s.userLog({
@@ -718,7 +719,12 @@ module.exports = function(s,config,lang){
                 s.group[e.ke].activeMonitors[e.id].spawn = s.ffmpeg(e)
             },3000)
         }
-        s.sendMonitorStatus({id:e.id,ke:e.ke,status:e.wantedStatus});
+        s.sendMonitorStatus({
+            id: e.id,
+            ke: e.ke,
+            status: e.wantedStatus,
+            code: e.wantedStatusCode
+        });
         //on unexpected exit restart
         s.group[e.ke].activeMonitors[e.id].spawn_exit = function(){
             if(s.group[e.ke].activeMonitors[e.id].isStarted === true){
@@ -1369,7 +1375,12 @@ module.exports = function(s,config,lang){
         }else{
             cameraDestroy(e)
         }
-        s.sendMonitorStatus({id:e.id,ke:e.ke,status:lang.Died})
+        s.sendMonitorStatus({
+            id: e.id,
+            ke: e.ke,
+            status: lang.Died,
+            code: 7
+        })
         clearTimeout(activeMonitor.onMonitorStartTimer)
         s.onMonitorDiedExtensions.forEach(function(extender){
             extender(Object.assign(s.group[e.ke].rawMonitorConfigurations[e.id],{}),e)
@@ -1536,7 +1547,12 @@ module.exports = function(s,config,lang){
                 },'MON_'+e.ke+e.id)
             break;
             case'restart'://restart monitor
-                s.sendMonitorStatus({id:e.id,ke:e.ke,status:'Restarting'});
+                s.sendMonitorStatus({
+                    id: e.id,
+                    ke: e.ke,
+                    status: 'Restarting',
+                    code: 4,
+                });
                 s.camera('stop',e)
                 setTimeout(function(){
                     s.camera(e.mode,e)
@@ -1583,10 +1599,17 @@ module.exports = function(s,config,lang){
                     }
                 }
                 var wantedStatus = lang.Stopped
+                var wantedStatusCode = 5
                 if(e.functionMode === 'idle'){
-                    var wantedStatus = lang.Idle
+                    wantedStatus = lang.Idle
+                    wantedStatusCode = 6
                 }
-                s.sendMonitorStatus({id:e.id,ke:e.ke,status:wantedStatus})
+                s.sendMonitorStatus({
+                    id:e.id,
+                    ke:e.ke,
+                    status: wantedStatus,
+                    code: wantedStatusCode,
+                })
                 setTimeout(() => {
                     scanForOrphanedVideos({
                         ke: e.ke,
@@ -1627,6 +1650,7 @@ module.exports = function(s,config,lang){
                     id: e.id,
                     ke: e.ke,
                     status: lang.Starting,
+                    code: 1
                 });
                 activeMonitor.isStarted = true
                 if(e.details && e.details.dir && e.details.dir !== ''){
