@@ -41,7 +41,7 @@ else
 fi
 npm install --unsafe-perm
 npm install @tensorflow-models/coco-ssd@2.0.3 @tensorflow/tfjs-converter@1.7.3 @tensorflow/tfjs-core@1.7.3 @tensorflow/tfjs-layers@1.7.3 @tensorflow/tfjs-node@1.7.3 --unsafe-perm
-npm audit fix --force
+# npm audit fix --force
 if [ ! -e "./conf.json" ]; then
     echo "Creating conf.json"
     sudo cp conf.sample.json conf.json

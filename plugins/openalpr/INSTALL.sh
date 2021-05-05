@@ -42,7 +42,7 @@ npm install nopt npmlog rimraf semver -g
 npm install
 npm uninstall nopt npmlog rimraf semver -g
 echo "Finding and Fixing Module Vulnerabilities.."
-npm audit fix --force
+# npm audit fix --force
 echo "Shinobi - Do you want to start the plugin?"
 echo "(Y)es or (n)o?"
 echo "Press [ENTER] for default (Yes)"
