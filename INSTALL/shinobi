@@ -146,7 +146,7 @@ if [[ $@ == *'update'* ]]; then
         pm2 stop "$installationDirectory"/camera.js
         pm2 stop "$installationDirectory"/cron.js
         npm install --unsafe-perm
-        npm audit fix --force
+        # npm audit fix --force
         git reset --hard
         git pull
         pm2 start "$installationDirectory"/camera.js

@@ -135,8 +135,10 @@ module.exports = function(s,config){
         }
         try{
             s.databaseEngine.schema.createTable('LoginTokens', table => {
-                table.charset('utf8');
-                table.collate('utf8_general_ci');
+                if(config.databaseType === 'mysql'){
+                    table.charset('utf8');
+                    table.collate('utf8_general_ci');
+                }
                 table.string('loginId',255).defaultTo('')
                 table.string('type',25).defaultTo('')
                 table.string('ke',50).defaultTo('')

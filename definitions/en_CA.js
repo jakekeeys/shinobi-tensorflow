@@ -1,5 +1,17 @@
 module.exports = function(s,config,lang){
     return {
+        "Monitor Status Codes": {
+            "0": "Disabled",
+            "1": "Starting",
+            "2": "Watching",
+            "3": "Recording",
+            "4": "Restarting",
+            "5": "Stopped",
+            "6": "Idle",
+            "7": "Died",
+            "8": "Stopping",
+            "9": "Started",
+        },
        "Monitor Settings": {
           "section": "Monitor Settings",
           "blocks": {
@@ -2554,56 +2566,6 @@ module.exports = function(s,config,lang){
                       "possible": ""
                    },
                    {
-                      "name": "detail=detector_discordbot",
-                      "field": lang["Discord Alert on Trigger"],
-                      "description": "",
-                      "default": "0",
-                      "example": "",
-                      "selector": "h_det_discord",
-                      "fieldType": "select",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": [
-                         {
-                            "name": lang.No,
-                            "value": "0"
-                         },
-                         {
-                            "name": lang.Yes,
-                            "value": "1"
-                         }
-                      ]
-                   },
-                   {
-                      "name": "detail=detector_discordbot_send_video",
-                      "field": lang["Attach Video Clip"],
-                      "description": "",
-                      "default": "0",
-                      "example": "",
-                      "fieldType": "select",
-                      "form-group-class": "h_det_discord_input h_det_discord_1",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": [
-                         {
-                            "name": lang.No,
-                            "value": "0"
-                         },
-                         {
-                            "name": lang.Yes,
-                            "value": "1"
-                         }
-                      ]
-                   },
-                   {
-                      "name": "detail=detector_discordbot_timeout",
-                      "field": lang['Allow Next Discord Alert'],
-                      "description": "",
-                      "default": "10",
-                      "example": "",
-                      "form-group-class": "h_det_discord_input h_det_discord_1",
-                      "form-group-class-pre-layer": "h_det_input h_det_1",
-                      "possible": ""
-                   },
-                   {
                       "name": "detail=use_detector_filters",
                       "field": lang['Event Filters'],
                       "description": "",
@@ -2653,8 +2615,7 @@ module.exports = function(s,config,lang){
                    },
                    {
                       "fieldType": "btn",
-                      "class": `btn-danger`,
-                      "attribute": `monitor="region"`,
+                      "class": `btn-danger open-region-editor`,
                       "btnContent": `<i class="fa fa-grav"></i> &nbsp; ${lang['Region Editor']}`,
                       "description": "",
                       "default": "",
@@ -2856,7 +2817,7 @@ module.exports = function(s,config,lang){
                          },
                          {
                             "name": "detail=detector_notrigger_discord",
-                            "field": lang['Discord'],
+                            "field": lang['No Trigger'],
                             "description": "If motion has not been detected after the timeout period you will recieve an Discord notification.",
                             "default": "0",
                             "example": "",
@@ -4032,23 +3993,6 @@ module.exports = function(s,config,lang){
                                  }
                               ]
                            },
-                           {
-                              "name": "detail=notify_discord",
-                              "field": lang.Discord,
-                              "default": "0",
-                              "example": "",
-                              "fieldType": "select",
-                              "possible": [
-                                 {
-                                    "name": lang.No,
-                                    "value": "0"
-                                 },
-                                 {
-                                    "name": lang.Yes,
-                                    "value": "1"
-                                 }
-                              ]
-                           },
                        ],
                     },
                    {
@@ -4271,26 +4215,6 @@ module.exports = function(s,config,lang){
                           }
                        ]
                    },
-                   {
-                       hidden: true,
-                       "name": "detail=factor_discord",
-                       "field": lang.Discord,
-                       "description": "Send 2-Factor Authentication codes to the specified Discord channel.",
-                       "default": "1",
-                       "example": "",
-                       "fieldType": "select",
-                       "possible": [
-                          {
-                             "name": lang.No,
-                             "value": "0"
-                          },
-                          {
-                             "name": lang.Yes,
-                             "value": "1"
-                          }
-                       ],
-                       "form-group-class": "u_discord_bot_input u_discord_bot_1"
-                    },
                 ]
              },
              "Profile": {
@@ -4507,53 +4431,6 @@ module.exports = function(s,config,lang){
                 "name": lang["Uploaders"],
                 "color": "forestgreen",
                 "blocks": s.uploaderFields
-             },
-             "Discord Bot": {
-                "evaluation": "details.use_discordbot!=='0'",
-                "name": lang["Discord Bot"],
-                "color": "forestgreen",
-                "info": [
-                    {
-                       "name": "detail=discordbot",
-                       "selector":"u_discord_bot",
-                       "field": lang.Enabled,
-                       "description": "Discord is a messaging service that can provides Bots. The Bots can post messages to a private channel that you have created.",
-                       "default": "0",
-                       "example": "",
-                       "fieldType": "select",
-                       "possible": [
-                           {
-                              "name": lang.No,
-                              "value": "0"
-                           },
-                           {
-                              "name": lang.Yes,
-                              "value": "1"
-                           }
-                       ]
-                    },
-                    {
-                       "name": "detail=discordbot_token",
-                       "fieldType": "password",
-                       "placeholder": "XXXXXXXXXXXXXXXXXXXXXXXX.XXXXXXXXXXXXXXX_XXXXXXXXXXXXXXXXXX",
-                       "field": lang.Token,
-                       "form-group-class":"u_discord_bot_input u_discord_bot_1",
-                       "description": "",
-                       "default": "",
-                       "example": "",
-                       "possible": ""
-                   },
-                    {
-                       "name": "detail=discordbot_channel",
-                       "placeholder": "xxxxxxxxxxxxxxxxxx",
-                       "field": lang["Channel ID"],
-                       "form-group-class":"u_discord_bot_input u_discord_bot_1",
-                       "description": "",
-                       "default": "",
-                       "example": "",
-                       "possible": ""
-                    }
-                ]
              },
              "Preferences": {
                 "name": lang.Preferences,
@@ -5139,7 +5016,8 @@ module.exports = function(s,config,lang){
            "blocks": {
                "Sub-Accounts": {
                   "name": lang['Sub-Accounts'],
-                  "color": "grey",
+                  "section-pre-class": "col-md-12",
+                  "color": "orange",
                   "isSection": true,
                   "id":"monSectionAccountList",
                   "info": [
@@ -5151,7 +5029,8 @@ module.exports = function(s,config,lang){
                },
                "Account Information": {
                   "name": lang['Account Information'],
-                  "color": "grey",
+                  "section-pre-class": "col-md-6",
+                  "color": "blue",
                   "isSection": true,
                   "isForm": true,
                   "id":"monSectionAccountInformation",
@@ -5204,7 +5083,8 @@ module.exports = function(s,config,lang){
               },
               "Account Privileges": {
                  "name": lang['Account Privileges'],
-                 "color": "grey",
+                 "section-pre-class": "col-md-6",
+                 "color": "red",
                  "isSection": true,
                  "id":"monSectionAccountPrivileges",
                  "info": [
@@ -5308,7 +5188,8 @@ module.exports = function(s,config,lang){
           "blocks": {
               "Add New": {
                  "name": lang['Add New'],
-                 "color": "grey",
+                 "section-pre-class": "col-md-6",
+                 "color": "forestgreen",
                  "isSection": true,
                  "isForm": true,
                  "id":"apiKeySectionAddNew",
@@ -5378,14 +5259,14 @@ module.exports = function(s,config,lang){
              },
              "API Keys": {
                 "name": lang['API Keys'],
-                "color": "grey",
+                "section-pre-class": "col-md-6",
+                "color": "blue",
                 "isSection": true,
                 "id":"apiKeySectionList",
                 "info": [
                     {
                         "fieldType": "table",
-                        "class": "table table-striped",
-                        id: "api_list",
+                        "id": "api_list",
                     }
                 ]
              },
@@ -5451,6 +5332,691 @@ module.exports = function(s,config,lang){
                 ]
              }
          }
+     },
+     "Region Editor": {
+         "section": "Region Editor",
+         "blocks": {
+             "Regions": {
+                "name": lang["Regions"],
+                "headerTitle": `<span class="cord_name">&nbsp;</span>
+                  <div class="pull-right">
+                      <a class="badge btn btn-success btn-sm add">&nbsp;<i class="fa fa-plus"></i>&nbsp;</a>
+                      <a class="badge btn btn-danger btn-sm erase">&nbsp;<i class="fa fa-trash-o"></i>&nbsp;</a>
+                  </div>`,
+                "color": "orange",
+                "section-pre-class": "col-md-6",
+                "section-class": "where",
+                "info": [
+                    {
+                       "field": lang["Monitor"],
+                       "id": "region_editor_monitors",
+                       "fieldType": "select",
+                    },
+                    {
+                       "id": "regions_list",
+                       "field": lang["Regions"],
+                       "fieldType": "select",
+                       "possible": []
+                   },
+                    {
+                       "name": "name",
+                       "field": lang['Region Name'],
+                    },
+                    {
+                       "name": "sensitivity",
+                       "field": lang['Minimum Change'],
+                    },
+                    {
+                       "name": "max_sensitivity",
+                       "field": lang['Maximum Change'],
+                    },
+                    {
+                       "name": "threshold",
+                       "field": lang['Trigger Threshold'],
+                    },
+                    {
+                       "name": "color_threshold",
+                       "field": lang['Color Threshold'],
+                    },
+                    {
+                        id: "regions_points",
+                        "fieldType": "table",
+                        "class": 'table table-striped',
+                    },
+                    {
+                       "fieldType": "btn",
+                       "class": `btn-info toggle-region-still-image`,
+                       "btnContent": `<i class="fa fa-retweet"></i> &nbsp; ${lang['Live Stream Toggle']}`,
+                    },
+                ]
+            },
+            "Points": {
+               "name": lang["Points"],
+               "color": "orange",
+               "section-pre-class": "col-md-6",
+               "blockquoteClass": "global_tip",
+               "blockquote": lang.RegionNote,
+               "info": [
+                   {
+                       "fieldType": "div",
+                       class: "canvas_holder",
+                       divContent: `<div id="region_editor_live"><iframe></iframe><img></div>
+                       <textarea id="regions_canvas" rows=3 class="hidden canvas-area input-xxlarge" disabled></textarea>`,
+                   }
+               ]
+            }
          }
+     },
+     "Schedules": {
+         "section": "Schedules",
+         "blocks": {
+             "Schedules": {
+                "name": lang["Schedules"],
+                "color": "orange",
+                "section-pre-class": "col-md-6",
+                "info": [
+                    {
+                       "id": "schedulesSelector",
+                       "field": lang["Schedules"],
+                       "fieldType": "select",
+                       "possible": [
+                           {
+                              "name": lang['Add New'],
+                              "value": ""
+                           },
+                           {
+                              "name": lang.Saved,
+                              "optgroup": []
+                           },
+                       ]
+                   },
+                ]
+            },
+            "Schedule": {
+               "name": lang["Schedule"],
+               "headerTitle": `${lang['Schedule']}
+                 <div class="pull-right">
+                     <a class="btn btn-danger btn-xs delete" style="display:none">&nbsp;<i class="fa fa-trash-o"></i>&nbsp;</a>
+                 </div>`,
+               "color": "green",
+               "section-pre-class": "col-md-6",
+               "info": [
+                   {
+                      "name": "name",
+                      "field": lang.Name,
+                      "description": "",
+                      "example": "Motion Off",
+                      "possible": ""
+                   },
+                   {
+                      "name": "enabled",
+                      "field": lang.Enabled,
+                      "default": "1",
+                      "fieldType": "select",
+                      "possible": [
+                          {
+                             "name": lang.No,
+                             "value": "0"
+                          },
+                          {
+                             "name": lang.Yes,
+                             "value": "1"
+                          }
+                      ]
+                   },
+                   {
+                      "name": "timezone",
+                      "field": lang['Timezone Offset'],
+                      "default": config.timeZones.find(tz => !!tz.selected).value,
+                      "fieldType": "select",
+                      "possible": config.timeZones.map((tz) => {
+                          return {
+                              "name": tz.text,
+                              "value": tz.value
+                          }
+                      })
+                   },
+                   {
+                      "name": "start",
+                      "field": lang.Start,
+                      "description": "",
+                      "placeholder": "HH:mm",
+                      "possible": "1:00"
+                   },
+                   {
+                      "name": "end",
+                      "field": lang.End,
+                      "description": "",
+                      "placeholder": "HH:mm",
+                      "possible": "2:00"
+                   },
+                   {
+                      "name": "days",
+                      "field": lang.Days,
+                      "default": "0",
+                      "fieldType": "select",
+                      "attribute": "multiple",
+                      "possible": [
+                          {
+                             "name": lang.Sunday,
+                             "value": "0"
+                          },
+                          {
+                             "name": lang.Monday,
+                             "value": "1"
+                          },
+                          {
+                             "name": lang.Tuesday,
+                             "value": "2"
+                          },
+                          {
+                             "name": lang.Wednesday,
+                             "value": "3"
+                          },
+                          {
+                             "name": lang.Thursday,
+                             "value": "4"
+                          },
+                          {
+                             "name": lang.Friday,
+                             "value": "5"
+                          },
+                          {
+                             "name": lang.Saturday,
+                             "value": "6"
+                          },
+                      ]
+                   },
+                   {
+                      "name": "monitorStates",
+                      "field": lang['Monitor States'],
+                      "fieldType": "select",
+                      "attribute": `multiple style="min-height:100px"`,
+                      "possible": []
+                   },
+               ]
+           },
+         }
+     },
+     "Monitor States": {
+         "section": "Monitor States",
+         "blocks": {
+             "Monitor States": {
+                "name": lang["Monitor States"],
+                "color": "green",
+                "section-pre-class": "col-md-6",
+                "info": [
+                    {
+                       "id": "monitorStatesSelector",
+                       "field": lang["Monitor States"],
+                       "fieldType": "select",
+                       "possible": [
+                           {
+                              "name": lang['Add New'],
+                              "value": ""
+                           },
+                           {
+                              "name": lang['Saved Presets'],
+                              "optgroup": []
+                           },
+                       ]
+                   },
+                ]
+            },
+            "Preset": {
+               "name": lang["Preset"],
+               "color": "green",
+               "section-pre-class": "col-md-6",
+               "info": [
+                   {
+                      "fieldType": "btn",
+                      "attribute": `type="submit" style="display:none"`,
+                      "class": `btn-danger delete`,
+                      "btnContent": `<i class="fa fa-trash"></i> &nbsp; ${lang.Delete}`,
+                   },
+                   {
+                      "name": "name",
+                      "field": lang.Name,
+                      "description": "",
+                      "example": "Motion Off",
+                      "possible": ""
+                   }
+               ]
+           },
+            "Monitors": {
+               "name": lang["Monitors"],
+               "color": "green",
+               "section-pre-class": "col-md-12",
+               "info": [
+                   {
+                      "fieldType": "btn",
+                      "class": `btn-success add-monitor`,
+                      "btnContent": `<i class="fa fa-plus"></i> &nbsp; ${lang['Add New']}`,
+                   },
+                  {
+                      "fieldType": "div",
+                      id: "monitorStatesMonitors",
+                  }
+               ]
+           },
+         }
+     },
+     "Timelapse": {
+         "section": "Timelapse",
+         "blocks": {
+             "Search Settings": {
+                "name": lang["Search Settings"],
+                "color": "green",
+                "section-pre-class": "col-md-4",
+                "info": [
+                    {
+                        "id": "monitorStatesSelector",
+                        "field": lang["Monitor"],
+                        "fieldType": "select",
+                        "class": "dark monitors_list",
+                        "possible": []
+                    },
+                    {
+                        "id": "timelapsejpeg_date",
+                        "field": lang.Date,
+                    },
+                    {
+                        "id": "timelapseJpegFps",
+                        "field": lang["Frame Rate"],
+                        "fieldType": "range",
+                        "min": "1",
+                        "max": "30",
+                    },
+                    {
+                       "fieldType": "btn-group",
+                       "btns": [
+                           {
+                               "fieldType": "btn",
+                               "class": `btn-primary playPause playPauseText`,
+                               "btnContent": `${lang['Play']}`,
+                           },
+                           {
+                               "fieldType": "btn",
+                               "class": `btn-success download_mp4`,
+                               "btnContent": `${lang['Download']}`,
+                           },
+                       ],
+                    },
+               ]
+           },
+           "Frames": {
+              "name": lang.Frames,
+              "color": "blue",
+              "section-pre-class": "col-md-8",
+              "info": [
+                  {
+                      "fieldType": "div",
+                      "class": "frameIcons row scroll-style-6",
+                  }
+              ]
+          },
+        }
+      },
+     "Event Filters": {
+          "section": "Event Filters",
+          "blocks": {
+              "Saved Filters": {
+                 "name": lang["Saved Filters"],
+                 "color": "green",
+                 "info": [
+                     {
+                        "field": lang["Monitor"],
+                        "id": "event_filters_monitors",
+                        "fieldType": "select",
+                     },
+                     {
+                        "fieldType": "btn-group",
+                        "class": "mb-3",
+                        "btns": [
+                            {
+                                "fieldType": "btn",
+                                "class": `btn-success add-filter`,
+                                "btnContent": `${lang['Add New']}`,
+                            },
+                            {
+                                "fieldType": "btn",
+                                "class": `btn-danger delete-filter`,
+                                "btnContent": `${lang['Delete']}`,
+                            },
+                        ],
+                     },
+                     {
+                        "id": "detector_filters",
+                        "field": lang["Filters"],
+                        "fieldType": "select",
+                     },
+                     {
+                         hidden:true,
+                        "name": "id",
+                     },
+                     {
+                        "name": "filter_name",
+                        "field": lang['Filter Name'],
+                     },
+                 ]
+             },
+             "Conditions": {
+                "name": lang["Conditions"],
+                "color": "blue",
+                "section-class": "where",
+                "info": [
+                    {
+                       "fieldType": "btn-group",
+                       "class": "mb-3",
+                       "btns": [
+                           {
+                               "fieldType": "btn",
+                               "class": `btn-success add`,
+                               "btnContent": `${lang['Add New']}`,
+                           },
+                       ],
+                    },
+                    {
+                        "id": 'detector_filters_where',
+                        "fieldType": 'div',
+                    },
+                ]
+            },
+             "Action for Selected": {
+                "name": lang["Action for Selected"],
+                "color": "red",
+                "section-class": "actions",
+                "info": [
+                    {
+                      "name": "actions=halt",
+                      "field": "Drop Event",
+                      "fieldType": "select",
+                      "form-group-class": "actions-row",
+                      "description": "Make the event do nothing, as if it never happened.",
+                      "default": "No",
+                      "possible": [
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "Allow other functions to continue.",
+                            "selected": true
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Use Traditional Recording, Hotswap, or Delete Motionless with their currently set options in the Global Detection Settings section."
+                         }
+                      ]
+                    },
+                    {
+                      "name": "actions=save",
+                      "field": "Save Events to SQL",
+                      "fieldType": "select",
+                      "description": "Save Motion Events in SQL. This will allow display of motion over video during the time motion events occured in the Power Viewer.",
+                      "default": "Yes",
+                      "form-group-class": "actions-row",
+                      "possible": [
+                         {
+                            "name": "Default",
+                            "value": "",
+                            "info": "Use values set in Global Detector Settings.",
+                            "selected": true
+                         },
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "Finish the current 10 minute order."
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Reset the timer"
+                         }
+                      ]
+                    },
+                    {
+                      "name": "actions=mail",
+                      "field": "Email on Trigger",
+                      "fieldType": "select",
+                      "form-group-class": "actions-row",
+                      "description": "Recieve an email of an image during a motion event to the master account for the camera group. You must setup SMTP details in conf.json.",
+                      "default": "No",
+                      "example": "1",
+                      "possible": [
+                         {
+                            "name": "Default",
+                            "value": "",
+                            "info": "Use values set in Global Detector Settings.",
+                            "selected": true
+                         },
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "No Email."
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Send Email."
+                         }
+                      ]
+                    },
+                    {
+                      "name": "actions=webhook",
+                      "field": "Webhook on Trigger",
+                      "fieldType": "select",
+                      "form-group-class": "actions-row",
+                      "description": "Send a GET request during an event to the URL specified. Webhook location can be specified in the Global Detector Settings for the Monitor.",
+                      "default": "No",
+                      "example": "1",
+                      "possible": [
+                         {
+                            "name": "Default",
+                            "value": "",
+                            "info": "Use values set in Global Detector Settings.",
+                            "selected": true
+                         },
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "No Webhook."
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Send Webhook."
+                         }
+                      ]
+                    },
+                    {
+                      "name": "actions=discord",
+                      "field": "Discord Alert on Trigger",
+                      "fieldType": "select",
+                      "form-group-class": "actions-row",
+                      "description": "Recieve a Discord Notification with an image or video during an event to the Discord channel specified. Discord Bot and Channel settings can be changed in your Account Settings.",
+                      "default": "No",
+                      "example": "1",
+                      "possible": [
+                         {
+                            "name": "Default",
+                            "value": "",
+                            "info": "Use values set in Global Detector Settings.",
+                            "selected": true
+                         },
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "No Alert."
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Get a Message to Discord."
+                         }
+                      ]
+                   },
+                   {
+                      "name": "actions=command",
+                      "field": "Detector Command",
+                      "fieldType": "select",
+                      "form-group-class": "actions-row",
+                      "description": "You may use this to trigger a script on command.",
+                      "default": "No",
+                      "form-group-class": "actions-row",
+                      "possible": [
+                         {
+                            "name": "Default",
+                            "value": "",
+                            "info": "Use values set in Global Detector Settings.",
+                            "selected": true
+                         },
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "No script will run."
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Trigger the script that is set in the <b>Command</b> option. <b>Command</b> is only visible when selecting this option."
+                         }
+                      ]
+                   },
+                   {
+                      "name": "actions=record",
+                      "field": "Use Record Method",
+                      "fieldType": "select",
+                      "description": "Use Traditional Recording, Hotswap, or Delete Motionless with their currently set options in the Global Detection Settings section.",
+                      "default": "No",
+                      "form-group-class": "actions-row",
+                      "possible": [
+                         {
+                            "name": "Default",
+                            "value": "",
+                            "info": "Use values set in Global Detector Settings.",
+                            "selected": true
+                         },
+                         {
+                            "name": "No",
+                            "value": "0",
+                            "info": "No Traditional Recording, Hotswap, or Delete Motionless."
+                         },
+                         {
+                            "name": "Yes",
+                            "value": "1",
+                            "info": "Use Traditional Recording, Hotswap, or Delete Motionless with their currently set options in the Global Detection Settings section."
+                         }
+                      ]
+                   },
+                   {
+                      "name": "actions=indifference",
+                      "field": "Modify Indifference",
+                      "description": "Modify minimum indifference required for event.",
+                      "form-group-class": "actions-row",
+                   },
+                ]
+            },
+          }
+      },
+     "ONVIF Scanner": {
+          "section": "ONVIF Scanner",
+          "blocks": {
+              "Search Settings": {
+                 "name": lang["Scan Settings"],
+                 "color": "navy",
+                 "blockquote": lang.ONVIFnote,
+                 "section-pre-class": "col-md-4",
+                 "info": [
+                     {
+                        "name": "ip",
+                        "field": lang['IP Address'],
+                        "description": lang['Range or Single'],
+                        "example": "10.1.100.1-10.1.100.254",
+                     },
+                     {
+                        "name": "port",
+                        "field": lang['Port'],
+                        "description": lang.separateByCommasOrRange,
+                        "example": "80,7575,8000,8080,8081",
+                     },
+                     {
+                        "name": "user",
+                        "field": lang['Camera Username'],
+                        "placeholder": "Can be left blank.",
+                     },
+                     {
+                        "name": "pass",
+                        "field": lang['Camera Password'],
+                        "fieldType": "password",
+                     },
+                     {
+                        "fieldType": "btn-group",
+                        "btns": [
+                            {
+                                "fieldType": "btn",
+                                "forForm": true,
+                                "class": `btn-block btn-success`,
+                                "btnContent": `${lang['Search']}<span class="_loading" style="display:none"> &nbsp; <i class="fa fa-pulse fa-spinner"></i></span>`,
+                            },
+                            {
+                                "fieldType": "btn",
+                                "class": `btn-default add-all`,
+                                "btnContent": `${lang['Add All']}`,
+                            },
+                        ],
+                     },
+                ]
+            },
+            "Found Devices": {
+               "name": lang['Found Devices'],
+               "color": "blue",
+               "section-pre-class": "col-md-8",
+               "info": [
+                   {
+                       "fieldType": "div",
+                       "class": "onvif_result row",
+                   }
+               ]
+           },
+         }
+       },
+     "Camera Probe": {
+          "section": "Camera Probe",
+          "blocks": {
+              "Search Settings": {
+                 "name": lang["FFprobe"],
+                 "color": "blue",
+                 "blockquote": `<i>"${lang['FFmpegTip']}"</i> - FFmpegTips`,
+                 "section-pre-class": "col-md-12",
+                 "info": [
+                     {
+                        "name": "url",
+                        "field": lang['Complete Stream URL'],
+                        "example": "http://192.168.88.126/videostream.cgi or /dev/video0",
+                     },
+                     {
+                        "fieldType": "btn-group",
+                        "btns": [
+                            {
+                                "fieldType": "btn",
+                                "forForm": true,
+                                "class": `btn-block btn-success`,
+                                "btnContent": `${lang['Check']}`,
+                            },
+                            {
+                                "fieldType": "btn",
+                                "class": `btn-default fill`,
+                                "btnContent": `${lang['Save']}`,
+                            },
+                        ],
+                     },
+                     {
+                         "fieldType": "div",
+                         "class": "output_data",
+                     }
+                ]
+            },
+         }
+       },
     }
 }

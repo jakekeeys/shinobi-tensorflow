@@ -2,16 +2,16 @@
 
 # Copyright (c) 2020 Jordan Geoghegan <jordan@geoghegan.ca>
 
-# Permission to use, copy, modify, and/or distribute this software for any 
-# purpose with or without fee is hereby granted, provided that the above 
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
 # copyright notice and this permission notice appear in all copies.
 
-# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH 
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
 # REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
 # AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-# INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM 
-# LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE 
-# OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR 
+# INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+# LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+# OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 # PERFORMANCE OF THIS SOFTWARE.
 
 # Functions
@@ -97,7 +97,7 @@ schema_install () {
 
 pro_download () {
 	echo "\n### Grabbing Shinobi Pro from master branch\n"
-	doas -u _shinobi ftp -o /home/_shinobi/shinobi.tar.gz https://gitlab.com/Shinobi-Systems/Shinobi/-/archive/master/Shinobi-master.tar.gz 
+	doas -u _shinobi ftp -o /home/_shinobi/shinobi.tar.gz https://gitlab.com/Shinobi-Systems/Shinobi/-/archive/master/Shinobi-master.tar.gz
 }
 
 gpl_download () {
@@ -187,7 +187,6 @@ done
 echo "\n### Installing required Node modules\n"
 cd /home/_shinobi/shinobi || npm_abort
 doas -u _shinobi npm install --unsafe-perm
-doas npm audit fix --force
 doas -u _shinobi cp /home/_shinobi/shinobi/conf.sample.json /home/_shinobi/shinobi/conf.json
 doas -u _shinobi cp /home/_shinobi/shinobi/super.sample.json /home/_shinobi/shinobi/super.json
 doas npm install -g pm2
@@ -198,7 +197,7 @@ echo "\nCongratulations, Shinobi is now installed!\n"
 echo 'To start Shinobi at boot, add a crontab entry for the user "_shinobi" with something like this:\n'
 
 echo '$ doas crontab -u _shinobi -e
- 
+
 @reboot /bin/sh -c "cd /home/_shinobi/Shinobi && pm2 start camera.js cron.js"
 
 echo "\nYou can access Shinobi at http://$(ifconfig | grep 'inet ' | awk '!/127.0.0.1/ {print $2}'):8080"

@@ -250,7 +250,7 @@ echo "Installing NPM libraries..."
 sudo npm i npm -g
 sudo npm install --unsafe-perm
 sudo npm install ffbinaries mp4frag@latest cws@latest
-sudo npm audit fix --force
+# sudo npm audit fix --force
 
 echo "========================================================="
 echo "Installing PM2..."

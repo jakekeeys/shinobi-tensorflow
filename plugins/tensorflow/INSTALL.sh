@@ -132,7 +132,7 @@ fi
 
 
 # npm install @tensorflow/tfjs-node-gpu@2.7.0
-npm audit fix --force
+# npm audit fix --force
 if [ "$installGpuFlag" = true ]; then
 	runRebuildGpu
 else

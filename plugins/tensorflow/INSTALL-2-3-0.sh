@@ -148,7 +148,7 @@ else
 		installNonGpuRoute
 	fi
 fi
-# npm audit fix --force
+# # npm audit fix --force
 if [ ! -e "$DIR/conf.json" ]; then
 	dontCreateKeyFlag=false
     echo "Creating conf.json"

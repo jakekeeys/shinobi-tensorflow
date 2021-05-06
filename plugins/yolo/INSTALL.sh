@@ -86,7 +86,7 @@ echo "Getting C++ module : node-yolo-shinobi"
 echo "https://www.npmjs.com/package/node-yolo-shinobi is a fork of https://github.com/rcaceiro/node-yolo"
 npm install --unsafe-perm
 npm install node-yolo-shinobi --unsafe-perm
-npm audit fix --force
+# npm audit fix --force
 echo "-----------------------------------"
 echo "Start the plugin with pm2 like so :"
 echo "pm2 start shinobi-yolo.js"

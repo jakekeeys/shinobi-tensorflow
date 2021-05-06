@@ -127,13 +127,13 @@ module.exports = (s,config,lang,app,io) => {
         return s.group[eventData.ke].activeMonitors[eventData.id].detector_motion_count.length
     }
     const hasMatrices = (eventDetails) => {
-        return (eventDetails.matrices && eventDetails.matrices.length > 0)
+        return (eventDetails.matrices && eventDetails.matrices.length > 0) && eventDetails.reason !== 'motion'
     }
     const checkEventFilters = (d,monitorDetails,filter) => {
         const eventDetails = d.details
         if(
             monitorDetails.use_detector_filters === '1' &&
-            ((monitorDetails.use_detector_filters_object === '1' && d.details.matrices) ||
+            ((monitorDetails.use_detector_filters_object === '1' && d.details.matrices && d.details.reason !== 'motion') ||
             monitorDetails.use_detector_filters_object !== '1')
         ){
             const parseValue = function(key,val){
@@ -244,7 +244,7 @@ module.exports = (s,config,lang,app,io) => {
                     }
                 }
             })
-            if(d.details.matrices && d.details.matrices.length === 0 || filter.halt === true){
+            if(d.details.matrices && d.details.matrices.length === 0 && d.details.reason !== 'motion' || filter.halt === true){
                 return false
             }else if(hasMatrices(d.details)){
                 var reviewedMatrix = []

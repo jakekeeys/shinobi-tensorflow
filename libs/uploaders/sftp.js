@@ -1,5 +1,5 @@
 var fs = require('fs');
-var ssh2SftpClient = require('node-ssh')
+const { NodeSSH } = require('node-ssh');
 module.exports = function(s,config,lang){
     //SFTP
     var sftpErr = function(groupKey,err){
@@ -27,12 +27,11 @@ module.exports = function(s,config,lang){
             if(userDetails.sftp_dir !== ''){
                 userDetails.sftp_dir = s.checkCorrectPathEnding(userDetails.sftp_dir)
             }
-            var sftp = new ssh2SftpClient()
-            var connectionDetails = {
+            const sftp = new NodeSSH();
+            const connectionDetails = {
                 host: userDetails.sftp_host,
-                port: userDetails.sftp_port
+                port: userDetails.sftp_port || 22,
             }
-            if(!userDetails.sftp_port)connectionDetails.port = 22
             if(userDetails.sftp_username && userDetails.sftp_username !== '')connectionDetails.username = userDetails.sftp_username
             if(userDetails.sftp_password && userDetails.sftp_password !== '')connectionDetails.password = userDetails.sftp_password
             if(userDetails.sftp_privateKey && userDetails.sftp_privateKey !== '')connectionDetails.privateKey = userDetails.sftp_privateKey
