@@ -5016,7 +5016,7 @@ module.exports = function(s,config,lang){
            "blocks": {
                "Sub-Accounts": {
                   "name": lang['Sub-Accounts'],
-                  "section-pre-class": "col-md-12",
+                  "section-pre-class": "col-md-6",
                   "color": "orange",
                   "isSection": true,
                   "id":"monSectionAccountList",
@@ -5024,6 +5024,24 @@ module.exports = function(s,config,lang){
                       {
                           "fieldType": "table",
                           id: "subAccountsList",
+                      }
+                  ]
+               },
+               "Currently Active": {
+                  "name": lang['Currently Active'],
+                  "section-pre-class": "col-md-6 search-parent",
+                  "color": "green",
+                  "isSection": true,
+                  "info": [
+                      {
+                         "field": lang['Search'],
+                         "class": 'search-controller',
+                      },
+                      {
+                          "fieldType": "div",
+                          "class": "search-body",
+                          "id": "currently-active-users",
+                          "attribute": `style="max-height: 400px;overflow: auto;"`,
                       }
                   ]
                },
@@ -5642,16 +5660,21 @@ module.exports = function(s,config,lang){
                            },
                        ],
                     },
+                    {
+                        "fieldType": "div",
+                        "class": "frameIcons mt-3 row scroll-style-6",
+                    }
                ]
            },
-           "Frames": {
-              "name": lang.Frames,
+           "Watch": {
+              "name": lang['Watch'],
               "color": "blue",
               "section-pre-class": "col-md-8",
               "info": [
                   {
                       "fieldType": "div",
-                      "class": "frameIcons row scroll-style-6",
+                      "class": "playBackView",
+                      "divContent": "<img>"
                   }
               ]
           },
@@ -6016,6 +6039,159 @@ module.exports = function(s,config,lang){
                      }
                 ]
             },
+         }
+       },
+       "Montior Configuration Finder": {
+            "section": "Montior Configuration Finder",
+            "blocks": {
+                "Search Settings": {
+                   "name": lang["Search Settings"],
+                   "color": "navy",
+                   "blockquote": lang.monitorConfigFinderDescription,
+                   "section-pre-class": "col-md-4",
+                   "info": [
+                       {
+                          "id": "shinobihub-sort-by",
+                          "field": lang["Sort By"],
+                          "fieldType": "select",
+                          "possible": [
+                              {
+                                 "name": lang['Date Updated'],
+                                 "value": "dateUpdated"
+                              },
+                              {
+                                 "name": lang['Date Added'],
+                                 "value": "dateAdded"
+                              },
+                              {
+                                 "name": lang['Title'],
+                                 "value": "heading"
+                              },
+                              {
+                                 "name": lang['Subtitle'],
+                                 "value": "opening"
+                              },
+                          ]
+                      },
+                       {
+                          "id": "shinobihub-sort-direction",
+                          "field": lang["Sort By"],
+                          "fieldType": "select",
+                          "possible": [
+                              {
+                                 "name": lang['Newest'],
+                                 "value": "DESC"
+                              },
+                              {
+                                 "name": lang['Oldest'],
+                                 "value": "ASC"
+                              },
+                          ]
+                      },
+                      {
+                         "id": "shinobihub-search",
+                         "field": lang['Search'],
+                      },
+                      {
+                          "id": "shinobihub-pages",
+                          "class": "btn-group",
+                          "fieldType": "div",
+                      }
+                  ]
+              },
+              "Monitor Settings": {
+                 "name": lang['Monitor Settings'],
+                 "color": "blue",
+                 "section-pre-class": "col-md-8",
+                 "info": [
+                     {
+                         "id": "shinobihub-results",
+                         "class": "text-center row",
+                         "fieldType": "div",
+                     }
+                 ]
+             },
+           }
+         },
+     "Log Viewer": {
+          "section": "Log Viewer",
+          "blocks": {
+              "Saved Logs": {
+                 "name": lang["Saved Logs"],
+                 "color": "blue",
+                 "section-pre-class": "col-md-6 search-parent",
+                 "info": [
+                     {
+                        "id": "log_monitors",
+                        "field": lang["Type"],
+                        "fieldType": "select",
+                        "possible": [
+                            {
+                               "name": lang['All Logs'],
+                               "value": "all"
+                            },
+                            {
+                               "name": lang['For Group'],
+                               "value": "$USER"
+                            },
+                            {
+                               "name": lang.Monitors,
+                               "optgroup": []
+                           }
+                        ]
+                    },
+                     {
+                        "field": lang['Search'],
+                        "class": 'search-controller',
+                     },
+                     {
+                        "id": "logs_daterange",
+                        "field": lang['Date Range'],
+                     },
+                     {
+                        "fieldType": "btn-group",
+                        "btns": [
+                            {
+                                "fieldType": "btn",
+                                "class": "btn-default",
+                                "forForm": true,
+                                "attribute": `download type="button"`,
+                                "btnContent": `${lang['Export']}`,
+                            },
+                            {
+                                "fieldType": "btn",
+                                "class": "btn-success",
+                                "forForm": true,
+                                "attribute": `type="submit"`,
+                                "btnContent": `${lang['Check']}`,
+                            },
+                        ],
+                     },
+                     {
+                         "id": "saved-logs-rows",
+                         "fieldType": "div",
+                         "attribute": `style="max-height: 600px;overflow: auto;"`,
+                         "class": "search-body mt-3 px-3 row",
+                     }
+                ]
+            },
+            "Streamed Logs": {
+               "name": lang['Streamed Logs'],
+               "color": "green",
+               "section-pre-class": "col-md-6 search-parent",
+               "info": [
+                   {
+                      "field": lang['Search'],
+                      "class": 'search-controller',
+                   },
+                   {
+                       "fieldType": "div",
+                       "id": "global-log-stream",
+                       "attribute": `style="max-height: 600px;overflow: auto;"`,
+                       "class": "search-body mt-3",
+                   }
+               ]
+           },
          }
        },
     }
